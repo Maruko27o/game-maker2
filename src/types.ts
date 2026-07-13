@@ -37,6 +37,15 @@ export const STAT_LABEL: Record<StatKey, string> = {
 export const STAT_CAP = 10; // per-stat max
 export const STAT_TOTAL_CAP = 48; // sum hard cap via training
 
+// Running style (脚質, RACE_V2 §4.2). Fixed per horse (derived from stats+id).
+export type RunStyle = 'nige' | 'senko' | 'sashi' | 'oikomi';
+export const RUN_STYLE_LABEL: Record<RunStyle, string> = {
+  nige: '逃げ',
+  senko: '先行',
+  sashi: '差し',
+  oikomi: '追込',
+};
+
 export type Horse = {
   id: string;
   name: string;

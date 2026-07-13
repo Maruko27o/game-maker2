@@ -1,48 +1,62 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
-import { COURSES, courseById, courseDistance, type Course } from '../data/courses';
+import { COURSES, type Course } from '../data/courses';
 import { colorsBySlot, decosBySlot, DECO_SLOTS } from '../data/parts';
-import { simulate, type Entrant, type SimResult } from '../logic/raceSim';
+import { type Entrant, type SimResult } from '../logic/raceSim2';
 import { rollStatsTotal, mulberry32 } from '../logic/stats';
+import { styleFor } from '../logic/runStyle';
 import { makeTrophy, itemDropCount, rollItems } from '../logic/raceReward';
-import type { Horse, DecoSlot, Trophy, TrainingItem } from '../types';
-import { STAT_LABEL } from '../types';
+import type { Horse, HorseLook, DecoSlot, Trophy, TrainingItem, Stats } from '../types';
+import { STAT_LABEL, RUN_STYLE_LABEL, STAT_KEYS } from '../types';
 import HorseView from '../components/HorseView';
-import RaceHorse from '../components/RaceHorse';
+import RaceTrack2 from '../components/RaceTrack2';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
 
-const CPU_NAMES = ['あらし号', 'かぜまる', 'いなずま', 'だいち', 'こまち', 'はやて', 'つむじ', 'くろがね', 'かみなり', 'そよかぜ'];
-const HORSE_SIZE = 50;
+const NAME_A = ['カゼ', 'ホシ', 'ハナ', 'ユキ', 'ソラ', 'ナミ', 'ミネ', 'タキ', 'クモ', 'ツキ', 'イナ', 'アサ'];
+const NAME_B = ['マル', 'ゴウ', 'オー', 'キング', 'スター', 'ボーイ', 'ヒメ', 'ナデシコ', '号', '丸'];
 
-function pick<T>(a: T[]): T {
-  return a[Math.floor(Math.random() * a.length)];
-}
-function shuffle<T>(a: T[]): T[] {
-  const r = [...a];
-  for (let i = r.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [r[i], r[j]] = [r[j], r[i]];
-  }
-  return r;
+function pick<T>(a: T[], rng: () => number): T {
+  return a[Math.floor(rng() * a.length)];
 }
 
-function cpuHorse(id: string, name: string, rng: () => number, band: [number, number]): { horse: Horse; entrant: Entrant } {
+function makeCpu(
+  id: string,
+  rng: () => number,
+  band: [number, number],
+  decoChance: number,
+): { entrant: Entrant; look: HorseLook } {
+  const stats = rollStatsTotal(rng, band[0], band[1]);
   const decos: Partial<Record<DecoSlot, string>> = {};
-  if (Math.random() < 0.5) {
-    const slot = pick(DECO_SLOTS);
-    decos[slot] = pick(decosBySlot[slot]).id;
+  let chance = decoChance;
+  for (const slot of DECO_SLOTS) {
+    if (rng() < chance) decos[slot] = pick(decosBySlot[slot], rng).id;
+    chance *= 0.5;
   }
-  const horse: Horse = {
-    id,
-    name,
-    colors: { body: pick(colorsBySlot.body).id, mane: pick(colorsBySlot.mane).id, hoof: pick(colorsBySlot.hoof).id },
+  const look: HorseLook = {
+    name: pick(NAME_A, rng) + pick(NAME_B, rng),
+    colors: {
+      body: pick(colorsBySlot.body, rng).id,
+      mane: pick(colorsBySlot.mane, rng).id,
+      hoof: pick(colorsBySlot.hoof, rng).id,
+    },
     decos,
-    stats: rollStatsTotal(rng, band[0], band[1]),
-    createdAt: 0,
   };
-  return { horse, entrant: { horseId: id, name, isPlayer: false, stats: horse.stats } };
+  return {
+    entrant: { horseId: id, name: look.name!, isPlayer: false, stats, style: styleFor(id, stats) },
+    look,
+  };
+}
+
+function aptitude(stats: Stats, c: Course): string {
+  const base = STAT_KEYS.reduce((n, k) => n + stats[k], 0);
+  const w = STAT_KEYS.reduce((n, k) => n + stats[k] * c.weights[k], 0);
+  const ratio = w / Math.max(1, base);
+  if (ratio > 1.06) return 'この子にピッタリの得意コース！';
+  if (ratio > 1.0) return 'まずまず走れそう。';
+  if (ratio > 0.95) return '標準的なコース。';
+  return 'ちょっと苦手なコースかも…';
 }
 
 function rankColor(rank: number, total: number): { bg: string; bd: string; fg: string } {
@@ -58,190 +72,124 @@ function itemLabel(it: TrainingItem): string {
   return it.kind === 'any' ? 'すきなステータス +1' : `${STAT_LABEL[it.stat]} +1`;
 }
 
-// ---------------------------------------------------------------------------
-
-type RaceData = {
-  result: SimResult;
-  horses: Horse[]; // aligned to entrant index; index 0 = player
+type RaceSetup = {
   course: Course;
-  distance: number;
   mode: 30 | 60;
+  seed: number;
+  entrants: Entrant[];
+  looks: Record<string, HorseLook>;
   grade: 'normal' | 'gp';
 };
 
-function Track({ data, onFinish }: { data: RaceData; onFinish: () => void }) {
-  const reduced = usePrefersReducedMotion();
-  const { result, horses, course, distance } = data;
-  const [count, setCount] = useState(3); // 3,2,1,0(GO)
-  const [running, setRunning] = useState(false);
-  const elapsed = useRef(0);
-  const [, force] = useState(0);
-  const startRef = useRef(0);
-  const prevRanks = useRef<number[]>(result.frames[0].runners.map((r) => r.rank));
-
-  // Countdown then run.
+// ---- Course reveal roulette (RACE_V2 §10) -------------------------------------
+function Roulette({ course, player, reduced, onDone }: { course: Course; player: Horse; reduced: boolean; onDone: () => void }) {
+  const [spinning, setSpinning] = useState(!reduced);
+  const [idx, setIdx] = useState(0);
   useEffect(() => {
-    const step = reduced ? 250 : 800;
-    const t = [
-      window.setTimeout(() => setCount(2), step),
-      window.setTimeout(() => setCount(1), step * 2),
-      window.setTimeout(() => {
-        setCount(0);
-        setRunning(true);
-      }, step * 3),
-    ];
-    return () => t.forEach(clearTimeout);
-  }, [reduced]);
-
-  useEffect(() => {
-    if (!running) return;
-    const speed = reduced ? 5 : 1;
-    let raf = 0;
-    const loop = (now: number) => {
-      if (!startRef.current) startRef.current = now;
-      elapsed.current = ((now - startRef.current) / 1000) * speed;
-      if (elapsed.current >= result.duration) {
-        elapsed.current = result.duration;
-        force((x) => x + 1);
-        window.setTimeout(onFinish, reduced ? 100 : 600);
-        return;
+    if (reduced) {
+      const t = setTimeout(onDone, 400);
+      return () => clearTimeout(t);
+    }
+    let i = 0;
+    let delay = 60;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      i++;
+      setIdx(i % COURSES.length);
+      delay *= 1.12;
+      if (delay < 320) timer = setTimeout(tick, delay);
+      else {
+        setIdx(COURSES.indexOf(course));
+        setSpinning(false);
+        timer = setTimeout(onDone, 1600);
       }
-      force((x) => x + 1);
-      raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [running, reduced, result.duration, onFinish]);
+    timer = setTimeout(tick, delay);
+    return () => clearTimeout(timer);
+  }, [course, reduced, onDone]);
 
-  // Sample the sim at the current time (interpolating position).
-  const dt = result.dt;
-  const fi = Math.min(Math.floor(elapsed.current / dt), result.frames.length - 1);
-  const frame = result.frames[fi];
-  const next = result.frames[Math.min(fi + 1, result.frames.length - 1)];
-  const alpha = Math.min(1, Math.max(0, elapsed.current / dt - fi));
-
-  const leaderPos = Math.max(...frame.runners.map((r) => r.pos));
-  const progress = Math.min(1, leaderPos / distance);
-
-  const ranks = frame.runners.map((r) => r.rank);
-  useEffect(() => {
-    prevRanks.current = ranks;
-  });
-
+  const shown = spinning ? COURSES[idx] : course;
   return (
-    <div className={styles.raceWrap}>
-      <div className={styles.hud}>
-        <span className={styles.hudTime}>⏱ {elapsed.current.toFixed(1)}s</span>
-        <div className={styles.hudBar}>
-          <div className={styles.hudFill} style={{ width: `${progress * 100}%` }} />
-        </div>
-        <span className={styles.hudDist}>{Math.max(0, Math.round(distance - leaderPos))}m</span>
-      </div>
-
-      <div className={styles.trackFrame} style={{ background: course.ground }}>
-        {result.frames[fi].runners.map((rf, i) => {
-          const posM = rf.pos + (next.runners[i].pos - rf.pos) * alpha;
-          const frac = Math.min(1, posM / distance);
-          const rc = rankColor(rf.rank, horses.length);
-          const isPlayer = i === 0;
-          return (
-            <div key={i} className={styles.lane}>
-              <div className={styles.laneObjects} aria-hidden>
-                {result.obstacles.map((o, k) => (
-                  <span key={'o' + k} className={styles.obstacle} style={{ left: `${(o.pos / distance) * 100}%` }}>
-                    {o.kind === 'rock' ? '🪨' : o.kind === 'water' ? '💧' : '🚧'}
-                  </span>
-                ))}
-                {result.boosts.map((b, k) => (
-                  <span key={'b' + k} className={styles.boostPanel} style={{ left: `${(b / distance) * 100}%` }}>
-                    ⚡
-                  </span>
-                ))}
-              </div>
-              <div className={styles.finishLine} aria-hidden />
-              <div
-                className={styles.runner}
-                style={{ left: `calc((100% - ${HORSE_SIZE}px) * ${frac})` }}
-              >
-                <span
-                  key={rf.rank}
-                  className={`${styles.rankBadge} ${isPlayer ? styles.rankBadgeMe : ''}`}
-                  style={{ background: rc.bg, borderColor: rc.bd, color: rc.fg }}
-                >
-                  {rf.rank}
-                </span>
-                <RaceHorse horse={horses[i]} pos={posM} state={rf.state} size={HORSE_SIZE} reduced={reduced} />
-                {isPlayer && <span className={styles.youTag}>あなた</span>}
-              </div>
+    <div className={styles.rouletteWrap} onClick={!spinning ? onDone : undefined}>
+      <div className={`${styles.rouletteCard} ${!spinning ? styles.rouletteStop : ''}`}>
+        <div className={styles.rouletteEmoji}>{shown.emoji}</div>
+        <div className={styles.rouletteName}>{shown.name}</div>
+        {!spinning && (
+          <>
+            <div className={styles.rouletteInfo}>
+              路面: {surfaceLabel(shown.surface)} ／ {shown.desc}
             </div>
-          );
-        })}
-
-        {count > 0 && <div className={styles.countdown}>{count}</div>}
-        {count === 0 && !running && <div className={styles.countdown}>GO!</div>}
+            <div className={styles.rouletteApt}>{aptitude(player.stats, shown)}</div>
+            <div className={styles.rouletteTap}>タップですすむ</div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
+function surfaceLabel(s: string): string {
+  return { turf: '芝', dirt: 'ダート', sand: '砂', steeple: '障害', circuit: 'ナイター', trail: '芝' }[s] ?? s;
+}
 
+// ---- main ---------------------------------------------------------------------
 export default function Race() {
   const navigate = useNavigate();
+  const reduced = usePrefersReducedMotion();
   const horses = useStore((s) => s.horses);
   const addTrophies = useStore((s) => s.addTrophies);
   const grantItems = useStore((s) => s.grantItems);
   const recordRace = useStore((s) => s.recordRace);
 
-  const [screen, setScreen] = useState<'menu' | 'setup' | 'race' | 'result'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'setup' | 'roulette' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
   const [horseId, setHorseId] = useState<string | null>(null);
-  const [courseId, setCourseId] = useState('green');
   const [mode, setMode] = useState<30 | 60>(30);
-  const [data, setData] = useState<RaceData | null>(null);
-  const [reward, setReward] = useState<{ trophy: Trophy | null; items: TrainingItem[]; rank: number; time: number } | null>(null);
+  const [setup, setSetup] = useState<RaceSetup | null>(null);
+  const [result, setResult] = useState<SimResult | null>(null);
+  const [reward, setReward] = useState<{ trophy: Trophy | null; items: TrainingItem[]; rank: number } | null>(null);
   const rewardApplied = useRef(false);
 
   const player = horses.find((h) => h.id === horseId) ?? null;
 
-  function startRace() {
+  function begin() {
     if (!player) return;
-    const course = courseById(courseId);
-    const distance = courseDistance(course, mode);
     const seed = (Math.random() * 2 ** 31) >>> 0;
+    const rng = mulberry32(seed ^ 0x77);
+    const course = COURSES[Math.floor(rng() * COURSES.length)];
     const band: [number, number] = grade === 'gp' ? [32, 44] : [20, 34];
-    const rng = mulberry32(seed ^ 0x51ed);
-    const names = shuffle(CPU_NAMES).slice(0, 5);
-    const cpus = names.map((n, i) => cpuHorse(`cpu${i}`, n, rng, band));
+    const looks: Record<string, HorseLook> = { [player.id]: player };
     const entrants: Entrant[] = [
-      { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats },
-      ...cpus.map((c) => c.entrant),
+      { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) },
     ];
-    const result = simulate(entrants, course, distance, seed);
-    setData({ result, horses: [player, ...cpus.map((c) => c.horse)], course, distance, mode, grade });
+    for (let i = 0; i < 7; i++) {
+      const cpu = makeCpu(`cpu${i}`, rng, band, grade === 'gp' ? 0.8 : 0.5);
+      entrants.push(cpu.entrant);
+      looks[cpu.entrant.horseId] = cpu.look;
+    }
+    setSetup({ course, mode, seed, entrants, looks, grade });
     rewardApplied.current = false;
     setReward(null);
-    setScreen('race');
+    setScreen('roulette');
   }
 
-  function finishRace() {
-    if (!data || rewardApplied.current) {
+  function onFinish(result: SimResult) {
+    setResult(result);
+    if (!setup || rewardApplied.current) {
       setScreen('result');
       return;
     }
     rewardApplied.current = true;
-    const rank = data.result.ranks[0];
-    const time = data.result.finishTimes[0];
-    const trophy = makeTrophy(data.horses[0].id, rank, data.course.id, data.mode, data.grade);
+    const rank = result.ranks[0];
+    const trophy = makeTrophy(setup.entrants[0].horseId, rank, setup.course.id, setup.mode, setup.grade);
     let items: TrainingItem[] = [];
-    if (data.grade === 'gp') {
-      const n = itemDropCount(rank, data.mode);
-      items = rollItems(mulberry32((data.result.duration * 1000) ^ rank ^ Date.now()), n);
+    if (setup.grade === 'gp') {
+      items = rollItems(mulberry32((setup.seed ^ rank ^ 0x9e37) >>> 0), itemDropCount(rank, setup.mode));
     }
     if (trophy) addTrophies([trophy]);
     if (items.length) grantItems(items);
-    recordRace(data.course.id, data.mode, rank, time);
-    setReward({ trophy, items, rank, time });
+    recordRace(setup.course.id, setup.mode, rank, Math.min(...result.finishTimes));
+    setReward({ trophy, items, rank });
     setScreen('result');
   }
 
@@ -250,12 +198,12 @@ export default function Race() {
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>レース 🏁</h1>
-        <p className={styles.lead}>あつめたウマを走らせよう！</p>
+        <p className={styles.lead}>コースはランダム。あつめたウマを走らせよう！</p>
         <button className={styles.modeCard} onClick={() => { setGrade('normal'); setScreen('setup'); }}>
           <span className={styles.modeEmoji}>🏇</span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>ひとりでレース</span>
-            <span className={styles.modeDesc}>CPU5頭と勝負・3位以内でトロフィー</span>
+            <span className={styles.modeDesc}>8頭立て・3位以内でトロフィー</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
@@ -279,13 +227,11 @@ export default function Race() {
     );
   }
 
-  // --- Setup (horse / course / time) ---
+  // --- Setup (horse + time; course is random) ---
   if (screen === 'setup') {
-    const course = courseById(courseId);
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>{grade === 'gp' ? 'グランプリ' : 'ひとりでレース'}</h1>
-
         {horses.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyEmoji}>🐴</div>
@@ -297,52 +243,24 @@ export default function Race() {
             <h2 className={styles.h2}>ウマをえらぶ</h2>
             <div className={styles.pickRow}>
               {horses.map((h) => (
-                <button
-                  key={h.id}
-                  className={`${styles.pickCard} ${horseId === h.id ? styles.pickSel : ''}`}
-                  onClick={() => setHorseId(h.id)}
-                >
-                  <HorseView horse={h} size={80} />
+                <button key={h.id} className={`${styles.pickCard} ${horseId === h.id ? styles.pickSel : ''}`} onClick={() => setHorseId(h.id)}>
+                  <HorseView horse={h} size={78} />
                   <span className={styles.pickName}>{h.name}</span>
+                  <span className={styles.pickStyle}>{RUN_STYLE_LABEL[styleFor(h.id, h.stats)]}</span>
                 </button>
               ))}
             </div>
-
-            <h2 className={styles.h2}>コース</h2>
-            <div className={styles.courseList}>
-              {COURSES.map((c) => (
-                <button
-                  key={c.id}
-                  className={`${styles.courseCard} ${courseId === c.id ? styles.courseSel : ''}`}
-                  onClick={() => setCourseId(c.id)}
-                >
-                  <span className={styles.courseEmoji}>{c.emoji}</span>
-                  <span className={styles.courseText}>
-                    <span className={styles.courseName}>{c.name}</span>
-                    <span className={styles.courseDesc}>{c.desc}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-
             <h2 className={styles.h2}>レース時間</h2>
             <div className={styles.modeSwitch}>
               {([30, 60] as const).map((m) => (
-                <button
-                  key={m}
-                  className={`${styles.modeBtn} ${mode === m ? styles.modeBtnSel : ''}`}
-                  onClick={() => setMode(m)}
-                >
-                  {m}秒{m === 60 && grade === 'gp' ? '（報酬1.5倍）' : ''}
+                <button key={m} className={`${styles.modeBtn} ${mode === m ? styles.modeBtnSel : ''}`} onClick={() => setMode(m)}>
+                  {m}秒{m === 60 && grade === 'gp' ? '（報酬1.5倍）' : ''}{m === 30 ? '（約1周）' : '（約2周）'}
                 </button>
               ))}
             </div>
-
             <div className={styles.setupActions}>
               <button className="btn neutral" onClick={() => setScreen('menu')}>もどる</button>
-              <button className="btn" onClick={startRace} disabled={!player}>
-                {player ? `${course.name}でスタート` : 'ウマをえらんでね'}
-              </button>
+              <button className="btn" onClick={begin} disabled={!player}>{player ? 'スタート' : 'ウマをえらんでね'}</button>
             </div>
           </>
         )}
@@ -350,67 +268,68 @@ export default function Race() {
     );
   }
 
-  // --- Race playback ---
-  if (screen === 'race' && data) {
+  // --- Roulette ---
+  if (screen === 'roulette' && setup && player) {
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>
-          {data.course.emoji} {data.course.name}
-        </h1>
-        <Track data={data} onFinish={finishRace} />
+        <Roulette course={setup.course} player={player} reduced={reduced} onDone={() => setScreen('race')} />
+      </div>
+    );
+  }
+
+  // --- Race ---
+  if (screen === 'race' && setup) {
+    return (
+      <div className={styles.page}>
+        <h1 className={styles.title}>{setup.course.emoji} {setup.course.name}</h1>
+        <RaceTrack2
+          entrants={setup.entrants}
+          looks={setup.looks}
+          course={setup.course}
+          mode={setup.mode}
+          seed={setup.seed}
+          reduced={reduced}
+          skippable
+          onFinish={onFinish}
+        />
       </div>
     );
   }
 
   // --- Result ---
-  if (screen === 'result' && data) {
-    const ranks = data.result.ranks;
-    const order = data.result.order;
-    const playerRank = ranks[0];
+  if (screen === 'result' && setup && result) {
+    const order = result.order.map((idx, place) => ({ idx, rank: place + 1, time: result.finishTimes[idx] }));
+    const playerRank = reward?.rank ?? result.ranks[0];
     return (
       <div className={styles.page}>
         <div className={styles.resultCard}>
-          <h2 className={styles.resultTitle}>
-            {playerRank === 1 ? '🏆 ゆうしょう！' : `${playerRank}位`}
-          </h2>
-
+          <h2 className={styles.resultTitle}>{playerRank === 1 ? '🏆 ゆうしょう！' : `${playerRank}位`}</h2>
           {reward?.trophy && (
-            <p className={styles.rewardLine}>
-              トロフィー獲得！（{reward.trophy.rank}位・{reward.trophy.grade === 'gp' ? 'GP' : '通常'}）
-            </p>
+            <p className={styles.rewardLine}>トロフィー獲得！（{reward.trophy.rank}位・{reward.trophy.grade === 'gp' ? 'GP' : '通常'}）</p>
           )}
           {reward && reward.items.length > 0 && (
             <div className={styles.itemReward}>
               <span className={styles.rewardLine}>育成アイテム × {reward.items.length}</span>
-              <ul className={styles.itemList}>
-                {reward.items.map((it, i) => (
-                  <li key={i}>🎁 {itemLabel(it)}</li>
-                ))}
-              </ul>
+              <ul className={styles.itemList}>{reward.items.map((it, i) => <li key={i}>🎁 {itemLabel(it)}</li>)}</ul>
             </div>
           )}
-
           <ol className={styles.ranking}>
-            {order.map((idx, place) => {
-              const rc = rankColor(place + 1, data.horses.length);
+            {order.map(({ idx, rank, time }) => {
+              const rc = rankColor(rank, setup.entrants.length);
+              const e = setup.entrants[idx];
               return (
-                <li key={idx} className={`${styles.rankRow} ${idx === 0 ? styles.rankMe : ''}`}>
-                  <span className={styles.rankNo} style={{ background: rc.bg, borderColor: rc.bd, color: rc.fg }}>
-                    {place + 1}
-                  </span>
-                  <div className={styles.rankHorse}>
-                    <HorseView horse={data.horses[idx]} size={40} />
-                  </div>
-                  <span className={styles.rankName}>{idx === 0 ? 'あなた' : data.horses[idx].name}</span>
-                  <span className={styles.rankTime}>{data.result.finishTimes[idx].toFixed(1)}s</span>
+                <li key={idx} className={`${styles.rankRow} ${e.isPlayer ? styles.rankMe : ''}`}>
+                  <span className={styles.rankNo} style={{ background: rc.bg, borderColor: rc.bd, color: rc.fg }}>{rank}</span>
+                  <div className={styles.rankHorse}><HorseView horse={setup.looks[e.horseId]} size={36} /></div>
+                  <span className={styles.rankName}>{e.isPlayer ? 'あなた' : e.name} <span className={styles.rankStyle}>{RUN_STYLE_LABEL[e.style]}</span></span>
+                  <span className={styles.rankTime}>{Number.isFinite(time) ? time.toFixed(1) + 's' : '-'}</span>
                 </li>
               );
             })}
           </ol>
-
           <div className={styles.raceActions}>
-            <button className="btn neutral" onClick={() => setScreen('setup')}>コースをかえる</button>
-            <button className="btn" onClick={startRace}>もう一回</button>
+            <button className="btn neutral" onClick={() => setScreen('setup')}>ウマ・時間をかえる</button>
+            <button className="btn" onClick={begin}>もう一回</button>
           </div>
           <button className={styles.exitLink} onClick={() => setScreen('menu')}>モードせんたくへ</button>
         </div>
