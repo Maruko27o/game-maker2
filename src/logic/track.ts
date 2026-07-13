@@ -1,7 +1,7 @@
 // Oval track geometry (RACE_V2 §3). A rounded-rectangle centerline described by
 // Frenet coordinates: distance `s` along the centerline and lateral offset `d`.
-// Clockwise (右回り); gate at s=0 (top-right). World coords are derived here and
-// used only by the renderer — the simulation works purely in (s, d).
+// Counter-clockwise (左回り); gate at s=0 (right side). World coords are derived
+// here and used only by the renderer — the simulation works purely in (s, d).
 
 export type Track = {
   straight: number; // length of one straight (m)
@@ -28,8 +28,17 @@ export function groundPerLap(t: Track, d: number): number {
   return 2 * t.straight + 2 * Math.PI * (t.radius + d);
 }
 
-/** Point/frame on the centerline at arc-length `s` (wraps around the lap). */
+/** Point/frame on the centerline at arc-length `s` (wraps around the lap).
+ *  Left-turn (左回り): the base geometry below is a right-turn oval, so we
+ *  reflect it across the x-axis. Increasing s then curves left; the outward
+ *  normal (+d = outer rail) and curvature magnitude are preserved. */
 export function centerline(t: Track, s0: number): CenterPoint {
+  const c = baseCenterline(t, s0);
+  return { x: c.x, y: -c.y, tx: c.tx, ty: -c.ty, nx: c.nx, ny: -c.ny, curvature: c.curvature };
+}
+
+/** Base right-turn rounded-rectangle centerline (internal; see `centerline`). */
+function baseCenterline(t: Track, s0: number): CenterPoint {
   const L = t.straight;
   const R = t.radius;
   const lap = lapLength(t);

@@ -4,10 +4,17 @@ import { centerline, toWorld, lapLength, groundPerLap, heading, type Track } fro
 const T: Track = { straight: 120, radius: 70, width: 22 };
 
 describe('track geometry', () => {
-  it('gate (s=0, d=0) sits at the top-right corner', () => {
+  it('gate (s=0, d=0) sits at the right side (left-turn oval)', () => {
     const p = toWorld(T, 0, 0);
     expect(p.x).toBeCloseTo(T.straight / 2, 6);
-    expect(p.y).toBeCloseTo(-T.radius, 6);
+    expect(p.y).toBeCloseTo(T.radius, 6);
+  });
+
+  it('runs counter-clockwise: shortly after the gate the horse curves upward (screen -y)', () => {
+    // Leaving the gate at (L/2, +R) heading +x, a left turn sweeps toward -y.
+    const a = toWorld(T, 0, 0);
+    const b = toWorld(T, 5, 0);
+    expect(b.y).toBeLessThan(a.y);
   });
 
   it('advancing s by one lap returns to the start', () => {

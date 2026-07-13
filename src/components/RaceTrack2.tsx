@@ -63,23 +63,32 @@ function RaceHorseMark({
   const body = colorById[look.colors.body]?.value ?? '#f6f2ea';
   const mane = colorById[look.colors.mane]?.value ?? '#6b4326';
   const deg = (heading * 180) / Math.PI;
+  const jumping = state === 'jump';
   const bob = state === 'stumble' ? 0.15 : Math.sin(legPhase * Math.PI * 4) * 0.08;
-  const legSwing = Math.sin(legPhase * Math.PI * 2) * 0.35;
+  // While airborne (§5.3 / §9): lift the horse in screen space (before the
+  // heading rotation) so the hop reads "up" regardless of travel direction,
+  // scale it up a touch, tuck the legs, and cast a detached ground shadow.
+  const lift = jumping ? 1.5 : 0;
+  const scale = jumping ? 1.24 : 1;
+  const legSwing = jumping ? 0.5 : Math.sin(legPhase * Math.PI * 2) * 0.35;
   return (
-    <g transform={`translate(${x} ${y}) rotate(${deg})`}>
-      {isPlayer && <ellipse cx="0" cy="0" rx="1.5" ry="1.2" fill="rgba(63,127,214,0.35)" />}
-      {/* legs */}
-      <g stroke={colorById[look.colors.hoof]?.value ?? '#3a2c1c'} strokeWidth="0.28" strokeLinecap="round">
-        <line x1={-0.4} y1={0.3} x2={-0.4 - legSwing} y2={0.9} />
-        <line x1={0.5} y1={0.3} x2={0.5 + legSwing} y2={0.9} />
-      </g>
-      <g transform={`translate(0 ${-bob})`} stroke="#2b2118" strokeWidth={isPlayer ? 0.26 : 0.18} strokeLinejoin="round">
-        <ellipse cx="0" cy="0" rx="1.1" ry="0.72" fill={body} />
-        {/* mane along the back */}
-        <path d="M -0.9,-0.5 Q -0.2,-1.0 0.5,-0.55" fill="none" stroke={mane} strokeWidth="0.5" strokeLinecap="round" />
-        {/* head at the front (+x) */}
-        <circle cx="1.15" cy="-0.15" r="0.45" fill={body} />
-        <circle cx="1.4" cy="-0.2" r="0.09" fill="#2b2118" stroke="none" />
+    <g>
+      {jumping && <ellipse cx={x} cy={y} rx="1.2" ry="0.55" fill="rgba(0,0,0,0.18)" />}
+      <g transform={`translate(${x} ${y - lift}) rotate(${deg}) scale(${scale})`}>
+        {isPlayer && <ellipse cx="0" cy="0" rx="1.5" ry="1.2" fill="rgba(63,127,214,0.35)" />}
+        {/* legs (tucked forward when airborne) */}
+        <g stroke={colorById[look.colors.hoof]?.value ?? '#3a2c1c'} strokeWidth="0.28" strokeLinecap="round">
+          <line x1={-0.4} y1={0.3} x2={-0.4 + (jumping ? legSwing : -legSwing)} y2={jumping ? 0.5 : 0.9} />
+          <line x1={0.5} y1={0.3} x2={0.5 + legSwing} y2={jumping ? 0.5 : 0.9} />
+        </g>
+        <g transform={`translate(0 ${-bob})`} stroke="#2b2118" strokeWidth={isPlayer ? 0.26 : 0.18} strokeLinejoin="round">
+          <ellipse cx="0" cy="0" rx="1.1" ry="0.72" fill={body} />
+          {/* mane along the back */}
+          <path d="M -0.9,-0.5 Q -0.2,-1.0 0.5,-0.55" fill="none" stroke={mane} strokeWidth="0.5" strokeLinecap="round" />
+          {/* head at the front (+x) */}
+          <circle cx="1.15" cy="-0.15" r="0.45" fill={body} />
+          <circle cx="1.4" cy="-0.2" r="0.09" fill="#2b2118" stroke="none" />
+        </g>
       </g>
     </g>
   );
@@ -149,7 +158,6 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const scenery = useMemo(() => {
     const path = centerlinePath(track);
     const surface = SURFACE_COLOR[course.surface] ?? '#8cc264';
-    const gate = toWorld(track, 0, 0);
     const goal = toWorld(track, lap * 0.12, 0);
     const gc = centerline(track, lap * 0.12);
     const dots = [];
@@ -179,11 +187,51 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           strokeWidth="1.2"
         />
         <text x={goal.x + 4} y={goal.y} fontSize="4" fill="#d64b45" fontWeight="900">GOAL</text>
-        {/* gate marker */}
-        <circle cx={gate.x} cy={gate.y} r="1.4" fill="#3a2c1c" opacity="0.5" />
       </>
     );
   }, [track, course, lap, vb.x, vb.y, vb.w, vb.h, b.minX, b.maxX, b.minY, stands]);
+
+  // Full starting gate (§9): one numbered stall per entrant, straddling the
+  // track at s=0. Oriented with the track (tangent = run direction), it fades
+  // out as the field clears it.
+  const startGate = useMemo(() => {
+    const N = entrants.length;
+    const c = centerline(track, 0);
+    const P = toWorld(track, 0, 0);
+    const halfW = track.width / 2;
+    const gd = 4.5; // gate depth (m)
+    const W = (a: number, n: number) => ({ x: P.x + c.tx * a + c.nx * n, y: P.y + c.ty * a + c.ny * n });
+    const dividers = [];
+    for (let i = 0; i <= N; i++) {
+      const n = -halfW + (i / N) * track.width;
+      const bk = W(-gd, n), fr = W(0.2, n);
+      dividers.push(
+        <line key={'d' + i} x1={bk.x} y1={bk.y} x2={fr.x} y2={fr.y} stroke="#48505e" strokeWidth="0.4" strokeLinecap="round" />,
+      );
+    }
+    const nums = [];
+    for (let i = 0; i < N; i++) {
+      const n = -halfW + ((i + 0.5) / N) * track.width;
+      const p = W(-gd - 1.3, n);
+      nums.push(
+        <text key={'n' + i} x={p.x} y={p.y} fontSize="1.8" fill="#f3efe0" fontWeight="900" textAnchor="middle" dominantBaseline="central">{i + 1}</text>,
+      );
+    }
+    const b0 = W(-gd, -halfW), b1 = W(-gd, halfW);
+    const f0 = W(0.2, -halfW), f1 = W(0.2, halfW);
+    const roof0 = W(-gd - 2.2, -halfW), roof1 = W(-gd - 2.2, halfW);
+    return (
+      <g>
+        {/* back frame / roof bar with stall numbers */}
+        <line x1={roof0.x} y1={roof0.y} x2={roof1.x} y2={roof1.y} stroke="#2b3350" strokeWidth="2.6" strokeLinecap="round" />
+        {nums}
+        <line x1={b0.x} y1={b0.y} x2={b1.x} y2={b1.y} stroke="#3a4454" strokeWidth="1.0" strokeLinecap="round" />
+        {dividers}
+        {/* front gate line (the doors that spring open) */}
+        <line x1={f0.x} y1={f0.y} x2={f1.x} y2={f1.y} stroke="#e8edf3" strokeWidth="0.7" strokeLinecap="round" strokeDasharray="0.8 0.6" />
+      </g>
+    );
+  }, [track, entrants.length]);
 
   // current frame (interpolated)
   const dt = result.dt;
@@ -240,6 +288,8 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         <svg viewBox={viewBox} className={styles.svg} preserveAspectRatio="xMidYMid meet">
           <HorseDefs />
           {scenery}
+          {/* starting gate — fades as the field runs clear of it */}
+          <g opacity={clamp(1 - leaderS / 30, 0, 1)}>{startGate}</g>
           {/* boost panels + obstacles */}
           {result.boosts.map((bp, i) => {
             const w = toWorld(track, bp.s, bp.d);
