@@ -72,6 +72,117 @@
         "name": "こがね",
         "value": "#e0b23c",
         "rarity": "SR"
+      },
+      {
+        "id": "body_cream",
+        "name": "ばふいろ",
+        "value": "#efe3c8",
+        "rarity": "N"
+      },
+      {
+        "id": "body_wheat",
+        "name": "こむぎいろ",
+        "value": "#dcc38c",
+        "rarity": "N"
+      },
+      {
+        "id": "body_roan",
+        "name": "あわげ",
+        "value": "#bfa093",
+        "rarity": "N"
+      },
+      {
+        "id": "body_liver",
+        "name": "かちぐり",
+        "value": "#5b3a2c",
+        "rarity": "N"
+      },
+      {
+        "id": "body_charcoal",
+        "name": "すみいろ",
+        "value": "#524d47",
+        "rarity": "N"
+      },
+      {
+        "id": "body_silver",
+        "name": "ぎんいろ",
+        "value": "#ccd1d6",
+        "rarity": "N"
+      },
+      {
+        "id": "body_peach",
+        "name": "ももずり",
+        "value": "#f6c6a6",
+        "rarity": "N"
+      },
+      {
+        "id": "body_coffee",
+        "name": "コーヒー",
+        "value": "#6f4a35",
+        "rarity": "N"
+      },
+      {
+        "id": "body_olive",
+        "name": "うぐいす",
+        "value": "#8a8a4e",
+        "rarity": "N"
+      },
+      {
+        "id": "body_slate",
+        "name": "あおねず",
+        "value": "#7d8a8c",
+        "rarity": "N"
+      },
+      {
+        "id": "body_sky",
+        "name": "みずいろ",
+        "value": "#9cc9e8",
+        "rarity": "R"
+      },
+      {
+        "id": "body_lavender",
+        "name": "ふじいろ",
+        "value": "#b6a4e0",
+        "rarity": "R"
+      },
+      {
+        "id": "body_coral",
+        "name": "さんごいろ",
+        "value": "#f28e7a",
+        "rarity": "R"
+      },
+      {
+        "id": "body_teal",
+        "name": "あおみどり",
+        "value": "#2f9e93",
+        "rarity": "R"
+      },
+      {
+        "id": "body_forest",
+        "name": "ときわ",
+        "value": "#3f6b45",
+        "rarity": "R"
+      },
+      {
+        "id": "body_sunset",
+        "name": "ゆうやけ",
+        "value": "url(#gradSunset)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#ffd06b,#ff8a5b,#e0567a,#7a4fb0)"
+      },
+      {
+        "id": "body_galaxy",
+        "name": "ぎんが",
+        "value": "url(#gradGalaxy)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#2b2e6b,#5b3fb0,#c85be0)"
+      },
+      {
+        "id": "body_aurora",
+        "name": "オーロラ",
+        "value": "url(#gradAurora)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#3ad7c0,#5bd97a,#7a5fe0)"
       }
     ],
     "mane": [
@@ -127,7 +238,75 @@
         "id": "mane_rainbow",
         "name": "にじいろ",
         "value": "url(#gradRainbow)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(90deg,#ff5b5b,#ffb14e,#ffe066,#5bd97a,#5bc8e0,#7a5fe0,#e05be0)"
+      },
+      {
+        "id": "mane_chestnut",
+        "name": "くりいろ",
+        "value": "#9c5a2e",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_silver",
+        "name": "ぎん",
+        "value": "#c9ced6",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_azuki",
+        "name": "あずき",
+        "value": "#6e3550",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_sand",
+        "name": "すないろ",
+        "value": "#cdb079",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_moss",
+        "name": "こけいろ",
+        "value": "#6f7d4a",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_charcoal",
+        "name": "けしずみ",
+        "value": "#3a3735",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_teal",
+        "name": "あおみどり",
+        "value": "#2fa898",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_lavender",
+        "name": "ふじ",
+        "value": "#b6a4e0",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_coral",
+        "name": "さんご",
+        "value": "#f0876f",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_gold",
+        "name": "こがね",
+        "value": "#e6b52e",
         "rarity": "SR"
+      },
+      {
+        "id": "mane_aurora",
+        "name": "オーロラ",
+        "value": "url(#gradAurora)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#3ad7c0,#5bd97a,#7a5fe0)"
       }
     ],
     "hoof": [
@@ -166,6 +345,55 @@
         "name": "ほのお",
         "value": "#ff8a3d",
         "rarity": "SR"
+      },
+      {
+        "id": "hoof_brown",
+        "name": "ちゃいろ",
+        "value": "#7a5230",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_ash",
+        "name": "はいいろ",
+        "value": "#8b8f94",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_sand",
+        "name": "すないろ",
+        "value": "#c9b088",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_charcoal",
+        "name": "すみ",
+        "value": "#45403a",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_rose",
+        "name": "ばらいろ",
+        "value": "#e88aa8",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_mint",
+        "name": "はっか",
+        "value": "#7fd6b0",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_amethyst",
+        "name": "むらさき",
+        "value": "#9a6fd0",
+        "rarity": "SR"
+      },
+      {
+        "id": "hoof_rainbow",
+        "name": "にじ",
+        "value": "url(#gradRainbow)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(90deg,#ff5b5b,#ffb14e,#ffe066,#5bd97a,#5bc8e0,#7a5fe0,#e05be0)"
       }
     ]
   },
