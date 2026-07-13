@@ -21,18 +21,68 @@ export type DecoPart = {
   svg: string; // SVG snippet in the base 0 0 520 520 coordinate space
 };
 
+// Race ability stats (RACE.md §1). Each 0..10, sum 10..30 at birth, cap 48 via training.
+export type StatKey = 'spd' | 'sta' | 'pwr' | 'jmp' | 'gut' | 'wit';
+export type Stats = Record<StatKey, number>;
+
+export const STAT_KEYS: StatKey[] = ['spd', 'sta', 'pwr', 'jmp', 'gut', 'wit'];
+export const STAT_LABEL: Record<StatKey, string> = {
+  spd: 'スピード',
+  sta: 'スタミナ',
+  pwr: 'パワー',
+  jmp: 'ジャンプ',
+  gut: 'こんじょう',
+  wit: 'かしこさ',
+};
+export const STAT_CAP = 10; // per-stat max
+export const STAT_TOTAL_CAP = 48; // sum hard cap via training
+
 export type Horse = {
   id: string;
   name: string;
   colors: Record<ColorSlot, string>; // parts.json color part ids
   decos: Partial<Record<DecoSlot, string>>; // parts.json deco part ids; unequipped = key absent
+  stats: Stats;
   createdAt: number;
 };
 
+// The minimum a Horse needs to be *drawn*. Real Horse is assignable to this, and
+// cosmetic/preview horses can be built without stats.
+export type HorseLook = {
+  name?: string;
+  colors: Record<ColorSlot, string>;
+  decos: Partial<Record<DecoSlot, string>>;
+};
+
+// A trophy earned by finishing top-3 (RACE.md §8). Belongs to a horse.
+export type Trophy = {
+  id: string;
+  horseId: string;
+  rank: 1 | 2 | 3;
+  courseId: string;
+  mode: 30 | 60;
+  grade: 'normal' | 'gp';
+  at: number;
+};
+
+// A training item (RACE.md §9.2). Applied via logic/training.ts only.
+export type TrainingItem = { kind: 'stat'; stat: StatKey } | { kind: 'any' };
+
+// Best result per course+mode (RACE.md §11).
+export type RaceRecord = {
+  courseId: string;
+  mode: 30 | 60;
+  bestRank: number;
+  bestTime: number; // seconds
+};
+
 export type SaveData = {
-  version: 2;
+  version: 3;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
   horses: Horse[]; // max 10
   energy: number; // grass spawn stock (0..3), charges 1 per hour
   energyUpdatedAt: number; // ms anchor for energy regen
+  trophies: Trophy[];
+  items: TrainingItem[]; // owned training items (unused inventory)
+  raceRecords: RaceRecord[];
 };

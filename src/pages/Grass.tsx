@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStore, type SpawnedPart } from '../store';
 import { ENERGY_CAP, normalizeEnergy, msUntilNextEnergy } from '../logic/energy';
 import { colorsBySlot, decosBySlot, partName, partRarity, isColorId } from '../data/parts';
-import type { Horse, DecoSlot } from '../types';
+import type { HorseLook, DecoSlot } from '../types';
 import HorseView from '../components/HorseView';
 import PartThumb from '../components/PartThumb';
 import { usePrefersReducedMotion } from '../hooks';
@@ -16,9 +16,9 @@ function pick<T>(arr: T[]): T {
 
 // A cosmetic "wild" horse that appears from the grass, wearing the decorations
 // it just dropped so the reveal feels connected to the reward.
-function makeWildHorse(parts: SpawnedPart[]): Horse {
+function makeWildHorse(parts: SpawnedPart[]): HorseLook {
   const decos: Partial<Record<DecoSlot, string>> = {};
-  const colors: Horse['colors'] = {
+  const colors: HorseLook["colors"] = {
     body: pick(colorsBySlot.body).id,
     mane: pick(colorsBySlot.mane).id,
     hoof: pick(colorsBySlot.hoof).id,
@@ -30,7 +30,7 @@ function makeWildHorse(parts: SpawnedPart[]): Horse {
     );
     if (slot && !decos[slot]) decos[slot] = p.id;
   }
-  return { id: 'wild', name: '', colors, decos, createdAt: 0 };
+  return { name: '', colors, decos };
 }
 
 function fmt(ms: number): string {
@@ -52,7 +52,7 @@ export default function Grass() {
   const [now, setNow] = useState(() => Date.now());
   const [phase, setPhase] = useState<Phase>('ready');
   const [reward, setReward] = useState<SpawnedPart[]>([]);
-  const [wild, setWild] = useState<Horse | null>(null);
+  const [wild, setWild] = useState<HorseLook | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);

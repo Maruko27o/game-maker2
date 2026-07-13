@@ -4,7 +4,7 @@
   gap: 14px;
 }
 .title {
-  font-size: 24px;
+  font-size: 22px;
   color: var(--ink);
 }
 .lead {
@@ -12,8 +12,13 @@
   color: var(--ink-soft);
   font-weight: 700;
 }
+.h2 {
+  font-size: 15px;
+  color: var(--ink);
+  margin: 2px 0 -4px;
+}
 
-/* Mode selection ---------------------------------------------------------- */
+/* Mode menu --------------------------------------------------------------- */
 .modeCard {
   display: flex;
   align-items: center;
@@ -71,7 +76,7 @@
   color: var(--ink-soft);
 }
 
-/* Horse picker ------------------------------------------------------------ */
+/* Setup ------------------------------------------------------------------- */
 .empty {
   text-align: center;
   padding: 30px 20px;
@@ -90,31 +95,29 @@
   margin: 0;
   font-weight: 800;
 }
-.pickGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+.pickRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 .pickCard {
+  flex: 0 0 auto;
+  width: 96px;
   background: var(--panel-inner);
   border: 3px solid var(--border);
-  border-radius: 16px;
-  padding: 8px;
+  border-radius: 14px;
+  padding: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
 }
-.pickThumb {
-  background: linear-gradient(180deg, #d7ecb4, #bfe08a);
-  border-radius: 12px;
-  border: 2px solid var(--border);
-  width: 100%;
-  display: grid;
-  place-items: center;
-  padding: 4px;
+.pickSel {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(63, 127, 214, 0.3);
 }
 .pickName {
+  font-size: 12px;
   font-weight: 800;
   color: var(--ink);
   white-space: nowrap;
@@ -122,85 +125,193 @@
   text-overflow: ellipsis;
   max-width: 100%;
 }
-.exitLink {
-  align-self: center;
-  background: none;
-  border: none;
-  color: var(--ink-soft);
+.courseList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.courseCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+.courseSel {
+  border-color: var(--blue);
+  background: #e5eefc;
+}
+.courseEmoji {
+  font-size: 24px;
+}
+.courseText {
+  display: flex;
+  flex-direction: column;
+}
+.courseName {
   font-weight: 800;
-  text-decoration: underline;
-  padding: 6px;
+  color: var(--ink);
+}
+.courseDesc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.modeSwitch {
+  display: flex;
+  gap: 10px;
+}
+.modeBtn {
+  flex: 1;
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.modeBtnSel {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+.setupActions {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0 8px;
+}
+.setupActions button {
+  flex: 1;
 }
 
-/* Race track -------------------------------------------------------------- */
+/* Track ------------------------------------------------------------------- */
 .raceWrap {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hudTime {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  min-width: 62px;
+}
+.hudBar {
+  flex: 1;
+  height: 14px;
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.hudFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--grass-dark), var(--grass));
+}
+.hudDist {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  min-width: 46px;
+  text-align: right;
 }
 .trackFrame {
   position: relative;
-  background: linear-gradient(180deg, #cde89f, #a9d46a);
   border: 4px solid var(--border-dark);
-  border-radius: 18px;
-  padding: 8px 8px;
+  border-radius: 16px;
+  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   overflow: hidden;
 }
 .lane {
   position: relative;
-  height: 62px;
-  border-bottom: 3px dashed rgba(90, 67, 38, 0.35);
+  height: 66px;
+  border-bottom: 3px dashed rgba(43, 33, 24, 0.22);
 }
 .lane:last-child {
   border-bottom: none;
 }
-.laneTag {
+.laneObjects {
   position: absolute;
-  top: 3px;
-  left: 6px;
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 6px;
-  padding: 0 5px;
-  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+}
+.obstacle,
+.boostPanel {
+  position: absolute;
+  bottom: 2px;
+  transform: translateX(-50%);
+  font-size: 18px;
+}
+.boostPanel {
+  bottom: 26px;
+  font-size: 14px;
+  opacity: 0.9;
 }
 .finishLine {
   position: absolute;
   top: 0;
   bottom: 0;
-  right: 8px;
+  right: 4px;
   width: 8px;
-  background:
-    repeating-linear-gradient(45deg, #3a2c1c 0 6px, #fff 6px 12px);
-  opacity: 0.7;
+  background: repeating-linear-gradient(45deg, #2b2118 0 6px, #fff 6px 12px);
+  opacity: 0.75;
   border-radius: 2px;
 }
 .runner {
   position: absolute;
-  left: 4px;
   bottom: 2px;
-  transition-property: left;
-  transition-timing-function: cubic-bezier(0.4, 0.1, 0.7, 1);
-  will-change: left;
+  width: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.run {
-  left: calc(100% - 62px);
-}
-.playerRunner {
-  filter: drop-shadow(0 0 0 var(--blue));
-}
-.playerRunner::after {
-  content: '★';
+.rankBadge {
   position: absolute;
-  top: -2px;
-  right: 0;
-  font-size: 14px;
-  color: var(--blue);
+  top: -14px;
+  z-index: 3;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 2px solid;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 16px;
+  text-align: center;
+  animation: pop 0.18s ease;
+}
+@keyframes pop {
+  0% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.rankBadgeMe {
+  box-shadow: 0 0 0 2px var(--blue);
+}
+.youTag {
+  position: absolute;
+  bottom: -12px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--blue);
+  border-radius: 5px;
+  padding: 0 4px;
+  white-space: nowrap;
 }
 .countdown {
   position: absolute;
@@ -210,12 +321,12 @@
   font-size: 72px;
   font-weight: 900;
   color: #fff;
-  text-shadow: 0 3px 0 var(--border-dark), 0 0 20px rgba(0, 0, 0, 0.3);
-  background: rgba(58, 44, 28, 0.25);
+  text-shadow: 0 3px 0 var(--border-dark), 0 0 20px rgba(0, 0, 0, 0.35);
+  background: rgba(58, 44, 28, 0.22);
   pointer-events: none;
-  animation: pulse 0.8s ease infinite;
+  animation: cd 0.8s ease infinite;
 }
-@keyframes pulse {
+@keyframes cd {
   0%,
   100% {
     transform: scale(1);
@@ -233,12 +344,35 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
 }
 .resultTitle {
   font-size: 24px;
   color: var(--ink);
+}
+.rewardLine {
+  margin: 0;
+  font-weight: 800;
+  color: var(--gold);
+  background: #4a3410;
+  border-radius: 8px;
+  padding: 4px 12px;
+}
+.itemReward {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.itemList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 13px;
+  text-align: center;
 }
 .ranking {
   list-style: none;
@@ -263,11 +397,14 @@
   background: #e5eefc;
 }
 .rankNo {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 900;
-  color: var(--ink-soft);
-  min-width: 22px;
+  min-width: 24px;
+  height: 24px;
+  line-height: 20px;
   text-align: center;
+  border: 2px solid;
+  border-radius: 8px;
 }
 .rankHorse {
   background: #fff;
@@ -281,8 +418,11 @@
   color: var(--ink);
   flex: 1;
 }
-.medal {
-  font-size: 20px;
+.rankTime {
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
 }
 .raceActions {
   display: flex;
@@ -291,4 +431,12 @@
 }
 .raceActions button {
   flex: 1;
+}
+.exitLink {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-weight: 800;
+  text-decoration: underline;
+  padding: 4px;
 }
