@@ -15,6 +15,7 @@ function snapshot(): SaveData {
     trophies: s.trophies,
     items: s.items,
     raceRecords: s.raceRecords,
+    gpUnlocked: s.gpUnlocked,
     savedAt: s.savedAt,
   };
 }

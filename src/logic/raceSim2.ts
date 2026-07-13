@@ -112,12 +112,13 @@ export function simulate2(
   course: Course,
   mode: 30 | 60,
   seed: number,
-  opts: { recordFrames?: boolean } = {},
+  opts: { recordFrames?: boolean; laps?: number } = {},
 ): SimResult {
   const rng = mulberry32(seed >>> 0);
   const track = course.track;
   const lap = lapLength(track);
-  const D = (mode === 30 ? course.laps30 : course.laps60) * lap + lap * 0.12;
+  const laps = opts.laps ?? (mode === 30 ? course.laps30 : course.laps60);
+  const D = laps * lap + lap * 0.12;
   const halfW = track.width / 2;
   const margin = HIT_R;
   const dLimit = halfW - margin;

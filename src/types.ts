@@ -94,5 +94,6 @@ export type SaveData = {
   trophies: Trophy[];
   items: TrainingItem[]; // owned training items (unused inventory)
   raceRecords: RaceRecord[];
+  gpUnlocked: { g2: boolean; g1: boolean }; // grand-prix grade unlocks
   savedAt: number; // ms of the last change — used for cloud last-write-wins sync
 };

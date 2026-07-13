@@ -11,6 +11,7 @@ import type { Horse, HorseLook, DecoSlot, Trophy, TrainingItem, Stats } from '..
 import { STAT_LABEL, RUN_STYLE_LABEL, STAT_KEYS } from '../types';
 import HorseView from '../components/HorseView';
 import RaceTrack2 from '../components/RaceTrack2';
+import GrandPrix from './GrandPrix';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
 
@@ -141,7 +142,7 @@ export default function Race() {
   const grantItems = useStore((s) => s.grantItems);
   const recordRace = useStore((s) => s.recordRace);
 
-  const [screen, setScreen] = useState<'menu' | 'setup' | 'roulette' | 'race' | 'result'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'setup' | 'gp' | 'roulette' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
   const [horseId, setHorseId] = useState<string | null>(null);
   const [mode, setMode] = useState<30 | 60>(30);
@@ -260,12 +261,23 @@ export default function Race() {
             </div>
             <div className={styles.setupActions}>
               <button className="btn neutral" onClick={() => setScreen('menu')}>もどる</button>
-              <button className="btn" onClick={begin} disabled={!player}>{player ? 'スタート' : 'ウマをえらんでね'}</button>
+              <button
+                className="btn"
+                onClick={() => (grade === 'gp' ? setScreen('gp') : begin())}
+                disabled={!player}
+              >
+                {player ? 'スタート' : 'ウマをえらんでね'}
+              </button>
             </div>
           </>
         )}
       </div>
     );
+  }
+
+  // --- Grand prix (its own multi-stage flow) ---
+  if (screen === 'gp' && player) {
+    return <GrandPrix player={player} mode={mode} onExit={() => setScreen('menu')} />;
   }
 
   // --- Roulette ---

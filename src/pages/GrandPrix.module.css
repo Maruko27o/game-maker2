@@ -1,0 +1,169 @@
+/* Grand-prix specific screens (race card / paddock / qualifier board).
+   Reuses the shared .page/.title/.setupActions from Race.module.css; these
+   classes cover the parts unique to the GP flow. */
+
+/* Race card (出走表) — styled like a printed program sheet ------------------- */
+.paper {
+  background: var(--panel-inner);
+  border: 3px solid var(--border-dark);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--border);
+  padding: 14px 16px 16px;
+}
+.paperHead {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ink);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+.paperSub {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+  margin-top: 2px;
+  padding-bottom: 8px;
+  border-bottom: 2px dashed var(--border);
+}
+
+.heatBlock {
+  margin-top: 12px;
+}
+.heatTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  border: 2px solid transparent;
+}
+.entry:nth-child(odd) {
+  background: rgba(140, 106, 65, 0.08);
+}
+.entryMe {
+  background: rgba(63, 127, 214, 0.16) !important;
+  border-color: var(--blue);
+}
+.entryQual {
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+
+.zekken {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--panel-inner);
+  font-size: 13px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+.entryName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.entryStyle {
+  flex: none;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.entryStat {
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+/* Qualifier badges */
+.qual,
+.revive {
+  flex: none;
+  font-size: 11px;
+  font-weight: 900;
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: #fff;
+}
+.qual {
+  background: var(--blue);
+}
+.revive {
+  background: var(--gold);
+  color: var(--ink);
+}
+.qualNote {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink);
+  margin: 4px 0;
+}
+
+/* Paddock / odds --------------------------------------------------------- */
+.oddsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.oddsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-inner);
+  border: 3px solid var(--border-dark);
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--border);
+  padding: 8px 12px;
+}
+.pop {
+  flex: none;
+  width: 62px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.oddsThumb {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+.oddsVal {
+  flex: none;
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+/* Unlock notice on the podium */
+.unlockMsg {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--gold);
+  background: var(--ink);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin: 2px 0;
+}
