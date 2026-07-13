@@ -37,6 +37,7 @@ type Props = {
   seed: number;
   reduced: boolean;
   skippable: boolean;
+  laps?: number; // override lap count (grand-prix heats/finals)
   onFinish: (result: SimResult) => void;
 };
 
@@ -84,14 +85,14 @@ function RaceHorseMark({
   );
 }
 
-export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, onFinish }: Props) {
+export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, onFinish }: Props) {
   const result = useMemo(
-    () => simulate2(entrants, course, mode, seed, { recordFrames: true }),
-    [entrants, course, mode, seed],
+    () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps }),
+    [entrants, course, mode, seed, laps],
   );
   const track = course.track;
   const lap = lapLength(track);
-  const totalLaps = mode === 30 ? course.laps30 : course.laps60;
+  const totalLaps = laps ?? (mode === 30 ? course.laps30 : course.laps60);
 
   const [phase, setPhase] = useState<'countdown' | 'run' | 'done'>('countdown');
   const [count, setCount] = useState(3);

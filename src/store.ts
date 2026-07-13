@@ -47,8 +47,14 @@ function freshSave(): SaveData {
     trophies: [],
     items: [],
     raceRecords: [],
+    gpUnlocked: { g2: false, g1: false },
     savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
+}
+
+function normGp(v: unknown): { g2: boolean; g1: boolean } {
+  const g = (v ?? {}) as { g2?: boolean; g1?: boolean };
+  return { g2: !!g.g2, g1: !!g.g1 };
 }
 
 // Give a horse reproducible stats seeded from its id (RACE.md §11).
@@ -76,6 +82,7 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
         trophies: Array.isArray(d.trophies) ? (d.trophies as Trophy[]) : [],
         items: Array.isArray(d.items) ? (d.items as TrainingItem[]) : [],
         raceRecords: Array.isArray(d.raceRecords) ? (d.raceRecords as RaceRecord[]) : [],
+        gpUnlocked: normGp(d.gpUnlocked),
         savedAt: typeof d.savedAt === 'number' ? d.savedAt : 0,
       },
       migrated: false,
@@ -100,6 +107,7 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
       trophies: [],
       items: [],
       raceRecords: [],
+      gpUnlocked: normGp(d.gpUnlocked),
       savedAt: typeof d.savedAt === 'number' ? d.savedAt : 0,
     },
     migrated: true,
@@ -144,6 +152,7 @@ type Store = SaveData & {
   removeHorse: (id: string) => void;
   addTrophies: (t: Trophy[]) => void;
   grantItems: (items: TrainingItem[]) => void;
+  unlockGp: (patch: { g2?: boolean; g1?: boolean }) => void;
   /** Consume item at index and raise `target` on the horse. Returns success. */
   trainHorse: (horseId: string, itemIndex: number, target: StatKey) => boolean;
   recordRace: (courseId: string, mode: 30 | 60, rank: number, time: number) => void;
@@ -166,6 +175,7 @@ export const useStore = create<Store>((set, get) => {
       trophies: next.trophies,
       items: next.items,
       raceRecords: next.raceRecords,
+      gpUnlocked: next.gpUnlocked,
       savedAt,
     };
     persist(data);
@@ -229,6 +239,13 @@ export const useStore = create<Store>((set, get) => {
     grantItems: (items) => {
       if (items.length === 0) return;
       commit({ items: [...get().items, ...items] });
+    },
+
+    unlockGp: (patch) => {
+      const cur = get().gpUnlocked;
+      const next = { g2: cur.g2 || !!patch.g2, g1: cur.g1 || !!patch.g1 };
+      if (next.g2 === cur.g2 && next.g1 === cur.g1) return;
+      commit({ gpUnlocked: next });
     },
 
     trainHorse: (horseId, itemIndex, target) => {
