@@ -18,7 +18,10 @@
 const ENV_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const ENV_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-export const SUPABASE_URL = ENV_URL ?? ''; // 例: 'https://abcd1234.supabase.co'
-export const SUPABASE_ANON_KEY = ENV_KEY ?? ''; // 例: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...'
+// Maruko27o's Project（anon キーは公開して安全な値。データは RLS で保護）
+export const SUPABASE_URL = ENV_URL ?? 'https://kpvlmjdbnuulzkpxywzd.supabase.co';
+export const SUPABASE_ANON_KEY =
+  ENV_KEY ??
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwdmxtamRibnV1bHprcHh5d3pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NDIyODIsImV4cCI6MjA5OTUxODI4Mn0.1B7ZOYPg4yONK-oAYGAR1RhDnplSEmTigNUKbdsm0dw';
 
 export const CLOUD_ENABLED = SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;

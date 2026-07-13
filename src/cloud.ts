@@ -45,12 +45,15 @@ function toUser(u: { id: string; email?: string | null } | null | undefined): Au
 }
 
 /** Wire up the initial session and auth-change subscription. Call once. */
+let authInited = false;
 export function initAuth(): void {
-  if (!supabase) return;
-  supabase.auth.getSession().then(({ data }) => {
-    useAuth.getState().setUser(toUser(data.session?.user));
-    useAuth.getState().setReady(true);
-  });
+  if (!supabase || authInited) return;
+  authInited = true;
+  supabase.auth
+    .getSession()
+    .then(({ data }) => useAuth.getState().setUser(toUser(data.session?.user)))
+    .catch(() => {})
+    .finally(() => useAuth.getState().setReady(true));
   supabase.auth.onAuthStateChange((_event, session) => {
     useAuth.getState().setUser(toUser(session?.user));
   });
