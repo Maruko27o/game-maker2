@@ -85,4 +85,5 @@ export type SaveData = {
   trophies: Trophy[];
   items: TrainingItem[]; // owned training items (unused inventory)
   raceRecords: RaceRecord[];
+  savedAt: number; // ms of the last change — used for cloud last-write-wins sync
 };

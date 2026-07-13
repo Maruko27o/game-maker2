@@ -38,6 +38,28 @@ npm run preview   # ビルド結果のプレビュー
 
 以後、公開URL（`https://<user>.github.io/game-maker2/`）を開くだけで遊べます。
 
+## アカウント連携（メールログイン・全端末で同期）
+
+既定では **この端末だけ**（localStorage）に保存されます。メールでログインして
+**どの端末でも同じデータ**を使えるようにするには、無料の [Supabase](https://supabase.com)
+を接続します（設定は初回のみ）。
+
+1. **プロジェクト作成** … Supabase で新規プロジェクトを作成
+2. **テーブル作成** … ダッシュボードの **SQL Editor** で
+   [`supabase/setup.sql`](./supabase/setup.sql) を貼り付けて Run
+3. **メール認証を有効化** … **Authentication → Providers → Email** を ON。
+   すぐログインできるようにするには **「Confirm email」を OFF** にする
+   （メール確認をスキップ。確認メールを使いたい場合は ON のままでもOK）
+4. **キーを設定** … **Project Settings → API** の
+   - **Project URL** を `src/supabaseConfig.ts` の `SUPABASE_URL` に
+   - **anon public** キーを `SUPABASE_ANON_KEY` に貼り付け
+   （どちらも公開して安全な値。データは行レベルセキュリティ(RLS)で保護されます）
+5. **コミット** … `main` に反映すると自動でデプロイされ、アプリ右上の
+   ☁️ ボタンからログイン／新規登録できるようになります
+
+> 同期方式は「最後に保存した端末が優先（last-write-wins）」です。ログイン中は
+> 変更が自動でクラウドに保存され、別端末でログインすると読み込まれます。
+
 ## ディレクトリ
 
 ```

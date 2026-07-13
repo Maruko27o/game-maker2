@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useStore } from './store';
+import CloudSync from './components/CloudSync';
+import AccountButton from './components/AccountButton';
 import styles from './App.module.css';
 
 const NAV = [
@@ -16,6 +18,8 @@ export default function App() {
   const clearMigrated = useStore((s) => s.clearMigrated);
   return (
     <div className={styles.shell}>
+      <CloudSync />
+      <AccountButton />
       {migrated && (
         <div className={styles.notice} role="status">
           <span>アップデート！ウマに能力値が付き、レースが本格化しました🏁</span>
