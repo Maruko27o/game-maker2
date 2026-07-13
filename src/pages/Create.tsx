@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore, MAX_HORSES } from '../store';
 import { colorsBySlot, decosBySlot, COLOR_SLOTS, DECO_SLOTS } from '../data/parts';
-import type { ColorSlot, DecoSlot, Horse } from '../types';
+import type { ColorSlot, DecoSlot, HorseLook } from '../types';
 import HorseView from '../components/HorseView';
 import styles from './Create.module.css';
 
@@ -44,8 +44,8 @@ export default function Create() {
   );
   const [name, setName] = useState(editing?.name ?? '');
 
-  const preview: Horse = useMemo(
-    () => ({ id: 'preview', name, colors, decos, createdAt: 0 }),
+  const preview: HorseLook = useMemo(
+    () => ({ name, colors, decos }),
     [name, colors, decos],
   );
 

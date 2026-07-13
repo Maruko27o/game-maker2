@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useStore } from './store';
 import styles from './App.module.css';
 
 const NAV = [
@@ -11,8 +12,18 @@ const NAV = [
 ];
 
 export default function App() {
+  const migrated = useStore((s) => s.migrated);
+  const clearMigrated = useStore((s) => s.clearMigrated);
   return (
     <div className={styles.shell}>
+      {migrated && (
+        <div className={styles.notice} role="status">
+          <span>アップデート！ウマに能力値が付き、レースが本格化しました🏁</span>
+          <button className={styles.noticeClose} onClick={clearMigrated} aria-label="閉じる">
+            ✕
+          </button>
+        </div>
+      )}
       <main className={styles.main}>
         <Outlet />
       </main>

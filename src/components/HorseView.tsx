@@ -1,7 +1,8 @@
 import type { CSSProperties } from 'react';
-import type { Horse, DecoSlot } from '../types';
+import type { HorseLook, DecoSlot } from '../types';
 import { colorById, decoById } from '../data/parts';
 import { HORSE_BASE_INNER, VIEWBOX } from '../data/horseBase';
+import HorseDefs from './HorseDefs';
 
 // Draw order (bottom -> top). Per CLAUDE.md §3.2 ("後 = 手前": decos drawn after
 // the base sit in front, face is frontmost). Verified by rendering: the back-slot
@@ -10,14 +11,14 @@ import { HORSE_BASE_INNER, VIEWBOX } from '../data/horseBase';
 const FRONT: DecoSlot[] = ['back', 'tail', 'head', 'face'];
 
 type Props = {
-  horse: Horse;
+  horse: HorseLook;
   size?: number;
   className?: string;
   /** Draw a soft ground shadow under the horse. */
   shadow?: boolean;
 };
 
-function decoMarkup(horse: Horse, slot: DecoSlot): string | null {
+function decoMarkup(horse: HorseLook, slot: DecoSlot): string | null {
   const id = horse.decos[slot];
   if (!id) return null;
   return decoById[id]?.svg ?? null;
@@ -47,33 +48,7 @@ export default function HorseView({ horse, size = 240, className, shadow }: Prop
       aria-label={horse.name || 'ウマ'}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <defs>
-        <linearGradient id="gradRainbow" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#ff5b5b" />
-          <stop offset="0.17" stopColor="#ffb14e" />
-          <stop offset="0.34" stopColor="#ffe066" />
-          <stop offset="0.5" stopColor="#5bd97a" />
-          <stop offset="0.67" stopColor="#5bc8e0" />
-          <stop offset="0.84" stopColor="#7a5fe0" />
-          <stop offset="1" stopColor="#e05be0" />
-        </linearGradient>
-        <linearGradient id="gradSunset" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffd06b" />
-          <stop offset="0.45" stopColor="#ff8a5b" />
-          <stop offset="0.75" stopColor="#e0567a" />
-          <stop offset="1" stopColor="#7a4fb0" />
-        </linearGradient>
-        <linearGradient id="gradGalaxy" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#2b2e6b" />
-          <stop offset="0.55" stopColor="#5b3fb0" />
-          <stop offset="1" stopColor="#c85be0" />
-        </linearGradient>
-        <linearGradient id="gradAurora" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#3ad7c0" />
-          <stop offset="0.5" stopColor="#5bd97a" />
-          <stop offset="1" stopColor="#7a5fe0" />
-        </linearGradient>
-      </defs>
+      <HorseDefs />
       {shadow && <ellipse cx="250" cy="470" rx="150" ry="22" fill="rgba(58,44,28,0.18)" />}
       <g dangerouslySetInnerHTML={{ __html: HORSE_BASE_INNER }} />
       {front && <g dangerouslySetInnerHTML={{ __html: front }} />}

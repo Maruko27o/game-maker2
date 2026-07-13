@@ -544,6 +544,153 @@
       "slot": "tail",
       "rarity": "SR",
       "svg": "<path fill=\"#ffe9a8\" d=\"M 84,268 L 90,290 L 112,296 L 90,302 L 84,324 L 78,302 L 56,296 L 78,290 Z\"/>\n<circle fill=\"#ffe9a8\" stroke=\"none\" cx=\"60\" cy=\"352\" r=\"8\"/>\n<circle fill=\"#ffe9a8\" stroke=\"none\" cx=\"112\" cy=\"340\" r=\"6\"/>"
+    },
+    {
+      "id": "head_flower_crown",
+      "name": "はなかんむり",
+      "slot": "head",
+      "rarity": "N",
+      "svg": "<path fill=\"none\" stroke=\"#4d7c3a\" stroke-width=\"7\" d=\"M 364,98 C 378,70 424,64 450,92\"/>\n<circle fill=\"#ff9ec4\" cx=\"374\" cy=\"84\" r=\"12\"/><circle fill=\"#ffe066\" stroke=\"none\" cx=\"374\" cy=\"84\" r=\"4\"/>\n<circle fill=\"#fff0a8\" cx=\"402\" cy=\"70\" r=\"13\"/><circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"402\" cy=\"70\" r=\"4\"/>\n<circle fill=\"#ff9ec4\" cx=\"432\" cy=\"78\" r=\"11\"/><circle fill=\"#ffe066\" stroke=\"none\" cx=\"432\" cy=\"78\" r=\"4\"/>"
+    },
+    {
+      "id": "head_straw_hat",
+      "name": "むぎわらぼうし",
+      "slot": "head",
+      "rarity": "N",
+      "svg": "<path fill=\"#e0c069\" d=\"M 376,92 C 372,58 388,46 410,48 C 432,50 442,62 440,94 Z\"/>\n<ellipse fill=\"#efd58c\" cx=\"406\" cy=\"94\" rx=\"76\" ry=\"16\"/>\n<path fill=\"#c9455e\" stroke=\"none\" d=\"M 344,84 L 470,96 L 469,106 L 344,94 Z\"/>"
+    },
+    {
+      "id": "head_bow",
+      "name": "あたまリボン",
+      "slot": "head",
+      "rarity": "N",
+      "svg": "<path fill=\"#ff7bb0\" d=\"M 380,74 C 356,60 350,80 362,92 C 374,102 388,90 392,76 Z\"/>\n<path fill=\"#ff7bb0\" d=\"M 404,76 C 428,58 446,70 440,88 C 434,104 414,98 404,84 Z\"/>\n<circle fill=\"#ffd0e2\" cx=\"398\" cy=\"80\" r=\"11\"/>"
+    },
+    {
+      "id": "head_ninja_hood",
+      "name": "にんじゃずきん",
+      "slot": "head",
+      "rarity": "R",
+      "svg": "<path fill=\"#2f3a4a\" d=\"M 352,150 C 338,102 364,76 402,78 C 442,80 454,106 448,130 L 396,120 C 380,140 366,150 352,150 Z\"/>\n<path fill=\"#c9455e\" stroke=\"none\" d=\"M 356,112 L 452,124 L 450,136 L 355,124 Z\"/>"
+    },
+    {
+      "id": "head_witch_hat",
+      "name": "まじょのぼうし",
+      "slot": "head",
+      "rarity": "R",
+      "svg": "<path fill=\"#4a3a6a\" d=\"M 374,94 C 382,52 402,22 434,6 C 424,42 418,72 440,96 Z\"/>\n<ellipse fill=\"#5c497f\" cx=\"406\" cy=\"96\" rx=\"74\" ry=\"15\"/>\n<path fill=\"#ffd45e\" stroke=\"none\" d=\"M 380,84 L 442,90 L 441,100 L 379,94 Z\"/>"
+    },
+    {
+      "id": "head_oni_horns",
+      "name": "おにのツノ",
+      "slot": "head",
+      "rarity": "R",
+      "svg": "<path fill=\"#f2e3c4\" d=\"M 378,86 L 364,34 L 398,74 Z\"/>\n<path fill=\"#f2e3c4\" d=\"M 424,80 L 450,32 L 446,88 Z\"/>"
+    },
+    {
+      "id": "head_crown",
+      "name": "おうかん",
+      "slot": "head",
+      "rarity": "SR",
+      "svg": "<path fill=\"#ffd45e\" d=\"M 372,96 L 366,42 L 392,70 L 408,34 L 426,72 L 452,46 L 444,98 Z\"/>\n<circle fill=\"#e2454f\" stroke=\"none\" cx=\"408\" cy=\"80\" r=\"7\"/>\n<circle fill=\"#3ad7ff\" stroke=\"none\" cx=\"382\" cy=\"86\" r=\"6\"/>\n<circle fill=\"#3ad7ff\" stroke=\"none\" cx=\"434\" cy=\"86\" r=\"6\"/>"
+    },
+    {
+      "id": "head_halo",
+      "name": "てんしのわ",
+      "slot": "head",
+      "rarity": "SR",
+      "svg": "<ellipse fill=\"none\" stroke=\"#ffd45e\" stroke-width=\"12\" cx=\"412\" cy=\"28\" rx=\"44\" ry=\"13\"/>\n<ellipse fill=\"none\" stroke=\"#fff3c4\" stroke-width=\"4\" cx=\"412\" cy=\"28\" rx=\"44\" ry=\"13\"/>"
+    },
+    {
+      "id": "face_glasses",
+      "name": "メガネ",
+      "slot": "face",
+      "rarity": "N",
+      "svg": "<circle fill=\"#cfeaf5\" cx=\"404\" cy=\"122\" r=\"19\"/>\n<circle fill=\"#cfeaf5\" cx=\"452\" cy=\"132\" r=\"16\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"6\" d=\"M 422,126 L 436,129 M 386,118 L 366,112\"/>"
+    },
+    {
+      "id": "face_eyepatch",
+      "name": "がんたい",
+      "slot": "face",
+      "rarity": "N",
+      "svg": "<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"6\" d=\"M 366,108 L 470,126\"/>\n<path fill=\"#2b2118\" d=\"M 386,106 L 424,112 L 420,138 L 384,132 Z\"/>"
+    },
+    {
+      "id": "face_mask",
+      "name": "くちマスク",
+      "slot": "face",
+      "rarity": "R",
+      "svg": "<path fill=\"#e9f2f7\" d=\"M 420,120 L 482,132 L 478,172 L 424,172 Z\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"5\" d=\"M 420,138 L 478,148\"/>"
+    },
+    {
+      "id": "face_star_paint",
+      "name": "ほしのペイント",
+      "slot": "face",
+      "rarity": "R",
+      "svg": "<path fill=\"#ffd45e\" d=\"M 378,134 L 384,150 L 401,152 L 388,163 L 392,180 L 378,170 L 364,180 L 368,163 L 355,152 L 372,150 Z\"/>"
+    },
+    {
+      "id": "back_cape",
+      "name": "マント",
+      "slot": "back",
+      "rarity": "N",
+      "svg": "<path fill=\"#c9455e\" d=\"M 302,212 C 258,188 182,178 150,202 C 140,254 152,306 174,336 C 224,304 282,262 302,212 Z\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"5\" d=\"M 262,222 C 232,248 204,286 190,320\"/>"
+    },
+    {
+      "id": "back_flag",
+      "name": "はた",
+      "slot": "back",
+      "rarity": "N",
+      "svg": "<path fill=\"none\" stroke=\"#8a5c22\" stroke-width=\"10\" d=\"M 214,214 L 206,96\"/>\n<path fill=\"#4d7c3a\" d=\"M 208,102 L 292,116 L 288,164 L 204,150 Z\"/>\n<circle fill=\"#ffd45e\" stroke=\"none\" cx=\"246\" cy=\"134\" r=\"12\"/>"
+    },
+    {
+      "id": "back_bat_wings",
+      "name": "コウモリのつばさ",
+      "slot": "back",
+      "rarity": "R",
+      "svg": "<path fill=\"#4a3560\" d=\"M 250,206 C 206,168 152,132 100,128 C 120,152 128,178 132,206 L 152,186 L 158,226 L 180,204 L 188,240 C 212,216 222,208 250,206 Z\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"5\" d=\"M 226,214 C 196,190 160,166 126,152 M 208,224 C 184,206 166,196 148,190\"/>"
+    },
+    {
+      "id": "back_taiko",
+      "name": "わだいこ",
+      "slot": "back",
+      "rarity": "R",
+      "svg": "<path fill=\"#8a3b2a\" d=\"M 176,236 L 176,172 L 252,172 L 252,232 Z\"/>\n<ellipse fill=\"#efdcb8\" cx=\"214\" cy=\"172\" rx=\"38\" ry=\"14\"/>\n<path fill=\"none\" stroke=\"#c9a227\" stroke-width=\"6\" d=\"M 176,192 L 252,192 M 176,214 L 252,214\"/>"
+    },
+    {
+      "id": "back_star_cloak",
+      "name": "ほしのマント",
+      "slot": "back",
+      "rarity": "SR",
+      "svg": "<path fill=\"#1e2350\" d=\"M 302,212 C 258,188 182,178 150,202 C 140,254 152,306 174,336 C 224,304 282,262 302,212 Z\"/>\n<path fill=\"#ffd45e\" stroke=\"none\" d=\"M 200,224 L 205,238 L 220,239 L 208,249 L 212,264 L 200,255 L 188,264 L 192,249 L 180,239 L 195,238 Z\"/>\n<circle fill=\"#fff3c4\" stroke=\"none\" cx=\"248\" cy=\"240\" r=\"6\"/>\n<circle fill=\"#fff3c4\" stroke=\"none\" cx=\"180\" cy=\"296\" r=\"5\"/>\n<circle fill=\"#fff3c4\" stroke=\"none\" cx=\"232\" cy=\"286\" r=\"4\"/>"
+    },
+    {
+      "id": "tail_flower",
+      "name": "はなのしっぽ",
+      "slot": "tail",
+      "rarity": "N",
+      "svg": "<circle fill=\"#ff9ec4\" cx=\"78\" cy=\"278\" r=\"13\"/><circle fill=\"#ffe066\" stroke=\"none\" cx=\"78\" cy=\"278\" r=\"4\"/>\n<circle fill=\"#fff0a8\" cx=\"70\" cy=\"336\" r=\"12\"/><circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"70\" cy=\"336\" r=\"4\"/>\n<circle fill=\"#ff9ec4\" cx=\"98\" cy=\"386\" r=\"11\"/><circle fill=\"#ffe066\" stroke=\"none\" cx=\"98\" cy=\"386\" r=\"4\"/>"
+    },
+    {
+      "id": "tail_bubble",
+      "name": "あわ",
+      "slot": "tail",
+      "rarity": "N",
+      "svg": "<circle fill=\"#cfeaf5\" cx=\"62\" cy=\"262\" r=\"16\"/>\n<circle fill=\"#cfeaf5\" cx=\"40\" cy=\"316\" r=\"12\"/>\n<circle fill=\"#cfeaf5\" cx=\"60\" cy=\"376\" r=\"19\"/>\n<circle fill=\"#ffffff\" stroke=\"none\" cx=\"56\" cy=\"370\" r=\"5\"/>"
+    },
+    {
+      "id": "tail_star",
+      "name": "ほしのしっぽ",
+      "slot": "tail",
+      "rarity": "R",
+      "svg": "<path fill=\"#ffd45e\" d=\"M 70,264 L 76,282 L 95,284 L 81,296 L 85,315 L 70,304 L 55,315 L 59,296 L 45,284 L 64,282 Z\"/>\n<circle fill=\"#fff3c4\" stroke=\"none\" cx=\"92\" cy=\"352\" r=\"8\"/>\n<circle fill=\"#fff3c4\" stroke=\"none\" cx=\"62\" cy=\"388\" r=\"6\"/>"
+    },
+    {
+      "id": "tail_lightning",
+      "name": "いなずま",
+      "slot": "tail",
+      "rarity": "SR",
+      "svg": "<path fill=\"#ffe066\" d=\"M 96,258 L 44,326 L 74,330 L 40,398 L 108,318 L 76,314 Z\"/>"
     }
   ]
 }

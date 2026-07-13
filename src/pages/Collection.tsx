@@ -28,7 +28,7 @@ const SECTIONS: { title: string; tab: string; entries: Entry[] }[] = [
 const TOTAL = SECTIONS.reduce((n, s) => n + s.entries.length, 0);
 
 // A blank horse used purely as a black silhouette behind the "?" for unowned parts.
-const BLANK = { id: 'blank', name: '', colors: { body: '', mane: '', hoof: '' }, decos: {}, createdAt: 0 };
+const BLANK = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 
 export default function Collection() {
   const owned = useStore((s) => s.owned);

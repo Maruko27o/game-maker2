@@ -1,23 +1,84 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore, MAX_HORSES } from '../store';
+import { useStore, MAX_HORSES, trophyCount } from '../store';
+import { statTotal } from '../logic/stats';
+import { canApply } from '../logic/training';
+import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP } from '../types';
+import type { Trophy, TrainingItem, StatKey } from '../types';
 import HorseView from '../components/HorseView';
+import StatRadar from '../components/StatRadar';
+import TrophyIcon from '../components/TrophyIcon';
 import styles from './Stable.module.css';
+
+type View = 'detail' | 'train';
+
+// Which item index to spend for stat K: prefer a matching stat item, else 'any'.
+function itemIndexFor(items: TrainingItem[], k: StatKey): number {
+  let anyIdx = -1;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it.kind === 'stat' && it.stat === k) return i;
+    if (it.kind === 'any' && anyIdx < 0) anyIdx = i;
+  }
+  return anyIdx;
+}
+
+function TrophyRack({ trophies }: { trophies: Trophy[] }) {
+  // Group by rank+grade, order gold->silver->bronze then by first-acquired.
+  const groups = useMemo(() => {
+    const map = new Map<string, { rank: 1 | 2 | 3; gp: boolean; count: number; at: number }>();
+    for (const t of trophies) {
+      const gp = t.grade === 'gp';
+      const key = `${t.rank}-${gp}`;
+      const g = map.get(key);
+      if (g) {
+        g.count++;
+        g.at = Math.min(g.at, t.at);
+      } else {
+        map.set(key, { rank: t.rank, gp, count: 1, at: t.at });
+      }
+    }
+    return [...map.values()].sort((a, b) => a.rank - b.rank || a.at - b.at);
+  }, [trophies]);
+
+  if (trophies.length === 0) {
+    return <div className={styles.rackEmpty}>まだトロフィーがありません</div>;
+  }
+  return (
+    <div className={styles.rack}>
+      {groups.map((g, i) => (
+        <div key={i} className={styles.rackItem}>
+          <TrophyIcon rank={g.rank} gp={g.gp} size={56} />
+          {g.count > 1 && <span className={styles.rackCount}>×{g.count}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Stable() {
   const navigate = useNavigate();
   const horses = useStore((s) => s.horses);
+  const trophies = useStore((s) => s.trophies);
+  const items = useStore((s) => s.items);
   const renameHorse = useStore((s) => s.renameHorse);
   const removeHorse = useStore((s) => s.removeHorse);
+  const trainHorse = useStore((s) => s.trainHorse);
 
   const [openId, setOpenId] = useState<string | null>(null);
+  const [view, setView] = useState<View>('detail');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const selected = horses.find((h) => h.id === openId) ?? null;
 
   function close() {
     setOpenId(null);
     setConfirmDelete(false);
+    setView('detail');
   }
+
+  const total = selected ? statTotal(selected.stats) : 0;
+  const statItemCount = items.filter((i) => i.kind === 'stat').length;
+  const anyItemCount = items.filter((i) => i.kind === 'any').length;
 
   return (
     <div className={styles.page}>
@@ -39,14 +100,21 @@ export default function Stable() {
         </div>
       ) : (
         <div className={styles.grid}>
-          {horses.map((h) => (
-            <button key={h.id} className={styles.card} onClick={() => setOpenId(h.id)}>
-              <div className={styles.cardThumb}>
-                <HorseView horse={h} size={130} shadow />
-              </div>
-              <div className={styles.cardName}>{h.name}</div>
-            </button>
-          ))}
+          {horses.map((h) => {
+            const tc = trophyCount(trophies, h.id);
+            return (
+              <button key={h.id} className={styles.card} onClick={() => setOpenId(h.id)}>
+                <div className={styles.cardThumb}>
+                  <HorseView horse={h} size={130} shadow />
+                </div>
+                <div className={styles.cardName}>{h.name}</div>
+                <div className={styles.cardMeta}>
+                  <span>合計 {statTotal(h.stats)}</span>
+                  {tc > 0 && <span className={styles.cardTrophy}>🏆{tc}</span>}
+                </div>
+              </button>
+            );
+          })}
           {horses.length < MAX_HORSES && (
             <button className={styles.add} onClick={() => navigate('/create')}>
               <span className={styles.plus}>＋</span>
@@ -59,50 +127,130 @@ export default function Stable() {
       {selected && (
         <div className={styles.overlay} onClick={close}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalThumb}>
-              <HorseView horse={selected} size={240} shadow />
-            </div>
-            <input
-              className={styles.nameInput}
-              value={selected.name}
-              maxLength={12}
-              onChange={(e) => renameHorse(selected.id, e.target.value)}
-              aria-label="なまえ"
-            />
-
-            {confirmDelete ? (
-              <div className={styles.confirm}>
-                <p className={styles.confirmText}>
-                  「{selected.name}」を消しますか？<br />
-                  <strong>消すと戻せません。</strong>
-                </p>
-                <div className={styles.row}>
-                  <button className="btn neutral" onClick={() => setConfirmDelete(false)}>
-                    やめる
-                  </button>
-                  <button
-                    className="btn secondary"
-                    onClick={() => {
-                      removeHorse(selected.id);
-                      close();
-                    }}
-                  >
-                    けす
-                  </button>
+            {view === 'detail' ? (
+              <>
+                <div className={styles.modalThumb}>
+                  <HorseView horse={selected} size={190} shadow />
                 </div>
-              </div>
+                <input
+                  className={styles.nameInput}
+                  value={selected.name}
+                  maxLength={12}
+                  onChange={(e) => renameHorse(selected.id, e.target.value)}
+                  aria-label="なまえ"
+                />
+
+                <div className={styles.statsBlock}>
+                  <StatRadar stats={selected.stats} size={190} />
+                  <div className={styles.statBars}>
+                    {STAT_KEYS.map((k) => (
+                      <div key={k} className={styles.statBarRow}>
+                        <span className={styles.statLabel}>{STAT_LABEL[k]}</span>
+                        <div className={styles.statTrack}>
+                          <div className={styles.statFill} style={{ width: `${(selected.stats[k] / STAT_CAP) * 100}%` }} />
+                        </div>
+                        <span className={styles.statVal}>{selected.stats[k]}</span>
+                      </div>
+                    ))}
+                    <div className={styles.statTotal}>
+                      合計 {total} / {STAT_TOTAL_CAP}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.rackWrap}>
+                  <h3 className={styles.rackTitle}>トロフィー</h3>
+                  <TrophyRack trophies={trophies.filter((t) => t.horseId === selected.id)} />
+                </div>
+
+                {confirmDelete ? (
+                  <div className={styles.confirm}>
+                    <p className={styles.confirmText}>
+                      「{selected.name}」を消しますか？<br />
+                      <strong>消すと戻せません。</strong>
+                    </p>
+                    <div className={styles.row}>
+                      <button className="btn neutral" onClick={() => setConfirmDelete(false)}>
+                        やめる
+                      </button>
+                      <button
+                        className="btn secondary"
+                        onClick={() => {
+                          removeHorse(selected.id);
+                          close();
+                        }}
+                      >
+                        けす
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className={styles.actions}>
+                      <button className="btn" onClick={() => setView('train')}>
+                        そだてる
+                      </button>
+                      <button className="btn neutral" onClick={() => navigate(`/create?edit=${selected.id}`)}>
+                        なおす
+                      </button>
+                    </div>
+                    <div className={styles.actions}>
+                      <button className="btn secondary" onClick={() => setConfirmDelete(true)}>
+                        けす
+                      </button>
+                      <button className="btn neutral" onClick={close}>
+                        とじる
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
             ) : (
-              <div className={styles.actions}>
-                <button className="btn" onClick={() => navigate(`/create?edit=${selected.id}`)}>
-                  なおす
+              // --- Training view ---
+              <>
+                <h2 className={styles.trainTitle}>そだてる</h2>
+                <div className={styles.trainHorse}>
+                  <HorseView horse={selected} size={120} shadow />
+                </div>
+                <div className={styles.itemBar}>
+                  <span>🎁 育成アイテム</span>
+                  <span className={styles.itemCounts}>
+                    ステータス {statItemCount} / どれでも {anyItemCount}
+                  </span>
+                </div>
+                {items.length === 0 && (
+                  <p className={styles.trainHint}>アイテムがありません。グランプリで入賞するともらえます。</p>
+                )}
+                <div className={styles.trainBars}>
+                  {STAT_KEYS.map((k) => {
+                    const idx = itemIndexFor(items, k);
+                    const usable = idx >= 0 && canApply(selected.stats, k);
+                    return (
+                      <div key={k} className={styles.trainRow}>
+                        <span className={styles.statLabel}>{STAT_LABEL[k]}</span>
+                        <div className={styles.statTrack}>
+                          <div className={styles.statFill} style={{ width: `${(selected.stats[k] / STAT_CAP) * 100}%` }} />
+                        </div>
+                        <span className={styles.statVal}>{selected.stats[k]}</span>
+                        <button
+                          className={styles.plusBtn}
+                          disabled={!usable}
+                          onClick={() => trainHorse(selected.id, idx, k)}
+                        >
+                          +1
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className={styles.statTotal}>
+                  合計 {total} / {STAT_TOTAL_CAP}
+                  {total >= STAT_TOTAL_CAP && '（これ以上つよくできません）'}
+                </div>
+                <button className="btn neutral" onClick={() => setView('detail')}>
+                  もどる
                 </button>
-                <button className="btn secondary" onClick={() => setConfirmDelete(true)}>
-                  けす
-                </button>
-                <button className="btn neutral" onClick={close}>
-                  とじる
-                </button>
-              </div>
+              </>
             )}
           </div>
         </div>
