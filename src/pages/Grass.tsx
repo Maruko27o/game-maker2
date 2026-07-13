@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore, type SpawnedPart } from '../store';
-import { hasSpawn, msUntilNextReset } from '../logic/reset';
+import { ENERGY_CAP, normalizeEnergy, msUntilNextEnergy } from '../logic/energy';
 import { colorsBySlot, decosBySlot, partName, partRarity, isColorId } from '../data/parts';
 import type { Horse, DecoSlot } from '../types';
 import HorseView from '../components/HorseView';
@@ -44,7 +44,8 @@ function fmt(ms: number): string {
 
 export default function Grass() {
   const doSpawn = useStore((s) => s.doSpawn);
-  const lastSpawnAt = useStore((s) => s.lastSpawnAt);
+  const energy = useStore((s) => s.energy);
+  const energyUpdatedAt = useStore((s) => s.energyUpdatedAt);
   const horseCount = useStore((s) => s.horses.length);
 
   const reduced = usePrefersReducedMotion();
@@ -53,22 +54,27 @@ export default function Grass() {
   const [reward, setReward] = useState<SpawnedPart[]>([]);
   const [wild, setWild] = useState<Horse | null>(null);
 
-  // Tick once a second — only to drive the countdown/availability display.
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const available = hasSpawn(lastSpawnAt, now);
-  const countdown = useMemo(() => fmt(msUntilNextReset(now)), [now]);
+  const state = { energy, energyUpdatedAt };
+  const stock = normalizeEnergy(state, now).energy;
+  const countdown = useMemo(() => fmt(msUntilNextEnergy(state, now)), [energy, energyUpdatedAt, now]);
+  const available = stock > 0;
 
   function onTap() {
     if (phase !== 'ready' || !available) return;
     setPhase('searching');
     const run = () => {
-      const parts = doSpawn();
-      setReward(parts);
-      setWild(makeWildHorse(parts));
+      const res = doSpawn();
+      if (!res) {
+        setPhase('ready');
+        return;
+      }
+      setReward(res.parts);
+      setWild(makeWildHorse(res.parts));
       setPhase('reveal');
     };
     if (reduced) run();
@@ -86,12 +92,21 @@ export default function Grass() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.stat}>
-          <span className={styles.statLabel}>つぎのウマ</span>
-          <span className={styles.statValue}>{available ? 'いま！' : countdown}</span>
+          <span className={styles.statLabel}>ストック</span>
+          <span className={styles.statValue}>
+            <span className={styles.hearts} aria-hidden>
+              {Array.from({ length: ENERGY_CAP }).map((_, i) => (
+                <span key={i} className={i < stock ? styles.on : styles.off}>
+                  🐴
+                </span>
+              ))}
+            </span>
+            <span className={styles.stockNum}>{stock}/{ENERGY_CAP}</span>
+          </span>
         </div>
         <div className={styles.stat}>
-          <span className={styles.statLabel}>マイウマ</span>
-          <span className={styles.statValue}>{horseCount}/10</span>
+          <span className={styles.statLabel}>{stock >= ENERGY_CAP ? 'まんタン' : 'つぎのチャージ'}</span>
+          <span className={styles.statValue}>{stock >= ENERGY_CAP ? '✓' : countdown}</span>
         </div>
       </header>
 
@@ -101,7 +116,7 @@ export default function Grass() {
         }`}
         onClick={onTap}
         disabled={!available || phase !== 'ready'}
-        aria-label={available ? '草むらをタップしてウマをさがす' : '次のリセットまで待つ'}
+        aria-label={available ? '草むらをタップしてウマをさがす' : '次のチャージまで待つ'}
       >
         <div className={styles.grassRow} aria-hidden>
           {Array.from({ length: 7 }).map((_, i) => (
@@ -121,17 +136,22 @@ export default function Grass() {
               <>
                 <div className={styles.tapEmoji}>👆</div>
                 <p>草むらをタップ！</p>
+                <p className={styles.hintSub}>ストック {stock}こ</p>
               </>
             ) : (
               <>
                 <p className={styles.waitTitle}>草がしずかだ…</p>
-                <p className={styles.waitSub}>つぎのリセットまで {countdown}</p>
-                <p className={styles.waitNote}>毎日 0:00 と 12:00 にウマがあらわれる</p>
+                <p className={styles.waitSub}>つぎのチャージまで {countdown}</p>
+                <p className={styles.waitNote}>1時間に1こ・最大{ENERGY_CAP}こまでたまる</p>
               </>
             )}
           </div>
         )}
       </button>
+
+      <div className={styles.footRow}>
+        <span className={styles.footNote}>マイウマ {horseCount}/10</span>
+      </div>
 
       {phase === 'reveal' && (
         <div className={styles.reward}>
@@ -157,7 +177,7 @@ export default function Grass() {
             ))}
           </div>
           <button className="btn" onClick={close}>
-            つづける
+            {stock > 0 ? `つづける（あと${stock}こ）` : 'つづける'}
           </button>
         </div>
       )}

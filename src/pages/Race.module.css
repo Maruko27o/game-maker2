@@ -1,0 +1,294 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.title {
+  font-size: 24px;
+  color: var(--ink);
+}
+.lead {
+  margin: -6px 0 0;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+/* Mode selection ---------------------------------------------------------- */
+.modeCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--panel-inner);
+  border: 3px solid var(--border-dark);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 0 var(--border);
+}
+.modeCard:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--border);
+}
+.modeEmoji {
+  font-size: 34px;
+}
+.modeText {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.modeName {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.modeDesc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.modeGo {
+  color: var(--blue);
+  font-size: 18px;
+  font-weight: 900;
+}
+.modeLocked {
+  opacity: 0.6;
+  box-shadow: none;
+  filter: grayscale(0.4);
+}
+.modeLocked:active {
+  transform: none;
+}
+.soon {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+/* Horse picker ------------------------------------------------------------ */
+.empty {
+  text-align: center;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+}
+.emptyEmoji {
+  font-size: 56px;
+}
+.empty p {
+  margin: 0;
+  font-weight: 800;
+}
+.pickGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.pickCard {
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.pickThumb {
+  background: linear-gradient(180deg, #d7ecb4, #bfe08a);
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+}
+.pickName {
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.exitLink {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-weight: 800;
+  text-decoration: underline;
+  padding: 6px;
+}
+
+/* Race track -------------------------------------------------------------- */
+.raceWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.trackFrame {
+  position: relative;
+  background: linear-gradient(180deg, #cde89f, #a9d46a);
+  border: 4px solid var(--border-dark);
+  border-radius: 18px;
+  padding: 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+.lane {
+  position: relative;
+  height: 62px;
+  border-bottom: 3px dashed rgba(90, 67, 38, 0.35);
+}
+.lane:last-child {
+  border-bottom: none;
+}
+.laneTag {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  padding: 0 5px;
+  z-index: 2;
+}
+.finishLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 8px;
+  width: 8px;
+  background:
+    repeating-linear-gradient(45deg, #3a2c1c 0 6px, #fff 6px 12px);
+  opacity: 0.7;
+  border-radius: 2px;
+}
+.runner {
+  position: absolute;
+  left: 4px;
+  bottom: 2px;
+  transition-property: left;
+  transition-timing-function: cubic-bezier(0.4, 0.1, 0.7, 1);
+  will-change: left;
+}
+.run {
+  left: calc(100% - 62px);
+}
+.playerRunner {
+  filter: drop-shadow(0 0 0 var(--blue));
+}
+.playerRunner::after {
+  content: '★';
+  position: absolute;
+  top: -2px;
+  right: 0;
+  font-size: 14px;
+  color: var(--blue);
+}
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 72px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 3px 0 var(--border-dark), 0 0 20px rgba(0, 0, 0, 0.3);
+  background: rgba(58, 44, 28, 0.25);
+  pointer-events: none;
+  animation: pulse 0.8s ease infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* Result ------------------------------------------------------------------ */
+.resultCard {
+  background: var(--panel);
+  border: 4px solid var(--border-dark);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.resultTitle {
+  font-size: 24px;
+  color: var(--ink);
+}
+.ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 4px 10px;
+}
+.rankMe {
+  border-color: var(--blue);
+  background: #e5eefc;
+}
+.rankNo {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  min-width: 22px;
+  text-align: center;
+}
+.rankHorse {
+  background: #fff;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  display: grid;
+  place-items: center;
+}
+.rankName {
+  font-weight: 800;
+  color: var(--ink);
+  flex: 1;
+}
+.medal {
+  font-size: 20px;
+}
+.raceActions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.raceActions button {
+  flex: 1;
+}
