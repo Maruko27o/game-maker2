@@ -30,8 +30,9 @@ export type Horse = {
 };
 
 export type SaveData = {
-  version: 1;
+  version: 2;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
   horses: Horse[]; // max 10
-  lastSpawnAt: number | null; // ms of the last grass spawn
+  energy: number; // grass spawn stock (0..3), charges 1 per hour
+  energyUpdatedAt: number; // ms anchor for energy regen
 };

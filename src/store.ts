@@ -2,33 +2,66 @@ import { create } from 'zustand';
 import type { SaveData, Horse, ColorSlot, DecoSlot } from './types';
 import { allParts } from './data/parts';
 import { spawn as gachaSpawn } from './logic/gacha';
+import { ENERGY_CAP, spendEnergy } from './logic/energy';
 
-export const STORAGE_KEY = 'horse-game/v1';
+export const STORAGE_KEY = 'horse-game/v1'; // storage slot; payload is versioned inside
 export const MAX_HORSES = 10;
 
-const EMPTY: SaveData = { version: 1, owned: {}, horses: [], lastSpawnAt: null };
+// Starter parts so a brand-new player can build a horse immediately without
+// collecting first — basic colors for every color slot (CLAUDE.md follow-up).
+export const STARTER_PARTS = [
+  'body_white',
+  'body_chestnut',
+  'body_bay',
+  'body_gray',
+  'mane_brown',
+  'mane_black',
+  'mane_cream',
+  'hoof_dark',
+  'hoof_stone',
+  'hoof_ivory',
+];
 
-function isValid(data: unknown): data is SaveData {
-  if (!data || typeof data !== 'object') return false;
-  const d = data as Record<string, unknown>;
-  return (
-    d.version === 1 &&
-    typeof d.owned === 'object' &&
-    d.owned !== null &&
-    Array.isArray(d.horses) &&
-    (d.lastSpawnAt === null || typeof d.lastSpawnAt === 'number')
-  );
+function starterOwned(): Record<string, number> {
+  return Object.fromEntries(STARTER_PARTS.map((id) => [id, 1]));
+}
+
+function freshSave(): SaveData {
+  return {
+    version: 2,
+    owned: starterOwned(),
+    horses: [],
+    energy: ENERGY_CAP, // start with a full stock
+    energyUpdatedAt: Date.now(),
+  };
+}
+
+// Accept a stored payload, migrating older versions while keeping the player's
+// collection and horses. Returns null when the data is unusable.
+function migrate(parsed: unknown): SaveData | null {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const d = parsed as Record<string, unknown>;
+  if (typeof d.owned !== 'object' || d.owned === null || !Array.isArray(d.horses)) return null;
+  const owned = d.owned as Record<string, number>;
+  const horses = d.horses as Horse[];
+
+  if (d.version === 2 && typeof d.energy === 'number' && typeof d.energyUpdatedAt === 'number') {
+    return { version: 2, owned, horses, energy: d.energy, energyUpdatedAt: d.energyUpdatedAt };
+  }
+  if (d.version === 1) {
+    // v1 had a single 0:00/12:00 reset slot; grant a full stock on upgrade.
+    return { version: 2, owned, horses, energy: ENERGY_CAP, energyUpdatedAt: Date.now() };
+  }
+  return null;
 }
 
 function load(): SaveData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...EMPTY };
-    const parsed = JSON.parse(raw);
-    if (!isValid(parsed)) return { ...EMPTY }; // corrupt / unknown version -> reset
-    return parsed;
+    if (!raw) return freshSave();
+    return migrate(JSON.parse(raw)) ?? freshSave();
   } catch {
-    return { ...EMPTY };
+    return freshSave();
   }
 }
 
@@ -46,10 +79,11 @@ function newId(): string {
 }
 
 export type SpawnedPart = { id: string; isNew: boolean };
+export type SpawnResult = { parts: SpawnedPart[]; energyLeft: number } | null;
 
 type Store = SaveData & {
-  /** Draw parts from the grass, add them to the collection, consume the slot. */
-  doSpawn: (rng?: () => number) => SpawnedPart[];
+  /** Spend one energy to draw parts from the grass. Returns null if no energy. */
+  doSpawn: (rng?: () => number) => SpawnResult;
   addHorse: (h: Omit<Horse, 'id' | 'createdAt'>) => Horse | null;
   updateHorse: (id: string, patch: Partial<Pick<Horse, 'name' | 'colors' | 'decos'>>) => void;
   renameHorse: (id: string, name: string) => void;
@@ -64,10 +98,11 @@ export const useStore = create<Store>((set, get) => {
   const commit = (partial: Partial<SaveData>) => {
     const next = { ...get(), ...partial } as Store;
     const data: SaveData = {
-      version: 1,
+      version: 2,
       owned: next.owned,
       horses: next.horses,
-      lastSpawnAt: next.lastSpawnAt,
+      energy: next.energy,
+      energyUpdatedAt: next.energyUpdatedAt,
     };
     persist(data);
     set(partial as Partial<Store>);
@@ -77,15 +112,19 @@ export const useStore = create<Store>((set, get) => {
     ...initial,
 
     doSpawn: (rng = Math.random) => {
+      const now = Date.now();
+      const spent = spendEnergy({ energy: get().energy, energyUpdatedAt: get().energyUpdatedAt }, now);
+      if (!spent) return null; // out of energy
+
       const ids = gachaSpawn(rng, allParts);
       const owned = { ...get().owned };
-      const result: SpawnedPart[] = ids.map((id) => {
+      const parts: SpawnedPart[] = ids.map((id) => {
         const isNew = !owned[id];
         owned[id] = (owned[id] ?? 0) + 1; // count also tracks "kaburi" duplicates
         return { id, isNew };
       });
-      commit({ owned, lastSpawnAt: Date.now() });
-      return result;
+      commit({ owned, energy: spent.energy, energyUpdatedAt: spent.energyUpdatedAt });
+      return { parts, energyLeft: spent.energy };
     },
 
     addHorse: (h) => {
@@ -109,7 +148,7 @@ export const useStore = create<Store>((set, get) => {
       commit({ horses: get().horses.filter((h) => h.id !== id) });
     },
 
-    resetAll: () => commit({ ...EMPTY }),
+    resetAll: () => commit({ ...freshSave() }),
   };
 });
 
