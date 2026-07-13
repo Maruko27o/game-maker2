@@ -137,6 +137,15 @@
   color: var(--gold);
 }
 
+.styleChip {
+  background: var(--blue);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 999px;
+  padding: 4px 14px;
+  border: 2px solid var(--blue-dark);
+}
 .statsBlock {
   display: flex;
   flex-direction: column;

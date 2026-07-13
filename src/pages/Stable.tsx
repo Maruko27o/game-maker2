@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore, MAX_HORSES, trophyCount } from '../store';
 import { statTotal } from '../logic/stats';
+import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
-import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP } from '../types';
+import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Trophy, TrainingItem, StatKey } from '../types';
 import HorseView from '../components/HorseView';
 import StatRadar from '../components/StatRadar';
@@ -139,6 +140,8 @@ export default function Stable() {
                   onChange={(e) => renameHorse(selected.id, e.target.value)}
                   aria-label="なまえ"
                 />
+
+                <div className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</div>
 
                 <div className={styles.statsBlock}>
                   <StatRadar stats={selected.stats} size={190} />

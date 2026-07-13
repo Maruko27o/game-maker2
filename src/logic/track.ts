@@ -88,6 +88,17 @@ export function heading(t: Track, s: number): number {
   return Math.atan2(c.ty, c.tx);
 }
 
+/** SVG path of the centerline (a rounded rectangle) in meter coordinates. */
+export function centerlinePath(t: Track): string {
+  const L = t.straight;
+  const R = t.radius;
+  return (
+    `M ${-L / 2},${-R} L ${L / 2},${-R} ` +
+    `A ${R},${R} 0 0 1 ${L / 2},${R} L ${-L / 2},${R} ` +
+    `A ${R},${R} 0 0 1 ${-L / 2},${-R} Z`
+  );
+}
+
 /** Bounds of the centerline in meter-space (for fitting the camera/viewport). */
 export function trackBounds(t: Track): { minX: number; maxX: number; minY: number; maxY: number } {
   const halfW = t.width / 2;

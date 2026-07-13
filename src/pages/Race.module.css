@@ -125,6 +125,75 @@
   text-overflow: ellipsis;
   max-width: 100%;
 }
+.pickStyle {
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--blue);
+  border-radius: 6px;
+  padding: 0 6px;
+}
+.rankStyle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* Course roulette (§10) */
+.rouletteWrap {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+}
+.rouletteCard {
+  background: var(--panel-inner);
+  border: 4px solid var(--border-dark);
+  border-radius: 20px;
+  padding: 24px 18px;
+  text-align: center;
+  min-width: 260px;
+  box-shadow: 0 6px 0 var(--border);
+}
+.rouletteStop {
+  animation: rpop 0.5s cubic-bezier(0.2, 1.4, 0.5, 1);
+}
+@keyframes rpop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.rouletteEmoji {
+  font-size: 60px;
+}
+.rouletteName {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.rouletteInfo {
+  margin-top: 10px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.rouletteApt {
+  margin-top: 10px;
+  font-weight: 800;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.rouletteTap {
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-decoration: underline;
+}
 .courseList {
   display: flex;
   flex-direction: column;
