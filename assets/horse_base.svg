@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520" width="520" height="520">
+  <g stroke="#2b2118" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+    <g id="legs-far">
+      <path id="leg-back-far"   fill="var(--body,#fff)" d="M 182,285 L 214,285 L 212,360 L 216,432 L 186,432 L 182,360 Z"/>
+      <path id="hoof-back-far"  fill="var(--hoof,#fff)" d="M 184,428 L 218,428 L 218,458 L 184,458 Z"/>
+      <path id="leg-front-far"  fill="var(--body,#fff)" d="M 258,290 L 290,290 L 288,360 L 292,432 L 262,432 L 258,360 Z"/>
+      <path id="hoof-front-far" fill="var(--hoof,#fff)" d="M 260,428 L 294,428 L 294,458 L 260,458 Z"/>
+    </g>
+    <path id="tail" fill="var(--mane,#fff)" d="M 140,230 C 100,214 74,242 67,292 C 60,344 78,382 96,398 C 88,352 90,300 112,270 C 123,254 133,247 142,262 Z"/>
+    <ellipse id="body" fill="var(--body,#fff)" cx="230" cy="265" rx="105" ry="72"/>
+    <ellipse id="belly" fill="#ffffff" stroke="none" cx="238" cy="312" rx="66" ry="20"/>
+    <ellipse id="body-outline" fill="none" cx="230" cy="265" rx="105" ry="72"/>
+    <path id="neck" fill="var(--body,#fff)" d="M 263,214 C 284,160 324,124 366,102 L 396,150 C 361,176 331,216 321,264 Z"/>
+    <g id="legs-near">
+      <path id="leg-back-near"   fill="var(--body,#fff)" d="M 150,288 L 192,288 L 188,360 L 192,432 L 152,432 L 152,360 Z"/>
+      <path id="hoof-back-near"  fill="var(--hoof,#fff)" d="M 148,428 L 194,428 L 194,460 L 148,460 Z"/>
+      <path id="leg-front-near"  fill="var(--body,#fff)" d="M 290,285 L 332,285 L 328,360 L 332,432 L 294,432 L 292,360 Z"/>
+      <path id="hoof-front-near" fill="var(--hoof,#fff)" d="M 290,428 L 336,428 L 336,460 L 290,460 Z"/>
+    </g>
+    <path id="mane" fill="var(--mane,#fff)" d="M 258,212 C 282,155 322,120 364,99 L 382,120 C 341,142 301,182 279,232 Z"/>
+    <path id="ear"  fill="var(--body,#fff)" d="M 386,90 L 377,50 L 410,82 Z"/>
+    <path id="head" fill="var(--body,#fff)" d="M 355,152 C 344,110 366,84 401,85 L 431,100 C 456,111 478,126 478,146 C 478,166 460,177 440,173 L 400,166 C 375,163 361,161 355,152 Z"/>
+    <ellipse id="muzzle" fill="#ffffff" stroke="none" cx="452" cy="152" rx="24" ry="15"/>
+    <circle id="eye"     fill="#2b2118" stroke="none" cx="404" cy="122" r="8"/>
+    <circle id="nostril" fill="#2b2118" stroke="none" cx="462" cy="149" r="4.5"/>
+  </g>
+</svg>
