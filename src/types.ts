@@ -8,8 +8,9 @@ export type DecoSlot = 'head' | 'face' | 'back' | 'tail';
 export type ColorPart = {
   id: string;
   name: string;
-  value: string; // hex color applied to the matching CSS variable
+  value: string; // paint applied to the CSS variable — a hex, or url(#grad…) for gradients
   rarity: Rarity;
+  swatch?: string; // CSS-background equivalent for pickers (gradients can't use url() in CSS)
 };
 
 export type DecoPart = {

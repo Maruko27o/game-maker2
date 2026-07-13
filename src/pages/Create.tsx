@@ -93,7 +93,7 @@ export default function Create() {
                   className={`${styles.swatch} ${selected ? styles.selected : ''} ${
                     has ? '' : styles.lockedSwatch
                   }`}
-                  style={{ background: c.value }}
+                  style={{ background: c.swatch ?? c.value }}
                   disabled={!has}
                   onClick={() => setColors((p) => ({ ...p, [slot]: c.id }))}
                   aria-label={c.name}
