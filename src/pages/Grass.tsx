@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore, type SpawnedPart } from '../store';
 import { ENERGY_CAP, normalizeEnergy, msUntilNextEnergy } from '../logic/energy';
-import { colorsBySlot, decosBySlot, partName, partRarity, isColorId } from '../data/parts';
+import { colorSlotById, decoById, partName, partRarity, isColorId } from '../data/parts';
 import type { HorseLook, DecoSlot } from '../types';
 import HorseView from '../components/HorseView';
 import PartThumb from '../components/PartThumb';
@@ -10,25 +10,19 @@ import styles from './Grass.module.css';
 
 type Phase = 'ready' | 'searching' | 'reveal';
 
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-// A cosmetic "wild" horse that appears from the grass, wearing the decorations
-// it just dropped so the reveal feels connected to the reward.
+// Build the appearing horse FROM the drawn parts (RACE_V2 §11.1): a drawn color
+// paints its slot, a drawn decoration is equipped, and un-drawn slots stay base.
+// So the horse that runs up is exactly what the reward cards show.
 function makeWildHorse(parts: SpawnedPart[]): HorseLook {
   const decos: Partial<Record<DecoSlot, string>> = {};
-  const colors: HorseLook["colors"] = {
-    body: pick(colorsBySlot.body).id,
-    mane: pick(colorsBySlot.mane).id,
-    hoof: pick(colorsBySlot.hoof).id,
-  };
+  const colors: HorseLook['colors'] = { body: '', mane: '', hoof: '' };
   for (const p of parts) {
-    if (isColorId(p.id)) continue;
-    const slot = (Object.keys(decosBySlot) as DecoSlot[]).find((s) =>
-      decosBySlot[s].some((d) => d.id === p.id),
-    );
-    if (slot && !decos[slot]) decos[slot] = p.id;
+    if (isColorId(p.id)) {
+      colors[colorSlotById[p.id]] = p.id;
+    } else {
+      const slot = decoById[p.id]?.slot;
+      if (slot && !decos[slot]) decos[slot] = p.id;
+    }
   }
   return { name: '', colors, decos };
 }
