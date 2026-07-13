@@ -1,0 +1,133 @@
+/* Hand-drawn / thick-outline / earthy-leather theme (CLAUDE.md §8). */
+:root {
+  --paper: #e9d6ac;
+  --panel: #d8b784;
+  --panel-2: #c8a06a;
+  --panel-inner: #f3e6c8;
+  --border: #8c6a41;
+  --border-dark: #5c4326;
+  --ink: #3a2c1c;
+  --ink-soft: #7a5c3a;
+  --grass: #a9d46a;
+  --grass-dark: #7bb04a;
+  --blue: #3f7fd6;
+  --blue-dark: #2b5ea3;
+  --red: #d64b45;
+  --red-dark: #a5322d;
+  --gold: #e0a92e;
+
+  --rarity-n: #8a7a5c;
+  --rarity-r: #3f7fd6;
+  --rarity-sr: #e0a92e;
+
+  --radius: 16px;
+  --nav-h: 62px;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--panel-2);
+  color: var(--ink);
+  font-family: 'Hiragino Maru Gothic ProN', 'Hiragino Maru Gothic Pro', 'BIZ UDPGothic',
+    'Yu Gothic', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100%;
+}
+
+button {
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+/* Shared button styles ---------------------------------------------------- */
+.btn {
+  border: 3px solid var(--border-dark);
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-size: 16px;
+  color: #fff;
+  background: var(--blue);
+  box-shadow: 0 4px 0 var(--blue-dark);
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+}
+.btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--blue-dark);
+}
+.btn.secondary {
+  background: var(--red);
+  box-shadow: 0 4px 0 var(--red-dark);
+}
+.btn.secondary:active {
+  box-shadow: 0 1px 0 var(--red-dark);
+}
+.btn.neutral {
+  background: var(--panel-inner);
+  color: var(--ink);
+  box-shadow: 0 4px 0 var(--border);
+}
+.btn.neutral:active {
+  box-shadow: 0 1px 0 var(--border);
+}
+.btn:disabled {
+  filter: grayscale(0.7) brightness(0.9);
+  opacity: 0.6;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  cursor: not-allowed;
+}
+
+/* Rarity chip ------------------------------------------------------------- */
+.rarity {
+  display: inline-block;
+  min-width: 26px;
+  text-align: center;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+}
+.rarity-N {
+  background: var(--rarity-n);
+}
+.rarity-R {
+  background: var(--rarity-r);
+}
+.rarity-SR {
+  background: var(--rarity-sr);
+  color: #4a3410;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
