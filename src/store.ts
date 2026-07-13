@@ -47,6 +47,7 @@ function freshSave(): SaveData {
     trophies: [],
     items: [],
     raceRecords: [],
+    savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
 }
 
@@ -75,6 +76,7 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
         trophies: Array.isArray(d.trophies) ? (d.trophies as Trophy[]) : [],
         items: Array.isArray(d.items) ? (d.items as TrainingItem[]) : [],
         raceRecords: Array.isArray(d.raceRecords) ? (d.raceRecords as RaceRecord[]) : [],
+        savedAt: typeof d.savedAt === 'number' ? d.savedAt : 0,
       },
       migrated: false,
     };
@@ -98,6 +100,7 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
       trophies: [],
       items: [],
       raceRecords: [],
+      savedAt: typeof d.savedAt === 'number' ? d.savedAt : 0,
     },
     migrated: true,
   };
@@ -132,6 +135,8 @@ export type SpawnResult = { parts: SpawnedPart[]; energyLeft: number } | null;
 type Store = SaveData & {
   migrated: boolean; // true once, right after a save upgrade (for a one-time notice)
   clearMigrated: () => void;
+  /** Replace the entire save (used when loading a cloud save on login). */
+  hydrate: (data: SaveData) => void;
   doSpawn: (rng?: () => number) => SpawnResult;
   addHorse: (h: Omit<Horse, 'id' | 'createdAt' | 'stats'>) => Horse | null;
   updateHorse: (id: string, patch: Partial<Pick<Horse, 'name' | 'colors' | 'decos'>>) => void;
@@ -150,7 +155,8 @@ export const useStore = create<Store>((set, get) => {
   if (migrated) persist(initial); // save the upgraded shape immediately
 
   const commit = (partial: Partial<SaveData>) => {
-    const next = { ...get(), ...partial } as Store;
+    const savedAt = Date.now();
+    const next = { ...get(), ...partial, savedAt } as Store;
     const data: SaveData = {
       version: 3,
       owned: next.owned,
@@ -160,15 +166,21 @@ export const useStore = create<Store>((set, get) => {
       trophies: next.trophies,
       items: next.items,
       raceRecords: next.raceRecords,
+      savedAt,
     };
     persist(data);
-    set(partial as Partial<Store>);
+    set({ ...(partial as Partial<Store>), savedAt });
   };
 
   return {
     ...initial,
     migrated,
     clearMigrated: () => set({ migrated: false }),
+
+    hydrate: (data) => {
+      persist(data); // keep cloud's savedAt as-is (do not bump)
+      set({ ...data, migrated: false });
+    },
 
     doSpawn: (rng = Math.random) => {
       const now = Date.now();
