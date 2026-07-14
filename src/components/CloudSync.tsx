@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useStore } from '../store';
 import type { SaveData } from '../types';
-import { initAuth, useAuth, cloudLoad, cloudSave, getOwner, setOwner } from '../cloud';
+import { initAuth, useAuth, cloudLoad, cloudSave, getOwner, setOwner, loadPlayerNo } from '../cloud';
 import { reconcile } from '../logic/cloudReconcile';
 
 // Extract the persisted shape from the live store state.
@@ -32,11 +32,14 @@ export default function CloudSync() {
     if (configured) initAuth();
   }, [configured]);
 
-  // On sign-in: reconcile local vs cloud.
+  // On sign-in: reconcile local vs cloud, and fetch the player number.
   useEffect(() => {
-    if (!user) return;
+    const { setSync, setPlayerNo } = useAuth.getState();
+    if (!user) {
+      setPlayerNo(null);
+      return;
+    }
     let cancelled = false;
-    const { setSync } = useAuth.getState();
     setSync('syncing');
     (async () => {
       const cloud = await cloudLoad(user.id);
@@ -54,6 +57,8 @@ export default function CloudSync() {
         setOwner(user.id);
         if (!cancelled) setSync(err ? 'error' : 'saved');
       }
+      const no = await loadPlayerNo();
+      if (!cancelled) setPlayerNo(no);
     })();
     return () => {
       cancelled = true;

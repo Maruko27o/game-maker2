@@ -108,6 +108,17 @@
   font-weight: 800;
   color: var(--ink);
 }
+.playerId {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.playerId strong {
+  color: var(--blue-dark);
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
 .syncLine {
   margin: 0;
   font-weight: 700;

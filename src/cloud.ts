@@ -42,9 +42,11 @@ type AuthStore = {
   configured: boolean;
   ready: boolean; // initial session check finished
   user: AuthUser | null;
+  playerNo: number | null; // sequential public player number (RACE_V3 accounts)
   sync: SyncState;
   error: string | null;
   setUser: (u: AuthUser | null) => void;
+  setPlayerNo: (n: number | null) => void;
   setSync: (s: SyncState) => void;
   setError: (e: string | null) => void;
   setReady: (r: boolean) => void;
@@ -54,13 +56,30 @@ export const useAuth = create<AuthStore>((set) => ({
   configured: CLOUD_ENABLED,
   ready: !CLOUD_ENABLED, // when unconfigured there is nothing to wait for
   user: null,
+  playerNo: null,
   sync: CLOUD_ENABLED ? 'idle' : 'offline',
   error: null,
   setUser: (user) => set({ user }),
+  setPlayerNo: (playerNo) => set({ playerNo }),
   setSync: (sync) => set({ sync }),
   setError: (error) => set({ error }),
   setReady: (ready) => set({ ready }),
 }));
+
+/** The player's public number (id0000123). Creates it on first call. Returns
+ *  null when cloud is off or the DB isn't set up yet (UI degrades gracefully). */
+export async function loadPlayerNo(): Promise<number | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('get_or_create_profile');
+  if (error || data == null) return null;
+  const n = typeof data === 'number' ? data : Number(data);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Format a player number as a zero-padded id (e.g. 123 → "id0000123"). */
+export function formatPlayerId(n: number): string {
+  return 'id' + String(n).padStart(7, '0');
+}
 
 function toUser(u: { id: string; email?: string | null } | null | undefined): AuthUser | null {
   return u ? { id: u.id, email: u.email ?? '' } : null;
