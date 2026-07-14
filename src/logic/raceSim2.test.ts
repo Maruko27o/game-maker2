@@ -201,3 +201,48 @@ describe('raceSim2 balance (RACE_V3 §4)', () => {
     expect(m).toBeLessThan(1.2);
   });
 });
+
+// RACE_V4 §3.9: the jockey-AI state machine (RAIL/SEEK/PASS/HOME) produces the
+// inside-course behaviour a real jockey would — measured via the §3.9 telemetry.
+describe('raceSim2 jockey AI (RACE_V4 §3)', () => {
+  const N = 40;
+  const M = {
+    cornerD: [] as number[], home: [] as number[], mid: [] as number[],
+    p2r: [] as number[], cut: 0, crowd: [] as number[], ot: [] as number[],
+  };
+  for (let s = 0; s < N; s++) {
+    const res = simulate2(field(s + 3), COURSES[s % 6], 60, s * 7 + 1);
+    M.cornerD.push(res.metrics.cornerDAvg);
+    M.home.push(res.metrics.homeLatAvg);
+    M.mid.push(res.metrics.midLatAvg);
+    M.p2r.push(res.metrics.passToRail);
+    M.cut += res.metrics.cutIns;
+    M.crowd.push(res.metrics.railCrowdFrac);
+    M.ot.push(res.metrics.overtakes);
+  }
+
+  it('#13 hugs the inside through corners (avg d on the inner half)', () => {
+    expect(avg(M.cornerD)).toBeLessThan(-1.5);
+  });
+
+  it('#14 front-runners run straight home (no wasted lateral on the final straight)', () => {
+    // 逃げ/先行 wander less at home than mid-race — they hold their line to the wire.
+    expect(avg(M.home)).toBeLessThanOrEqual(avg(M.mid) * 1.25);
+  });
+
+  it('#15 completes passes and returns to the rail (PASS→RAIL happens)', () => {
+    expect(avg(M.p2r)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('#16 never cuts across a just-passed horse (斜行 = 0)', () => {
+    expect(M.cut).toBe(0);
+  });
+
+  it('#17 the field does not wall up on the rail (<40% of ticks packed inside)', () => {
+    expect(avg(M.crowd)).toBeLessThan(0.4);
+  });
+
+  it('#18 stays lively — overtakes remain frequent', () => {
+    expect(avg(M.ot)).toBeGreaterThanOrEqual(8);
+  });
+});

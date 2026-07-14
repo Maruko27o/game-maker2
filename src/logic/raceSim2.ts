@@ -6,7 +6,7 @@ import { STAT_KEYS } from '../types';
 import type { Course } from '../data/courses';
 import { lapLength } from './track';
 import { mulberry32 } from './stats';
-import { paceAt, STYLE_BIAS } from './runStyle';
+import { paceAt } from './runStyle';
 
 export type RunnerState =
   | 'gate'
@@ -51,6 +51,14 @@ export type SimResult = {
     maxBlocked: number;
     minPairDist: number;
     leadGap: number; // 1st-to-2nd finish time gap
+    // Jockey-AI (RACE_V4 §3.9)
+    cornerDAvg: number;
+    straightDAvg: number;
+    homeLatAvg: number;
+    midLatAvg: number;
+    passToRail: number;
+    cutIns: number;
+    railCrowdFrac: number;
   };
 };
 
@@ -99,6 +107,13 @@ type R = {
   stallSince: number; // -1 when moving; tracks true deadlock time
   forceOutUntil: number;
   forceOutDir: number; // -1 inner / +1 outer — toward the side with room
+  // Jockey AI state machine (RACE_V4 §3): RAIL keeps the rail, SEEK looks for a
+  // gap, PASS drives through it, HOME runs straight home on the final straight.
+  aim: 'RAIL' | 'SEEK' | 'PASS' | 'HOME';
+  seekSince: number; // t when SEEK began (-1 otherwise)
+  passRef: R | null; // runner we committed to pass
+  passDTarget: number; // lateral target chosen for the pass
+  passedRef: R | null; // runner we just cleared — no cutting inside it yet (§3.7)
   lateUntil: number; // gate: stays put until this time
   nextObs: number;
   nextBoost: number;
@@ -165,12 +180,12 @@ export function simulate2(
       gate,
       vMax0: 9 + ef.spd * 0.6,
       accel0: 1.8 + ef.pwr * 0.26,
-      spMax: 48 + ef.sta * 12,
+      spMax: 44 + ef.sta * 13,
       s: 0,
       d: startD,
       v: 0,
       vd: 0,
-      sp: 60 + ef.sta * 10,
+      sp: 44 + ef.sta * 13, // start with a full tank (== spMax)
       state: 'gate',
       boostUntil: 0,
       jumpUntil: 0,
@@ -179,6 +194,11 @@ export function simulate2(
       stallSince: -1,
       forceOutUntil: 0,
       forceOutDir: 1,
+      aim: 'RAIL',
+      seekSince: -1,
+      passRef: null,
+      passDTarget: 0,
+      passedRef: null,
       lateUntil: late,
       nextObs: 0,
       nextBoost: 0,
@@ -196,6 +216,12 @@ export function simulate2(
   let t = 0;
   let finishedCount = 0;
   const MAX_TICKS = 12000;
+  // Jockey-AI metrics (RACE_V4 §3.9).
+  let cornerDSum = 0, cornerDN = 0, straightDSum = 0, straightDN = 0; // #13
+  let homeLatSum = 0, homeLatN = 0, midLatSum = 0, midLatN = 0; // #14
+  let passToRail = 0; // #15
+  let cutIns = 0; // #16 (should stay 0)
+  let railCrowdTicks = 0, crowdTicks = 0; // #17
 
   for (let tick = 0; tick < MAX_TICKS && finishedCount < N; tick++) {
     t = tick * DT;
@@ -211,6 +237,8 @@ export function simulate2(
       }
       const ef = r.eff;
       const progress = r.s / D;
+      const aimBefore = r.aim;
+      const dBefore = r.d;
       const c = centerCurv(track, r.s);
       const onCorner = c > 0;
 
@@ -220,8 +248,12 @@ export function simulate2(
       let vMax = (13.0 + ef.spd * 0.33) * paceAt(r.e.style, progress);
       vMax *= 1 - Math.max(0, course.drag - ef.pwr * 0.015);
       if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.03);
+      // Graduated fatigue: as the tank runs low the top speed sags, so stamina
+      // bites *continuously* (a small tank fades late on any course) rather than
+      // only at empty. Big-tank builds (high sta) and closers hold their speed.
       const tired = r.sp <= 0;
-      if (tired) vMax *= 0.5; // running on empty is punishing — stamina matters
+      const spFrac = Math.max(0, r.sp / r.spMax);
+      if (spFrac < 0.35) vMax *= 0.55 + (spFrac / 0.35) * 0.45; // 0.55x empty → 1.0x at 35%
       if (progress >= 0.7) vMax *= 1 + ef.gut * 0.025; // gut = a strong late kick
       const boosting = t < r.boostUntil;
       if (boosting) vMax *= 1.25;
@@ -249,7 +281,7 @@ export function simulate2(
       const sandMul = course.surface === 'sand' ? 1.15 : 1;
       const drain = DT * Math.pow(r.v / 13, 2.2) * 4.0 * (1 - ef.wit * 0.012) * sandMul;
       r.sp = Math.max(0, r.sp - drain);
-      if (r.sp <= 0 && rng() < ef.gut * 0.0035) r.sp = r.spMax * 0.15;
+      if (r.sp <= 0 && rng() < ef.gut * 0.0045) r.sp = r.spMax * 0.15;
 
       // acceleration
       let accel = r.accel0;
@@ -265,37 +297,91 @@ export function simulate2(
 
       r.v = Math.min(vMax, r.v + accel * DT);
 
-      // --- steering (lateral) ---
+      // --- steering (lateral): jockey AI state machine (RACE_V4 §3) ---
       const jumping = isAir(r, t);
       if (!jumping) {
-        let lateral = 0;
-        const biasD = STYLE_BIAS[r.e.style] * dLimit;
-        lateral += (biasD - r.d) * 0.8; // style bias
-        lateral += -0.3; // inner desire (mild, so the field doesn't wall up)
-        if (onCorner) lateral += c * r.v * r.v * 0.02; // centrifugal push outward
-        // rail avoidance
-        if (r.d > dLimit - 1.5) lateral -= (r.d - (dLimit - 1.5)) * 3.0;
-        if (r.d < -dLimit + 1.5) lateral += (-dLimit + 1.5 - r.d) * 3.0;
-        // front avoidance + neighbours
-        const avoidW = blocked ? 5.0 : 2.5;
-        lateral += steerAvoid(runners, r, avoidW);
-        // deadlock escape — commit hard toward the side that has room
-        if (t < r.forceOutUntil) lateral += r.forceOutDir * 4.0;
+        const rr = HIT_R;
+        const dInner = -dLimit;
+        // HOME: the final straight — curvature 0 and within one straight of home.
+        const inHome = c === 0 && D - r.s < track.straight;
+        const jam = frontJam(runners, r, vMax);
+
+        // transitions
+        if (inHome) {
+          r.aim = 'HOME';
+        } else if (r.aim === 'HOME') {
+          r.aim = 'RAIL'; // left the straight (multi-lap) — back to keeping the rail
+        } else if (r.aim === 'RAIL') {
+          if (jam) { r.aim = 'SEEK'; r.seekSince = t; }
+        } else if (r.aim === 'SEEK') {
+          if (!jam) { r.aim = 'RAIL'; r.seekSince = -1; }
+          else {
+            const gap = chooseGap(runners, r, jam, c, vMax, dLimit);
+            if (gap != null) { r.aim = 'PASS'; r.passRef = jam; r.passDTarget = gap; }
+            else if (t - r.seekSince > 2.5) { // waited too long — force outside (§3.5)
+              r.aim = 'PASS'; r.passRef = jam; r.passDTarget = Math.min(dLimit, r.d + 3 * rr);
+            }
+          }
+        } else if (r.aim === 'PASS') {
+          const tgt = r.passRef;
+          if (!tgt || tgt.finished || r.s - tgt.s > 2 * rr) {
+            r.passedRef = tgt && !tgt.finished && r.s - tgt.s < 3 * rr ? tgt : null; // §3.7 lock
+            r.aim = 'RAIL'; r.passRef = null; r.seekSince = -1;
+          } else if (!frontJam(runners, r, vMax)) {
+            r.aim = 'RAIL'; r.passRef = null; r.seekSince = -1;
+          }
+        }
+        // clear the no-cut-inside lock once we're 3r clear of the passed horse
+        if (r.passedRef && (r.passedRef.finished || r.s - r.passedRef.s > 3 * rr)) r.passedRef = null;
+
+        // dTarget by state
+        let dTarget = r.d;
+        let vdScale = 1;
+        let weaveCost = 0.05;
+        if (r.aim === 'HOME') {
+          dTarget = homeTarget(runners, r, dLimit);
+          weaveCost = 0.035;
+        } else if (r.aim === 'PASS') {
+          dTarget = r.passDTarget;
+          weaveCost = 0.025; // §3.6: accelerating through — half the weave penalty
+        } else if (r.aim === 'RAIL') {
+          dTarget = railTarget(r, dInner, rr, progress, dLimit);
+          vdScale = 0.6; // ease onto the rail, don't cut across (§3.4)
+          if (innerOccupied(runners, r, rr)) dTarget = r.d; // don't shove a rail neighbour
+          if (r.passedRef) dTarget = Math.max(dTarget, r.d); // no cutting inside yet (§3.7)
+        }
+        // low-level deadlock escape overrides everything (§4.5, keeps the pack moving)
+        if (t < r.forceOutUntil) { dTarget = r.d + r.forceOutDir * 3 * rr; vdScale = 1; }
+
+        // physics: centrifugal drift out on corners + soft rail cushions
+        let extra = 0;
+        if (onCorner) extra += c * r.v * r.v * 0.02;
+        if (r.d > dLimit - 1.5) extra -= (r.d - (dLimit - 1.5)) * 3.0;
+        if (r.d < -dLimit + 1.5) extra += (-dLimit + 1.5 - r.d) * 3.0;
 
         const vdMax = VD_MAX_BASE + ef.wit * 0.12;
-        const target = Math.max(-vdMax, Math.min(vdMax, lateral));
-        r.vd += (target - r.vd) * 0.35;
+        let desired = (dTarget - r.d) * 2.2 + extra;
+        desired = Math.max(-vdMax * vdScale, Math.min(vdMax * vdScale, desired));
+        if (r.passedRef && desired < 0) desired = 0; // never cut inside a just-passed horse
+        r.vd += (desired - r.vd) * 0.35;
+        if (r.passedRef && r.vd < 0) r.vd = 0; // kill inward momentum too (§3.7, no 斜行)
         r.d += r.vd * DT;
         // Weaving lowers the speed CEILING for this tick (no compounding decay).
-        r.v = Math.min(r.v, vMax * (1 - Math.min(0.15, Math.abs(r.vd) * 0.05)));
-        if (r.d > dLimit) {
-          r.d = dLimit;
-          if (r.vd > 0) r.vd = 0;
+        r.v = Math.min(r.v, vMax * (1 - Math.min(0.15, Math.abs(r.vd) * weaveCost)));
+        if (r.d > dLimit) { r.d = dLimit; if (r.vd > 0) r.vd = 0; }
+        if (r.d < -dLimit) { r.d = -dLimit; if (r.vd < 0) r.vd = 0; }
+
+        // --- jockey-AI metrics (§3.9) ---
+        if (onCorner) { cornerDSum += r.d; cornerDN++; } else { straightDSum += r.d; straightDN++; }
+        const moved = Math.abs(r.d - dBefore);
+        // #14: front-runners (逃げ/先行) hold their line home — their deliberate
+        // job is to run straight. Closers weave for the 大外 charge, so they're
+        // excluded here (that movement is purposeful, not wasted).
+        if (r.e.style === 'nige' || r.e.style === 'senko') {
+          if (r.aim === 'HOME') { homeLatSum += moved; homeLatN++; } else { midLatSum += moved; midLatN++; }
         }
-        if (r.d < -dLimit) {
-          r.d = -dLimit;
-          if (r.vd < 0) r.vd = 0;
-        }
+        if (aimBefore === 'PASS' && r.aim === 'RAIL') passToRail++;
+        if (r.passedRef && r.d < dBefore - 0.01) cutIns++; // must stay 0 (no 斜行)
       }
 
       // slow zones
@@ -379,6 +465,13 @@ export function simulate2(
     for (let pass = 0; pass < 2; pass++) resolveCollisions(runners, t, HIT_R, dLimit);
     enforceFollowing(runners, t, HIT_R);
 
+    // #17: fraction of ticks where the whole field is packed on the rail.
+    const active = runners.filter((r) => !r.finished && t >= r.lateUntil);
+    if (active.length >= 2) {
+      crowdTicks++;
+      if (active.every((r) => r.d < -dLimit + 2 * HIT_R)) railCrowdTicks++;
+    }
+
     // ranks
     const order = runners
       .map((_, i) => i)
@@ -449,6 +542,13 @@ export function simulate2(
       maxBlocked,
       minPairDist,
       leadGap: second - first,
+      cornerDAvg: cornerDN ? cornerDSum / cornerDN : 0,
+      straightDAvg: straightDN ? straightDSum / straightDN : 0,
+      homeLatAvg: homeLatN ? homeLatSum / homeLatN : 0,
+      midLatAvg: midLatN ? midLatSum / midLatN : 0,
+      passToRail,
+      cutIns,
+      railCrowdFrac: crowdTicks ? railCrowdTicks / crowdTicks : 0,
     },
   };
 }
@@ -514,23 +614,88 @@ function drafting(runners: R[], r: R): boolean {
   return false;
 }
 
-function steerAvoid(runners: R[], r: R, avoidW: number): number {
-  let lat = 0;
+// The slower horse just ahead that we're catching and can't get around (§3.5).
+function frontJam(runners: R[], r: R, vMax: number): R | null {
+  let best: R | null = null;
+  let bestGap = Infinity;
   for (const o of runners) {
     if (o === r || o.finished) continue;
     const ds = o.s - r.s;
-    const dd = o.d - r.d;
-    // front avoidance
-    if (ds > 0 && ds < r.v * 0.6 + HIT_R && Math.abs(dd) < HIT_R * 1.8) {
-      const openSide = r.d >= o.d ? 1 : -1; // steer to the side we're already leaning
-      lat += openSide * avoidW;
-    }
-    // neighbour repulsion
-    if (Math.abs(ds) < HIT_R * 2 && Math.abs(dd) < HIT_R * 2) {
-      lat += (dd >= 0 ? -1 : 1) * 1.5 * (1 - Math.abs(dd) / (HIT_R * 2));
-    }
+    if (ds <= 0 || ds > r.v * 0.8 + 2 * HIT_R) continue;
+    if (Math.abs(o.d - r.d) > 1.6 * HIT_R) continue;
+    if (o.v >= vMax * 0.98) continue; // not actually slower — no need to pass
+    if (ds < bestGap) { bestGap = ds; best = o; }
   }
-  return lat;
+  return best;
+}
+
+// A horse hugging our inside that we'd shove if we dived for the rail (§3.4).
+function innerOccupied(runners: R[], r: R, rr: number): boolean {
+  for (const o of runners) {
+    if (o === r || o.finished) continue;
+    if (o.d < r.d && Math.abs(o.d - r.d) < 2 * rr && Math.abs(o.s - r.s) < 1.5 * rr) return true;
+  }
+  return false;
+}
+
+// Score the inner vs outer gap around a jam and return the chosen lateral target,
+// or null to wait ("包まれる"). Outer costs distance on corners; inner risks the
+// rail. Smarter (wit) horses judge the risk more truly (§3.5).
+function chooseGap(runners: R[], r: R, jam: R, c: number, vMax: number, dLimit: number): number | null {
+  const rr = HIT_R;
+  const need = 2.4 * rr;
+  const gain = Math.max(0, vMax - jam.v) * 1.4; // ~ speed we'd unlock by getting by
+  const evalSide = (dir: -1 | 1): { d: number; score: number } | null => {
+    const dTarget = jam.d + dir * need;
+    if (dTarget < -dLimit || dTarget > dLimit) return null;
+    let occ = 0;
+    for (const o of runners) {
+      if (o === r || o === jam || o.finished) continue;
+      if (Math.abs(o.s - r.s) > 5) continue;
+      const inGap = dir === -1 ? o.d < jam.d && o.d > dTarget - rr : o.d > jam.d && o.d < dTarget + rr;
+      if (inGap) occ++;
+    }
+    const move = Math.abs(dTarget - r.d);
+    const costDistance = dir === 1 ? move * c * 6 : 0; // outer on a corner is dear; inner is free
+    const width = dir === -1 ? jam.d + dLimit : dLimit - jam.d;
+    let costRisk = occ * 0.6 + (dir === -1 ? 0.8 : 0) + (width < 3 * rr ? 1.0 : 0);
+    costRisk *= 1 - Math.min(0.5, r.eff.wit * 0.03); // wit sees the risk truer
+    return { d: dTarget, score: gain - costDistance - costRisk };
+  };
+  const cands = [evalSide(-1), evalSide(1)].filter((x): x is { d: number; score: number } => x != null);
+  cands.sort((a, b) => b.score - a.score);
+  if (cands.length === 0 || cands[0].score <= 0) return null;
+  return cands[0].d;
+}
+
+// RAIL target — style dispersion so the field doesn't wall up on the rail (#17).
+function railTarget(r: R, dInner: number, rr: number, progress: number, dLimit: number): number {
+  const style = r.e.style;
+  if (style === 'nige' || style === 'senko') return dInner + 1.2 * rr;
+  const early = progress < 0.55; // closers wait off the rail, then drift in
+  if (style === 'sashi') return early ? 0 : dInner + 1.6 * rr;
+  return early ? dLimit * 0.35 : dInner + 2.0 * rr; // oikomi
+}
+
+// HOME target — the final straight (§3.8). Front-runners hold their line and only
+// dodge a horse dead ahead the shortest way; closers (差し/追込) swing to clean air
+// on the outside for a 大外強襲 — on the straight (curvature 0) lateral position is
+// distance-free, so the wide charge costs nothing and buys a clear run.
+function homeTarget(runners: R[], r: R, dLimit: number): number {
+  const rr = HIT_R;
+  const closer = r.e.style === 'oikomi' || r.e.style === 'sashi';
+  let blockedAhead = false;
+  for (const o of runners) {
+    if (o === r || o.finished) continue;
+    const ds = o.s - r.s;
+    if (ds > 0 && ds < r.v * 0.7 + 2 * rr && Math.abs(o.d - r.d) < 1.5 * rr) { blockedAhead = true; break; }
+  }
+  if (!blockedAhead) return closer ? Math.max(r.d, dLimit * 0.4) : r.d; // ease out for a run
+  if (closer) return dLimit * (r.e.style === 'oikomi' ? 0.8 : 0.6); // 大外強襲
+  // front-runner/先行: dodge the shortest way.
+  const innerRoom = r.d + dLimit;
+  const outerRoom = dLimit - r.d;
+  return r.d + (outerRoom >= innerRoom ? 1 : -1) * 2 * rr;
 }
 
 function resolveCollisions(runners: R[], t: number, r: number, dLimit: number): void {
