@@ -121,7 +121,7 @@ export default function Grass() {
         </div>
 
         {phase === 'reveal' && wild ? (
-          <div className={styles.wild}>
+          <div className={`${styles.wild} ${reduced ? '' : styles.runIn}`}>
             <HorseView horse={wild} size={200} shadow />
           </div>
         ) : (

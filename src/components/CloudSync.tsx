@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useStore } from '../store';
 import type { SaveData } from '../types';
-import { initAuth, useAuth, cloudLoad, cloudSave } from '../cloud';
+import { initAuth, useAuth, cloudLoad, cloudSave, getOwner, setOwner, loadPlayerNo } from '../cloud';
+import { reconcile } from '../logic/cloudReconcile';
 
 // Extract the persisted shape from the live store state.
 function snapshot(): SaveData {
@@ -31,26 +32,33 @@ export default function CloudSync() {
     if (configured) initAuth();
   }, [configured]);
 
-  // On sign-in: reconcile local vs cloud.
+  // On sign-in: reconcile local vs cloud, and fetch the player number.
   useEffect(() => {
-    if (!user) return;
+    const { setSync, setPlayerNo } = useAuth.getState();
+    if (!user) {
+      setPlayerNo(null);
+      return;
+    }
     let cancelled = false;
-    const { setSync } = useAuth.getState();
     setSync('syncing');
     (async () => {
       const cloud = await cloudLoad(user.id);
       if (cancelled) return;
       const local = snapshot();
-      if (!cloud) {
-        const err = await cloudSave(user.id, local); // first login on this account
-        if (!cancelled) setSync(err ? 'error' : 'saved');
-      } else if ((cloud.savedAt ?? 0) >= (local.savedAt ?? 0)) {
+      // Ownership-based reconcile: cloud data is never overwritten by a local
+      // save that doesn't belong to this account (fixes the overwrite bug).
+      const decision = reconcile(cloud, local, getOwner(), user.id);
+      if (decision.action === 'loadCloud' && cloud) {
         useStore.getState().hydrate(cloud);
+        setOwner(user.id);
         if (!cancelled) setSync('saved');
       } else {
-        const err = await cloudSave(user.id, local); // local is newer
+        const err = await cloudSave(user.id, local); // pushLocal / keepLocalPushCloud
+        setOwner(user.id);
         if (!cancelled) setSync(err ? 'error' : 'saved');
       }
+      const no = await loadPlayerNo();
+      if (!cancelled) setPlayerNo(no);
     })();
     return () => {
       cancelled = true;

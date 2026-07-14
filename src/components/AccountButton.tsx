@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth, signIn, signUp, signOut } from '../cloud';
+import { useAuth, signIn, signUp, signOut, formatPlayerId } from '../cloud';
 import styles from './AccountButton.module.css';
 
 const SYNC_LABEL: Record<string, string> = {
@@ -14,6 +14,7 @@ export default function AccountButton() {
   const configured = useAuth((s) => s.configured);
   const ready = useAuth((s) => s.ready);
   const user = useAuth((s) => s.user);
+  const playerNo = useAuth((s) => s.playerNo);
   const sync = useAuth((s) => s.sync);
 
   const [open, setOpen] = useState(false);
@@ -65,6 +66,11 @@ export default function AccountButton() {
             ) : signedIn ? (
               <div className={styles.signedIn}>
                 <p className={styles.email}>📧 {user!.email}</p>
+                {playerNo != null && (
+                  <p className={styles.playerId}>
+                    プレイヤーID: <strong>{formatPlayerId(playerNo)}</strong>
+                  </p>
+                )}
                 <p className={styles.syncLine}>状態: {SYNC_LABEL[sync] || '—'}</p>
                 <p className={styles.note}>ログインしたどの端末でもデータが同期されます。</p>
                 <button
@@ -115,7 +121,9 @@ export default function AccountButton() {
                   {busy ? '…' : mode === 'login' ? 'ログイン' : '登録する'}
                 </button>
                 <p className={styles.note}>
-                  登録すると、いまこの端末にあるデータがそのままアカウントに保存されます。
+                  {mode === 'signup'
+                    ? '登録すると、いまこの端末にあるデータがそのままアカウントに保存されます。'
+                    : 'ログインすると、アカウントに保存されたデータが読み込まれます（この端末のデータで上書きされません）。'}
                 </p>
               </div>
             )}
