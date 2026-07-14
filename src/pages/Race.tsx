@@ -7,14 +7,34 @@ import { mulberry32, statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { makeCpu } from '../logic/cpu';
 import { colorById } from '../data/parts';
-import { makeTrophy, itemDropCount, rollItems } from '../logic/raceReward';
-import type { Horse, HorseLook, Trophy, TrainingItem, Stats } from '../types';
-import { STAT_LABEL, RUN_STYLE_LABEL, STAT_KEYS } from '../types';
+import { BADGES } from '../data/badges';
+import type { Horse, HorseLook, Badge, Stats } from '../types';
+import { RUN_STYLE_LABEL, STAT_KEYS } from '../types';
 import HorseView from '../components/HorseView';
+import BadgeIcon from '../components/BadgeIcon';
 import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
+
+// A short celebratory cut-in for achievement badges (ACCOUNT.md §2, 1.2s, skippable).
+function BadgeCutin({ badges, onDone }: { badges: Badge[]; onDone: () => void }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => (i + 1 < badges.length ? setI(i + 1) : onDone()), 1200);
+    return () => clearTimeout(t);
+  }, [i, badges.length, onDone]);
+  const b = badges[i];
+  return (
+    <div className={styles.cutin} onClick={onDone}>
+      <div className={styles.cutinCard}>
+        <BadgeIcon id={b.id} size={120} />
+        <div className={styles.cutinName}>{BADGES[b.id as keyof typeof BADGES]?.name}</div>
+        <div className={styles.cutinSub}>バッジ獲得！</div>
+      </div>
+    </div>
+  );
+}
 
 function aptitude(stats: Stats, c: Course): string {
   const base = STAT_KEYS.reduce((n, k) => n + stats[k], 0);
@@ -35,9 +55,6 @@ function rankColor(rank: number, total: number): { bg: string; bd: string; fg: s
   return { bg: `rgb(${v},${v},${v})`, bd: '#2b2118', fg: v > 140 ? '#2b2118' : '#fff' };
 }
 
-function itemLabel(it: TrainingItem): string {
-  return it.kind === 'any' ? 'すきなステータス +1' : `${STAT_LABEL[it.stat]} +1`;
-}
 
 type RaceSetup = {
   course: Course;
@@ -104,9 +121,7 @@ export default function Race() {
   const navigate = useNavigate();
   const reduced = usePrefersReducedMotion();
   const horses = useStore((s) => s.horses);
-  const addTrophies = useStore((s) => s.addTrophies);
-  const grantItems = useStore((s) => s.grantItems);
-  const recordRace = useStore((s) => s.recordRace);
+  const finishNormalRace = useStore((s) => s.finishNormalRace);
 
   const [screen, setScreen] = useState<'menu' | 'setup' | 'gp' | 'roulette' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
@@ -114,7 +129,8 @@ export default function Race() {
   const [mode, setMode] = useState<30 | 60>(30);
   const [setup, setSetup] = useState<RaceSetup | null>(null);
   const [result, setResult] = useState<SimResult | null>(null);
-  const [reward, setReward] = useState<{ trophy: Trophy | null; items: TrainingItem[]; rank: number } | null>(null);
+  const [reward, setReward] = useState<{ rank: number; awarded: Badge[] } | null>(null);
+  const [cutin, setCutin] = useState<Badge[]>([]); // achievement badges to celebrate
   const rewardApplied = useRef(false);
 
   const player = horses.find((h) => h.id === horseId) ?? null;
@@ -151,16 +167,21 @@ export default function Race() {
       return;
     }
     rewardApplied.current = true;
-    const rank = result.ranks[0];
-    const trophy = makeTrophy(setup.entrants[0].horseId, rank, setup.course.id, setup.mode, setup.grade);
-    let items: TrainingItem[] = [];
-    if (setup.grade === 'gp') {
-      items = rollItems(mulberry32((setup.seed ^ rank ^ 0x9e37) >>> 0), itemDropCount(rank, setup.mode));
-    }
-    if (trophy) addTrophies([trophy]);
-    if (items.length) grantItems(items);
-    recordRace(setup.course.id, setup.mode, rank, Math.min(...result.finishTimes));
-    setReward({ trophy, items, rank });
+    const rank = result.ranks[0]; // player is entrant 0
+    const flawless = !result.frames.some((f) => f.runners[0]?.state === 'stumble');
+    const awarded = finishNormalRace({
+      horseId: setup.entrants[0].horseId,
+      courseId: setup.course.id,
+      mode: setup.mode,
+      rank,
+      time: result.finishTimes[0],
+      isJumpCourse: setup.course.surface === 'steeple',
+      flawless,
+    });
+    setReward({ rank, awarded });
+    // Cut-in only for achievement badges (placing badges are everyday).
+    const achievements = awarded.filter((b) => !BADGES[b.id as keyof typeof BADGES]?.placing);
+    setCutin(achievements);
     setScreen('result');
   }
 
@@ -286,13 +307,14 @@ export default function Race() {
       <div className={styles.page}>
         <div className={styles.resultCard}>
           <h2 className={styles.resultTitle}>{playerRank === 1 ? '🏆 ゆうしょう！' : `${playerRank}位`}</h2>
-          {reward?.trophy && (
-            <p className={styles.rewardLine}>トロフィー獲得！（{reward.trophy.rank}位・{reward.trophy.grade === 'gp' ? 'GP' : '通常'}）</p>
-          )}
-          {reward && reward.items.length > 0 && (
-            <div className={styles.itemReward}>
-              <span className={styles.rewardLine}>育成アイテム × {reward.items.length}</span>
-              <ul className={styles.itemList}>{reward.items.map((it, i) => <li key={i}>🎁 {itemLabel(it)}</li>)}</ul>
+          {reward && reward.awarded.length > 0 && (
+            <div className={styles.badgeReward}>
+              {reward.awarded.map((b, i) => (
+                <div key={i} className={styles.badgeGot}>
+                  <BadgeIcon id={b.id} size={40} />
+                  <span>{BADGES[b.id as keyof typeof BADGES]?.name}</span>
+                </div>
+              ))}
             </div>
           )}
           <ol className={styles.ranking}>
@@ -315,6 +337,7 @@ export default function Race() {
           </div>
           <button className={styles.exitLink} onClick={() => setScreen('menu')}>モードせんたくへ</button>
         </div>
+        {cutin.length > 0 && <BadgeCutin badges={cutin} onDone={() => setCutin([])} />}
       </div>
     );
   }

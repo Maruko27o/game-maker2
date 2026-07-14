@@ -5,10 +5,12 @@ import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
-import type { Trophy, TrainingItem, StatKey } from '../types';
+import type { Trophy, Badge, TrainingItem, StatKey } from '../types';
+import { BADGES } from '../data/badges';
 import HorseView from '../components/HorseView';
 import StatRadar from '../components/StatRadar';
 import TrophyIcon from '../components/TrophyIcon';
+import BadgeIcon from '../components/BadgeIcon';
 import styles from './Stable.module.css';
 
 type View = 'detail' | 'train';
@@ -43,7 +45,7 @@ function TrophyRack({ trophies }: { trophies: Trophy[] }) {
   }, [trophies]);
 
   if (trophies.length === 0) {
-    return <div className={styles.rackEmpty}>まだトロフィーがありません</div>;
+    return <div className={styles.rackEmpty}>まだトロフィーがありません（グランプリ本戦で3位以内）</div>;
   }
   return (
     <div className={styles.rack}>
@@ -57,10 +59,40 @@ function TrophyRack({ trophies }: { trophies: Trophy[] }) {
   );
 }
 
+// Badges from everyday races: placing badges stack, achievements show once.
+// Placing first (by rank), then achievements (ACCOUNT.md §2).
+function BadgeRack({ badges }: { badges: Badge[] }) {
+  const groups = useMemo(() => {
+    const map = new Map<string, { id: string; count: number; at: number }>();
+    for (const b of badges) {
+      const g = map.get(b.id);
+      if (g) { g.count++; g.at = Math.min(g.at, b.at); }
+      else map.set(b.id, { id: b.id, count: 1, at: b.at });
+    }
+    const order = Object.keys(BADGES);
+    return [...map.values()].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  }, [badges]);
+
+  if (badges.length === 0) {
+    return <div className={styles.rackEmpty}>まだバッジがありません（ふだんのレースで入賞）</div>;
+  }
+  return (
+    <div className={styles.badgeRack}>
+      {groups.map((g) => (
+        <div key={g.id} className={styles.badgeRackItem} title={BADGES[g.id as keyof typeof BADGES]?.name}>
+          <BadgeIcon id={g.id} size={40} />
+          {g.count > 1 && <span className={styles.rackCount}>×{g.count}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Stable() {
   const navigate = useNavigate();
   const horses = useStore((s) => s.horses);
   const trophies = useStore((s) => s.trophies);
+  const badges = useStore((s) => s.badges);
   const items = useStore((s) => s.items);
   const renameHorse = useStore((s) => s.renameHorse);
   const removeHorse = useStore((s) => s.removeHorse);
@@ -165,6 +197,8 @@ export default function Stable() {
                 <div className={styles.rackWrap}>
                   <h3 className={styles.rackTitle}>トロフィー</h3>
                   <TrophyRack trophies={trophies.filter((t) => t.horseId === selected.id)} />
+                  <h3 className={`${styles.rackTitle} ${styles.badgeRackTitle}`}>バッジ</h3>
+                  <BadgeRack badges={badges.filter((b) => b.horseId === selected.id)} />
                 </div>
 
                 {confirmDelete ? (

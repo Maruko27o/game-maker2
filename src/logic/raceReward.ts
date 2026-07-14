@@ -3,6 +3,8 @@ import type { Trophy, TrainingItem, StatKey } from '../types';
 import { STAT_KEYS } from '../types';
 import type { RNG } from './stats';
 
+// Trophies are GRAND-PRIX only now (ACCOUNT.md §2). Everyday single races award
+// badges instead (see logic/badges.ts), so a normal-race call returns null.
 export function makeTrophy(
   horseId: string,
   rank: number,
@@ -10,7 +12,7 @@ export function makeTrophy(
   mode: 30 | 60,
   grade: 'normal' | 'gp',
 ): Trophy | null {
-  if (rank > 3) return null;
+  if (grade !== 'gp' || rank > 3) return null;
   return {
     id: `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
     horseId,

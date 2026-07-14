@@ -4,7 +4,7 @@ import type { SaveData } from '../types';
 
 function save(savedAt: number, horses = 0): SaveData {
   return {
-    version: 4,
+    version: 5,
     owned: {},
     horses: Array.from({ length: horses }, (_, i) => ({
       id: 'h' + i,
@@ -17,6 +17,8 @@ function save(savedAt: number, horses = 0): SaveData {
     energy: 3,
     energyUpdatedAt: 0,
     trophies: [],
+    badges: [],
+    winStreaks: {},
     items: [],
     raceRecords: [],
     gpUnlocked: { g2: false, g1: false },

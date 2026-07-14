@@ -18,12 +18,14 @@ import { reconcile } from '../logic/cloudReconcile';
 function snapshot(): SaveData {
   const s = useStore.getState();
   return {
-    version: 4,
+    version: 5,
     owned: s.owned,
     horses: s.horses,
     energy: s.energy,
     energyUpdatedAt: s.energyUpdatedAt,
     trophies: s.trophies,
+    badges: s.badges,
+    winStreaks: s.winStreaks,
     items: s.items,
     raceRecords: s.raceRecords,
     gpUnlocked: s.gpUnlocked,
