@@ -1,6 +1,18 @@
-import { useState } from 'react';
-import { useAuth, signIn, signUp, signOut, formatPlayerId } from '../cloud';
+import { useRef, useState } from 'react';
+import { useStore } from '../store';
+import { useAuth, signIn, signUp, signOut, resetPassword, formatPlayerId } from '../cloud';
 import styles from './AccountButton.module.css';
+
+// Download the current save as a JSON file (offline backup, ACCOUNT.md §0).
+function exportToFile() {
+  const json = useStore.getState().exportSave();
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `umaatsume-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const SYNC_LABEL: Record<string, string> = {
   idle: '',
@@ -16,6 +28,9 @@ export default function AccountButton() {
   const user = useAuth((s) => s.user);
   const playerNo = useAuth((s) => s.playerNo);
   const sync = useAuth((s) => s.sync);
+
+  const importSave = useStore((s) => s.importSave);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -35,6 +50,24 @@ export default function AccountButton() {
       setPassword('');
       if (mode === 'signup') setMsg('登録しました！このままログインされます。');
     }
+  }
+
+  async function onReset() {
+    if (!email.trim()) {
+      setMsg('メールアドレスを入力してから「パスワードを忘れた」を押してください。');
+      return;
+    }
+    setBusy(true);
+    const err = await resetPassword(email.trim());
+    setBusy(false);
+    setMsg(err ?? '再設定メールを送りました。メールのリンクから再設定してください。');
+  }
+
+  function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    file.text().then((t) => setMsg(importSave(t) ? 'データを読み込みました。' : '読み込みに失敗しました（ファイルを確認）。'));
+    e.target.value = '';
   }
 
   const signedIn = !!user;
@@ -120,6 +153,11 @@ export default function AccountButton() {
                 <button className="btn" onClick={submit} disabled={busy || !email || password.length < 6}>
                   {busy ? '…' : mode === 'login' ? 'ログイン' : '登録する'}
                 </button>
+                {mode === 'login' && (
+                  <button className={styles.textLink} onClick={onReset} disabled={busy}>
+                    パスワードを忘れた
+                  </button>
+                )}
                 <p className={styles.note}>
                   {mode === 'signup'
                     ? '登録すると、いまこの端末にあるデータがそのままアカウントに保存されます。'
@@ -127,6 +165,16 @@ export default function AccountButton() {
                 </p>
               </div>
             )}
+
+            {/* Local backup — works with or without an account (ACCOUNT.md §0) */}
+            <div className={styles.backup}>
+              <span className={styles.backupLabel}>データのバックアップ</span>
+              <div className={styles.backupRow}>
+                <button className="btn neutral" onClick={exportToFile}>書き出す</button>
+                <button className="btn neutral" onClick={() => fileRef.current?.click()}>読み込む</button>
+              </div>
+              <input ref={fileRef} type="file" accept="application/json" hidden onChange={onImportFile} />
+            </div>
 
             <button className={styles.closeLink} onClick={() => setOpen(false)}>
               とじる

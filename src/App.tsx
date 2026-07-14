@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useStore } from './store';
 import CloudSync from './components/CloudSync';
+import SyncConflictModal from './components/SyncConflictModal';
 import AccountButton from './components/AccountButton';
 import styles from './App.module.css';
 
@@ -19,6 +20,7 @@ export default function App() {
   return (
     <div className={styles.shell}>
       <CloudSync />
+      <SyncConflictModal />
       <AccountButton />
       {migrated && (
         <div className={styles.notice} role="status">

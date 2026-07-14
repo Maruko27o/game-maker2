@@ -16,8 +16,20 @@ import { ENERGY_CAP, spendEnergy } from './logic/energy';
 import { rescaleTo40 } from './logic/stats';
 import { applyTraining } from './logic/training';
 
-export const STORAGE_KEY = 'horse-game/v1'; // storage slot; payload is versioned inside
+export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 10;
+
+// Which localStorage slot we currently read/write. Guests use STORAGE_KEY; a
+// signed-in user uses a per-account slot so two accounts on the same browser
+// never share a local cache (ACCOUNT.md §1.6).
+let activeKey = STORAGE_KEY;
+function keyFor(uid: string | null): string {
+  return uid ? `horse-game/v3/${uid}` : STORAGE_KEY;
+}
+/** Point future reads/writes at the given account's slot (null = guest). */
+export function bindSaveKey(uid: string | null): void {
+  activeKey = keyFor(uid);
+}
 
 // Starter parts so a brand-new player can build a horse immediately.
 export const STARTER_PARTS = [
@@ -120,9 +132,9 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
   };
 }
 
-function load(): { data: SaveData; migrated: boolean } {
+function loadKey(key: string): { data: SaveData; migrated: boolean } {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return { data: freshSave(), migrated: false };
     return migrate(JSON.parse(raw)) ?? { data: freshSave(), migrated: false };
   } catch {
@@ -130,9 +142,13 @@ function load(): { data: SaveData; migrated: boolean } {
   }
 }
 
+function load(): { data: SaveData; migrated: boolean } {
+  return loadKey(activeKey);
+}
+
 function persist(data: SaveData): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(activeKey, JSON.stringify(data));
   } catch {
     // storage full / unavailable — keep running with in-memory state
   }
@@ -151,6 +167,12 @@ type Store = SaveData & {
   clearMigrated: () => void;
   /** Replace the entire save (used when loading a cloud save on login). */
   hydrate: (data: SaveData) => void;
+  /** Re-read state from an account's local slot (null = guest). Used on logout. */
+  reloadFromKey: (uid: string | null) => void;
+  /** Serialize the current save to a JSON string (backup export). */
+  exportSave: () => string;
+  /** Replace the save from an exported JSON string. Returns success. */
+  importSave: (json: string) => boolean;
   doSpawn: (rng?: () => number) => SpawnResult;
   addHorse: (h: Omit<Horse, 'id' | 'createdAt' | 'stats'>, stats: Stats) => Horse | null;
   updateHorse: (id: string, patch: Partial<Pick<Horse, 'name' | 'colors' | 'decos'>>) => void;
@@ -199,6 +221,43 @@ export const useStore = create<Store>((set, get) => {
     hydrate: (data) => {
       persist(data); // keep cloud's savedAt as-is (do not bump)
       set({ ...data, migrated: false });
+    },
+
+    reloadFromKey: (uid) => {
+      bindSaveKey(uid);
+      const { data } = loadKey(activeKey);
+      set({ ...data, migrated: false });
+    },
+
+    exportSave: () => {
+      const s = get();
+      const data: SaveData = {
+        version: 4,
+        owned: s.owned,
+        horses: s.horses,
+        energy: s.energy,
+        energyUpdatedAt: s.energyUpdatedAt,
+        trophies: s.trophies,
+        items: s.items,
+        raceRecords: s.raceRecords,
+        gpUnlocked: s.gpUnlocked,
+        freeRebalance: s.freeRebalance,
+        savedAt: s.savedAt,
+      };
+      return JSON.stringify(data);
+    },
+
+    importSave: (json) => {
+      try {
+        const parsed = migrate(JSON.parse(json));
+        if (!parsed) return false;
+        const data = { ...parsed.data, savedAt: Date.now() }; // treat import as newest
+        persist(data);
+        set({ ...data, migrated: false });
+        return true;
+      } catch {
+        return false;
+      }
     },
 
     doSpawn: (rng = Math.random) => {

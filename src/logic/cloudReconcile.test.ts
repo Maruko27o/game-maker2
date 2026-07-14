@@ -33,17 +33,19 @@ describe('cloud reconcile', () => {
     expect(reconcile(null, save(500, 2), null, A)).toEqual({ action: 'pushLocal' });
   });
 
-  it('DATA-LOSS GUARD: guest local (newer) must NOT overwrite an existing account', () => {
+  it('DATA-LOSS GUARD: guest local WITH progress vs an account → ask (never silent overwrite)', () => {
     const cloud = save(100, 3); // account has real progress, older timestamp
-    const local = save(999, 1); // this device's guest data is newer
-    // owner=null means the local data is not this account's → cloud must win.
-    expect(reconcile(cloud, local, null, A)).toEqual({ action: 'loadCloud' });
+    const local = save(999, 1); // this device's guest data is newer and non-empty
+    // owner=null + local has horses → let the player choose; do NOT overwrite.
+    expect(reconcile(cloud, local, null, A)).toEqual({ action: 'conflict' });
   });
 
-  it("another account's local (newer) must NOT overwrite this account", () => {
-    const cloud = save(100, 3);
-    const local = save(999, 1);
-    expect(reconcile(cloud, local, B, A)).toEqual({ action: 'loadCloud' });
+  it("another account's local WITH progress → conflict (choose, never silent overwrite)", () => {
+    expect(reconcile(save(100, 3), save(999, 2), B, A)).toEqual({ action: 'conflict' });
+  });
+
+  it('guest local with NO progress → just load the cloud (nothing to lose)', () => {
+    expect(reconcile(save(100, 3), save(999, 0), null, A)).toEqual({ action: 'loadCloud' });
   });
 
   it('same account, cloud newer → load cloud', () => {
