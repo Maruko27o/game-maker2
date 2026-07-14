@@ -108,6 +108,38 @@
   font-weight: 800;
   color: var(--ink);
 }
+.textLink {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--blue-dark);
+  font-weight: 800;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 2px;
+}
+.backup {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.backupLabel {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  text-align: center;
+}
+.backupRow {
+  display: flex;
+  gap: 8px;
+}
+.backupRow button {
+  flex: 1;
+}
 .playerId {
   margin: 0;
   font-weight: 700;

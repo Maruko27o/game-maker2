@@ -10,7 +10,12 @@ import type { SaveData } from '../types';
 export type Reconciliation =
   | { action: 'pushLocal' } // account is empty → seed it from this device (guest import)
   | { action: 'loadCloud' } // take the account's cloud save; do NOT overwrite it
-  | { action: 'keepLocalPushCloud' }; // same account, this device is newer → sync up
+  | { action: 'keepLocalPushCloud' } // same account, this device is newer → sync up
+  | { action: 'conflict' }; // foreign/guest local WITH progress vs an existing cloud → ask
+
+function hasProgress(s: SaveData): boolean {
+  return s.horses.length > 0;
+}
 
 /**
  * @param cloud  the account's cloud save, or null if it has none yet
@@ -35,7 +40,9 @@ export function reconcile(
       : { action: 'keepLocalPushCloud' };
   }
 
-  // Local is guest data or belongs to a DIFFERENT account: the account already
-  // has a save, so load it and never overwrite with foreign local data.
-  return { action: 'loadCloud' };
+  // Local is guest/other-account data. If it's empty there's nothing to lose —
+  // just take the cloud. If it has real progress, never silently discard either
+  // side: ask the player which to keep (ACCOUNT.md §1.6).
+  if (!hasProgress(local)) return { action: 'loadCloud' };
+  return { action: 'conflict' };
 }

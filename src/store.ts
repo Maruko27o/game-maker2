@@ -5,19 +5,34 @@ import type {
   ColorSlot,
   DecoSlot,
   Trophy,
+  Badge,
   TrainingItem,
   RaceRecord,
   Stats,
   StatKey,
 } from './types';
 import { allParts } from './data/parts';
+import { COURSES } from './data/courses';
 import { spawn as gachaSpawn } from './logic/gacha';
 import { ENERGY_CAP, spendEnergy } from './logic/energy';
 import { rescaleTo40 } from './logic/stats';
 import { applyTraining } from './logic/training';
+import { evaluateBadges } from './logic/badges';
 
-export const STORAGE_KEY = 'horse-game/v1'; // storage slot; payload is versioned inside
+export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 10;
+
+// Which localStorage slot we currently read/write. Guests use STORAGE_KEY; a
+// signed-in user uses a per-account slot so two accounts on the same browser
+// never share a local cache (ACCOUNT.md §1.6).
+let activeKey = STORAGE_KEY;
+function keyFor(uid: string | null): string {
+  return uid ? `horse-game/v3/${uid}` : STORAGE_KEY;
+}
+/** Point future reads/writes at the given account's slot (null = guest). */
+export function bindSaveKey(uid: string | null): void {
+  activeKey = keyFor(uid);
+}
 
 // Starter parts so a brand-new player can build a horse immediately.
 export const STARTER_PARTS = [
@@ -39,12 +54,14 @@ function starterOwned(): Record<string, number> {
 
 function freshSave(): SaveData {
   return {
-    version: 4,
+    version: 5,
     owned: starterOwned(),
     horses: [],
     energy: ENERGY_CAP,
     energyUpdatedAt: Date.now(),
     trophies: [],
+    badges: [],
+    winStreaks: {},
     items: [],
     raceRecords: [],
     gpUnlocked: { g2: false, g1: false },
@@ -73,19 +90,24 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
   const energy = typeof d.energy === 'number' ? d.energy : ENERGY_CAP;
   const energyUpdatedAt = typeof d.energyUpdatedAt === 'number' ? d.energyUpdatedAt : Date.now();
   const trophies = Array.isArray(d.trophies) ? (d.trophies as Trophy[]) : [];
+  const badges = Array.isArray(d.badges) ? (d.badges as Badge[]) : [];
+  const winStreaks =
+    d.winStreaks && typeof d.winStreaks === 'object' ? (d.winStreaks as Record<string, number>) : {};
   const items = Array.isArray(d.items) ? (d.items as TrainingItem[]) : [];
   const raceRecords = Array.isArray(d.raceRecords) ? (d.raceRecords as RaceRecord[]) : [];
   const savedAt = typeof d.savedAt === 'number' ? d.savedAt : 0;
 
-  if (d.version === 4) {
+  if (d.version === 5) {
     return {
       data: {
-        version: 4,
+        version: 5,
         owned,
         horses,
         energy,
         energyUpdatedAt,
         trophies,
+        badges,
+        winStreaks,
         items,
         raceRecords,
         gpUnlocked: normGp(d.gpUnlocked),
@@ -96,33 +118,34 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
     };
   }
 
-  // v1/v2/v3 -> v4: re-scale every horse's stats to sum 40 (RACE_V3 §3.6) and
-  // grant one free re-allocation so the player can adapt to the new rules.
-  const rescaled = horses.map((h) => ({
-    ...h,
-    stats: h.stats ? rescaleTo40(h.stats) : { ...BALANCED_40 },
-  }));
+  // v1/v2/v3 -> v4 stat rescale (RACE_V3 §3.6); v4 -> v5 just adds `badges: []`.
+  const isPreV4 = d.version !== 4;
+  const rescaled = isPreV4
+    ? horses.map((h) => ({ ...h, stats: h.stats ? rescaleTo40(h.stats) : { ...BALANCED_40 } }))
+    : horses;
   return {
     data: {
-      version: 4,
+      version: 5,
       owned,
       horses: rescaled,
       energy,
       energyUpdatedAt,
       trophies,
+      badges,
+      winStreaks,
       items,
       raceRecords,
       gpUnlocked: normGp(d.gpUnlocked),
-      freeRebalance: horses.length > 0, // only worth a rebalance if there are horses
+      freeRebalance: isPreV4 ? horses.length > 0 : !!d.freeRebalance,
       savedAt,
     },
-    migrated: true,
+    migrated: isPreV4, // only the v3→v4 stat change warrants the one-time notice
   };
 }
 
-function load(): { data: SaveData; migrated: boolean } {
+function loadKey(key: string): { data: SaveData; migrated: boolean } {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return { data: freshSave(), migrated: false };
     return migrate(JSON.parse(raw)) ?? { data: freshSave(), migrated: false };
   } catch {
@@ -130,9 +153,13 @@ function load(): { data: SaveData; migrated: boolean } {
   }
 }
 
+function load(): { data: SaveData; migrated: boolean } {
+  return loadKey(activeKey);
+}
+
 function persist(data: SaveData): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(activeKey, JSON.stringify(data));
   } catch {
     // storage full / unavailable — keep running with in-memory state
   }
@@ -151,6 +178,12 @@ type Store = SaveData & {
   clearMigrated: () => void;
   /** Replace the entire save (used when loading a cloud save on login). */
   hydrate: (data: SaveData) => void;
+  /** Re-read state from an account's local slot (null = guest). Used on logout. */
+  reloadFromKey: (uid: string | null) => void;
+  /** Serialize the current save to a JSON string (backup export). */
+  exportSave: () => string;
+  /** Replace the save from an exported JSON string. Returns success. */
+  importSave: (json: string) => boolean;
   doSpawn: (rng?: () => number) => SpawnResult;
   addHorse: (h: Omit<Horse, 'id' | 'createdAt' | 'stats'>, stats: Stats) => Horse | null;
   updateHorse: (id: string, patch: Partial<Pick<Horse, 'name' | 'colors' | 'decos'>>) => void;
@@ -159,11 +192,23 @@ type Store = SaveData & {
   /** One-time free stat re-allocation after the v4 migration. Returns success. */
   rebalanceHorse: (id: string, stats: Stats) => boolean;
   addTrophies: (t: Trophy[]) => void;
+  addBadges: (b: Badge[]) => void;
   grantItems: (items: TrainingItem[]) => void;
   unlockGp: (patch: { g2?: boolean; g1?: boolean }) => void;
   /** Consume item at index and raise `target` on the horse. Returns success. */
   trainHorse: (horseId: string, itemIndex: number, target: StatKey) => boolean;
   recordRace: (courseId: string, mode: 30 | 60, rank: number, time: number) => void;
+  /** Record a finished single race: updates best time, win streak, and awards
+   *  badges (ACCOUNT.md §2). Returns the newly-earned badges (for the cut-in). */
+  finishNormalRace: (args: {
+    horseId: string;
+    courseId: string;
+    mode: 30 | 60;
+    rank: number;
+    time: number;
+    isJumpCourse: boolean;
+    flawless: boolean;
+  }) => Badge[];
   resetAll: () => void;
 };
 
@@ -175,12 +220,14 @@ export const useStore = create<Store>((set, get) => {
     const savedAt = Date.now();
     const next = { ...get(), ...partial, savedAt } as Store;
     const data: SaveData = {
-      version: 4,
+      version: 5,
       owned: next.owned,
       horses: next.horses,
       energy: next.energy,
       energyUpdatedAt: next.energyUpdatedAt,
       trophies: next.trophies,
+      badges: next.badges,
+      winStreaks: next.winStreaks,
       items: next.items,
       raceRecords: next.raceRecords,
       gpUnlocked: next.gpUnlocked,
@@ -199,6 +246,45 @@ export const useStore = create<Store>((set, get) => {
     hydrate: (data) => {
       persist(data); // keep cloud's savedAt as-is (do not bump)
       set({ ...data, migrated: false });
+    },
+
+    reloadFromKey: (uid) => {
+      bindSaveKey(uid);
+      const { data } = loadKey(activeKey);
+      set({ ...data, migrated: false });
+    },
+
+    exportSave: () => {
+      const s = get();
+      const data: SaveData = {
+        version: 5,
+        owned: s.owned,
+        horses: s.horses,
+        energy: s.energy,
+        energyUpdatedAt: s.energyUpdatedAt,
+        trophies: s.trophies,
+        badges: s.badges,
+        winStreaks: s.winStreaks,
+        items: s.items,
+        raceRecords: s.raceRecords,
+        gpUnlocked: s.gpUnlocked,
+        freeRebalance: s.freeRebalance,
+        savedAt: s.savedAt,
+      };
+      return JSON.stringify(data);
+    },
+
+    importSave: (json) => {
+      try {
+        const parsed = migrate(JSON.parse(json));
+        if (!parsed) return false;
+        const data = { ...parsed.data, savedAt: Date.now() }; // treat import as newest
+        persist(data);
+        set({ ...data, migrated: false });
+        return true;
+      } catch {
+        return false;
+      }
     },
 
     doSpawn: (rng = Math.random) => {
@@ -237,6 +323,7 @@ export const useStore = create<Store>((set, get) => {
       commit({
         horses: get().horses.filter((h) => h.id !== id),
         trophies: get().trophies.filter((t) => t.horseId !== id),
+        badges: get().badges.filter((b) => b.horseId !== id),
       });
     },
 
@@ -254,6 +341,11 @@ export const useStore = create<Store>((set, get) => {
     addTrophies: (t) => {
       if (t.length === 0) return;
       commit({ trophies: [...get().trophies, ...t] });
+    },
+
+    addBadges: (b) => {
+      if (b.length === 0) return;
+      commit({ badges: [...get().badges, ...b] });
     },
 
     grantItems: (items) => {
@@ -298,6 +390,34 @@ export const useStore = create<Store>((set, get) => {
         };
       }
       commit({ raceRecords: records });
+    },
+
+    finishNormalRace: ({ horseId, courseId, mode, rank, time, isJumpCourse, flawless }) => {
+      const s = get();
+      const prevBest = s.raceRecords.find((r) => r.courseId === courseId && r.mode === mode);
+      const isNewRecord = !prevBest || time < prevBest.bestTime;
+
+      const { badges: awarded, newStreak } = evaluateBadges(
+        { horseId, rank, courseId, isJumpCourse, flawless, isNewRecord },
+        {
+          existing: s.badges.filter((b) => b.horseId === horseId),
+          priorStreak: s.winStreaks[horseId] ?? 0,
+          allCourseIds: COURSES.map((c) => c.id),
+        },
+      );
+
+      // Update best time (reuse the same rule as recordRace).
+      const records = s.raceRecords.slice();
+      const i = records.findIndex((r) => r.courseId === courseId && r.mode === mode);
+      if (i < 0) records.push({ courseId, mode, bestRank: rank, bestTime: time });
+      else records[i] = { ...records[i], bestRank: Math.min(records[i].bestRank, rank), bestTime: Math.min(records[i].bestTime, time) };
+
+      commit({
+        raceRecords: records,
+        badges: [...s.badges, ...awarded],
+        winStreaks: { ...s.winStreaks, [horseId]: newStreak },
+      });
+      return awarded;
     },
 
     resetAll: () => commit({ ...freshSave() }),

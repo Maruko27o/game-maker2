@@ -69,7 +69,8 @@ export type HorseLook = {
   decos: Partial<Record<DecoSlot, string>>;
 };
 
-// A trophy earned by finishing top-3 (RACE.md §8). Belongs to a horse.
+// A trophy earned by finishing top-3 in a GRAND PRIX final (ACCOUNT.md §2).
+// Everyday single races award badges instead.
 export type Trophy = {
   id: string;
   horseId: string;
@@ -77,6 +78,15 @@ export type Trophy = {
   courseId: string;
   mode: 30 | 60;
   grade: 'normal' | 'gp';
+  at: number;
+};
+
+// A badge earned in everyday single races (ACCOUNT.md §2). Belongs to a horse.
+// Placing badges (badge_1st/2nd/3rd) stack; achievement badges are once-only.
+export type Badge = {
+  id: string; // BadgeId from data/badges.ts
+  horseId: string;
+  courseId?: string;
   at: number;
 };
 
@@ -92,12 +102,14 @@ export type RaceRecord = {
 };
 
 export type SaveData = {
-  version: 4;
+  version: 5;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
   horses: Horse[]; // max 10
   energy: number; // grass spawn stock (0..3), charges 1 per hour
   energyUpdatedAt: number; // ms anchor for energy regen
-  trophies: Trophy[];
+  trophies: Trophy[]; // grand-prix only
+  badges: Badge[]; // everyday single-race rewards (ACCOUNT.md §2)
+  winStreaks: Record<string, number>; // horseId -> current consecutive 1st count
   items: TrainingItem[]; // owned training items (unused inventory)
   raceRecords: RaceRecord[];
   gpUnlocked: { g2: boolean; g1: boolean }; // grand-prix grade unlocks
