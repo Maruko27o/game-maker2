@@ -6,6 +6,7 @@ import { type Entrant, type SimResult } from '../logic/raceSim2';
 import { mulberry32, statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { makeCpu } from '../logic/cpu';
+import { colorById } from '../data/parts';
 import { makeTrophy, itemDropCount, rollItems } from '../logic/raceReward';
 import type { Horse, HorseLook, Trophy, TrainingItem, Stats } from '../types';
 import { STAT_LABEL, RUN_STYLE_LABEL, STAT_KEYS } from '../types';
@@ -131,8 +132,9 @@ export default function Race() {
     const entrants: Entrant[] = [
       { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) },
     ];
+    const avoidBody = colorById[player.colors.body]?.value;
     for (let i = 0; i < 7; i++) {
-      const cpu = makeCpu(`cpu${i}`, rng, band, grade === 'gp' ? 0.8 : 0.5);
+      const cpu = makeCpu(`cpu${i}`, rng, band, grade === 'gp' ? 0.8 : 0.5, undefined, avoidBody);
       entrants.push(cpu.entrant);
       looks[cpu.entrant.horseId] = cpu.look;
     }

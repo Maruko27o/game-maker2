@@ -4,6 +4,7 @@ import type { Course } from '../data/courses';
 import type { Entrant, SimResult } from './raceSim2';
 import { mulberry32 } from './stats';
 import { makeCpu } from './cpu';
+import { colorById } from '../data/parts';
 import { paceAt } from './runStyle';
 import type { HorseLook, StatKey } from '../types';
 import { STAT_KEYS } from '../types';
@@ -34,9 +35,10 @@ export function buildGpField(
   const band = GP_GRADES[grade].band;
   const decoChance = grade === 'g1' ? 0.9 : grade === 'g2' ? 0.7 : 0.5;
   const looks: Record<string, HorseLook> = { [player.horseId]: playerLook };
+  const avoidBody = colorById[playerLook.colors.body]?.value;
   const cpus: Entrant[] = [];
   for (let i = 0; i < 17; i++) {
-    const c = makeCpu(`gp${i}`, rng, band, decoChance);
+    const c = makeCpu(`gp${i}`, rng, band, decoChance, undefined, avoidBody);
     cpus.push(c.entrant);
     looks[c.entrant.horseId] = c.look;
   }
