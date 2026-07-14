@@ -1,0 +1,115 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #bfe3f2 0%, #d9eec6 62%, #cfe6a8 100%);
+}
+.hill {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 0;
+  height: 46%;
+  background: radial-gradient(120% 90% at 50% 100%, #9fd06a 0%, #8bc25a 60%, #7bb04a 100%);
+  border-top-left-radius: 60% 40%;
+  border-top-right-radius: 60% 40%;
+}
+
+.logo {
+  position: relative;
+  margin-top: 16vh;
+  font-size: clamp(40px, 13vw, 68px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #4a3410;
+  text-shadow: 0 3px 0 #f3e6c8, 0 6px 0 rgba(74, 52, 16, 0.25);
+}
+.logoIn {
+  animation: logoIn 0.6s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+@keyframes logoIn {
+  0% { transform: translateY(-30px) scale(0.7); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.meadow {
+  position: relative;
+  margin-top: auto;
+  margin-bottom: 12vh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: -6px;
+}
+.grazer {
+  margin: 0 -10px;
+  filter: drop-shadow(0 6px 4px rgba(43, 33, 24, 0.15));
+}
+.graze {
+  animation: graze 4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+@keyframes graze {
+  0%, 70%, 100% { transform: translateY(0) rotate(0); }
+  78% { transform: translateY(4px) rotate(-3deg); }
+  86% { transform: translateY(5px) rotate(-3deg); }
+  94% { transform: translateY(0) rotate(0); }
+}
+
+.tap {
+  position: absolute;
+  bottom: 8vh;
+  font-size: 17px;
+  font-weight: 800;
+  color: #4a3410;
+  background: rgba(243, 230, 200, 0.7);
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+.blink {
+  animation: blink 1.6s ease-in-out infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.foot {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: default;
+}
+.id {
+  font-size: 13px;
+  font-weight: 800;
+  color: #4a3410;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+.gear {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--border-dark);
+  background: var(--panel-inner);
+  font-size: 17px;
+  cursor: pointer;
+}

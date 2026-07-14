@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useStore } from './store';
 import CloudSync from './components/CloudSync';
 import SyncConflictModal from './components/SyncConflictModal';
 import AccountButton from './components/AccountButton';
+import Title from './components/Title';
 import styles from './App.module.css';
 
 const NAV = [
@@ -17,10 +19,27 @@ const NAV = [
 export default function App() {
   const migrated = useStore((s) => s.migrated);
   const clearMigrated = useStore((s) => s.clearMigrated);
+  // Show the title once per session (a calm entry point, ACCOUNT.md §3).
+  const [showTitle, setShowTitle] = useState(() => {
+    try {
+      return !sessionStorage.getItem('seenTitle');
+    } catch {
+      return true;
+    }
+  });
+  function dismissTitle() {
+    try {
+      sessionStorage.setItem('seenTitle', '1');
+    } catch {
+      /* ignore */
+    }
+    setShowTitle(false);
+  }
   return (
     <div className={styles.shell}>
       <CloudSync />
       <SyncConflictModal />
+      {showTitle && <Title onStart={dismissTitle} />}
       <AccountButton />
       {migrated && (
         <div className={styles.notice} role="status">

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { useAuth, signIn, signUp, signOut, resetPassword, formatPlayerId } from '../cloud';
 import styles from './AccountButton.module.css';
@@ -30,9 +30,19 @@ export default function AccountButton() {
   const sync = useAuth((s) => s.sync);
 
   const importSave = useStore((s) => s.importSave);
+  const wantAccount = useAuth((s) => s.wantAccount);
+  const setWantAccount = useAuth((s) => s.setWantAccount);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [open, setOpen] = useState(false);
+
+  // The title screen (or elsewhere) can request the account panel be opened.
+  useEffect(() => {
+    if (wantAccount) {
+      setOpen(true);
+      setWantAccount(false);
+    }
+  }, [wantAccount, setWantAccount]);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

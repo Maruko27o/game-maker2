@@ -58,12 +58,14 @@ type AuthStore = {
   sync: SyncState;
   error: string | null;
   conflict: ConflictInfo | null;
+  wantAccount: boolean; // a request (e.g. from the title screen) to open the account panel
   setUser: (u: AuthUser | null) => void;
   setPlayerNo: (n: number | null) => void;
   setSync: (s: SyncState) => void;
   setError: (e: string | null) => void;
   setReady: (r: boolean) => void;
   setConflict: (c: ConflictInfo | null) => void;
+  setWantAccount: (b: boolean) => void;
 };
 
 export const useAuth = create<AuthStore>((set) => ({
@@ -74,12 +76,14 @@ export const useAuth = create<AuthStore>((set) => ({
   sync: CLOUD_ENABLED ? 'idle' : 'offline',
   error: null,
   conflict: null,
+  wantAccount: false,
   setUser: (user) => set({ user }),
   setPlayerNo: (playerNo) => set({ playerNo }),
   setSync: (sync) => set({ sync }),
   setError: (error) => set({ error }),
   setReady: (ready) => set({ ready }),
   setConflict: (conflict) => set({ conflict }),
+  setWantAccount: (wantAccount) => set({ wantAccount }),
 }));
 
 /** The player's public number (id0000123). Creates it on first call. Returns
