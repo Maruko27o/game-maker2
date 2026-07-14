@@ -2,53 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { COURSES, type Course } from '../data/courses';
-import { colorsBySlot, decosBySlot, DECO_SLOTS } from '../data/parts';
 import { type Entrant, type SimResult } from '../logic/raceSim2';
-import { rollStatsTotal, mulberry32 } from '../logic/stats';
+import { mulberry32, statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
+import { makeCpu } from '../logic/cpu';
+import { colorById } from '../data/parts';
 import { makeTrophy, itemDropCount, rollItems } from '../logic/raceReward';
-import type { Horse, HorseLook, DecoSlot, Trophy, TrainingItem, Stats } from '../types';
+import type { Horse, HorseLook, Trophy, TrainingItem, Stats } from '../types';
 import { STAT_LABEL, RUN_STYLE_LABEL, STAT_KEYS } from '../types';
 import HorseView from '../components/HorseView';
 import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
-
-const NAME_A = ['カゼ', 'ホシ', 'ハナ', 'ユキ', 'ソラ', 'ナミ', 'ミネ', 'タキ', 'クモ', 'ツキ', 'イナ', 'アサ'];
-const NAME_B = ['マル', 'ゴウ', 'オー', 'キング', 'スター', 'ボーイ', 'ヒメ', 'ナデシコ', '号', '丸'];
-
-function pick<T>(a: T[], rng: () => number): T {
-  return a[Math.floor(rng() * a.length)];
-}
-
-function makeCpu(
-  id: string,
-  rng: () => number,
-  band: [number, number],
-  decoChance: number,
-): { entrant: Entrant; look: HorseLook } {
-  const stats = rollStatsTotal(rng, band[0], band[1]);
-  const decos: Partial<Record<DecoSlot, string>> = {};
-  let chance = decoChance;
-  for (const slot of DECO_SLOTS) {
-    if (rng() < chance) decos[slot] = pick(decosBySlot[slot], rng).id;
-    chance *= 0.5;
-  }
-  const look: HorseLook = {
-    name: pick(NAME_A, rng) + pick(NAME_B, rng),
-    colors: {
-      body: pick(colorsBySlot.body, rng).id,
-      mane: pick(colorsBySlot.mane, rng).id,
-      hoof: pick(colorsBySlot.hoof, rng).id,
-    },
-    decos,
-  };
-  return {
-    entrant: { horseId: id, name: look.name!, isPlayer: false, stats, style: styleFor(id, stats) },
-    look,
-  };
-}
 
 function aptitude(stats: Stats, c: Course): string {
   const base = STAT_KEYS.reduce((n, k) => n + stats[k], 0);
@@ -158,13 +124,17 @@ export default function Race() {
     const seed = (Math.random() * 2 ** 31) >>> 0;
     const rng = mulberry32(seed ^ 0x77);
     const course = COURSES[Math.floor(rng() * COURSES.length)];
-    const band: [number, number] = grade === 'gp' ? [32, 44] : [20, 34];
+    // Keep CPUs within ±4 of the player's total so single races stay close
+    // (RACE_V3 §3.5, user preference: 接戦に寄せる).
+    const pt = statTotal(player.stats);
+    const band: [number, number] = [Math.max(34, pt - 4), Math.min(48, pt + 4)];
     const looks: Record<string, HorseLook> = { [player.id]: player };
     const entrants: Entrant[] = [
       { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) },
     ];
+    const avoidBody = colorById[player.colors.body]?.value;
     for (let i = 0; i < 7; i++) {
-      const cpu = makeCpu(`cpu${i}`, rng, band, grade === 'gp' ? 0.8 : 0.5);
+      const cpu = makeCpu(`cpu${i}`, rng, band, grade === 'gp' ? 0.8 : 0.5, undefined, avoidBody);
       entrants.push(cpu.entrant);
       looks[cpu.entrant.horseId] = cpu.look;
     }

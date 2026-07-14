@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Course } from '../data/courses';
 import { centerline, centerlinePath, toWorld, lapLength, trackBounds } from '../logic/track';
-import { simulate2, type Entrant, type SimResult, type RunnerState } from '../logic/raceSim2';
-import { colorById } from '../data/parts';
+import { simulate2, type Entrant, type SimResult } from '../logic/raceSim2';
 import type { HorseLook } from '../types';
 import HorseDefs from './HorseDefs';
+import HorseRaceView from './HorseRaceView';
+import RankPanel from './RankPanel';
 import styles from './RaceTrack2.module.css';
 
 const SURFACE_COLOR: Record<string, string> = {
@@ -20,15 +21,6 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
-function rankColor(rank: number, total: number): { bg: string; fg: string; bd: string } {
-  if (rank === 1) return { bg: '#f0c33c', fg: '#2b2118', bd: '#8a6410' };
-  if (rank === 2) return { bg: '#cfd6dd', fg: '#2b2118', bd: '#79838d' };
-  if (rank === 3) return { bg: '#cf8a4e', fg: '#fff', bd: '#8f5a28' };
-  const f = total > 4 ? (rank - 4) / (total - 4) : 0;
-  const v = Math.round(230 * (1 - f) + 40 * f);
-  return { bg: `rgb(${v},${v},${v})`, fg: v > 140 ? '#2b2118' : '#fff', bd: '#2b2118' };
-}
-
 type Props = {
   entrants: Entrant[];
   looks: Record<string, HorseLook>; // horseId -> look
@@ -40,59 +32,6 @@ type Props = {
   laps?: number; // override lap count (grand-prix heats/finals)
   onFinish: (result: SimResult) => void;
 };
-
-// A simplified, rounder race horse (RACE_V2 §5.1) drawn in meter coordinates,
-// oriented along the track. Body diameter ≈ the collision size so it reads true.
-function RaceHorseMark({
-  look,
-  x,
-  y,
-  heading,
-  legPhase,
-  state,
-  isPlayer,
-}: {
-  look: HorseLook;
-  x: number;
-  y: number;
-  heading: number;
-  legPhase: number;
-  state: RunnerState;
-  isPlayer: boolean;
-}) {
-  const body = colorById[look.colors.body]?.value ?? '#f6f2ea';
-  const mane = colorById[look.colors.mane]?.value ?? '#6b4326';
-  const deg = (heading * 180) / Math.PI;
-  const jumping = state === 'jump';
-  const bob = state === 'stumble' ? 0.15 : Math.sin(legPhase * Math.PI * 4) * 0.08;
-  // While airborne (§5.3 / §9): lift the horse in screen space (before the
-  // heading rotation) so the hop reads "up" regardless of travel direction,
-  // scale it up a touch, tuck the legs, and cast a detached ground shadow.
-  const lift = jumping ? 1.5 : 0;
-  const scale = jumping ? 1.24 : 1;
-  const legSwing = jumping ? 0.5 : Math.sin(legPhase * Math.PI * 2) * 0.35;
-  return (
-    <g>
-      {jumping && <ellipse cx={x} cy={y} rx="1.2" ry="0.55" fill="rgba(0,0,0,0.18)" />}
-      <g transform={`translate(${x} ${y - lift}) rotate(${deg}) scale(${scale})`}>
-        {isPlayer && <ellipse cx="0" cy="0" rx="1.5" ry="1.2" fill="rgba(63,127,214,0.35)" />}
-        {/* legs (tucked forward when airborne) */}
-        <g stroke={colorById[look.colors.hoof]?.value ?? '#3a2c1c'} strokeWidth="0.28" strokeLinecap="round">
-          <line x1={-0.4} y1={0.3} x2={-0.4 + (jumping ? legSwing : -legSwing)} y2={jumping ? 0.5 : 0.9} />
-          <line x1={0.5} y1={0.3} x2={0.5 + legSwing} y2={jumping ? 0.5 : 0.9} />
-        </g>
-        <g transform={`translate(0 ${-bob})`} stroke="#2b2118" strokeWidth={isPlayer ? 0.26 : 0.18} strokeLinejoin="round">
-          <ellipse cx="0" cy="0" rx="1.1" ry="0.72" fill={body} />
-          {/* mane along the back */}
-          <path d="M -0.9,-0.5 Q -0.2,-1.0 0.5,-0.55" fill="none" stroke={mane} strokeWidth="0.5" strokeLinecap="round" />
-          {/* head at the front (+x) */}
-          <circle cx="1.15" cy="-0.15" r="0.45" fill={body} />
-          <circle cx="1.4" cy="-0.2" r="0.09" fill="#2b2118" stroke="none" />
-        </g>
-      </g>
-    </g>
-  );
-}
 
 export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, onFinish }: Props) {
   const result = useMemo(
@@ -250,7 +189,15 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     const d = rf.d + (nf.runners[i].d - rf.d) * alpha;
     const c = centerline(track, s);
     const w = toWorld(track, s, d);
-    return { x: w.x, y: w.y, s, heading: Math.atan2(c.ty, c.tx) };
+    const speed = (nf.runners[i].s - rf.s) / dt; // m/s over this frame
+    return {
+      x: w.x,
+      y: w.y,
+      s,
+      heading: Math.atan2(c.ty, c.tx),
+      speed01: clamp(speed / 18, 0, 1),
+      onCorner: c.curvature > 0,
+    };
   });
 
   // Smoothed auto-fit camera: keep every horse (incl. the player) in frame,
@@ -304,31 +251,25 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
                 stroke={o.kind === 'water' ? '#79c8ea' : o.kind === 'bamboo' ? '#b7913f' : '#4d7c3a'} strokeWidth="1.6" />
             );
           })}
-          {/* horses */}
-          {positions.map((p, i) => (
-            <RaceHorseMark
-              key={i}
-              look={looks[entrants[i].horseId]}
-              x={p.x}
-              y={p.y}
-              heading={p.heading}
-              legPhase={(p.s / 4.5) % 1}
-              state={fr.runners[i].state}
-              isPlayer={entrants[i].isPlayer}
-            />
-          ))}
-          {/* rank labels (upright) */}
-          {positions.map((p, i) => {
-            const rc = rankColor(fr.runners[i].rank, entrants.length);
-            return (
-              <g key={'l' + i} transform={`translate(${p.x} ${p.y - 2.6})`}>
-                <circle r="1.4" fill={rc.bg} stroke={rc.bd} strokeWidth="0.3" />
-                <text fontSize="1.9" fill={rc.fg} fontWeight="900" textAnchor="middle" dominantBaseline="central">
-                  {fr.runners[i].rank}
-                </text>
-              </g>
-            );
-          })}
+          {/* horses — trailing runners drawn first so the player reads on top */}
+          {positions
+            .map((p, i) => ({ p, i }))
+            .sort((a, b) => (entrants[a.i].isPlayer ? 1 : 0) - (entrants[b.i].isPlayer ? 1 : 0))
+            .map(({ p, i }) => (
+              <HorseRaceView
+                key={i}
+                look={looks[entrants[i].horseId]}
+                x={p.x}
+                y={p.y}
+                heading={p.heading}
+                legPhase={(p.s / 4.5) % 1}
+                speed01={p.speed01}
+                onCorner={p.onCorner}
+                jumping={fr.runners[i].state === 'jump'}
+                zekken={result.gate[i]}
+                isPlayer={entrants[i].isPlayer}
+              />
+            ))}
         </svg>
 
         {phase === 'countdown' && <div className={styles.countdown}>{count > 0 ? count : 'GO!'}</div>}
@@ -336,6 +277,12 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
+      <RankPanel
+        entrants={entrants}
+        looks={looks}
+        ranks={fr.runners.map((r) => r.rank)}
+        finished={phase === 'done'}
+      />
       {skippable && phase === 'run' && (
         <button className={styles.skip} onClick={() => { elapsed.current = result.duration; setPhase('done'); onFinish(result); }}>
           スキップ ⏭

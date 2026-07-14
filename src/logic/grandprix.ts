@@ -4,16 +4,18 @@ import type { Course } from '../data/courses';
 import type { Entrant, SimResult } from './raceSim2';
 import { mulberry32 } from './stats';
 import { makeCpu } from './cpu';
+import { colorById } from '../data/parts';
 import { paceAt } from './runStyle';
 import type { HorseLook, StatKey } from '../types';
 import { STAT_KEYS } from '../types';
 
 export type GpGrade = 'g3' | 'g2' | 'g1';
 
+// Total-point bands per grade under the 40-point system (RACE_V3 §3.5).
 export const GP_GRADES: Record<GpGrade, { name: string; band: [number, number]; win1Items: number; star: boolean }> = {
-  g3: { name: 'G3', band: [24, 34], win1Items: 2, star: false },
-  g2: { name: 'G2', band: [30, 40], win1Items: 3, star: false },
-  g1: { name: 'G1', band: [36, 46], win1Items: 4, star: true },
+  g3: { name: 'G3', band: [40, 44], win1Items: 2, star: false },
+  g2: { name: 'G2', band: [42, 46], win1Items: 3, star: false },
+  g1: { name: 'G1', band: [44, 48], win1Items: 4, star: true },
 };
 
 export type GpField = {
@@ -33,9 +35,10 @@ export function buildGpField(
   const band = GP_GRADES[grade].band;
   const decoChance = grade === 'g1' ? 0.9 : grade === 'g2' ? 0.7 : 0.5;
   const looks: Record<string, HorseLook> = { [player.horseId]: playerLook };
+  const avoidBody = colorById[playerLook.colors.body]?.value;
   const cpus: Entrant[] = [];
   for (let i = 0; i < 17; i++) {
-    const c = makeCpu(`gp${i}`, rng, band, decoChance);
+    const c = makeCpu(`gp${i}`, rng, band, decoChance, undefined, avoidBody);
     cpus.push(c.entrant);
     looks[c.entrant.horseId] = c.look;
   }
