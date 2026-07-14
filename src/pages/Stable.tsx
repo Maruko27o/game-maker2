@@ -65,6 +65,7 @@ export default function Stable() {
   const renameHorse = useStore((s) => s.renameHorse);
   const removeHorse = useStore((s) => s.removeHorse);
   const trainHorse = useStore((s) => s.trainHorse);
+  const freeRebalance = useStore((s) => s.freeRebalance);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [view, setView] = useState<View>('detail');
@@ -189,6 +190,15 @@ export default function Stable() {
                   </div>
                 ) : (
                   <>
+                    {freeRebalance && (
+                      <button
+                        className="btn"
+                        style={{ width: '100%' }}
+                        onClick={() => navigate(`/create?rebalance=${selected.id}`)}
+                      >
+                        🔄 ステータスを1回だけ振り直す
+                      </button>
+                    )}
                     <div className={styles.actions}>
                       <button className="btn" onClick={() => setView('train')}>
                         そだてる

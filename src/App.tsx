@@ -22,7 +22,7 @@ export default function App() {
       <AccountButton />
       {migrated && (
         <div className={styles.notice} role="status">
-          <span>アップデート！ウマに能力値が付き、レースが本格化しました🏁</span>
+          <span>ステータスの仕組みが変わりました（合計40の割り振り制）。マイウマから1回だけ無料で振り直せます🏁</span>
           <button className={styles.noticeClose} onClick={clearMigrated} aria-label="閉じる">
             ✕
           </button>

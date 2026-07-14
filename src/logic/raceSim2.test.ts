@@ -1,14 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { simulate2, type Entrant } from './raceSim2';
 import { COURSES, courseById } from '../data/courses';
-import { rollStatsTotal, mulberry32, statTotal } from './stats';
+import { rollStatsForStyle, mulberry32, statTotal } from './stats';
 import { styleFor } from './runStyle';
+import type { RunStyle, Stats } from '../types';
 
-// A field of 8 with varied stats (the normal-race size, RACE_V2 §14 answer).
+const STYLES: RunStyle[] = ['nige', 'senko', 'sashi', 'oikomi'];
+
+// A field of 8 with varied 40-point spreads (the normal-race size, §14 answer).
 function field(seed: number, n = 8): Entrant[] {
   const rng = mulberry32(seed * 2 + 1);
   return Array.from({ length: n }, (_, i) => {
-    const stats = rollStatsTotal(rng, 16, 34);
+    const style = STYLES[Math.floor(rng() * 4)];
+    const total = 38 + Math.floor(rng() * 9); // 38..46 (creation 40 + training headroom)
+    const stats = rollStatsForStyle(rng, total, style);
     const id = `h${i}`;
     return { horseId: id, name: id, isPlayer: i === 0, stats, style: styleFor(id, stats) };
   });
@@ -117,9 +122,82 @@ describe('raceSim2 invariants', () => {
       const early = res.frames[Math.floor(res.frames.length * 0.25)];
       f.forEach((e, i) => delta[e.style].push(early.runners[i].rank - res.ranks[i]));
     }
-    // Directional: closers improve, front-runners lose ground.
-    expect(avg(delta.oikomi)).toBeGreaterThan(avg(delta.nige));
-    expect(avg(delta.oikomi)).toBeGreaterThan(0);
-    expect(avg(delta.nige)).toBeLessThan(0);
+    // Directional: closers (追込) finish clearly stronger than front-runners
+    // (逃げ), and front-runners fade. In the compressed 40-point field the whole
+    // pack bunches at the line, so what matters is the *gap* between styles — a
+    // closer holds/gains while a front-runner clearly loses ground late.
+    expect(avg(delta.nige)).toBeLessThan(-0.05); // front-runners clearly fade
+    expect(avg(delta.oikomi)).toBeGreaterThan(avg(delta.nige) + 0.2); // closers far stronger late
+    expect(avg(delta.oikomi)).toBeGreaterThan(avg(delta.sashi) - 0.25); // both closer styles hold up
+  });
+});
+
+// RACE_V3 §4: with point-buy 40 stats, verify no build/type dominates, that
+// course aptitude bites, and that finishes stay close.
+import { courseById as cById } from '../data/courses';
+
+// Six archetypes from RACE_V3 §4 #10 (each sums to 40).
+const ARCHE: Record<string, Stats> = {
+  balance: { spd: 8, sta: 8, pwr: 7, jmp: 3, gut: 8, wit: 6 },
+  speed: { spd: 10, sta: 6, pwr: 8, jmp: 2, gut: 4, wit: 10 },
+  stamina: { spd: 5, sta: 10, pwr: 6, jmp: 2, gut: 10, wit: 7 },
+  sashi: { spd: 7, sta: 9, pwr: 6, jmp: 2, gut: 9, wit: 7 },
+  nige: { spd: 9, sta: 6, pwr: 9, jmp: 2, gut: 7, wit: 7 },
+  oikomi: { spd: 6, sta: 9, pwr: 6, jmp: 3, gut: 10, wit: 6 },
+};
+
+// Run `runs` races of the 6 archetypes (+2 balanced fillers = 8) and count wins.
+function archetypeWins(runs: number, courseId?: string): { wins: Record<string, number>; margins: number[] } {
+  const keys = Object.keys(ARCHE);
+  const wins: Record<string, number> = {};
+  keys.forEach((k) => (wins[k] = 0));
+  const margins: number[] = [];
+  for (let s = 0; s < runs; s++) {
+    const course = courseId ? cById(courseId) : COURSES[s % COURSES.length];
+    const f: Entrant[] = keys.map((k) => {
+      const id = `${k}${s}`;
+      return { horseId: id, name: k, isPlayer: false, stats: ARCHE[k], style: styleFor(id, ARCHE[k]) };
+    });
+    for (let j = 0; j < 2; j++) {
+      const id = `fl${s}_${j}`;
+      // Fillers are named distinctly so their wins don't count toward any archetype.
+      f.push({ horseId: id, name: 'filler', isPlayer: false, stats: ARCHE.balance, style: styleFor(id, ARCHE.balance) });
+    }
+    const res = simulate2(f, course, 60, s * 3 + 1);
+    wins[f[res.order[0]].name]++;
+    const t = [...res.finishTimes].sort((a, b) => a - b);
+    margins.push(t[1] - t[0]);
+  }
+  return { wins, margins };
+}
+
+describe('raceSim2 balance (RACE_V3 §4)', () => {
+  it('#10 no build/style dominates — each archetype wins 6%..40% across courses', () => {
+    const runs = 300;
+    const { wins } = archetypeWins(runs);
+    for (const k of Object.keys(ARCHE)) {
+      const rate = wins[k] / runs;
+      expect(rate).toBeGreaterThanOrEqual(0.06);
+      expect(rate).toBeLessThanOrEqual(0.4);
+    }
+  });
+
+  it('#11 course aptitude matters — a build wins ≥2x more on its good course than its bad one', () => {
+    const runs = 250;
+    // Stamina build: trail (sta/gut-weighted) is its course; circuit (spd/wit) is not.
+    const staOnTrail = archetypeWins(runs, 'trail').wins.stamina / runs;
+    const staOnCircuit = archetypeWins(runs, 'circuit').wins.stamina / runs;
+    // Front-runner (nige): dirt (pwr/sta-weighted, its power run) vs trail.
+    const nigeOnDirt = archetypeWins(runs, 'dirt').wins.nige / runs;
+    const nigeOnTrail = archetypeWins(runs, 'trail').wins.nige / runs;
+    expect(staOnTrail).toBeGreaterThanOrEqual(staOnCircuit * 2);
+    expect(nigeOnDirt).toBeGreaterThanOrEqual(nigeOnTrail * 2);
+  });
+
+  it('#12 finishes stay close — mean 1st–2nd gap in 0.15..1.2s', () => {
+    const { margins } = archetypeWins(240);
+    const m = avg(margins);
+    expect(m).toBeGreaterThan(0.15);
+    expect(m).toBeLessThan(1.2);
   });
 });

@@ -163,9 +163,9 @@ export function simulate2(
       e,
       eff: ef,
       gate,
-      vMax0: 9 + ef.spd * 0.8,
-      accel0: 1.8 + ef.pwr * 0.35,
-      spMax: 60 + ef.sta * 10,
+      vMax0: 9 + ef.spd * 0.6,
+      accel0: 1.8 + ef.pwr * 0.26,
+      spMax: 48 + ef.sta * 12,
       s: 0,
       d: startD,
       v: 0,
@@ -215,14 +215,14 @@ export function simulate2(
       const onCorner = c > 0;
 
       // --- longitudinal speed target ---
-      // Compressed spread (11 + spd*0.55) keeps the field tightly matched so
-      // finishes are close; positioning/pace then decide the winner.
-      let vMax = (11 + ef.spd * 0.6) * paceAt(r.e.style, progress);
+      // Tightly compressed base spread (spd barely moves top speed) so raw speed
+      // can't run away; stamina failure, pace and positioning decide the winner.
+      let vMax = (13.0 + ef.spd * 0.33) * paceAt(r.e.style, progress);
       vMax *= 1 - Math.max(0, course.drag - ef.pwr * 0.015);
       if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.03);
       const tired = r.sp <= 0;
-      if (tired) vMax *= 0.6;
-      if (progress >= 0.75) vMax *= 1 + ef.gut * 0.02;
+      if (tired) vMax *= 0.5; // running on empty is punishing — stamina matters
+      if (progress >= 0.7) vMax *= 1 + ef.gut * 0.025; // gut = a strong late kick
       const boosting = t < r.boostUntil;
       if (boosting) vMax *= 1.25;
       // Slipstream vs clean-air: a horse leading its line cuts the air and is a
@@ -230,18 +230,26 @@ export function simulate2(
       // this is what produces close finishes (RACE_V2 §8 criterion 5).
       if (drafting(runners, r)) vMax *= 1.05;
       else vMax *= 0.97; // clean-air cost keeps the pack honest
-      // Gentle terminal closing (RACE_V2 §13): only the last 18%, so it tightens
-      // the finish without erasing the running-style position swings.
-      if (progress > 0.82) {
+      if (r.s >= leaderS - 0.01) vMax *= 0.965; // the outright leader cuts all the wind
+      // Terminal closing (RACE_V2 §13): the last quarter pulls trailing horses
+      // back toward the leader so finishes stay tight and closers can strike.
+      // Gut ("こんじょう") strengthens the tow, so gutsy closers reliably reel the
+      // leader in late (RACE_V3 §4 directionality).
+      if (progress > 0.75) {
         const behind = leaderS - r.s;
-        if (behind > 0 && behind < 30) vMax *= 1 + Math.min(0.13, (behind / 30) * 0.13);
+        if (behind > 0 && behind < 45) {
+          const towCap = 0.16 + ef.gut * 0.012; // gut10 => up to +0.28
+          vMax *= 1 + Math.min(towCap, (behind / 45) * towCap);
+        }
       }
 
-      // stamina
+      // stamina — drain scales with ABSOLUTE speed, so front-runners burning fast
+      // early empty out and fade; gut ("こんじょう") rarely buys a second wind, so
+      // only genuinely gutsy (closer) horses can keep striking on empty.
       const sandMul = course.surface === 'sand' ? 1.15 : 1;
-      const drain = DT * Math.pow(r.v / Math.max(1, vMax), 2) * 3.0 * (1 - ef.wit * 0.02) * sandMul;
+      const drain = DT * Math.pow(r.v / 13, 2.2) * 4.0 * (1 - ef.wit * 0.012) * sandMul;
       r.sp = Math.max(0, r.sp - drain);
-      if (r.sp <= 0 && rng() < ef.gut * 0.004) r.sp = r.spMax * 0.15;
+      if (r.sp <= 0 && rng() < ef.gut * 0.0035) r.sp = r.spMax * 0.15;
 
       // acceleration
       let accel = r.accel0;

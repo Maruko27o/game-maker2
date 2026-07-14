@@ -1,9 +1,10 @@
 // CPU horse generation shared by single races and the grand prix.
 import { colorsBySlot, decosBySlot, DECO_SLOTS } from '../data/parts';
-import { rollStatsTotal, type RNG } from './stats';
-import { styleFor } from './runStyle';
+import { rollStatsForStyle, type RNG } from './stats';
 import type { Entrant } from './raceSim2';
-import type { HorseLook, DecoSlot } from '../types';
+import type { HorseLook, DecoSlot, RunStyle } from '../types';
+
+const STYLES: RunStyle[] = ['nige', 'senko', 'sashi', 'oikomi'];
 
 const NAME_A = ['カゼ', 'ホシ', 'ハナ', 'ユキ', 'ソラ', 'ナミ', 'ミネ', 'タキ', 'クモ', 'ツキ', 'イナ', 'アサ', 'ハル', 'ナツ'];
 const NAME_B = ['マル', 'ゴウ', 'オー', 'キング', 'スター', 'ボーイ', 'ヒメ', 'ナデシコ', '号', '丸', 'クン', 'ロード'];
@@ -16,8 +17,9 @@ export function cpuName(rng: RNG): string {
   return pick(NAME_A, rng) + pick(NAME_B, rng);
 }
 
-/** A CPU racer with random look + stats in a grade band. Higher decoChance
- *  (grand-prix, higher grade) makes stronger-looking horses. */
+/** A CPU racer whose 40+ points are laid down along a running-style template
+ *  (RACE_V3 §3.5), so it plays like a real 逃げ/差し… type. `band` is the total
+ *  point range for the grade. Higher decoChance dresses stronger horses up. */
 export function makeCpu(
   id: string,
   rng: RNG,
@@ -25,7 +27,9 @@ export function makeCpu(
   decoChance: number,
   name = cpuName(rng),
 ): { entrant: Entrant; look: HorseLook } {
-  const stats = rollStatsTotal(rng, band[0], band[1]);
+  const style = pick(STYLES, rng);
+  const total = band[0] + Math.floor(rng() * (band[1] - band[0] + 1));
+  const stats = rollStatsForStyle(rng, total, style);
   const decos: Partial<Record<DecoSlot, string>> = {};
   let chance = decoChance;
   for (const slot of DECO_SLOTS) {
@@ -42,7 +46,7 @@ export function makeCpu(
     decos,
   };
   return {
-    entrant: { horseId: id, name, isPlayer: false, stats, style: styleFor(id, stats) },
+    entrant: { horseId: id, name, isPlayer: false, stats, style },
     look,
   };
 }

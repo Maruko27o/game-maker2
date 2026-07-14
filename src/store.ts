@@ -13,7 +13,7 @@ import type {
 import { allParts } from './data/parts';
 import { spawn as gachaSpawn } from './logic/gacha';
 import { ENERGY_CAP, spendEnergy } from './logic/energy';
-import { rollStats, rngFromId } from './logic/stats';
+import { rescaleTo40 } from './logic/stats';
 import { applyTraining } from './logic/training';
 
 export const STORAGE_KEY = 'horse-game/v1'; // storage slot; payload is versioned inside
@@ -39,7 +39,7 @@ function starterOwned(): Record<string, number> {
 
 function freshSave(): SaveData {
   return {
-    version: 3,
+    version: 4,
     owned: starterOwned(),
     horses: [],
     energy: ENERGY_CAP,
@@ -48,6 +48,7 @@ function freshSave(): SaveData {
     items: [],
     raceRecords: [],
     gpUnlocked: { g2: false, g1: false },
+    freeRebalance: false,
     savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
 }
@@ -57,12 +58,10 @@ function normGp(v: unknown): { g2: boolean; g1: boolean } {
   return { g2: !!g.g2, g1: !!g.g1 };
 }
 
-// Give a horse reproducible stats seeded from its id (RACE.md §11).
-function statsForId(id: string): Stats {
-  return rollStats(rngFromId(id));
-}
+// Balanced 40-point spread for horses that predate any stats (v1/v2).
+const BALANCED_40: Stats = { spd: 7, sta: 7, pwr: 7, jmp: 7, gut: 6, wit: 6 };
 
-// Migrate any stored payload up to v3, preserving collection/horses.
+// Migrate any stored payload up to v4, preserving collection/horses.
 // Returns { data, migrated } — migrated=true when an upgrade happened.
 function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null {
   if (!parsed || typeof parsed !== 'object') return null;
@@ -71,44 +70,51 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
   const owned = d.owned as Record<string, number>;
   const horses = d.horses as Horse[];
 
-  if (d.version === 3) {
+  const energy = typeof d.energy === 'number' ? d.energy : ENERGY_CAP;
+  const energyUpdatedAt = typeof d.energyUpdatedAt === 'number' ? d.energyUpdatedAt : Date.now();
+  const trophies = Array.isArray(d.trophies) ? (d.trophies as Trophy[]) : [];
+  const items = Array.isArray(d.items) ? (d.items as TrainingItem[]) : [];
+  const raceRecords = Array.isArray(d.raceRecords) ? (d.raceRecords as RaceRecord[]) : [];
+  const savedAt = typeof d.savedAt === 'number' ? d.savedAt : 0;
+
+  if (d.version === 4) {
     return {
       data: {
-        version: 3,
+        version: 4,
         owned,
         horses,
-        energy: typeof d.energy === 'number' ? d.energy : ENERGY_CAP,
-        energyUpdatedAt: typeof d.energyUpdatedAt === 'number' ? d.energyUpdatedAt : Date.now(),
-        trophies: Array.isArray(d.trophies) ? (d.trophies as Trophy[]) : [],
-        items: Array.isArray(d.items) ? (d.items as TrainingItem[]) : [],
-        raceRecords: Array.isArray(d.raceRecords) ? (d.raceRecords as RaceRecord[]) : [],
+        energy,
+        energyUpdatedAt,
+        trophies,
+        items,
+        raceRecords,
         gpUnlocked: normGp(d.gpUnlocked),
-        savedAt: typeof d.savedAt === 'number' ? d.savedAt : 0,
+        freeRebalance: !!d.freeRebalance,
+        savedAt,
       },
       migrated: false,
     };
   }
 
-  // v1 (0:00/12:00 slot) or v2 (energy, no stats) -> v3.
-  const energy =
-    d.version === 2 && typeof d.energy === 'number' ? (d.energy as number) : ENERGY_CAP;
-  const energyUpdatedAt =
-    d.version === 2 && typeof d.energyUpdatedAt === 'number'
-      ? (d.energyUpdatedAt as number)
-      : Date.now();
-  const withStats = horses.map((h) => ({ ...h, stats: h.stats ?? statsForId(h.id) }));
+  // v1/v2/v3 -> v4: re-scale every horse's stats to sum 40 (RACE_V3 §3.6) and
+  // grant one free re-allocation so the player can adapt to the new rules.
+  const rescaled = horses.map((h) => ({
+    ...h,
+    stats: h.stats ? rescaleTo40(h.stats) : { ...BALANCED_40 },
+  }));
   return {
     data: {
-      version: 3,
+      version: 4,
       owned,
-      horses: withStats,
+      horses: rescaled,
       energy,
       energyUpdatedAt,
-      trophies: [],
-      items: [],
-      raceRecords: [],
+      trophies,
+      items,
+      raceRecords,
       gpUnlocked: normGp(d.gpUnlocked),
-      savedAt: typeof d.savedAt === 'number' ? d.savedAt : 0,
+      freeRebalance: horses.length > 0, // only worth a rebalance if there are horses
+      savedAt,
     },
     migrated: true,
   };
@@ -146,10 +152,12 @@ type Store = SaveData & {
   /** Replace the entire save (used when loading a cloud save on login). */
   hydrate: (data: SaveData) => void;
   doSpawn: (rng?: () => number) => SpawnResult;
-  addHorse: (h: Omit<Horse, 'id' | 'createdAt' | 'stats'>) => Horse | null;
+  addHorse: (h: Omit<Horse, 'id' | 'createdAt' | 'stats'>, stats: Stats) => Horse | null;
   updateHorse: (id: string, patch: Partial<Pick<Horse, 'name' | 'colors' | 'decos'>>) => void;
   renameHorse: (id: string, name: string) => void;
   removeHorse: (id: string) => void;
+  /** One-time free stat re-allocation after the v4 migration. Returns success. */
+  rebalanceHorse: (id: string, stats: Stats) => boolean;
   addTrophies: (t: Trophy[]) => void;
   grantItems: (items: TrainingItem[]) => void;
   unlockGp: (patch: { g2?: boolean; g1?: boolean }) => void;
@@ -167,7 +175,7 @@ export const useStore = create<Store>((set, get) => {
     const savedAt = Date.now();
     const next = { ...get(), ...partial, savedAt } as Store;
     const data: SaveData = {
-      version: 3,
+      version: 4,
       owned: next.owned,
       horses: next.horses,
       energy: next.energy,
@@ -176,6 +184,7 @@ export const useStore = create<Store>((set, get) => {
       items: next.items,
       raceRecords: next.raceRecords,
       gpUnlocked: next.gpUnlocked,
+      freeRebalance: next.freeRebalance,
       savedAt,
     };
     persist(data);
@@ -208,10 +217,10 @@ export const useStore = create<Store>((set, get) => {
       return { parts, energyLeft: spent.energy };
     },
 
-    addHorse: (h) => {
+    addHorse: (h, stats) => {
       if (get().horses.length >= MAX_HORSES) return null;
       const id = newId();
-      const horse: Horse = { ...h, id, stats: statsForId(id), createdAt: Date.now() };
+      const horse: Horse = { ...h, id, stats, createdAt: Date.now() };
       commit({ horses: [...get().horses, horse] });
       return horse;
     },
@@ -229,6 +238,17 @@ export const useStore = create<Store>((set, get) => {
         horses: get().horses.filter((h) => h.id !== id),
         trophies: get().trophies.filter((t) => t.horseId !== id),
       });
+    },
+
+    rebalanceHorse: (id, stats) => {
+      if (!get().freeRebalance) return false;
+      const exists = get().horses.some((h) => h.id === id);
+      if (!exists) return false;
+      commit({
+        horses: get().horses.map((h) => (h.id === id ? { ...h, stats } : h)),
+        freeRebalance: false, // consume the one-time free rebalance
+      });
+      return true;
     },
 
     addTrophies: (t) => {

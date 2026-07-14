@@ -7,7 +7,7 @@ import { initAuth, useAuth, cloudLoad, cloudSave } from '../cloud';
 function snapshot(): SaveData {
   const s = useStore.getState();
   return {
-    version: 3,
+    version: 4,
     owned: s.owned,
     horses: s.horses,
     energy: s.energy,
@@ -16,6 +16,7 @@ function snapshot(): SaveData {
     items: s.items,
     raceRecords: s.raceRecords,
     gpUnlocked: s.gpUnlocked,
+    freeRebalance: s.freeRebalance,
     savedAt: s.savedAt,
   };
 }

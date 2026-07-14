@@ -37,6 +37,12 @@ export const STAT_LABEL: Record<StatKey, string> = {
 export const STAT_CAP = 10; // per-stat max
 export const STAT_TOTAL_CAP = 48; // sum hard cap via training
 
+// Point-buy creation (RACE_V3 §3): the player distributes exactly 40 points,
+// each stat 1..10. Training then raises the sum up to STAT_TOTAL_CAP (48).
+export const STAT_ALLOC_TOTAL = 40;
+export const STAT_ALLOC_MIN = 1;
+export const STAT_ALLOC_MAX = STAT_CAP; // 10
+
 // Running style (脚質, RACE_V2 §4.2). Fixed per horse (derived from stats+id).
 export type RunStyle = 'nige' | 'senko' | 'sashi' | 'oikomi';
 export const RUN_STYLE_LABEL: Record<RunStyle, string> = {
@@ -86,7 +92,7 @@ export type RaceRecord = {
 };
 
 export type SaveData = {
-  version: 3;
+  version: 4;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
   horses: Horse[]; // max 10
   energy: number; // grass spawn stock (0..3), charges 1 per hour
@@ -95,5 +101,6 @@ export type SaveData = {
   items: TrainingItem[]; // owned training items (unused inventory)
   raceRecords: RaceRecord[];
   gpUnlocked: { g2: boolean; g1: boolean }; // grand-prix grade unlocks
+  freeRebalance: boolean; // one free stat re-allocation after the v4 migration (RACE_V3 §3.6)
   savedAt: number; // ms of the last change — used for cloud last-write-wins sync
 };
