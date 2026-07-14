@@ -5,6 +5,7 @@ import { simulate2, type Entrant, type SimResult } from '../logic/raceSim2';
 import type { HorseLook } from '../types';
 import HorseDefs from './HorseDefs';
 import HorseRaceView from './HorseRaceView';
+import RankPanel from './RankPanel';
 import styles from './RaceTrack2.module.css';
 
 const SURFACE_COLOR: Record<string, string> = {
@@ -276,6 +277,12 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
+      <RankPanel
+        entrants={entrants}
+        looks={looks}
+        ranks={fr.runners.map((r) => r.rank)}
+        finished={phase === 'done'}
+      />
       {skippable && phase === 'run' && (
         <button className={styles.skip} onClick={() => { elapsed.current = result.duration; setPhase('done'); onFinish(result); }}>
           スキップ ⏭
