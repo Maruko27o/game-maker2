@@ -13,6 +13,28 @@ export const supabase: SupabaseClient | null = CLOUD_ENABLED
 
 export const SAVE_TABLE = 'saves';
 
+// Which account the *local* save currently belongs to (device-local only; never
+// synced to the cloud). Used to stop guest/other-account data from overwriting
+// an established account on sign-in.
+const OWNER_KEY = 'horse-game/owner';
+
+export function getOwner(): string | null {
+  try {
+    return localStorage.getItem(OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setOwner(userId: string | null): void {
+  try {
+    if (userId) localStorage.setItem(OWNER_KEY, userId);
+    else localStorage.removeItem(OWNER_KEY);
+  } catch {
+    // storage unavailable — reconciliation just falls back to "guest" (cloud wins)
+  }
+}
+
 export type SyncState = 'idle' | 'syncing' | 'saved' | 'error' | 'offline';
 export type AuthUser = { id: string; email: string };
 
@@ -82,6 +104,7 @@ export async function signIn(email: string, password: string): Promise<string | 
 
 export async function signOut(): Promise<void> {
   if (!supabase) return;
+  setOwner(null); // local save reverts to "guest"; a later login won't clobber cloud
   await supabase.auth.signOut();
 }
 

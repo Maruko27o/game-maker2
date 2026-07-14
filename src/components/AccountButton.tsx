@@ -115,7 +115,9 @@ export default function AccountButton() {
                   {busy ? '…' : mode === 'login' ? 'ログイン' : '登録する'}
                 </button>
                 <p className={styles.note}>
-                  登録すると、いまこの端末にあるデータがそのままアカウントに保存されます。
+                  {mode === 'signup'
+                    ? '登録すると、いまこの端末にあるデータがそのままアカウントに保存されます。'
+                    : 'ログインすると、アカウントに保存されたデータが読み込まれます（この端末のデータで上書きされません）。'}
                 </p>
               </div>
             )}

@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useStore } from '../store';
 import type { SaveData } from '../types';
-import { initAuth, useAuth, cloudLoad, cloudSave } from '../cloud';
+import { initAuth, useAuth, cloudLoad, cloudSave, getOwner, setOwner } from '../cloud';
+import { reconcile } from '../logic/cloudReconcile';
 
 // Extract the persisted shape from the live store state.
 function snapshot(): SaveData {
@@ -41,14 +42,16 @@ export default function CloudSync() {
       const cloud = await cloudLoad(user.id);
       if (cancelled) return;
       const local = snapshot();
-      if (!cloud) {
-        const err = await cloudSave(user.id, local); // first login on this account
-        if (!cancelled) setSync(err ? 'error' : 'saved');
-      } else if ((cloud.savedAt ?? 0) >= (local.savedAt ?? 0)) {
+      // Ownership-based reconcile: cloud data is never overwritten by a local
+      // save that doesn't belong to this account (fixes the overwrite bug).
+      const decision = reconcile(cloud, local, getOwner(), user.id);
+      if (decision.action === 'loadCloud' && cloud) {
         useStore.getState().hydrate(cloud);
+        setOwner(user.id);
         if (!cancelled) setSync('saved');
       } else {
-        const err = await cloudSave(user.id, local); // local is newer
+        const err = await cloudSave(user.id, local); // pushLocal / keepLocalPushCloud
+        setOwner(user.id);
         if (!cancelled) setSync(err ? 'error' : 'saved');
       }
     })();
