@@ -99,18 +99,11 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     const surface = SURFACE_COLOR[course.surface] ?? '#8cc264';
     const goal = toWorld(track, lap * 0.12, 0);
     const gc = centerline(track, lap * 0.12);
-    const dots = [];
-    for (let r = 0; r < 3; r++) {
-      for (let x = b.minX; x < b.maxX; x += 6) {
-        dots.push(<circle key={`${r}-${x}`} cx={x + (r % 2) * 3} cy={b.minY - stands + 4 + r * 5} r="1.8" fill={['#d98b8b', '#8bb7d9', '#e0c27a', '#a6d98b'][(x + r) % 4]} />);
-      }
-    }
     return (
       <>
         <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill={course.surface === 'circuit' ? '#2b3350' : '#bfe08a'} />
-        {/* stands */}
+        {/* stands (spectators drawn as a separate cheering layer) */}
         <rect x={vb.x} y={vb.y} width={vb.w} height={stands + 4} fill="#c8a06a" />
-        {dots}
         {/* outer rail (white ring) then running surface */}
         <path d={path} fill="none" stroke="#f3efe0" strokeWidth={track.width + 2.4} strokeLinejoin="round" />
         <path d={path} fill="none" stroke={surface} strokeWidth={track.width} strokeLinejoin="round" />
@@ -129,6 +122,23 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
       </>
     );
   }, [track, course, lap, vb.x, vb.y, vb.w, vb.h, b.minX, b.maxX, b.minY, stands]);
+
+  // Spectator seats (positions are static; they bob per-frame in the render).
+  const crowdDots = useMemo(() => {
+    const dots: { x: number; y: number; fill: string; ph: number }[] = [];
+    const palette = ['#d98b8b', '#8bb7d9', '#e0c27a', '#a6d98b', '#c79bd9'];
+    for (let r = 0; r < 3; r++) {
+      for (let x = b.minX; x < b.maxX; x += 5) {
+        dots.push({
+          x: x + (r % 2) * 2.5,
+          y: b.minY - stands + 4 + r * 5,
+          fill: palette[(Math.abs(x) + r) % palette.length],
+          ph: (Math.abs(x) * 7 + r * 3) % 100,
+        });
+      }
+    }
+    return dots;
+  }, [b.minX, b.maxX, b.minY, stands]);
 
   // Full starting gate (§9): one numbered stall per entrant, straddling the
   // track at s=0. Oriented with the track (tangent = run direction), it fades
@@ -235,6 +245,15 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         <svg viewBox={viewBox} className={styles.svg} preserveAspectRatio="xMidYMid meet">
           <HorseDefs />
           {scenery}
+          {/* cheering crowd — bobs harder down the final stretch and at the finish */}
+          {(() => {
+            const hype = phase === 'done' ? 1 : leaderS / result.distanceS > 0.85 ? 0.7 : 0.28;
+            const amp = reduced ? 0 : 1.4 * hype;
+            const t = elapsed.current * 7;
+            return crowdDots.map((d, i) => (
+              <circle key={i} cx={d.x} cy={d.y - Math.abs(Math.sin(t + d.ph)) * amp} r={1.7} fill={d.fill} />
+            ));
+          })()}
           {/* starting gate — fades as the field runs clear of it */}
           <g opacity={clamp(1 - leaderS / 30, 0, 1)}>{startGate}</g>
           {/* boost panels + obstacles */}

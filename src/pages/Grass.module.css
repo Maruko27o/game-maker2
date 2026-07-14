@@ -170,19 +170,31 @@
 .wild {
   z-index: 1;
   margin-bottom: 24px;
-  animation: pop 0.5s cubic-bezier(0.2, 1.4, 0.5, 1) both;
 }
-@keyframes pop {
+/* Runs in from the distance (RACE_V2 §11.2): small + off to the side, gallops
+   up to the front with a little bob, then settles. */
+.runIn {
+  animation: runIn 0.85s cubic-bezier(0.15, 0.6, 0.25, 1) both;
+}
+@keyframes runIn {
   0% {
-    transform: translateY(60px) scale(0.4);
+    transform: translateX(-170%) translateY(8px) scale(0.32);
     opacity: 0;
   }
-  60% {
-    transform: translateY(-10px) scale(1.08);
+  25% {
     opacity: 1;
   }
+  45% {
+    transform: translateX(-40%) translateY(-6px) scale(0.7);
+  }
+  62% {
+    transform: translateX(8%) translateY(3px) scale(0.98);
+  }
+  78% {
+    transform: translateX(-3%) translateY(-3px) scale(1.03);
+  }
   100% {
-    transform: translateY(0) scale(1);
+    transform: translateX(0) translateY(0) scale(1);
   }
 }
 
