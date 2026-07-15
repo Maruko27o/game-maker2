@@ -1,8 +1,11 @@
 .shell {
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100vh;
-  min-height: 100dvh;
+  /* Fix the shell to the viewport so .main is the internal scroller. This keeps
+     position:sticky elements (e.g. the edit-screen horse preview) pinned to the
+     top band instead of scrolling away with the page. */
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--paper);
@@ -35,7 +38,11 @@
 
 .main {
   flex: 1;
-  padding: 14px 14px calc(var(--nav-h) + 20px);
+  min-height: 0; /* allow the flex child to shrink so it can scroll internally */
+  overflow-y: auto;
+  /* Top padding reserves the fixed top band (coin pill + account button, y≈10–50)
+     so no page's content sits under them. */
+  padding: 56px 14px calc(var(--nav-h) + 20px);
   overflow-x: hidden;
 }
 

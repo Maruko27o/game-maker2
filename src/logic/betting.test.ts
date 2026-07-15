@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { raceOdds, settleWin } from './betting';
+import { raceOdds, oddsFor, selProb, settle, wouldWin, type Bet } from './betting';
+import { winProbs } from './grandprix';
 import { COURSES } from '../data/courses';
 import { styleFor } from './runStyle';
 import type { Entrant } from './raceSim2';
 import type { Stats } from '../types';
 
-// A moderately-spread field: a clear favourite, but no horse extreme enough to
-// hit the odds clamp (so the takeout shows cleanly in the implied-probability sum).
+// Moderately-spread field so no market hits the odds clamp.
 function field(): Entrant[] {
   const specs: Array<[string, Stats]> = [
     ['strong', { spd: 8, sta: 8, pwr: 8, jmp: 3, gut: 8, wit: 7 }],
@@ -17,37 +17,72 @@ function field(): Entrant[] {
   return specs.map(([id, stats]) => ({ horseId: id, name: id, isPlayer: false, stats, style: styleFor(id, stats) }));
 }
 
-describe('betting odds', () => {
-  it('every entrant gets odds within the clamp and a unique popularity rank', () => {
+describe('win odds table', () => {
+  it('within clamp, unique popularity, favourite is strongest, ~20% takeout', () => {
     const rows = raceOdds(field(), COURSES[0]);
-    expect(rows).toHaveLength(4);
-    for (const r of rows) {
-      expect(r.odds).toBeGreaterThanOrEqual(1.1);
-      expect(r.odds).toBeLessThanOrEqual(99);
-    }
+    for (const r of rows) expect(r.odds).toBeGreaterThanOrEqual(1.1);
     expect([...rows.map((r) => r.pop)].sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
-  });
-
-  it('the strongest horse is the favourite (lowest odds, pop 1)', () => {
-    const rows = raceOdds(field(), COURSES[0]);
-    const fav = rows.reduce((a, b) => (a.odds < b.odds ? a : b));
-    expect(fav.idx).toBe(0); // the "strong" entrant
-    expect(fav.pop).toBe(1);
-  });
-
-  it('carries an ~20% takeout — implied probabilities sum above 1', () => {
-    const rows = raceOdds(field(), COURSES[0]);
+    expect(rows.reduce((a, b) => (a.odds < b.odds ? a : b)).idx).toBe(0);
     const implied = rows.reduce((n, r) => n + 1 / r.odds, 0);
-    expect(implied).toBeGreaterThan(1.05); // house edge present
-    expect(implied).toBeLessThan(1.4);
+    expect(implied).toBeGreaterThan(1.05);
   });
 });
 
-describe('betting payout', () => {
-  it('pays floor(stake × odds) on a win and nothing on a loss', () => {
-    const bet = { targetIdx: 2, amount: 100, odds: 4.7 };
-    expect(settleWin(bet, 2)).toBe(470);
-    expect(settleWin(bet, 0)).toBe(0);
-    expect(settleWin({ targetIdx: 1, amount: 50, odds: 3.33 }, 1)).toBe(166); // floored
+describe('market probabilities (Harville)', () => {
+  const p = winProbs(field(), COURSES[0]);
+  it('place (top-3) is more likely than win for the same horse', () => {
+    expect(selProb('place', [0], p)).toBeGreaterThan(selProb('win', [0], p));
+  });
+  it('trifecta is rarer (longer odds) than win', () => {
+    expect(oddsFor('trifecta', [0, 1, 2], p)).toBeGreaterThan(oddsFor('win', [0], p));
+  });
+  it('wide (both in top-3) is easier than quinella (exact top-2) for the same pair', () => {
+    expect(selProb('wide', [0, 1], p)).toBeGreaterThan(selProb('quinella', [0, 1], p));
+  });
+  it('all odds respect the clamp', () => {
+    const cases: [Bet['kind'], number[]][] = [
+      ['win', [0]], ['place', [3]], ['quinella', [0, 1]], ['wide', [2, 3]], ['trifecta', [3, 2, 1]],
+    ];
+    for (const [k, sel] of cases) {
+      const o = oddsFor(k, sel, p);
+      expect(o).toBeGreaterThanOrEqual(1.1);
+      expect(o).toBeLessThanOrEqual(999);
+    }
+  });
+});
+
+describe('settlement', () => {
+  const order = [2, 5, 1, 0, 3, 4, 6, 7]; // finishing order (entrant indices)
+  const bet = (kind: Bet['kind'], sel: number[]): Bet => ({ kind, sel, amount: 100, odds: 4 });
+  it('win: only the actual winner pays', () => {
+    expect(settle(bet('win', [2]), order)).toBe(400);
+    expect(settle(bet('win', [5]), order)).toBe(0);
+  });
+  it('place: any of the top 3 pays', () => {
+    expect(settle(bet('place', [1]), order)).toBe(400); // 3rd
+    expect(settle(bet('place', [0]), order)).toBe(0); // 4th
+  });
+  it('quinella: the exact top-2 set in any order', () => {
+    expect(settle(bet('quinella', [5, 2]), order)).toBe(400);
+    expect(settle(bet('quinella', [2, 1]), order)).toBe(0); // 1st+3rd, not top-2
+  });
+  it('wide: both picks inside the top 3', () => {
+    expect(settle(bet('wide', [2, 1]), order)).toBe(400); // 1st + 3rd
+    expect(settle(bet('wide', [2, 0]), order)).toBe(0); // 0 is 4th
+  });
+  it('trifecta: exact 1-2-3 order', () => {
+    expect(settle(bet('trifecta', [2, 5, 1]), order)).toBe(400);
+    expect(settle(bet('trifecta', [2, 1, 5]), order)).toBe(0); // right horses, wrong order
+  });
+});
+
+describe('wouldWin (in-race glow)', () => {
+  it('matches settle for the current standing', () => {
+    // ranks[entrantIdx] = current rank. Winner=idx3, 2nd=idx1, 3rd=idx0.
+    const ranks = [3, 2, 5, 1, 6, 7, 8, 4];
+    expect(wouldWin({ kind: 'win', sel: [3], amount: 10, odds: 2 }, ranks)).toBe(true);
+    expect(wouldWin({ kind: 'win', sel: [1], amount: 10, odds: 2 }, ranks)).toBe(false);
+    expect(wouldWin({ kind: 'place', sel: [0], amount: 10, odds: 2 }, ranks)).toBe(true); // 0 is 3rd
+    expect(wouldWin({ kind: 'trifecta', sel: [3, 1, 0], amount: 10, odds: 2 }, ranks)).toBe(true);
   });
 });

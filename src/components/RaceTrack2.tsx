@@ -7,7 +7,10 @@ import HorseDefs from './HorseDefs';
 import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
 import { buildScenery } from './trackScenery';
+import { wouldWin, type Bet, type BetKind } from '../logic/betting';
 import styles from './RaceTrack2.module.css';
+
+const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -22,10 +25,11 @@ type Props = {
   reduced: boolean;
   skippable: boolean;
   laps?: number; // override lap count (grand-prix heats/finals)
+  bets?: Bet[]; // the player's placed bets — shown as a live strip that glows when winning
   onFinish: (result: SimResult) => void;
 };
 
-export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, onFinish }: Props) {
+export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, bets, onFinish }: Props) {
   const result = useMemo(
     () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps }),
     [entrants, course, mode, seed, laps],
@@ -274,12 +278,13 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
               <circle key={i} cx={d.x} cy={d.y - Math.abs(Math.sin(t + d.ph)) * amp} r={1.7} fill={d.fill} />
             ));
           })()}
-          {/* turf vision — a decorative jumbotron on the grandstand */}
+          {/* turf vision — a decorative jumbotron on the grandstand. The live
+              leader is shown in the HUD ("先頭 N番") so there's no giant number
+              floating on the course (which read as clutter). */}
           <g>
             <rect x={tv.x - 1} y={tv.y - 1} width={tv.w + 2} height={tv.h + 4} rx={1.2} fill="#2b2f38" />
             <rect x={tv.x} y={tv.y} width={tv.w} height={tv.h} rx={0.6} fill="#0f1a22" />
-            <text x={tv.x + tv.w * 0.5} y={tv.y + tv.h * 0.42} fontSize="2.4" fill="#8fe6c0" fontWeight="800" textAnchor="middle">先頭</text>
-            <text x={tv.x + tv.w * 0.5} y={tv.y + tv.h * 0.78} fontSize="4.4" fill="#f6d24a" fontWeight="900" textAnchor="middle" dominantBaseline="central">{result.gate[leaderIdx]}番</text>
+            <circle cx={tv.x + tv.w * 0.5} cy={tv.y + tv.h * 0.5} r={tv.h * 0.28} fill="none" stroke="#2f6d55" strokeWidth={0.6} />
             <line x1={tv.x + tv.w * 0.5} y1={tv.y + tv.h + 2} x2={tv.x + tv.w * 0.5} y2={tv.y + tv.h + 5} stroke="#2b2f38" strokeWidth={0.8} />
           </g>
           {/* three flags on the grandstand, fluttering */}
@@ -349,13 +354,31 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
+      {/* Bet slip strip — glows when a bet would win if the race ended right now. */}
+      {bets && bets.length > 0 && (
+        <div className={styles.betStrip}>
+          {bets.map((b, i) => {
+            const hit = wouldWin(b, fr.runners.map((r) => r.rank));
+            const picks = b.sel.map((idx) => result.gate[idx]).join(b.kind === 'trifecta' ? '→' : '・');
+            return (
+              <span key={i} className={`${styles.betTag} ${hit ? styles.betHitGlow : ''}`}>
+                <span className={styles.betTagKind}>{KIND_LABEL[b.kind]}</span>
+                {picks}
+                <span className={styles.betTagOdds}>{b.odds.toFixed(1)}倍</span>
+              </span>
+            );
+          })}
+        </div>
+      )}
       <RankPanel
         entrants={entrants}
         looks={looks}
+        gate={result.gate}
         ranks={fr.runners.map((r) => r.rank)}
         finished={phase === 'done'}
       />
-      {skippable && phase === 'run' && (
+      {/* Skip unlocks only in the second half of the race (RACE_V4 §2 request). */}
+      {skippable && phase === 'run' && travelled / result.distanceS >= 0.5 && (
         <button className={styles.skip} onClick={() => { elapsed.current = result.duration; setPhase('done'); onFinish(result); }}>
           スキップ ⏭
         </button>

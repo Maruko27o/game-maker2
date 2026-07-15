@@ -14,8 +14,10 @@
   border: 4px solid var(--border-dark);
   border-radius: 20px;
   padding: 12px;
+  /* Pin the horse below the fixed top band so its whole body stays visible while
+     scrolling the colour/decoration pickers (changes are always in view). */
   position: sticky;
-  top: 8px;
+  top: 56px;
   z-index: 5;
 }
 .warn {
