@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import type { SaveData } from './types';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from './supabaseConfig';
+import { migrate } from './store';
 
 export const supabase: SupabaseClient | null = CLOUD_ENABLED
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -170,12 +171,25 @@ function deviceId(): string {
 
 export type CloudSave = { data: SaveData; rev: number };
 
-/** Load this user's save from the cloud (null when they have none yet). */
-export async function cloudLoad(userId: string): Promise<CloudSave | null> {
-  if (!supabase) return null;
+// Loading the cloud save has THREE outcomes, and conflating them causes data
+// loss: an "error" (network/RLS/timeout/corrupt) must NEVER be treated as
+// "empty", or the sign-in reconciler would push the local (possibly empty) save
+// over real cloud data and wipe the account.
+export type CloudLoad =
+  | { status: 'ok'; save: CloudSave }
+  | { status: 'empty' } // the account genuinely has no save row yet
+  | { status: 'error' }; // could not read — treat the cloud as unknown, don't touch it
+
+/** Load this user's save from the cloud, distinguishing empty from error and
+ *  upgrading old payloads to the current shape. */
+export async function cloudLoad(userId: string): Promise<CloudLoad> {
+  if (!supabase) return { status: 'error' };
   const { data, error } = await supabase.from(SAVE_TABLE).select('*').eq('user_id', userId).maybeSingle();
-  if (error || !data) return null;
-  return { data: data.data as SaveData, rev: typeof data.rev === 'number' ? data.rev : 1 };
+  if (error) return { status: 'error' }; // a real failure — do not mistake for empty
+  if (!data) return { status: 'empty' }; // no row: the account has never saved
+  const migrated = migrate(data.data); // validate + upgrade (v5 → v6 …)
+  if (!migrated) return { status: 'error' }; // unreadable/corrupt payload — never overwrite it
+  return { status: 'ok', save: { data: migrated.data, rev: typeof data.rev === 'number' ? data.rev : 1 } };
 }
 
 export type SaveResult =
