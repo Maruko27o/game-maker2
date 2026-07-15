@@ -34,6 +34,7 @@ function Side({ title, save, accent }: { title: string; save: SaveData; accent: 
 export default function SyncConflictModal() {
   const conflict = useAuth((s) => s.conflict);
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<null | 'device' | 'server'>(null);
   if (!conflict) return null;
   const { userId, cloud, local } = conflict;
 
@@ -82,13 +83,38 @@ export default function SyncConflictModal() {
           <Side title="サーバー" save={cloud.data} accent="#8c6a41" />
         </div>
         <div className={styles.actions}>
-          <button className="btn" disabled={busy} onClick={keepDevice}>
+          <button className="btn" disabled={busy} onClick={() => setPending('device')}>
             この端末を使う
           </button>
-          <button className="btn neutral" disabled={busy} onClick={keepServer}>
+          <button className="btn neutral" disabled={busy} onClick={() => setPending('server')}>
             サーバーを使う
           </button>
         </div>
+
+        {pending && (
+          <div className={styles.confirm}>
+            <p className={styles.confirmMsg}>
+              本当に<strong>「{pending === 'device' ? 'この端末' : 'サーバー'}」</strong>のデータでよろしいですか？
+              <br />
+              {pending === 'device'
+                ? 'サーバー側のデータは、この端末のデータで上書きされます'
+                : 'この端末のデータは、サーバーのデータで置きかえられます'}
+              （選ばれなかった方は7日間バックアップに残ります）。
+            </p>
+            <div className={styles.actions}>
+              <button
+                className="btn"
+                disabled={busy}
+                onClick={() => (pending === 'device' ? keepDevice() : keepServer())}
+              >
+                はい、これでOK
+              </button>
+              <button className="btn neutral" disabled={busy} onClick={() => setPending(null)}>
+                もどる
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

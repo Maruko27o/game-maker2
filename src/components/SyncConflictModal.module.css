@@ -77,3 +77,19 @@
 .actions button {
   width: 100%;
 }
+.confirm {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.confirmMsg {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.7;
+  color: var(--ink);
+  text-align: center;
+}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useStore, dayKey, type SpawnedPart } from '../store';
+import { useStore, type SpawnedPart } from '../store';
 import { ENERGY_CAP, normalizeEnergy, msUntilNextEnergy } from '../logic/energy';
 import { colorSlotById, decoById, partName, partRarity, isColorId } from '../data/parts';
 import { GRASS_OKAWARI_COST } from '../data/coins';
@@ -48,7 +48,6 @@ export default function Grass() {
   const coins = useStore((s) => s.coins);
   const claimGrassBonus = useStore((s) => s.claimGrassBonus);
   const buyOkawari = useStore((s) => s.buyOkawari);
-  const okawariUsed = useStore((s) => s.daily.okawari >= 1 && s.daily.day === dayKey());
 
   const reduced = usePrefersReducedMotion();
   const [now, setNow] = useState(() => Date.now());
@@ -168,8 +167,8 @@ export default function Grass() {
           <button
             className={styles.okawari}
             onClick={() => { if (buyOkawari()) setNow(Date.now()); }}
-            disabled={okawariUsed || coins < GRASS_OKAWARI_COST}
-            title={okawariUsed ? '今日はもう おかわりしました' : `${GRASS_OKAWARI_COST}コインでストック+1`}
+            disabled={coins < GRASS_OKAWARI_COST}
+            title={`${GRASS_OKAWARI_COST}コインでストック+1（何回でもOK）`}
           >
             <CoinIcon size={16} /> 草をおかわり（{GRASS_OKAWARI_COST}）
           </button>

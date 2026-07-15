@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { useAuth, saveDisplayName } from '../cloud';
+import { useAuth, saveDisplayName, setRankingAvatar } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
@@ -149,7 +149,11 @@ export default function ProfileModal({
                         <button
                           key={h.id}
                           className={`${styles.horsePick} ${sel ? styles.picked : ''}`}
-                          onClick={() => setAvatarHorse(h.id)}
+                          onClick={() => {
+                            setAvatarHorse(h.id);
+                            // Reflect the new icon on the ranking too (best-effort).
+                            if (user) setRankingAvatar({ colors: h.colors, decos: h.decos });
+                          }}
                           title={h.name}
                         >
                           <HorseFace horse={h} size={54} />
@@ -158,6 +162,12 @@ export default function ProfileModal({
                     })}
                   </div>
                 )}
+              </section>
+
+              {/* Icon frame — coming soon (今後実装予定) */}
+              <section className={styles.section}>
+                <h3 className={styles.secTitle}>アイコンのフレーム</h3>
+                <p className={styles.hint}>フレーム装飾は近日実装予定です。お楽しみに！</p>
               </section>
 
               {/* Trophy decoration */}

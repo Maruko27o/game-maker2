@@ -26,7 +26,7 @@ function save(savedAt: number, horses = 0): SaveData {
     coins: 0,
     bets: [],
     maxHorses: 10,
-    daily: { day: '2026-1-1', grassBonus: 0, okawari: 0 },
+    daily: { day: '2026-1-1', grassBonus: 0, okawari: 0, gp: 0 },
     avatarHorseId: null,
     displayTrophies: [],
     savedAt,
