@@ -7,7 +7,10 @@ import HorseDefs from './HorseDefs';
 import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
 import { buildScenery } from './trackScenery';
+import { wouldWin, type Bet, type BetKind } from '../logic/betting';
 import styles from './RaceTrack2.module.css';
+
+const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -22,10 +25,11 @@ type Props = {
   reduced: boolean;
   skippable: boolean;
   laps?: number; // override lap count (grand-prix heats/finals)
+  bets?: Bet[]; // the player's placed bets — shown as a live strip that glows when winning
   onFinish: (result: SimResult) => void;
 };
 
-export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, onFinish }: Props) {
+export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, bets, onFinish }: Props) {
   const result = useMemo(
     () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps }),
     [entrants, course, mode, seed, laps],
@@ -350,6 +354,22 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
+      {/* Bet slip strip — glows when a bet would win if the race ended right now. */}
+      {bets && bets.length > 0 && (
+        <div className={styles.betStrip}>
+          {bets.map((b, i) => {
+            const hit = wouldWin(b, fr.runners.map((r) => r.rank));
+            const picks = b.sel.map((idx) => result.gate[idx]).join(b.kind === 'trifecta' ? '→' : '・');
+            return (
+              <span key={i} className={`${styles.betTag} ${hit ? styles.betHitGlow : ''}`}>
+                <span className={styles.betTagKind}>{KIND_LABEL[b.kind]}</span>
+                {picks}
+                <span className={styles.betTagOdds}>{b.odds.toFixed(1)}倍</span>
+              </span>
+            );
+          })}
+        </div>
+      )}
       <RankPanel
         entrants={entrants}
         looks={looks}

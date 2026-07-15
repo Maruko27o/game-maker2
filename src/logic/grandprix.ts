@@ -78,9 +78,10 @@ export function computeQualifiers(heats: Entrant[][], results: SimResult[]): Qua
   return q;
 }
 
-// Win-odds estimate (RACE_V2 §13.1). Not for betting — just "how popular is my
-// horse". Based on effective ability with a pace-shape allowance.
-export function computeOdds(entrants: Entrant[], course: Course): { odds: number; pop: number }[] {
+// Win probability per entrant (softmax of course-effective ability, with a small
+// late-pace allowance). The single source of truth for both display odds and the
+// betting markets (RACE_V4 §4). Deterministic — same field+course → same probs.
+export function winProbs(entrants: Entrant[], course: Course): number[] {
   const score = entrants.map((e) => {
     const eff = STAT_KEYS.reduce((n, k) => n + e.stats[k] * course.weights[k as StatKey], 0);
     const late = paceAt(e.style, 0.9); // reward strong finishers a touch
@@ -88,8 +89,13 @@ export function computeOdds(entrants: Entrant[], course: Course): { odds: number
   });
   const T = 3.2;
   const exps = score.map((s) => Math.exp(s / T));
-  const sum = exps.reduce((a, b) => a + b, 0);
-  const probs = exps.map((x) => x / sum);
+  const sum = exps.reduce((a, b) => a + b, 0) || 1;
+  return exps.map((x) => x / sum);
+}
+
+// Win-odds estimate (RACE_V2 §13.1) — "how popular is my horse" + betting odds.
+export function computeOdds(entrants: Entrant[], course: Course): { odds: number; pop: number }[] {
+  const probs = winProbs(entrants, course);
   const order = probs.map((_, i) => i).sort((a, b) => probs[b] - probs[a]);
   const pop = new Array(entrants.length);
   order.forEach((idx, place) => (pop[idx] = place + 1));

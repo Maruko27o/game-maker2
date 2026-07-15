@@ -75,3 +75,39 @@
   font-weight: 800;
   color: var(--ink-soft);
 }
+
+/* bet slip strip during the race (改修①②) */
+.betStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.betTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  background: var(--panel-inner);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  transition: transform 0.15s ease;
+}
+.betTagKind {
+  font-weight: 900;
+  color: #2b6d55;
+}
+.betTagOdds {
+  font-weight: 900;
+  color: #c33f39;
+}
+.betHitGlow {
+  color: #2b2118;
+  background: #fff2cf;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold), 0 0 10px rgba(240, 195, 60, 0.8);
+  transform: translateY(-1px);
+}

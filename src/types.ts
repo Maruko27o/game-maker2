@@ -101,10 +101,14 @@ export type RaceRecord = {
   bestTime: number; // seconds
 };
 
-// A settled 単勝 bet, kept as recent history (RACE_V4 §4).
+// Betting market kinds (RACE_V4 §4 / 改修①).
+export type BetKind = 'win' | 'place' | 'quinella' | 'wide' | 'trifecta';
+
+// A settled bet, kept as recent history (RACE_V4 §4).
 export type BetRecord = {
   courseId: string;
-  target: string; // name of the horse bet on
+  kind: BetKind; // 単勝/複勝/馬連/ワイド/3連単
+  picks: number[]; // gate numbers selected (for display)
   amount: number; // stake
   odds: number;
   won: boolean;
