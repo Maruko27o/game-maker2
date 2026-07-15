@@ -4,7 +4,7 @@
 import type { Stats, StatKey, RunStyle } from '../types';
 import { STAT_KEYS } from '../types';
 import type { Course } from '../data/courses';
-import { lapLength } from './track';
+import { lapLength, goalS } from './track';
 import { mulberry32 } from './stats';
 import { paceAt } from './runStyle';
 
@@ -35,7 +35,8 @@ export type SlowZone = { s: number; d: number; halfLen: number; halfWid: number 
 
 export type SimResult = {
   dt: number;
-  distanceS: number;
+  distanceS: number; // travelled distance to the finish (laps * lap)
+  startS: number; // absolute arc-length of the start/finish line (home-straight centre)
   duration: number;
   gate: number[]; // gate (post) number per entrant index
   frames: SimFrame[]; // empty unless recordFrames
@@ -133,7 +134,13 @@ export function simulate2(
   const track = course.track;
   const lap = lapLength(track);
   const laps = opts.laps ?? (mode === 30 ? course.laps30 : course.laps60);
-  const D = laps * lap + lap * 0.12;
+  // Start AND finish at the centre of the home (bottom) straight (RACE_V4 §2):
+  // the field breaks from the start/finish line, runs N full laps and finishes
+  // back down the home straight. s0 is the absolute start offset; the finish is
+  // s0 + dist. Distances elsewhere use the *travelled* distance (s − s0).
+  const s0 = goalS(track);
+  const dist = laps * lap;
+  const D = s0 + dist; // absolute arc-length of the finish line
   const halfW = track.width / 2;
   const margin = HIT_R;
   const dLimit = halfW - margin;
@@ -148,21 +155,22 @@ export function simulate2(
   const gateOf = new Array<number>(N);
   posts.forEach((entIdx, post) => (gateOf[entIdx] = post + 1));
 
-  // Object placement (deterministic per race).
+  // Object placement (deterministic per race). Placed along the travelled range
+  // [s0, s0+dist] so nothing sits behind the start/finish line.
   const isSteeple = course.surface === 'steeple';
-  const obsCount = Math.round((course.obstacleDensity * D) / 1000);
+  const obsCount = Math.round((course.obstacleDensity * dist) / 1000);
   const kinds: Obstacle['kind'][] = ['hedge', 'bamboo', 'water'];
   const obstacles: Obstacle[] = isSteeple
-    ? placements(D, obsCount, rng, 25).map((s) => ({ s, kind: kinds[Math.floor(rng() * 3)] }))
+    ? placements(dist, obsCount, rng, 25).map((s) => ({ s: s + s0, kind: kinds[Math.floor(rng() * 3)] }))
     : [];
-  const boostCount = Math.round((course.boostDensity * D) / 1000);
-  const boosts: BoostPanel[] = placements(D, boostCount, rng).map((s) => ({
-    s,
+  const boostCount = Math.round((course.boostDensity * dist) / 1000);
+  const boosts: BoostPanel[] = placements(dist, boostCount, rng).map((s) => ({
+    s: s + s0,
     d: (rng() * 2 - 1) * dLimit * 0.85,
   }));
-  const slowCount = Math.round((course.drag * 12 * D) / 1000);
-  const slows: SlowZone[] = placements(D, slowCount, rng).map((s) => ({
-    s,
+  const slowCount = Math.round((course.drag * 12 * dist) / 1000);
+  const slows: SlowZone[] = placements(dist, slowCount, rng).map((s) => ({
+    s: s + s0,
     d: (rng() * 2 - 1) * dLimit * 0.6,
     halfLen: 6,
     halfWid: 4,
@@ -181,7 +189,7 @@ export function simulate2(
       vMax0: 9 + ef.spd * 0.6,
       accel0: 1.8 + ef.pwr * 0.26,
       spMax: 44 + ef.sta * 13,
-      s: 0,
+      s: s0,
       d: startD,
       v: 0,
       vd: 0,
@@ -236,7 +244,7 @@ export function simulate2(
         continue;
       }
       const ef = r.eff;
-      const progress = r.s / D;
+      const progress = (r.s - s0) / dist;
       const aimBefore = r.aim;
       const dBefore = r.d;
       const c = centerCurv(track, r.s);
@@ -245,7 +253,7 @@ export function simulate2(
       // --- longitudinal speed target ---
       // Tightly compressed base spread (spd barely moves top speed) so raw speed
       // can't run away; stamina failure, pace and positioning decide the winner.
-      let vMax = (13.0 + ef.spd * 0.33) * paceAt(r.e.style, progress);
+      let vMax = (13.0 + ef.spd * 0.36) * paceAt(r.e.style, progress);
       vMax *= 1 - Math.max(0, course.drag - ef.pwr * 0.015);
       if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.03);
       // Graduated fatigue: as the tank runs low the top speed sags, so stamina
@@ -253,7 +261,7 @@ export function simulate2(
       // only at empty. Big-tank builds (high sta) and closers hold their speed.
       const tired = r.sp <= 0;
       const spFrac = Math.max(0, r.sp / r.spMax);
-      if (spFrac < 0.35) vMax *= 0.55 + (spFrac / 0.35) * 0.45; // 0.55x empty → 1.0x at 35%
+      if (spFrac < 0.35) vMax *= 0.53 + (spFrac / 0.35) * 0.47; // 0.53x empty → 1.0x at 35%
       if (progress >= 0.7) vMax *= 1 + ef.gut * 0.025; // gut = a strong late kick
       const boosting = t < r.boostUntil;
       if (boosting) vMax *= 1.25;
@@ -526,7 +534,8 @@ export function simulate2(
 
   return {
     dt: DT,
-    distanceS: D,
+    distanceS: dist,
+    startS: s0,
     duration: t,
     gate: gateOf,
     frames,

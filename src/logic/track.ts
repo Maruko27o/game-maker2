@@ -23,6 +23,14 @@ export function lapLength(t: Track): number {
   return 2 * t.straight + 2 * Math.PI * t.radius;
 }
 
+/** Arc-length (mod lap) of the finish line: the centre of the bottom (home)
+ *  straight (RACE_V4 §2). The gate sits at s=0 = the bottom-right corner, where
+ *  the home straight ends, so its centre is half a straight before the wrap. A
+ *  race of N laps starts and finishes here — down the home straight, in view. */
+export function goalS(t: Track): number {
+  return lapLength(t) - t.straight / 2;
+}
+
 /** Ground distance to complete one lap while holding a constant offset `d`. */
 export function groundPerLap(t: Track, d: number): number {
   return 2 * t.straight + 2 * Math.PI * (t.radius + d);

@@ -9,8 +9,8 @@ import { rngFromId, type RNG } from './stats';
 const PACE: Record<RunStyle, [number, number, number]> = {
   nige: [1.11, 1.0, 0.82],
   senko: [1.05, 1.01, 0.96],
-  sashi: [0.95, 1.0, 1.18],
-  oikomi: [0.91, 0.98, 1.29],
+  sashi: [0.95, 1.0, 1.17],
+  oikomi: [0.91, 0.98, 1.31],
 };
 
 export function paceAt(style: RunStyle, progress: number): number {

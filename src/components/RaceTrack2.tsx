@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Course } from '../data/courses';
-import { centerline, centerlinePath, toWorld, lapLength, trackBounds } from '../logic/track';
+import { centerline, centerlinePath, toWorld, lapLength, goalS, trackBounds } from '../logic/track';
 import { simulate2, type Entrant, type SimResult } from '../logic/raceSim2';
 import type { HorseLook } from '../types';
 import HorseDefs from './HorseDefs';
@@ -97,8 +97,9 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const scenery = useMemo(() => {
     const path = centerlinePath(track);
     const surface = SURFACE_COLOR[course.surface] ?? '#8cc264';
-    const goal = toWorld(track, lap * 0.12, 0);
-    const gc = centerline(track, lap * 0.12);
+    const goalPos = goalS(track);
+    const goal = toWorld(track, goalPos, 0);
+    const gc = centerline(track, goalPos);
     return (
       <>
         <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill={course.surface === 'circuit' ? '#2b3350' : '#bfe08a'} />
@@ -145,8 +146,9 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   // out as the field clears it.
   const startGate = useMemo(() => {
     const N = entrants.length;
-    const c = centerline(track, 0);
-    const P = toWorld(track, 0, 0);
+    const gs = goalS(track); // gate straddles the start/finish line (home-straight centre)
+    const c = centerline(track, gs);
+    const P = toWorld(track, gs, 0);
     const halfW = track.width / 2;
     const gd = 4.5; // gate depth (m)
     const W = (a: number, n: number) => ({ x: P.x + c.tx * a + c.nx * n, y: P.y + c.ty * a + c.ny * n });
@@ -190,8 +192,9 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const alpha = Math.min(1, Math.max(0, elapsed.current / dt - fi));
 
   const leaderS = Math.max(...fr.runners.map((r) => r.s));
-  const curLap = Math.min(totalLaps, Math.floor(leaderS / lap) + 1);
-  const remaining = Math.max(0, Math.round(result.distanceS - leaderS));
+  const travelled = leaderS - result.startS; // distance run since the start/finish line
+  const curLap = Math.min(totalLaps, Math.floor(travelled / lap) + 1);
+  const remaining = Math.max(0, Math.round(result.distanceS - travelled));
 
   // Interpolated horse world positions (also used to drive the follow camera).
   const positions = fr.runners.map((rf, i) => {
@@ -247,7 +250,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           {scenery}
           {/* cheering crowd — bobs harder down the final stretch and at the finish */}
           {(() => {
-            const hype = phase === 'done' ? 1 : leaderS / result.distanceS > 0.85 ? 0.7 : 0.28;
+            const hype = phase === 'done' ? 1 : travelled / result.distanceS > 0.85 ? 0.7 : 0.28;
             const amp = reduced ? 0 : 1.4 * hype;
             const t = elapsed.current * 7;
             return crowdDots.map((d, i) => (
@@ -255,7 +258,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
             ));
           })()}
           {/* starting gate — fades as the field runs clear of it */}
-          <g opacity={clamp(1 - leaderS / 30, 0, 1)}>{startGate}</g>
+          <g opacity={clamp(1 - travelled / 30, 0, 1)}>{startGate}</g>
           {/* boost panels + obstacles */}
           {result.boosts.map((bp, i) => {
             const w = toWorld(track, bp.s, bp.d);
@@ -292,7 +295,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         </svg>
 
         {phase === 'countdown' && <div className={styles.countdown}>{count > 0 ? count : 'GO!'}</div>}
-        {leaderS / result.distanceS > 0.85 && phase === 'run' && (
+        {travelled / result.distanceS > 0.85 && phase === 'run' && (
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
