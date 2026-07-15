@@ -206,7 +206,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   for (let i = 1; i < fr.runners.length; i++) if (fr.runners[i].rank < fr.runners[leaderIdx].rank) leaderIdx = i;
   const top3 = result.order.slice(0, 3);
   // turf-vision screen + flag poles sit on the grandstand (top band).
-  const tv = { x: -17, y: vb.y + 2.5, w: 34, h: 18 };
+  const tv = { x: -11, y: vb.y + 2, w: 22, h: 12 };
   const flagXs = [0.24, 0.5, 0.76].map((f) => vb.x + vb.w * f);
   const flagY = vb.y + stands * 0.34;
   const curLap = Math.min(totalLaps, Math.floor(travelled / lap) + 1);
@@ -258,6 +258,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         <span>
           {curLap}/{totalLaps}周 {totalLaps - curLap === 0 ? '（ラスト！）' : ''}
         </span>
+        <span className={styles.leadNo}>先頭 {result.gate[leaderIdx]}番</span>
         <span className={styles.remain}>のこり {remaining}m</span>
       </div>
       <div className={styles.stage}>
@@ -273,13 +274,13 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
               <circle key={i} cx={d.x} cy={d.y - Math.abs(Math.sin(t + d.ph)) * amp} r={1.7} fill={d.fill} />
             ));
           })()}
-          {/* turf vision — a big screen showing the current leader's number/rank */}
+          {/* turf vision — a decorative jumbotron on the grandstand */}
           <g>
             <rect x={tv.x - 1} y={tv.y - 1} width={tv.w + 2} height={tv.h + 4} rx={1.2} fill="#2b2f38" />
-            <rect x={tv.x} y={tv.y} width={tv.w} height={tv.h} rx={0.8} fill="#0f1a22" />
-            <text x={tv.x + tv.w * 0.5} y={tv.y + 4.4} fontSize="3" fill="#8fe6c0" fontWeight="800" textAnchor="middle">先頭</text>
-            <text x={tv.x + tv.w * 0.5} y={tv.y + tv.h * 0.62} fontSize="9" fill="#f6d24a" fontWeight="900" textAnchor="middle" dominantBaseline="central">{result.gate[leaderIdx]}</text>
-            <line x1={tv.x + tv.w * 0.5} y1={tv.y + tv.h + 3} x2={tv.x + tv.w * 0.5} y2={tv.y + tv.h + 7} stroke="#2b2f38" strokeWidth={1} />
+            <rect x={tv.x} y={tv.y} width={tv.w} height={tv.h} rx={0.6} fill="#0f1a22" />
+            <text x={tv.x + tv.w * 0.5} y={tv.y + tv.h * 0.42} fontSize="2.4" fill="#8fe6c0" fontWeight="800" textAnchor="middle">先頭</text>
+            <text x={tv.x + tv.w * 0.5} y={tv.y + tv.h * 0.78} fontSize="4.4" fill="#f6d24a" fontWeight="900" textAnchor="middle" dominantBaseline="central">{result.gate[leaderIdx]}番</text>
+            <line x1={tv.x + tv.w * 0.5} y1={tv.y + tv.h + 2} x2={tv.x + tv.w * 0.5} y2={tv.y + tv.h + 5} stroke="#2b2f38" strokeWidth={0.8} />
           </g>
           {/* three flags on the grandstand, fluttering */}
           {flagXs.map((fx, i) => {
