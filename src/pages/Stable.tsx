@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore, MAX_HORSES, trophyCount } from '../store';
+import { useStore, trophyCount } from '../store';
 import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
+import { RENAME_COST, SLOT_EXPAND_COST, SLOT_EXPAND_TO } from '../data/coins';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Trophy, Badge, TrainingItem, StatKey } from '../types';
 import { BADGES } from '../data/badges';
 import HorseView from '../components/HorseView';
+import CoinIcon from '../components/CoinIcon';
 import StatRadar from '../components/StatRadar';
 import TrophyIcon from '../components/TrophyIcon';
 import BadgeIcon from '../components/BadgeIcon';
@@ -98,11 +100,21 @@ export default function Stable() {
   const removeHorse = useStore((s) => s.removeHorse);
   const trainHorse = useStore((s) => s.trainHorse);
   const freeRebalance = useStore((s) => s.freeRebalance);
+  const maxHorses = useStore((s) => s.maxHorses);
+  const coins = useStore((s) => s.coins);
+  const spendCoins = useStore((s) => s.spendCoins);
+  const expandSlots = useStore((s) => s.expandSlots);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [view, setView] = useState<View>('detail');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [draftName, setDraftName] = useState('');
   const selected = horses.find((h) => h.id === openId) ?? null;
+
+  // Reset the rename draft whenever a different horse is opened.
+  useEffect(() => {
+    setDraftName(selected?.name ?? '');
+  }, [openId, selected?.name]);
 
   function close() {
     setOpenId(null);
@@ -119,9 +131,20 @@ export default function Stable() {
       <header className={styles.head}>
         <h1 className={styles.title}>マイウマ</h1>
         <span className={styles.count}>
-          {horses.length}/{MAX_HORSES}
+          {horses.length}/{maxHorses}
         </span>
       </header>
+
+      {maxHorses < SLOT_EXPAND_TO && horses.length >= maxHorses && (
+        <button
+          className={styles.expandSlot}
+          onClick={() => expandSlots()}
+          disabled={coins < SLOT_EXPAND_COST}
+          title={coins < SLOT_EXPAND_COST ? 'コインが足りません' : ''}
+        >
+          <CoinIcon size={18} /> 馬房を{SLOT_EXPAND_TO}に拡張（{SLOT_EXPAND_COST}コイン）
+        </button>
+      )}
 
       {horses.length === 0 ? (
         <div className={styles.empty}>
@@ -149,7 +172,7 @@ export default function Stable() {
               </button>
             );
           })}
-          {horses.length < MAX_HORSES && (
+          {horses.length < maxHorses && (
             <button className={styles.add} onClick={() => navigate('/create')}>
               <span className={styles.plus}>＋</span>
               <span>つくる</span>
@@ -166,13 +189,27 @@ export default function Stable() {
                 <div className={styles.modalThumb}>
                   <HorseView horse={selected} size={190} shadow />
                 </div>
-                <input
-                  className={styles.nameInput}
-                  value={selected.name}
-                  maxLength={12}
-                  onChange={(e) => renameHorse(selected.id, e.target.value)}
-                  aria-label="なまえ"
-                />
+                <div className={styles.renameRow}>
+                  <input
+                    className={styles.nameInput}
+                    value={draftName}
+                    maxLength={12}
+                    onChange={(e) => setDraftName(e.target.value)}
+                    aria-label="なまえ"
+                  />
+                  {draftName.trim() && draftName !== selected.name && (
+                    <button
+                      className={styles.renameBtn}
+                      disabled={coins < RENAME_COST}
+                      onClick={() => {
+                        if (spendCoins(RENAME_COST)) renameHorse(selected.id, draftName.trim());
+                      }}
+                      title={coins < RENAME_COST ? 'コインが足りません' : ''}
+                    >
+                      <CoinIcon size={15} /> 改名（{RENAME_COST}）
+                    </button>
+                  )}
+                </div>
 
                 <div className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</div>
 

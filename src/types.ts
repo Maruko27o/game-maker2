@@ -101,10 +101,24 @@ export type RaceRecord = {
   bestTime: number; // seconds
 };
 
+// A settled 単勝 bet, kept as recent history (RACE_V4 §4).
+export type BetRecord = {
+  courseId: string;
+  target: string; // name of the horse bet on
+  amount: number; // stake
+  odds: number;
+  won: boolean;
+  payout: number; // coins returned (0 if lost)
+  at: number; // ms
+};
+
+// Per-day counters (local date key), for the grass bonus and おかわり limits.
+export type DailyCounters = { day: string; grassBonus: number; okawari: number };
+
 export type SaveData = {
-  version: 5;
+  version: 6;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
-  horses: Horse[]; // max 10
+  horses: Horse[]; // up to `maxHorses`
   energy: number; // grass spawn stock (0..3), charges 1 per hour
   energyUpdatedAt: number; // ms anchor for energy regen
   trophies: Trophy[]; // grand-prix only
@@ -114,5 +128,9 @@ export type SaveData = {
   raceRecords: RaceRecord[];
   gpUnlocked: { g2: boolean; g1: boolean }; // grand-prix grade unlocks
   freeRebalance: boolean; // one free stat re-allocation after the v4 migration (RACE_V3 §3.6)
+  coins: number; // soft currency (RACE_V4 §4)
+  bets: BetRecord[]; // recent settled bets (capped)
+  maxHorses: number; // stable slot cap (10, expandable to 15)
+  daily: DailyCounters; // per-day bonus/おかわり counters
   savedAt: number; // ms of the last change — used for cloud last-write-wins sync
 };

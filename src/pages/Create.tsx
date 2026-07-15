@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useStore, MAX_HORSES } from '../store';
+import { useStore } from '../store';
 import { colorsBySlot, decosBySlot, COLOR_SLOTS, DECO_SLOTS } from '../data/parts';
 import { predictStyle } from '../logic/runStyle';
 import type { ColorSlot, DecoSlot, HorseLook, Stats, StatKey } from '../types';
@@ -47,10 +47,11 @@ export default function Create() {
   const updateHorse = useStore((s) => s.updateHorse);
   const rebalanceHorse = useStore((s) => s.rebalanceHorse);
   const freeRebalance = useStore((s) => s.freeRebalance);
+  const maxHorses = useStore((s) => s.maxHorses);
 
   const editing = editId ? horses.find((h) => h.id === editId) ?? null : null;
   const rebalancing = rebalanceId ? horses.find((h) => h.id === rebalanceId) ?? null : null;
-  const atCap = !editing && !rebalancing && horses.length >= MAX_HORSES;
+  const atCap = !editing && !rebalancing && horses.length >= maxHorses;
 
   // Whether the player owns at least one color in every color slot.
   const canBuild = COLOR_SLOTS.every((s) => colorsBySlot[s].some((c) => (owned[c.id] ?? 0) > 0));
@@ -140,7 +141,7 @@ export default function Create() {
         </p>
       )}
       {atCap && (
-        <p className={styles.warn}>マイウマが上限（{MAX_HORSES}体）です。マイウマで1体消すと作れます。</p>
+        <p className={styles.warn}>マイウマが上限（{maxHorses}体）です。マイウマで1体消すと作れます。</p>
       )}
 
       {/* Look (colors / decorations / name) — hidden while rebalancing stats */}

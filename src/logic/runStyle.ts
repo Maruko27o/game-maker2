@@ -7,10 +7,10 @@ import { rngFromId, type RNG } from './stats';
 // Stronger front-to-back swing so styles genuinely change the race shape:
 // front-runners lead then fade, closers surge late and converge at the line.
 const PACE: Record<RunStyle, [number, number, number]> = {
-  nige: [1.10, 1.0, 0.84],
+  nige: [1.11, 1.0, 0.82],
   senko: [1.05, 1.01, 0.96],
-  sashi: [0.95, 1.0, 1.16],
-  oikomi: [0.92, 0.98, 1.25],
+  sashi: [0.95, 1.0, 1.17],
+  oikomi: [0.91, 0.98, 1.31],
 };
 
 export function paceAt(style: RunStyle, progress: number): number {

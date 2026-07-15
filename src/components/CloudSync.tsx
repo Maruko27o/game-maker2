@@ -18,7 +18,7 @@ import { reconcile } from '../logic/cloudReconcile';
 function snapshot(): SaveData {
   const s = useStore.getState();
   return {
-    version: 5,
+    version: 6,
     owned: s.owned,
     horses: s.horses,
     energy: s.energy,
@@ -30,6 +30,10 @@ function snapshot(): SaveData {
     raceRecords: s.raceRecords,
     gpUnlocked: s.gpUnlocked,
     freeRebalance: s.freeRebalance,
+    coins: s.coins,
+    bets: s.bets,
+    maxHorses: s.maxHorses,
+    daily: s.daily,
     savedAt: s.savedAt,
   };
 }

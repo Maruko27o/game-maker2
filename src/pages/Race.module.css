@@ -554,3 +554,104 @@
   text-decoration: underline;
   padding: 4px;
 }
+
+/* ---- paddock / betting (RACE_V4 §4) ---- */
+.paddock {
+  background: var(--panel);
+  border: 3px solid var(--border-dark);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 6px 0 rgba(43, 33, 24, 0.12);
+}
+.coinLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.paddockLead {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+.oddsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.oddsRow {
+  display: grid;
+  grid-template-columns: auto 40px 1fr auto;
+  grid-template-areas: 'pop horse name val' 'btns btns btns btns';
+  align-items: center;
+  gap: 4px 8px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 6px 8px;
+}
+.oddsMe { border-color: var(--gold); background: #fff7e6; }
+.oddsPicked { box-shadow: 0 0 0 3px var(--gold) inset; }
+.oddsPop { grid-area: pop; font-size: 11px; font-weight: 800; color: var(--ink-soft); }
+.oddsHorse { grid-area: horse; }
+.oddsName { grid-area: name; font-weight: 800; color: var(--ink); }
+.oddsVal { grid-area: val; font-weight: 900; color: #c33f39; font-size: 17px; }
+.oddsBtns { grid-area: btns; display: flex; gap: 6px; margin-top: 2px; }
+.betBtn {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 8px;
+  border: 2px solid var(--border-dark);
+  background: var(--panel);
+  font-weight: 800;
+  cursor: pointer;
+}
+.betBtn:disabled { opacity: 0.4; cursor: default; }
+.betConfirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #fff7e6;
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.betCancel {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 2px solid var(--border-dark);
+  background: var(--panel);
+  font-weight: 800;
+  cursor: pointer;
+}
+.coinReward {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 10px 0;
+}
+.coinGot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #8a6410;
+}
+.coinPop { animation: coinPop 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes coinPop {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.betHit { font-weight: 900; color: #2e9e5b; }
+.betMiss { font-weight: 800; color: var(--ink-soft); }

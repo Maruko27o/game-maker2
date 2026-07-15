@@ -358,3 +358,41 @@
 .confirmText strong {
   color: var(--red-dark);
 }
+
+/* coin sinks (RACE_V4 §4) */
+.expandSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin: 4px 0 10px;
+  padding: 9px;
+  border-radius: 12px;
+  border: 2px solid var(--border-dark);
+  background: #fff7e6;
+  font-weight: 800;
+  color: #8a6410;
+  cursor: pointer;
+}
+.expandSlot:disabled { opacity: 0.5; cursor: default; }
+.renameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.renameBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border-dark);
+  background: var(--gold);
+  font-weight: 800;
+  color: #2b2118;
+  cursor: pointer;
+}
+.renameBtn:disabled { opacity: 0.5; cursor: default; }

@@ -16,9 +16,12 @@ import {
   type Qualifier,
 } from '../logic/grandprix';
 import { makeTrophy, rollItems } from '../logic/raceReward';
+import { GP_QUALIFY_COINS, gpFinalCoins } from '../data/coins';
+import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import type { Horse, HorseLook, Trophy, TrainingItem } from '../types';
 import { RUN_STYLE_LABEL, STAT_LABEL } from '../types';
 import HorseView from '../components/HorseView';
+import CoinIcon from '../components/CoinIcon';
 import RaceTrack2 from '../components/RaceTrack2';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
@@ -52,13 +55,14 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const grantItems = useStore((s) => s.grantItems);
   const recordRace = useStore((s) => s.recordRace);
   const unlockGp = useStore((s) => s.unlockGp);
+  const addCoins = useStore((s) => s.addCoins);
 
   const [screen, setScreen] = useState<'grade' | 'card' | 'odds' | 'heat' | 'qualify' | 'final' | 'podium'>('grade');
   const [state, setState] = useState<GpState | null>(null);
   const [heatResults, setHeatResults] = useState<SimResult[] | null>(null);
   const [qualifiers, setQualifiers] = useState<Qualifier[] | null>(null);
   const [finalResult, setFinalResult] = useState<SimResult | null>(null);
-  const [reward, setReward] = useState<{ trophy: Trophy | null; items: TrainingItem[]; rank: number; qualified: boolean } | null>(null);
+  const [reward, setReward] = useState<{ trophy: Trophy | null; items: TrainingItem[]; rank: number; qualified: boolean; coins: number } | null>(null);
   const rewardApplied = useRef(false);
 
   const playerEntrant: Entrant = useMemo(
@@ -103,7 +107,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     const finalists = qualifiers.map((q) => q.entrant);
     const playerIdx = finalists.findIndex((e) => e.isPlayer);
     if (playerIdx < 0) {
-      setReward({ trophy: null, items: [], rank: 0, qualified: false });
+      setReward({ trophy: null, items: [], rank: 0, qualified: false, coins: 0 });
       setScreen('podium');
       return;
     }
@@ -115,7 +119,15 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     recordRace(state.course.id, mode, rank, res.finishTimes[playerIdx]);
     if (state.grade === 'g3' && rank <= 3) unlockGp({ g2: true });
     if (state.grade === 'g2' && rank === 1) unlockGp({ g1: true });
-    setReward({ trophy, items, rank, qualified: true });
+    // Coins (RACE_V4 §4.2): reaching the final pays a qualifying bonus, plus a
+    // top-3 placing reward.
+    const coinReward = GP_QUALIFY_COINS + gpFinalCoins(rank);
+    addCoins(coinReward);
+    // Ranking foundation (RACE_V4 §5): buffer the final locally (upload gated off).
+    bufferSubmission(
+      buildSubmission(finalists, state.course.id, mode, state.seed ^ 0x5f, res, finalists[playerIdx].horseId, finalLaps(mode)),
+    );
+    setReward({ trophy, items, rank, qualified: true, coins: coinReward });
     setScreen('podium');
   }
 
@@ -297,6 +309,11 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
               <span className={styles.rewardLine}>育成アイテム × {reward.items.length}</span>
               <ul className={styles.itemList}>{reward.items.map((it, i) => <li key={i}>🎁 {itemLabel(it)}</li>)}</ul>
             </div>
+          )}
+          {reward && reward.coins > 0 && (
+            <p className={styles.rewardLine} style={{ color: '#8a6410' }}>
+              <CoinIcon size={18} /> コイン ＋{reward.coins}
+            </p>
           )}
           {state.grade === 'g3' && reward?.qualified && reward.rank <= 3 && <p className={gp.unlockMsg}>G2グランプリ解放！</p>}
           {state.grade === 'g2' && reward?.rank === 1 && <p className={gp.unlockMsg}>G1グランプリ解放！</p>}

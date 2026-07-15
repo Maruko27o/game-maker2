@@ -1,6 +1,6 @@
 import raw from './courses.json';
 import type { Stats } from '../types';
-import { lapLength, type Track } from '../logic/track';
+import { lapLength, goalS as trackGoalS, type Track } from '../logic/track';
 
 export type Surface = 'turf' | 'dirt' | 'sand' | 'trail' | 'circuit' | 'steeple';
 
@@ -33,13 +33,13 @@ export function courseDistance(course: Course, mode: 30 | 60): number {
   return mode === 30 ? course.distance30 : course.distance60;
 }
 
-// Goal line sits just past the gate, clockwise (RACE_V2 §3.4).
+// Goal line sits at the centre of the home (bottom) straight (RACE_V4 §2).
 export function goalS(course: Course): number {
-  return lapLength(course.track) * 0.12;
+  return trackGoalS(course.track);
 }
 
-/** Total centerline distance to the finish for a mode (v2). */
+/** Total travelled distance to the finish for a mode (v2): N full laps. */
 export function raceDistanceS(course: Course, mode: 30 | 60): number {
   const laps = mode === 30 ? course.laps30 : course.laps60;
-  return laps * lapLength(course.track) + goalS(course);
+  return laps * lapLength(course.track);
 }

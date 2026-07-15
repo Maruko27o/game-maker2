@@ -10,6 +10,8 @@ import type {
   RaceRecord,
   Stats,
   StatKey,
+  BetRecord,
+  DailyCounters,
 } from './types';
 import { allParts } from './data/parts';
 import { COURSES } from './data/courses';
@@ -18,6 +20,13 @@ import { ENERGY_CAP, spendEnergy } from './logic/energy';
 import { rescaleTo40 } from './logic/stats';
 import { applyTraining } from './logic/training';
 import { evaluateBadges } from './logic/badges';
+import {
+  GRASS_DAILY_BONUS,
+  GRASS_DAILY_BONUS_MAX,
+  GRASS_OKAWARI_COST,
+  SLOT_EXPAND_COST,
+  SLOT_EXPAND_TO,
+} from './data/coins';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 10;
@@ -52,9 +61,19 @@ function starterOwned(): Record<string, number> {
   return Object.fromEntries(STARTER_PARTS.map((id) => [id, 1]));
 }
 
+/** Local date key (YYYY-MM-DD) for per-day counters. */
+export function dayKey(now = Date.now()): string {
+  const d = new Date(now);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+function freshDaily(): SaveData['daily'] {
+  return { day: dayKey(), grassBonus: 0, okawari: 0 };
+}
+const BETS_CAP = 50; // keep only the most recent settled bets
+
 function freshSave(): SaveData {
   return {
-    version: 5,
+    version: 6,
     owned: starterOwned(),
     horses: [],
     energy: ENERGY_CAP,
@@ -66,6 +85,10 @@ function freshSave(): SaveData {
     raceRecords: [],
     gpUnlocked: { g2: false, g1: false },
     freeRebalance: false,
+    coins: 0,
+    bets: [],
+    maxHorses: MAX_HORSES,
+    daily: freshDaily(),
     savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
 }
@@ -96,11 +119,19 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
   const items = Array.isArray(d.items) ? (d.items as TrainingItem[]) : [];
   const raceRecords = Array.isArray(d.raceRecords) ? (d.raceRecords as RaceRecord[]) : [];
   const savedAt = typeof d.savedAt === 'number' ? d.savedAt : 0;
+  // v6 (RACE_V4 §4) economy fields — default sensibly for older saves.
+  const coins = typeof d.coins === 'number' ? d.coins : 0;
+  const bets = Array.isArray(d.bets) ? (d.bets as SaveData['bets']) : [];
+  const maxHorses = typeof d.maxHorses === 'number' ? d.maxHorses : MAX_HORSES;
+  const daily =
+    d.daily && typeof d.daily === 'object' && typeof (d.daily as DailyCounters).day === 'string'
+      ? (d.daily as DailyCounters)
+      : freshDaily();
 
-  if (d.version === 5) {
+  if (d.version === 6) {
     return {
       data: {
-        version: 5,
+        version: 6,
         owned,
         horses,
         energy,
@@ -112,6 +143,10 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
         raceRecords,
         gpUnlocked: normGp(d.gpUnlocked),
         freeRebalance: !!d.freeRebalance,
+        coins,
+        bets,
+        maxHorses,
+        daily,
         savedAt,
       },
       migrated: false,
@@ -125,7 +160,7 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
     : horses;
   return {
     data: {
-      version: 5,
+      version: 6,
       owned,
       horses: rescaled,
       energy,
@@ -137,6 +172,10 @@ function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null 
       raceRecords,
       gpUnlocked: normGp(d.gpUnlocked),
       freeRebalance: isPreV4 ? horses.length > 0 : !!d.freeRebalance,
+      coins,
+      bets,
+      maxHorses,
+      daily,
       savedAt,
     },
     migrated: isPreV4, // only the v3→v4 stat change warrants the one-time notice
@@ -209,6 +248,18 @@ type Store = SaveData & {
     isJumpCourse: boolean;
     flawless: boolean;
   }) => Badge[];
+  // Coin economy (RACE_V4 §4).
+  addCoins: (n: number) => void;
+  /** Spend coins if affordable. Returns true on success. */
+  spendCoins: (n: number) => boolean;
+  /** Record a settled bet (payout already added via addCoins by the caller). */
+  recordBet: (bet: BetRecord) => void;
+  /** Grass first-visits-of-day bonus (up to GRASS_DAILY_BONUS_MAX). Returns coins granted. */
+  claimGrassBonus: () => number;
+  /** Buy an extra grass charge (300, once/day). Returns true on success. */
+  buyOkawari: () => boolean;
+  /** Expand the stable 10→15 for 3000 coins (once). Returns true on success. */
+  expandSlots: () => boolean;
   resetAll: () => void;
 };
 
@@ -220,7 +271,7 @@ export const useStore = create<Store>((set, get) => {
     const savedAt = Date.now();
     const next = { ...get(), ...partial, savedAt } as Store;
     const data: SaveData = {
-      version: 5,
+      version: 6,
       owned: next.owned,
       horses: next.horses,
       energy: next.energy,
@@ -232,6 +283,10 @@ export const useStore = create<Store>((set, get) => {
       raceRecords: next.raceRecords,
       gpUnlocked: next.gpUnlocked,
       freeRebalance: next.freeRebalance,
+      coins: next.coins,
+      bets: next.bets,
+      maxHorses: next.maxHorses,
+      daily: next.daily,
       savedAt,
     };
     persist(data);
@@ -257,7 +312,7 @@ export const useStore = create<Store>((set, get) => {
     exportSave: () => {
       const s = get();
       const data: SaveData = {
-        version: 5,
+        version: 6,
         owned: s.owned,
         horses: s.horses,
         energy: s.energy,
@@ -269,6 +324,10 @@ export const useStore = create<Store>((set, get) => {
         raceRecords: s.raceRecords,
         gpUnlocked: s.gpUnlocked,
         freeRebalance: s.freeRebalance,
+        coins: s.coins,
+        bets: s.bets,
+        maxHorses: s.maxHorses,
+        daily: s.daily,
         savedAt: s.savedAt,
       };
       return JSON.stringify(data);
@@ -304,7 +363,7 @@ export const useStore = create<Store>((set, get) => {
     },
 
     addHorse: (h, stats) => {
-      if (get().horses.length >= MAX_HORSES) return null;
+      if (get().horses.length >= get().maxHorses) return null;
       const id = newId();
       const horse: Horse = { ...h, id, stats, createdAt: Date.now() };
       commit({ horses: [...get().horses, horse] });
@@ -418,6 +477,56 @@ export const useStore = create<Store>((set, get) => {
         winStreaks: { ...s.winStreaks, [horseId]: newStreak },
       });
       return awarded;
+    },
+
+    addCoins: (n) => {
+      if (!n) return;
+      commit({ coins: Math.max(0, get().coins + n) });
+    },
+
+    spendCoins: (n) => {
+      if (get().coins < n) return false;
+      commit({ coins: get().coins - n });
+      return true;
+    },
+
+    recordBet: (bet) => {
+      commit({ bets: [bet, ...get().bets].slice(0, BETS_CAP) });
+    },
+
+    claimGrassBonus: () => {
+      const s = get();
+      const today = dayKey();
+      const daily = s.daily.day === today ? s.daily : freshDaily();
+      if (daily.grassBonus >= GRASS_DAILY_BONUS_MAX) {
+        if (s.daily.day !== today) commit({ daily });
+        return 0;
+      }
+      commit({
+        coins: s.coins + GRASS_DAILY_BONUS,
+        daily: { ...daily, grassBonus: daily.grassBonus + 1 },
+      });
+      return GRASS_DAILY_BONUS;
+    },
+
+    buyOkawari: () => {
+      const s = get();
+      const today = dayKey();
+      const daily = s.daily.day === today ? s.daily : freshDaily();
+      if (daily.okawari >= 1 || s.coins < GRASS_OKAWARI_COST) return false;
+      commit({
+        coins: s.coins - GRASS_OKAWARI_COST,
+        energy: Math.min(ENERGY_CAP, s.energy + 1),
+        daily: { ...daily, okawari: daily.okawari + 1 },
+      });
+      return true;
+    },
+
+    expandSlots: () => {
+      const s = get();
+      if (s.maxHorses >= SLOT_EXPAND_TO || s.coins < SLOT_EXPAND_COST) return false;
+      commit({ coins: s.coins - SLOT_EXPAND_COST, maxHorses: SLOT_EXPAND_TO });
+      return true;
     },
 
     resetAll: () => commit({ ...freshSave() }),

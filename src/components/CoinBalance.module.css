@@ -1,0 +1,25 @@
+.pill {
+  position: fixed;
+  top: 10px;
+  left: calc(50% - 240px + 12px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 8px;
+  background: var(--panel);
+  border: 2px solid var(--border-dark);
+  border-radius: 999px;
+  box-shadow: 0 3px 0 rgba(43, 33, 24, 0.15);
+  font-weight: 900;
+  color: #8a6410;
+}
+.amount {
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+@media (max-width: 520px) {
+  .pill {
+    left: 12px;
+  }
+}
