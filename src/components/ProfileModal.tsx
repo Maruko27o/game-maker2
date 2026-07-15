@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { useAuth, saveDisplayName, setRankingAvatar } from '../cloud';
+import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
@@ -47,13 +47,17 @@ export default function ProfileModal({
   const shelf = displayTrophies; // ranks, in order, max SLOTS
   const usedOf = (r: 1 | 2 | 3) => shelf.filter((x) => x === r).length;
 
+  function saveShelf(next: number[]) {
+    setDisplayTrophies(next);
+    if (user) setRankingTrophies(next); // reflect on the ranking profile too
+  }
   function addTrophy(r: 1 | 2 | 3) {
     if (shelf.length >= SLOTS) return;
     if (usedOf(r) >= owned[r]) return;
-    setDisplayTrophies([...shelf, r]);
+    saveShelf([...shelf, r]);
   }
   function removeSlot(i: number) {
-    setDisplayTrophies(shelf.filter((_, idx) => idx !== i));
+    saveShelf(shelf.filter((_, idx) => idx !== i));
   }
 
   // Ranking name edit.

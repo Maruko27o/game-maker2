@@ -18,6 +18,8 @@ type Props = {
   onAdd: (bet: Bet) => void; // parent spends the stake
   onRemove: (index: number) => void; // parent refunds the stake
   onStart: () => void;
+  maxBets?: number; // slip cap (default MAX_BETS_PER_RACE); grand-prix passes MAX_BETS_GP
+  startLabel?: string; // override the start button label (e.g. "予選スタート")
 };
 
 const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
@@ -25,7 +27,7 @@ const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', qu
 // Paddock: pick a market, select the horse(s), stake, and add to the bet slip —
 // as many bets as you like (RACE_V4 改修①). Odds come from the same model as the
 // popularity, with the 0.80 takeout. Bet on your own horse is allowed.
-export default function Paddock({ entrants, looks, course, coins, bets, onAdd, onRemove, onStart }: Props) {
+export default function Paddock({ entrants, looks, course, coins, bets, onAdd, onRemove, onStart, maxBets = MAX_BETS_PER_RACE, startLabel }: Props) {
   const p = useMemo(() => winProbs(entrants, course), [entrants, course]);
   const rows = useMemo(() => raceOdds(entrants, course).slice().sort((a, b) => a.pop - b.pop), [entrants, course]);
 
@@ -39,7 +41,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
   const complete = sel.length === spec.pick;
   const curOdds = complete ? oddsFor(kind, sel, p) : 0;
   const staked = bets.reduce((s, b) => s + b.amount, 0);
-  const full = bets.length >= MAX_BETS_PER_RACE; // slip cap reached
+  const full = bets.length >= maxBets; // slip cap reached
 
   function toggle(idx: number) {
     setSel((prev) => {
@@ -104,14 +106,14 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
           </button>
         ))}
         <button className={styles.add} disabled={!complete || coins < amount || full} onClick={add}>
-          {full ? '上限10パターン' : complete ? `${curOdds.toFixed(1)}倍で追加` : `${KIND_LABEL[kind]}を選ぶ`}
+          {full ? `上限${maxBets}パターン` : complete ? `${curOdds.toFixed(1)}倍で追加` : `${KIND_LABEL[kind]}を選ぶ`}
         </button>
       </div>
 
       {/* bet slip */}
       {bets.length > 0 && (
         <div className={styles.slip}>
-          <div className={styles.slipHead}>賭け伝票 {bets.length}/{MAX_BETS_PER_RACE}（合計 <CoinIcon size={13} /> {staked}）</div>
+          <div className={styles.slipHead}>賭け伝票 {bets.length}/{maxBets}（合計 <CoinIcon size={13} /> {staked}）</div>
           {bets.map((b, i) => (
             <div key={i} className={styles.slipRow}>
               <span className={styles.slipKind}>{KIND_LABEL[b.kind]}</span>
@@ -125,7 +127,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
       )}
 
       <div className={styles.actions}>
-        <button className="btn" onClick={onStart}>{bets.length > 0 ? '出走！' : '賭けずに出走'}</button>
+        <button className="btn" onClick={onStart}>{startLabel ?? (bets.length > 0 ? '出走！' : '賭けずに出走')}</button>
       </div>
     </div>
   );

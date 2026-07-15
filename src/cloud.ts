@@ -4,7 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import type { SaveData, HorseLook } from './types';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from './supabaseConfig';
-import { migrate } from './store';
+import { migrate, useStore } from './store';
 
 export const supabase: SupabaseClient | null = CLOUD_ENABLED
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -139,12 +139,13 @@ export async function saveDisplayName(name: string): Promise<string | null> {
 // The horse look shown next to a ranking row (avatar). Stored as jsonb.
 export type AvatarLook = { colors: HorseLook['colors']; decos: HorseLook['decos'] };
 
-/** Submit a winning bet's odds (+ current avatar); server keeps each account's best. */
+/** Submit a winning bet's odds (+ current avatar & displayed trophies); server keeps each account's best. */
 export async function submitBetScore(
   odds: number,
   courseId: string,
   username: string,
   avatar: AvatarLook | null,
+  trophies: number[] | null,
 ): Promise<void> {
   if (!supabase) return;
   try {
@@ -153,14 +154,35 @@ export async function submitBetScore(
       p_course: courseId,
       p_username: username,
       p_avatar: avatar,
+      p_trophies: trophies,
     });
-    // Fall back to the pre-avatar 3-arg RPC if the new one isn't applied yet.
+    // Fall back to the pre-trophies 4-arg RPC if the new one isn't applied yet.
     if (error) {
-      await supabase.rpc('submit_bet_score', { p_odds: odds, p_course: courseId, p_username: username });
+      await supabase.rpc('submit_bet_score', {
+        p_odds: odds,
+        p_course: courseId,
+        p_username: username,
+        p_avatar: avatar,
+      });
     }
   } catch {
     /* DB not set up / offline — non-fatal */
   }
+}
+
+/**
+ * Submit the current best winning odds for the signed-in player, attaching their
+ * avatar horse and displayed trophies from the live store. Best-effort no-op
+ * when signed out. Shared by single races and grand-prix.
+ */
+export async function submitBestOdds(odds: number, courseId: string): Promise<void> {
+  const auth = useAuth.getState();
+  const name = auth.displayName;
+  if (!auth.user || !name || odds <= 0) return;
+  const st = useStore.getState();
+  const av = st.avatarHorseId ? st.horses.find((h) => h.id === st.avatarHorseId) : st.horses[0];
+  const avatar = av ? { colors: av.colors, decos: av.decos } : null;
+  await submitBetScore(odds, courseId, name, avatar, st.displayTrophies ?? null);
 }
 
 /** Update just the ranking avatar for the signed-in account (no-op if no row yet). */
@@ -173,12 +195,23 @@ export async function setRankingAvatar(avatar: AvatarLook | null): Promise<void>
   }
 }
 
+/** Update just the displayed trophies for the signed-in account (no-op if no row yet). */
+export async function setRankingTrophies(trophies: number[] | null): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.rpc('set_bet_trophies', { p_trophies: trophies });
+  } catch {
+    /* DB not set up / offline — non-fatal */
+  }
+}
+
 export type ScoreRow = {
   userId: string;
   username: string;
   bestOdds: number;
   courseId: string | null;
   avatar: AvatarLook | null;
+  displayTrophies: number[];
 };
 
 /** Top scores by best hit odds (one row per user). Empty on any failure. */
@@ -187,10 +220,10 @@ export async function loadLeaderboard(limit = 50): Promise<ScoreRow[]> {
   try {
     let res = await supabase
       .from('bet_scores')
-      .select('user_id, username, best_odds, course_id, avatar')
+      .select('user_id, username, best_odds, course_id, avatar, display_trophies')
       .order('best_odds', { ascending: false })
       .limit(limit);
-    // Fall back to the pre-avatar columns if that column isn't applied yet.
+    // Fall back to the pre-avatar columns if those columns aren't applied yet.
     if (res.error) {
       res = (await supabase
         .from('bet_scores')
@@ -200,13 +233,21 @@ export async function loadLeaderboard(limit = 50): Promise<ScoreRow[]> {
     }
     if (res.error || !res.data) return [];
     return (
-      res.data as { user_id: string; username: string; best_odds: number; course_id: string | null; avatar?: AvatarLook | null }[]
+      res.data as {
+        user_id: string;
+        username: string;
+        best_odds: number;
+        course_id: string | null;
+        avatar?: AvatarLook | null;
+        display_trophies?: number[] | null;
+      }[]
     ).map((r) => ({
       userId: r.user_id,
       username: r.username,
       bestOdds: Number(r.best_odds),
       courseId: r.course_id,
       avatar: r.avatar ?? null,
+      displayTrophies: Array.isArray(r.display_trophies) ? r.display_trophies : [],
     }));
   } catch {
     return [];

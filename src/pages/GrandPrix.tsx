@@ -7,7 +7,6 @@ import { simulate2, type Entrant, type SimResult } from '../logic/raceSim2';
 import {
   buildGpField,
   computeQualifiers,
-  computeOdds,
   gpItemCount,
   heatLaps,
   finalLaps,
@@ -16,7 +15,11 @@ import {
   type Qualifier,
 } from '../logic/grandprix';
 import { makeTrophy, rollItems } from '../logic/raceReward';
-import { GP_QUALIFY_COINS, GP_DAILY_LIMIT, gpFinalCoins } from '../data/coins';
+import { settle, type Bet } from '../logic/betting';
+import { submitBestOdds } from '../cloud';
+import { ENABLE_RANKING } from '../config';
+import Paddock from '../components/Paddock';
+import { GP_QUALIFY_COINS, GP_DAILY_LIMIT, MAX_BETS_GP, gpFinalCoins } from '../data/coins';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import type { Horse, HorseLook, Trophy, TrainingItem } from '../types';
 import { RUN_STYLE_LABEL, STAT_LABEL } from '../types';
@@ -57,11 +60,35 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const recordRace = useStore((s) => s.recordRace);
   const unlockGp = useStore((s) => s.unlockGp);
   const addCoins = useStore((s) => s.addCoins);
+  const spendCoins = useStore((s) => s.spendCoins);
+  const coins = useStore((s) => s.coins);
   const startGpAttempt = useStore((s) => s.startGpAttempt);
   const daily = useStore((s) => s.daily);
   const gpLeft = Math.max(0, GP_DAILY_LIMIT - (daily.day === dayKey() ? daily.gp : 0));
 
-  const [screen, setScreen] = useState<'grade' | 'card' | 'odds' | 'heat' | 'qualify' | 'final' | 'podium'>('grade');
+  // Betting (改修：グランプリでも馬券。予選＋本戦の2回・各最大 MAX_BETS_GP 通り・コイン使用)。
+  const [heatBets, setHeatBets] = useState<Bet[]>([]);
+  const [finalBets, setFinalBets] = useState<Bet[]>([]);
+  const [betPayout, setBetPayout] = useState(0); // total bet winnings this attempt (for the podium)
+
+  // Settle a round's bets against its finishing order: pay out and push the best
+  // winning odds to the ranking (same as a single race).
+  function settleBets(bets: Bet[], order: number[], courseId: string) {
+    let payout = 0;
+    let best = 0;
+    for (const b of bets) {
+      const got = settle(b, order);
+      payout += got;
+      if (got > 0) best = Math.max(best, b.odds);
+    }
+    if (payout > 0) {
+      addCoins(payout);
+      setBetPayout((p) => p + payout);
+    }
+    if (ENABLE_RANKING && best > 0) submitBestOdds(best, courseId);
+  }
+
+  const [screen, setScreen] = useState<'grade' | 'card' | 'odds' | 'heat' | 'qualify' | 'finalPaddock' | 'final' | 'podium'>('grade');
   const [state, setState] = useState<GpState | null>(null);
   const [heatResults, setHeatResults] = useState<SimResult[] | null>(null);
   const [qualifiers, setQualifiers] = useState<Qualifier[] | null>(null);
@@ -84,6 +111,9 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     setQualifiers(null);
     setFinalResult(null);
     setReward(null);
+    setHeatBets([]);
+    setFinalBets([]);
+    setBetPayout(0);
     rewardApplied.current = false;
     setScreen('card');
   }
@@ -96,6 +126,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       if (h === state.playerHeat) results[h] = playerRes;
       else results[h] = simulate2(heat, state.course, mode, state.seed + h * 101, { laps: heatLaps(mode) });
     });
+    // Settle the qualifier bets against the player's heat result.
+    settleBets(heatBets, playerRes.order, state.course.id);
     setHeatResults(results);
     setQualifiers(computeQualifiers(state.heats, results));
     setScreen('qualify');
@@ -108,6 +140,9 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       return;
     }
     rewardApplied.current = true;
+    // Settle the final bets against the final result (runs even if the player
+    // didn't qualify — they can still bet on the final as a spectator).
+    settleBets(finalBets, res.order, state.course.id);
     const finalists = qualifiers.map((q) => q.entrant);
     const playerIdx = finalists.findIndex((e) => e.isPlayer);
     if (playerIdx < 0) {
@@ -197,32 +232,27 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     );
   }
 
-  // ---- odds / paddock ----
+  // ---- qualifier paddock (bet on your heat, then start) ----
   if (screen === 'odds') {
     const heat = state.heats[state.playerHeat];
-    const odds = computeOdds(heat, state.course);
-    const order = heat.map((_, i) => i).sort((a, b) => odds[a].pop - odds[b].pop);
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>パドック（{state.playerHeat + 1}組）</h1>
-        <p className={styles.lead}>単勝オッズ（人気）。あなたの馬は何番人気？</p>
-        <div className={gp.oddsList}>
-          {order.map((i) => {
-            const e = heat[i];
-            return (
-              <div key={e.horseId} className={`${gp.oddsRow} ${e.isPlayer ? gp.entryMe : ''}`}>
-                <span className={gp.pop}>{odds[i].pop}番人気</span>
-                <div className={gp.oddsThumb}><HorseView horse={state.looks[e.horseId]} size={44} /></div>
-                <span className={gp.entryName}>{e.isPlayer ? 'あなた' : e.name}</span>
-                <span className={gp.oddsVal}>{odds[i].odds.toFixed(1)}倍</span>
-              </div>
-            );
-          })}
-        </div>
-        <div className={styles.setupActions}>
-          <button className="btn neutral" onClick={() => setScreen('card')}>もどる</button>
-          <button className="btn" onClick={() => { if (startGpAttempt()) setScreen('heat'); else onExit(); }}>予選スタート</button>
-        </div>
+        <h1 className={styles.title}>予選パドック（{state.playerHeat + 1}組）</h1>
+        <Paddock
+          entrants={heat}
+          looks={state.looks}
+          course={state.course}
+          coins={coins}
+          bets={heatBets}
+          maxBets={MAX_BETS_GP}
+          startLabel="予選スタート"
+          onAdd={(b) => { if (heatBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) setHeatBets((prev) => [...prev, b]); }}
+          onRemove={(i) => { addCoins(heatBets[i].amount); setHeatBets((prev) => prev.filter((_, k) => k !== i)); }}
+          onStart={() => { if (startGpAttempt()) setScreen('heat'); else onExit(); }}
+        />
+        <button className={styles.exitLink} onClick={() => { heatBets.forEach((b) => addCoins(b.amount)); setHeatBets([]); setScreen('card'); }}>
+          もどる（賭けを取り消す）
+        </button>
       </div>
     );
   }
@@ -241,6 +271,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           reduced={reduced}
           skippable
           laps={heatLaps(mode)}
+          bets={heatBets}
           onFinish={afterPlayerHeat}
         />
       </div>
@@ -276,8 +307,33 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
         <p className={gp.qualNote}>{playerIn ? '本戦進出！' : '予選敗退… 本戦は観戦になります'}</p>
         <div className={styles.setupActions}>
           <button className="btn neutral" onClick={onExit}>やめる</button>
-          <button className="btn" onClick={() => setScreen('final')}>{playerIn ? '本戦へ' : '本戦を観る'}</button>
+          <button className="btn" onClick={() => setScreen('finalPaddock')}>{playerIn ? '本戦へ' : '本戦を観る'}</button>
         </div>
+      </div>
+    );
+  }
+
+  // ---- final paddock (bet on the 8 finalists) ----
+  if (screen === 'finalPaddock' && qualifiers) {
+    const finalists = qualifiers.map((q) => q.entrant);
+    return (
+      <div className={styles.page}>
+        <h1 className={styles.title}>本戦パドック（決勝8頭）</h1>
+        <Paddock
+          entrants={finalists}
+          looks={state.looks}
+          course={state.course}
+          coins={coins}
+          bets={finalBets}
+          maxBets={MAX_BETS_GP}
+          startLabel="本戦スタート"
+          onAdd={(b) => { if (finalBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) setFinalBets((prev) => [...prev, b]); }}
+          onRemove={(i) => { addCoins(finalBets[i].amount); setFinalBets((prev) => prev.filter((_, k) => k !== i)); }}
+          onStart={() => setScreen('final')}
+        />
+        <button className={styles.exitLink} onClick={() => { finalBets.forEach((b) => addCoins(b.amount)); setFinalBets([]); setScreen('qualify'); }}>
+          もどる（賭けを取り消す）
+        </button>
       </div>
     );
   }
@@ -297,6 +353,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           reduced={reduced}
           skippable
           laps={finalLaps(mode)}
+          bets={finalBets}
           onFinish={afterFinal}
         />
       </div>
@@ -323,6 +380,11 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           {reward && reward.coins > 0 && (
             <p className={styles.rewardLine} style={{ color: '#8a6410' }}>
               <CoinIcon size={18} /> コイン ＋{reward.coins}
+            </p>
+          )}
+          {betPayout > 0 && (
+            <p className={styles.rewardLine} style={{ color: '#8a6410' }}>
+              <CoinIcon size={18} /> 馬券の払戻 ＋{betPayout}
             </p>
           )}
           {state.grade === 'g3' && reward?.qualified && reward.rank <= 3 && <p className={gp.unlockMsg}>G2グランプリ解放！</p>}

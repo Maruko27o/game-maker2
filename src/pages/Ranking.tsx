@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth, loadLeaderboard, type ScoreRow } from '../cloud';
 import type { HorseLook } from '../types';
 import HorseFace from '../components/HorseFace';
+import RankingProfileCard from '../components/RankingProfileCard';
 import CoinIcon from '../components/CoinIcon';
 import styles from './Ranking.module.css';
 
@@ -16,6 +17,7 @@ export default function Ranking() {
   const displayName = useAuth((s) => s.displayName);
   const configured = useAuth((s) => s.configured);
   const [rows, setRows] = useState<ScoreRow[] | null>(null);
+  const [viewing, setViewing] = useState<ScoreRow | null>(null); // profile card being shown
 
   useEffect(() => {
     let live = true;
@@ -51,7 +53,13 @@ export default function Ranking() {
               ? { name: '', colors: r.avatar.colors, decos: r.avatar.decos }
               : DEFAULT_LOOK;
             return (
-              <li key={r.userId} className={`${styles.row} ${me ? styles.me : ''}`}>
+              <li
+                key={r.userId}
+                className={`${styles.row} ${me ? styles.me : ''}`}
+                onClick={() => setViewing(r)}
+                role="button"
+                tabIndex={0}
+              >
                 <span className={`${styles.place} ${medal(i + 1)}`}>{i + 1}</span>
                 <span className={styles.avatar}>
                   <HorseFace horse={look} size={34} />
@@ -73,6 +81,8 @@ export default function Ranking() {
           <span className={styles.selfHint}>（左上のアイコン→プロフィールから変更できます）</span>
         </div>
       )}
+
+      {viewing && <RankingProfileCard row={viewing} onClose={() => setViewing(null)} />}
     </div>
   );
 }

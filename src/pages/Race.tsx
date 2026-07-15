@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
-import { useAuth, submitBetScore } from '../cloud';
+import { submitBestOdds } from '../cloud';
 import { ENABLE_RANKING } from '../config';
 import { COURSES, type Course } from '../data/courses';
 import { type Entrant, type SimResult } from '../logic/raceSim2';
@@ -217,15 +217,7 @@ export default function Race() {
     addCoins(earned + payout);
     // Ranking (改修④): submit the best winning odds; the server keeps each
     // account's max. Best-effort — no-op when signed out or the DB isn't set up.
-    if (ENABLE_RANKING && bestWonOdds > 0) {
-      const name = useAuth.getState().displayName;
-      if (useAuth.getState().user && name) {
-        // Include the player's avatar horse so it shows next to their ranking row.
-        const st = useStore.getState();
-        const av = st.avatarHorseId ? st.horses.find((h) => h.id === st.avatarHorseId) : st.horses[0];
-        submitBetScore(bestWonOdds, setup.course.id, name, av ? { colors: av.colors, decos: av.decos } : null);
-      }
-    }
+    if (ENABLE_RANKING && bestWonOdds > 0) submitBestOdds(bestWonOdds, setup.course.id);
     setReward({ rank, awarded, earned, payout });
     setCutin(achievements); // cut-in only for achievement badges (placing are everyday)
     // Ranking foundation (RACE_V4 §5): buffer a verifiable submission locally.
