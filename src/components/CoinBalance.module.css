@@ -1,7 +1,7 @@
 .pill {
   position: fixed;
   top: 10px;
-  left: calc(50% - 240px + 12px);
+  right: calc(50% - 240px + 12px);
   z-index: 30;
   display: flex;
   align-items: center;
@@ -20,6 +20,6 @@
 }
 @media (max-width: 520px) {
   .pill {
-    left: 12px;
+    right: 12px;
   }
 }

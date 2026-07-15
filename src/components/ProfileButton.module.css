@@ -1,0 +1,21 @@
+.fab {
+  position: fixed;
+  top: 10px;
+  left: calc(50% - 240px + 12px);
+  z-index: 30;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid var(--border-dark);
+  background: var(--panel-inner);
+  box-shadow: 0 3px 0 var(--border);
+  padding: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+@media (max-width: 520px) {
+  .fab {
+    left: 12px;
+  }
+}
