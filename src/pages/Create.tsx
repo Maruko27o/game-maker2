@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
+import Icon from '../components/Icon';
 import { colorsBySlot, decosBySlot, COLOR_SLOTS, DECO_SLOTS } from '../data/parts';
 import { predictStyle } from '../logic/runStyle';
 import type { ColorSlot, DecoSlot, HorseLook, Stats, StatKey } from '../types';
@@ -166,7 +167,7 @@ export default function Create() {
                       aria-label={c.name}
                       title={has ? c.name : '未所持'}
                     >
-                      {!has && <span className={styles.lock}>🔒</span>}
+                      {!has && <span className={styles.lock}><Icon name="lock" size={13} /></span>}
                     </button>
                   );
                 })}
@@ -196,7 +197,7 @@ export default function Create() {
                       disabled={!has}
                       onClick={() => setDecos((p) => ({ ...p, [slot]: d.id }))}
                     >
-                      {has ? d.name : '🔒 ' + d.name}
+                      {has ? d.name : (<><Icon name="lock" size={11} /> {d.name}</>)}
                     </button>
                   );
                 })}

@@ -27,9 +27,15 @@ export default function TrophyIcon({
     <svg viewBox="0 0 520 520" width={size} height={size} role="img" aria-label={`${rank}位トロフィー`}>
       <g dangerouslySetInnerHTML={{ __html: BY_RANK[rank] }} />
       {gp && (
-        <text x="330" y="472" fontSize="46" textAnchor="middle" aria-hidden>
-          ⭐
-        </text>
+        <g transform="translate(307,432) scale(1.9)" aria-hidden>
+          <path
+            d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9.9l6.9-.8L12 2z"
+            fill="#f6c945"
+            stroke="#2b2118"
+            strokeWidth="1.2"
+            strokeLinejoin="round"
+          />
+        </g>
       )}
     </svg>
   );

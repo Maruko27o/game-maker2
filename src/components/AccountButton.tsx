@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth, signIn, signUp, signOut, resetPassword, formatPlayerId, saveDisplayName } from '../cloud';
 import { normalizeUsername } from '../logic/username';
+import Icon from './Icon';
 import styles from './AccountButton.module.css';
 
 const SYNC_LABEL: Record<string, string> = {
@@ -84,7 +85,7 @@ export default function AccountButton() {
         aria-label="アカウント"
         data-state={signedIn ? 'in' : 'out'}
       >
-        {signedIn ? '👤' : '☁️'}
+        <Icon name={signedIn ? 'account' : 'cloud'} size={20} />
       </button>
 
       {open && (
@@ -102,7 +103,7 @@ export default function AccountButton() {
               <p className={styles.note}>読み込み中…</p>
             ) : signedIn ? (
               <div className={styles.signedIn}>
-                <p className={styles.email}>📧 {user!.email}</p>
+                <p className={styles.email}>{user!.email}</p>
                 {playerNo != null && (
                   <p className={styles.playerId}>
                     プレイヤーID: <strong>{formatPlayerId(playerNo)}</strong>

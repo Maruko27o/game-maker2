@@ -8,6 +8,7 @@ import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
 import { buildScenery } from './trackScenery';
 import { wouldWin, type Bet, type BetKind } from '../logic/betting';
+import Icon from './Icon';
 import styles from './RaceTrack2.module.css';
 
 const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
@@ -303,7 +304,10 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           {/* boost panels + obstacles */}
           {result.boosts.map((bp, i) => {
             const w = toWorld(track, bp.s, bp.d);
-            return <text key={'b' + i} x={w.x} y={w.y} fontSize="3.4" textAnchor="middle" dominantBaseline="middle">⚡</text>;
+            return (
+              <path key={'b' + i} transform={`translate(${w.x - 2.04},${w.y - 2.04}) scale(0.17)`}
+                d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#f6c945" stroke="#2b2118" strokeWidth={1.4} strokeLinejoin="round" />
+            );
           })}
           {result.obstacles.map((o, i) => {
             const c = centerline(track, o.s);
@@ -380,7 +384,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
       {/* Skip unlocks only in the second half of the race (RACE_V4 §2 request). */}
       {skippable && phase === 'run' && travelled / result.distanceS >= 0.5 && (
         <button className={styles.skip} onClick={() => { elapsed.current = result.duration; setPhase('done'); onFinish(result); }}>
-          スキップ ⏭
+          スキップ <Icon name="skip" size={14} />
         </button>
       )}
     </div>

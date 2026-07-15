@@ -15,6 +15,7 @@ import { RUN_STYLE_LABEL, STAT_KEYS } from '../types';
 import HorseView from '../components/HorseView';
 import BadgeIcon from '../components/BadgeIcon';
 import CoinIcon from '../components/CoinIcon';
+import Icon from '../components/Icon';
 import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
 import { settle, type Bet } from '../logic/betting';
@@ -103,7 +104,7 @@ function Roulette({ course, player, reduced, onDone }: { course: Course; player:
   return (
     <div className={styles.rouletteWrap} onClick={!spinning ? onDone : undefined}>
       <div className={`${styles.rouletteCard} ${!spinning ? styles.rouletteStop : ''}`}>
-        <div className={styles.rouletteEmoji}>{shown.emoji}</div>
+        <div className={styles.rouletteEmoji} style={{ background: shown.ground }} aria-hidden />
         <div className={styles.rouletteName}>{shown.name}</div>
         {!spinning && (
           <>
@@ -234,10 +235,10 @@ export default function Race() {
   if (screen === 'menu') {
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>レース 🏁</h1>
+        <h1 className={styles.title}>レース</h1>
         <p className={styles.lead}>コースはランダム。あつめたウマを走らせよう！</p>
         <button className={styles.modeCard} onClick={() => { setGrade('normal'); setScreen('setup'); }}>
-          <span className={styles.modeEmoji}>🏇</span>
+          <span className={styles.modeEmoji}><Icon name="horse" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>ひとりでレース</span>
             <span className={styles.modeDesc}>8頭立て・3位以内でトロフィー</span>
@@ -245,7 +246,7 @@ export default function Race() {
           <span className={styles.modeGo}>▶</span>
         </button>
         <button className={styles.modeCard} onClick={() => { setGrade('gp'); setScreen('setup'); }}>
-          <span className={styles.modeEmoji}>🏆</span>
+          <span className={styles.modeEmoji}><Icon name="trophy" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>グランプリ</span>
             <span className={styles.modeDesc}>強敵ぞろい・入賞で育成アイテム</span>
@@ -253,7 +254,7 @@ export default function Race() {
           <span className={styles.modeGo}>▶</span>
         </button>
         <div className={`${styles.modeCard} ${styles.modeLocked}`} aria-disabled>
-          <span className={styles.modeEmoji}>⚔️</span>
+          <span className={styles.modeEmoji}><Icon name="swords" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>たいせん</span>
             <span className={styles.modeDesc}>ともだちと対戦</span>
@@ -271,7 +272,7 @@ export default function Race() {
         <h1 className={styles.title}>{grade === 'gp' ? 'グランプリ' : 'ひとりでレース'}</h1>
         {horses.length === 0 ? (
           <div className={styles.empty}>
-            <div className={styles.emptyEmoji}>🐴</div>
+            <div className={styles.emptyEmoji}><Icon name="horse" size={56} /></div>
             <p>走らせるウマがいません。</p>
             <button className="btn" onClick={() => navigate('/create')}>ウマをつくる</button>
           </div>
@@ -347,7 +348,9 @@ export default function Race() {
   if (screen === 'race' && setup) {
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>{setup.course.emoji} {setup.course.name}</h1>
+        <h1 className={styles.title}>
+          <span className={styles.courseDot} style={{ background: setup.course.ground }} aria-hidden /> {setup.course.name}
+        </h1>
         <RaceTrack2
           entrants={setup.entrants}
           looks={setup.looks}
@@ -370,7 +373,7 @@ export default function Race() {
     return (
       <div className={styles.page}>
         <div className={styles.resultCard}>
-          <h2 className={styles.resultTitle}>{playerRank === 1 ? '🏆 ゆうしょう！' : `${playerRank}位`}</h2>
+          <h2 className={styles.resultTitle}>{playerRank === 1 ? (<><Icon name="trophy" size={22} /> ゆうしょう！</>) : `${playerRank}位`}</h2>
           {reward && reward.awarded.length > 0 && (
             <div className={styles.badgeReward}>
               {reward.awarded.map((b, i) => (
