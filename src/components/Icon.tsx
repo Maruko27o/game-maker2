@@ -4,7 +4,8 @@
 export type IconName =
   | 'leaf' | 'horse' | 'palette' | 'book' | 'flag' | 'trophy'
   | 'star' | 'account' | 'cloud' | 'gear' | 'lock' | 'gift'
-  | 'refresh' | 'bolt' | 'skip' | 'medal' | 'crown' | 'clipboard' | 'sparkle' | 'swords';
+  | 'refresh' | 'bolt' | 'skip' | 'medal' | 'crown' | 'clipboard' | 'sparkle' | 'swords'
+  | 'eye' | 'eyeOff';
 
 const P: Record<IconName, JSX.Element> = {
   // 草むら
@@ -48,6 +49,9 @@ const P: Record<IconName, JSX.Element> = {
   clipboard: <path d="M9 3h6v2h3v16H6V5h3V3zm0 4h6V5H9v2zm-1 4h8v-2H8v2zm0 4h8v-2H8v2zm0 4h5v-2H8v2z" fillRule="evenodd" />,
   sparkle: <path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6zm7 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />,
   swords: <path d="M3 3l6 2 8 8 1 4-4-1-8-8L3 3zm18 0l-2 6-3-1 4-5h1zM5 19l4-4 1 1-4 4-1-1zm12-4l4 4-1 1-4-4 1-1z" fillRule="evenodd" />,
+  // パスワード表示トグル（目）
+  eye: <path d="M12 5C6.5 5 2.7 9 1.5 12 2.7 15 6.5 19 12 19s9.3-4 10.5-7C21.3 9 17.5 5 12 5zm0 3a4 4 0 110 8 4 4 0 010-8zm0 2a2 2 0 100 4 2 2 0 000-4z" fillRule="evenodd" />,
+  eyeOff: <path d="M3.3 2L2 3.3l3.2 3.2C3.4 7.8 2.2 9.7 1.5 12 2.7 15 6.5 19 12 19c1.7 0 3.3-.4 4.7-1.1l4 4L22 20.7 3.3 2zM12 16a4 4 0 01-3.7-5.6l1.6 1.6a2 2 0 002.1 2.1l1.6 1.6c-.5.2-1 .3-1.6.3zm0-11c5.5 0 9.3 4 10.5 7-.5 1.2-1.4 2.6-2.7 3.8l-2.9-2.9A4 4 0 0012 8c-.4 0-.8 0-1.1.1L8.6 5.8C9.7 5.3 10.8 5 12 5z" fillRule="evenodd" />,
 };
 
 export default function Icon({ name, size = 24, className }: { name: IconName; size?: number; className?: string }) {
