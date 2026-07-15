@@ -24,7 +24,8 @@ export const GRASS_DAILY_BONUS = 20; // grass first-visit bonus…
 export const GRASS_DAILY_BONUS_MAX = 2; // …up to this many times a day
 
 // ---- spending (§4.3) ----------------------------------------------------------
-export const BET_AMOUNTS = [10, 50, 100, 500] as const;
+export const BET_AMOUNTS = [10, 100, 500, 1000] as const;
+export const MAX_BETS_PER_RACE = 10; // bet-slip cap per single race
 export const GRASS_OKAWARI_COST = 300; // an extra grass charge (repeatable)
 export const SLOT_EXPAND_COST = 3000; // stable 10 → 15 (once)
 export const SLOT_EXPAND_TO = 15;
