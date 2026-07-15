@@ -59,7 +59,13 @@ describe('cloud reconcile', () => {
   });
 
   it('same account, local newer → push local (this device made changes)', () => {
-    expect(reconcile(save(100), save(900), A, A)).toEqual({ action: 'keepLocalPushCloud' });
+    expect(reconcile(save(100, 1), save(900, 1), A, A)).toEqual({ action: 'keepLocalPushCloud' });
+  });
+
+  it('DATA-LOSS GUARD: same account but local emptied vs cloud with progress → load cloud', () => {
+    // Even though local looks newer, an emptied local must not wipe a non-empty
+    // cloud (lost/cleared storage, a stale tab). Take the cloud.
+    expect(reconcile(save(100, 3), save(900, 0), A, A)).toEqual({ action: 'loadCloud' });
   });
 
   it('same account, equal timestamps → load cloud (no needless write)', () => {

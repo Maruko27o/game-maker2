@@ -35,6 +35,11 @@ export function reconcile(
   // The local save is this same account's (a device that has synced before):
   // ordinary last-write-wins keeps multi-device play in sync.
   if (owner === userId) {
+    // Safety net: never let an emptied local (lost/cleared storage, a stale tab)
+    // wipe a cloud that still has progress, even if its clock looks newer. Taking
+    // the cloud here can't lose data — a genuine local reset is rare and can be
+    // redone, whereas an accidental wipe is unrecoverable.
+    if (!hasProgress(local) && hasProgress(cloud)) return { action: 'loadCloud' };
     return (cloud.savedAt ?? 0) >= (local.savedAt ?? 0)
       ? { action: 'loadCloud' }
       : { action: 'keepLocalPushCloud' };

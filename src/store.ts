@@ -103,7 +103,7 @@ const BALANCED_40: Stats = { spd: 7, sta: 7, pwr: 7, jmp: 7, gut: 6, wit: 6 };
 
 // Migrate any stored payload up to v4, preserving collection/horses.
 // Returns { data, migrated } — migrated=true when an upgrade happened.
-function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null {
+export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } | null {
   if (!parsed || typeof parsed !== 'object') return null;
   const d = parsed as Record<string, unknown>;
   if (typeof d.owned !== 'object' || d.owned === null || !Array.isArray(d.horses)) return null;

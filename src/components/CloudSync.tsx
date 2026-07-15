@@ -6,6 +6,7 @@ import {
   useAuth,
   cloudLoad,
   cloudSave,
+  backupSave,
   getOwner,
   setOwner,
   getRev,
@@ -62,9 +63,25 @@ export default function CloudSync() {
     }
     let cancelled = false;
     setSync('syncing');
+    // Until we have SUCCESSFULLY read the cloud, we must not write to it: a null
+    // rev blocks the debounced push (below), so a failed read can never lead to
+    // the local save overwriting real cloud data.
+    setRev(null);
     (async () => {
-      const cloud = await cloudLoad(user.id);
+      const loaded = await cloudLoad(user.id);
       if (cancelled) return;
+
+      // Could not read the cloud (network/RLS/corrupt). Treat its state as
+      // unknown: keep the local save, surface the error, and DON'T push. The
+      // account's data is left untouched. A later reload retries.
+      if (loaded.status === 'error') {
+        setSync('error');
+        const no = await loadPlayerNo();
+        if (!cancelled) setPlayerNo(no);
+        return;
+      }
+
+      const cloud = loaded.status === 'ok' ? loaded.save : null;
       const local = snapshot();
       const decision = reconcile(cloud ? cloud.data : null, local, getOwner(), user.id);
 
@@ -79,7 +96,9 @@ export default function CloudSync() {
         setRev(cloud.rev);
         if (!cancelled) setSync('saved');
       } else {
-        // pushLocal / keepLocalPushCloud
+        // pushLocal (empty account) / keepLocalPushCloud (same account, newer here).
+        // Stash the existing cloud copy first so any overwrite is recoverable.
+        if (cloud) await backupSave(user.id, cloud.data, cloud.rev);
         bindSaveKey(user.id);
         const res = await cloudSave(user.id, local, cloud ? cloud.rev : null);
         setOwner(user.id);
@@ -102,17 +121,23 @@ export default function CloudSync() {
     const unsub = useStore.subscribe((state, prev) => {
       if (state.savedAt === prev.savedAt) return; // only real changes bump savedAt
       if (useAuth.getState().conflict) return; // don't sync while resolving a conflict
+      // Never write before we've read: a null rev means the initial cloud load
+      // failed or hasn't finished, so pushing now could clobber unread data.
+      if (getRev() === null) return;
       useAuth.getState().setSync('syncing');
       clearTimeout(timer);
       timer = setTimeout(async () => {
+        if (getRev() === null) return; // re-check after the debounce
         const res = await cloudSave(user.id, snapshot(), getRev());
         if (res.ok) {
           setRev(res.rev);
           useAuth.getState().setSync('saved');
         } else if (res.conflict) {
           // Another device moved ahead: re-read and ask the player.
-          const cloud = await cloudLoad(user.id);
-          if (cloud) useAuth.getState().setConflict({ userId: user.id, cloud, local: snapshot() });
+          const loaded = await cloudLoad(user.id);
+          if (loaded.status === 'ok') {
+            useAuth.getState().setConflict({ userId: user.id, cloud: loaded.save, local: snapshot() });
+          }
           useAuth.getState().setSync('idle');
         } else {
           useAuth.getState().setSync('error');
