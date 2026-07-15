@@ -20,7 +20,8 @@ export const BET_KINDS: { kind: BetKind; label: string; pick: number; ordered: b
 ];
 
 const TAKEOUT = 0.8; // 80% payout
-const clampOdds = (o: number) => Math.min(999, Math.max(1.1, o));
+export const MAX_ODDS = 99999; // display/pay cap — high enough to show big 3連単 etc.
+const clampOdds = (o: number) => Math.min(MAX_ODDS, Math.max(1.1, o));
 
 export type Bet = { kind: BetKind; sel: number[]; amount: number; odds: number };
 
@@ -57,7 +58,7 @@ export function selProb(kind: BetKind, sel: number[], p: number[]): number {
 /** Decimal odds for a selection (with takeout, clamped). */
 export function oddsFor(kind: BetKind, sel: number[], p: number[]): number {
   const prob = selProb(kind, sel, p);
-  return prob > 0 ? clampOdds((1 / prob) * TAKEOUT) : 999;
+  return prob > 0 ? clampOdds((1 / prob) * TAKEOUT) : MAX_ODDS;
 }
 
 // Win odds/popularity table for the paddock header (people bet from 人気).

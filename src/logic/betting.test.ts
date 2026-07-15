@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { raceOdds, oddsFor, selProb, settle, wouldWin, type Bet } from './betting';
+import { raceOdds, oddsFor, selProb, settle, wouldWin, MAX_ODDS, type Bet } from './betting';
 import { winProbs } from './grandprix';
 import { COURSES } from '../data/courses';
 import { styleFor } from './runStyle';
@@ -46,7 +46,7 @@ describe('market probabilities (Harville)', () => {
     for (const [k, sel] of cases) {
       const o = oddsFor(k, sel, p);
       expect(o).toBeGreaterThanOrEqual(1.1);
-      expect(o).toBeLessThanOrEqual(999);
+      expect(o).toBeLessThanOrEqual(MAX_ODDS);
     }
   });
 });
