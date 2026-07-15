@@ -163,7 +163,19 @@
   100% { transform: scale(1); }
 }
 .rouletteEmoji {
-  font-size: 60px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 4px solid var(--border-dark);
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.12);
+}
+.courseDot {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-dark);
+  vertical-align: -2px;
 }
 .rouletteName {
   font-size: 24px;

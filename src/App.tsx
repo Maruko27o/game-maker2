@@ -6,15 +6,16 @@ import SyncConflictModal from './components/SyncConflictModal';
 import AccountButton from './components/AccountButton';
 import CoinBalance from './components/CoinBalance';
 import Title from './components/Title';
+import Icon, { type IconName } from './components/Icon';
 import styles from './App.module.css';
 
-const NAV = [
-  { to: '/', label: '草むら', icon: '🌿', end: true },
-  { to: '/stable', label: 'マイウマ', icon: '🐴' },
-  { to: '/create', label: 'つくる', icon: '🎨' },
-  { to: '/collection', label: '図鑑', icon: '📖' },
-  { to: '/race', label: 'レース', icon: '🏁' },
-  { to: '/ranking', label: 'ランキング', icon: '⭐' },
+const NAV: { to: string; label: string; icon: IconName; end?: boolean }[] = [
+  { to: '/', label: '草むら', icon: 'leaf', end: true },
+  { to: '/stable', label: 'マイウマ', icon: 'horse' },
+  { to: '/create', label: 'つくる', icon: 'palette' },
+  { to: '/collection', label: '図鑑', icon: 'book' },
+  { to: '/race', label: 'レース', icon: 'flag' },
+  { to: '/ranking', label: 'ランキング', icon: 'trophy' },
 ];
 
 export default function App() {
@@ -45,7 +46,7 @@ export default function App() {
       <AccountButton />
       {migrated && (
         <div className={styles.notice} role="status">
-          <span>ステータスの仕組みが変わりました（合計40の割り振り制）。マイウマから1回だけ無料で振り直せます🏁</span>
+          <span>ステータスの仕組みが変わりました（合計40の割り振り制）。マイウマから1回だけ無料で振り直せます。</span>
           <button className={styles.noticeClose} onClick={clearMigrated} aria-label="閉じる">
             ✕
           </button>
@@ -63,7 +64,7 @@ export default function App() {
             className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ''}`}
           >
             <span className={styles.icon} aria-hidden>
-              {item.icon}
+              <Icon name={item.icon} size={24} />
             </span>
             <span className={styles.tabLabel}>{item.label}</span>
           </NavLink>

@@ -4,6 +4,7 @@ import { useAuth, formatPlayerId } from '../cloud';
 import { colorsBySlot } from '../data/parts';
 import type { HorseLook } from '../types';
 import HorseView from './HorseView';
+import Icon from './Icon';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Title.module.css';
 
@@ -76,7 +77,7 @@ export default function Title({ onStart }: { onStart: () => void }) {
             onStart();
           }}
         >
-          ⚙︎
+          <Icon name="gear" size={18} />
         </button>
       </div>
     </div>

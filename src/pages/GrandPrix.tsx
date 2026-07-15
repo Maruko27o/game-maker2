@@ -22,6 +22,7 @@ import type { Horse, HorseLook, Trophy, TrainingItem } from '../types';
 import { RUN_STYLE_LABEL, STAT_LABEL } from '../types';
 import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
+import Icon from '../components/Icon';
 import RaceTrack2 from '../components/RaceTrack2';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
@@ -140,16 +141,16 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     ];
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>グランプリ 🏆</h1>
+        <h1 className={styles.title}>グランプリ</h1>
         <p className={styles.lead}>18頭・予選3組 → 上位＋敗者復活で本戦8頭。時間: {mode}秒</p>
         {rows.map(({ g, locked, cond }) => (
           <button key={g} className={`${styles.modeCard} ${locked ? styles.modeLocked : ''}`} disabled={locked} onClick={() => !locked && startGrade(g)}>
-            <span className={styles.modeEmoji}>{g === 'g1' ? '👑' : g === 'g2' ? '🥇' : '🏅'}</span>
+            <span className={styles.modeEmoji}><Icon name={g === 'g1' ? 'crown' : 'medal'} size={30} /></span>
             <span className={styles.modeText}>
               <span className={styles.modeName}>{GP_GRADES[g].name} グランプリ</span>
               <span className={styles.modeDesc}>敵の強さ {GP_GRADES[g].band[0]}〜{GP_GRADES[g].band[1]}／{locked ? cond : `1着で育成アイテム${GP_GRADES[g].win1Items}個`}</span>
             </span>
-            {locked ? <span className={styles.soon}>🔒</span> : <span className={styles.modeGo}>▶</span>}
+            {locked ? <span className={styles.soon}><Icon name="lock" size={16} /></span> : <span className={styles.modeGo}>▶</span>}
           </button>
         ))}
         <button className={styles.exitLink} onClick={onExit}>もどる</button>
@@ -164,7 +165,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       <div className={styles.page}>
         <div className={gp.paper}>
           <div className={gp.paperHead}>{GP_GRADES[state.grade].name} グランプリ</div>
-          <div className={gp.paperSub}>{state.course.emoji} {state.course.name}・{mode}秒</div>
+          <div className={gp.paperSub}>{state.course.name}・{mode}秒</div>
           {state.heats.map((heat, h) => (
             <div key={h} className={gp.heatBlock}>
               <div className={gp.heatTitle}>{h + 1}組{h === state.playerHeat ? '（あなたの組）' : ''}</div>
@@ -243,7 +244,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     const playerIn = qualifiers.some((q) => q.entrant.isPlayer);
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>予選けっか 📋</h1>
+        <h1 className={styles.title}>予選けっか</h1>
         {state.heats.map((heat, h) => {
           const res = heatResults[h];
           const rows = heat.map((e, i) => ({ e, rank: res.ranks[i], time: res.finishTimes[i] })).sort((a, b) => a.rank - b.rank);
@@ -263,7 +264,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
             </div>
           );
         })}
-        <p className={gp.qualNote}>{playerIn ? '本戦進出！🎉' : '予選敗退… 本戦は観戦になります'}</p>
+        <p className={gp.qualNote}>{playerIn ? '本戦進出！' : '予選敗退… 本戦は観戦になります'}</p>
         <div className={styles.setupActions}>
           <button className="btn neutral" onClick={onExit}>やめる</button>
           <button className="btn" onClick={() => setScreen('final')}>{playerIn ? '本戦へ' : '本戦を観る'}</button>
@@ -277,7 +278,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     const finalists = qualifiers.map((q) => q.entrant);
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>本戦（決勝）🏁</h1>
+        <h1 className={styles.title}>本戦（決勝）</h1>
         <RaceTrack2
           entrants={finalists}
           looks={state.looks}
@@ -301,13 +302,13 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       <div className={styles.page}>
         <div className={styles.resultCard}>
           <h2 className={styles.resultTitle}>
-            {reward?.qualified ? (reward.rank === 1 ? '🏆 グランプリ制覇！' : `本戦 ${reward.rank}位`) : '予選敗退'}
+            {reward?.qualified ? (reward.rank === 1 ? (<><Icon name="trophy" size={22} /> グランプリ制覇！</>) : `本戦 ${reward.rank}位`) : '予選敗退'}
           </h2>
           {reward?.trophy && <p className={styles.rewardLine}>トロフィー獲得！（{reward.trophy.rank}位・GP）</p>}
           {reward && reward.items.length > 0 && (
             <div className={styles.itemReward}>
               <span className={styles.rewardLine}>育成アイテム × {reward.items.length}</span>
-              <ul className={styles.itemList}>{reward.items.map((it, i) => <li key={i}>🎁 {itemLabel(it)}</li>)}</ul>
+              <ul className={styles.itemList}>{reward.items.map((it, i) => <li key={i}><Icon name="gift" size={13} /> {itemLabel(it)}</li>)}</ul>
             </div>
           )}
           {reward && reward.coins > 0 && (

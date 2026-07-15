@@ -10,6 +10,7 @@ import type { Trophy, Badge, TrainingItem, StatKey } from '../types';
 import { BADGES } from '../data/badges';
 import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
+import Icon from '../components/Icon';
 import StatRadar from '../components/StatRadar';
 import TrophyIcon from '../components/TrophyIcon';
 import BadgeIcon from '../components/BadgeIcon';
@@ -148,7 +149,7 @@ export default function Stable() {
 
       {horses.length === 0 ? (
         <div className={styles.empty}>
-          <div className={styles.emptyEmoji}>🐴</div>
+          <div className={styles.emptyEmoji}><Icon name="horse" size={56} /></div>
           <p>まだウマがいません。</p>
           <p className={styles.emptySub}>草むらでパーツをあつめて、ウマをつくろう！</p>
           <button className="btn" onClick={() => navigate('/create')}>
@@ -167,7 +168,7 @@ export default function Stable() {
                 <div className={styles.cardName}>{h.name}</div>
                 <div className={styles.cardMeta}>
                   <span>合計 {statTotal(h.stats)}</span>
-                  {tc > 0 && <span className={styles.cardTrophy}>🏆{tc}</span>}
+                  {tc > 0 && <span className={styles.cardTrophy}><Icon name="trophy" size={13} />{tc}</span>}
                 </div>
               </button>
             );
@@ -267,7 +268,7 @@ export default function Stable() {
                         style={{ width: '100%' }}
                         onClick={() => navigate(`/create?rebalance=${selected.id}`)}
                       >
-                        🔄 ステータスを1回だけ振り直す
+                        <Icon name="refresh" size={15} /> ステータスを1回だけ振り直す
                       </button>
                     )}
                     <div className={styles.actions}>
@@ -297,7 +298,7 @@ export default function Stable() {
                   <HorseView horse={selected} size={120} shadow />
                 </div>
                 <div className={styles.itemBar}>
-                  <span>🎁 育成アイテム</span>
+                  <span><Icon name="gift" size={15} /> 育成アイテム</span>
                   <span className={styles.itemCounts}>
                     ステータス {statItemCount} / どれでも {anyItemCount}
                   </span>

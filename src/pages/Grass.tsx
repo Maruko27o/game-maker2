@@ -6,6 +6,7 @@ import { GRASS_OKAWARI_COST } from '../data/coins';
 import type { HorseLook, DecoSlot } from '../types';
 import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
+import Icon from '../components/Icon';
 import PartThumb from '../components/PartThumb';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Grass.module.css';
@@ -109,7 +110,7 @@ export default function Grass() {
             <span className={styles.hearts} aria-hidden>
               {Array.from({ length: ENERGY_CAP }).map((_, i) => (
                 <span key={i} className={i < stock ? styles.on : styles.off}>
-                  🐴
+                  <Icon name="horse" size={16} />
                 </span>
               ))}
             </span>
@@ -133,7 +134,7 @@ export default function Grass() {
         <div className={styles.grassRow} aria-hidden>
           {Array.from({ length: 7 }).map((_, i) => (
             <span key={i} className={styles.blade} style={{ animationDelay: `${i * 0.06}s` }}>
-              🌿
+              <Icon name="leaf" size={20} />
             </span>
           ))}
         </div>
@@ -146,7 +147,7 @@ export default function Grass() {
           <div className={styles.hint}>
             {available ? (
               <>
-                <div className={styles.tapEmoji}>👆</div>
+                <div className={styles.tapEmoji}><Icon name="leaf" size={40} /></div>
                 <p>草むらをタップ！</p>
                 <p className={styles.hintSub}>ストック {stock}こ</p>
               </>
