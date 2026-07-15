@@ -125,10 +125,14 @@ export default function Create() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>{title}</h1>
-
-      <div className={styles.previewBox}>
-        <HorseView horse={preview} size={220} shadow />
+      {/* Title + horse stay pinned at the top as an opaque band, so the colour /
+          decoration pickers scroll *under* it and the whole horse is always
+          visible while editing (改修③). */}
+      <div className={styles.stickyHead}>
+        <h1 className={styles.title}>{title}</h1>
+        <div className={styles.previewBox}>
+          <HorseView horse={preview} size={190} shadow />
+        </div>
       </div>
 
       {rebalancing && (

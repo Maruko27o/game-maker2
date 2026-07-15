@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth, signIn, signUp, signOut, resetPassword, formatPlayerId, saveDisplayName } from '../cloud';
+import { useAuth, signIn, signUp, signOut, formatPlayerId, saveDisplayName, loginIdFromEmail } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import Icon from './Icon';
 import styles from './AccountButton.module.css';
@@ -46,7 +46,7 @@ export default function AccountButton() {
     }
   }, [wantAccount, setWantAccount]);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export default function AccountButton() {
   async function submit() {
     setBusy(true);
     setMsg(null);
-    const err = mode === 'login' ? await signIn(email.trim(), password) : await signUp(email.trim(), password);
+    const err = mode === 'login' ? await signIn(loginId.trim(), password) : await signUp(loginId.trim(), password);
     setBusy(false);
     if (err) {
       setMsg(err);
@@ -62,17 +62,6 @@ export default function AccountButton() {
       setPassword('');
       if (mode === 'signup') setMsg('登録しました！このままログインされます。');
     }
-  }
-
-  async function onReset() {
-    if (!email.trim()) {
-      setMsg('メールアドレスを入力してから「パスワードを忘れた」を押してください。');
-      return;
-    }
-    setBusy(true);
-    const err = await resetPassword(email.trim());
-    setBusy(false);
-    setMsg(err ?? '再設定メールを送りました。メールのリンクから再設定してください。');
   }
 
   const signedIn = !!user;
@@ -103,7 +92,7 @@ export default function AccountButton() {
               <p className={styles.note}>読み込み中…</p>
             ) : signedIn ? (
               <div className={styles.signedIn}>
-                <p className={styles.email}>{user!.email}</p>
+                {user!.email && <p className={styles.email}>ログインID: {loginIdFromEmail(user!.email)}</p>}
                 {playerNo != null && (
                   <p className={styles.playerId}>
                     プレイヤーID: <strong>{formatPlayerId(playerNo)}</strong>
@@ -157,12 +146,15 @@ export default function AccountButton() {
                 </div>
                 <input
                   className={styles.input}
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  placeholder="メールアドレス"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  inputMode="text"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="プレイヤーID（英数字）"
+                  value={loginId}
+                  onChange={(e) => setLoginId(e.target.value)}
                 />
                 <input
                   className={styles.input}
@@ -173,18 +165,13 @@ export default function AccountButton() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 {msg && <p className={styles.msg}>{msg}</p>}
-                <button className="btn" onClick={submit} disabled={busy || !email || password.length < 6}>
+                <button className="btn" onClick={submit} disabled={busy || loginId.trim().length < 3 || password.length < 6}>
                   {busy ? '…' : mode === 'login' ? 'ログイン' : '登録する'}
                 </button>
-                {mode === 'login' && (
-                  <button className={styles.textLink} onClick={onReset} disabled={busy}>
-                    パスワードを忘れた
-                  </button>
-                )}
                 <p className={styles.note}>
                   {mode === 'signup'
-                    ? '登録すると、いまこの端末にあるデータがそのままアカウントに保存されます。'
-                    : 'ログインすると、アカウントに保存されたデータが読み込まれます（この端末のデータで上書きされません）。'}
+                    ? 'プレイヤーIDとパスワードで登録します（メールアドレスは不要）。IDとパスワードは忘れないようにメモしてね。いまこの端末にあるデータは、そのままアカウントに保存されます。'
+                    : 'プレイヤーIDとパスワードでログインします。保存されたデータが読み込まれます（この端末のデータで上書きされません）。'}
                 </p>
               </div>
             )}

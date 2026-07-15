@@ -86,6 +86,8 @@ begin
   if nm is null then return null; end if;
   nm := left(nm, 32);
   update public.profiles set display_name = nm where user_id = auth.uid();
+  -- 既に載っているランキング行の表示名も同時に更新（改修①：的中後に改名しても反映）。
+  update public.bet_scores set username = nm where user_id = auth.uid();
   return nm;
 end;
 $$;
