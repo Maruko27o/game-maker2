@@ -1,10 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { raceOdds, oddsFor, selProb, settle, wouldWin, MAX_ODDS, type Bet } from './betting';
 import { winProbs } from './grandprix';
-import { COURSES } from '../data/courses';
+import { COURSES, courseById } from '../data/courses';
 import { styleFor } from './runStyle';
 import type { Entrant } from './raceSim2';
 import type { Stats } from '../types';
+
+function ent(id: string, stats: Stats): Entrant {
+  return { horseId: id, name: id, isPlayer: false, stats, style: styleFor(id, stats) };
+}
 
 // Moderately-spread field so no market hits the odds clamp.
 function field(): Entrant[] {
@@ -84,5 +88,42 @@ describe('wouldWin (in-race glow)', () => {
     expect(wouldWin({ kind: 'win', sel: [1], amount: 10, odds: 2 }, ranks)).toBe(false);
     expect(wouldWin({ kind: 'place', sel: [0], amount: 10, odds: 2 }, ranks)).toBe(true); // 0 is 3rd
     expect(wouldWin({ kind: 'trifecta', sel: [3, 1, 0], amount: 10, odds: 2 }, ranks)).toBe(true);
+  });
+});
+
+// The odds must stay consistent with the win probabilities (fair value × takeout)
+// and respond to ability and course, like real pari-mutuel racing.
+describe('odds are realistic vs win probability', () => {
+  it('win odds = (1/p) × 0.8 takeout; book ≈ 125% (20% take) on every course', () => {
+    for (const c of COURSES) {
+      const f = field();
+      const p = winProbs(f, c);
+      const rows = raceOdds(f, c);
+      if (rows.some((r) => r.odds <= 1.1 || r.odds >= MAX_ODDS)) continue; // skip clamped edges
+      for (const r of rows) expect(r.odds).toBeCloseTo(0.8 / p[r.idx], 2);
+      const book = rows.reduce((n, r) => n + 1 / r.odds, 0);
+      expect(book).toBeCloseTo(1.25, 2); // 1 / 0.8
+    }
+  });
+
+  it('a stronger horse gets shorter odds; rivals drift out', () => {
+    const c = COURSES[0];
+    const base = field();
+    const o0 = raceOdds(base, c);
+    const bumped = base.map((e, i) =>
+      i === 2 ? ent(e.horseId, { ...e.stats, spd: e.stats.spd + 5, pwr: e.stats.pwr + 5 }) : e,
+    );
+    const o1 = raceOdds(bumped, c);
+    expect(o1[2].odds).toBeLessThan(o0[2].odds); // improved horse shortens
+    expect(o1[0].odds).toBeGreaterThan(o0[0].odds); // the former favourite lengthens
+  });
+
+  it('course aptitude changes odds (a sprinter is shorter on a speed course)', () => {
+    const sprinter = ent('sprint', { spd: 12, sta: 4, pwr: 8, jmp: 6, gut: 5, wit: 5 });
+    const filler = [1, 2, 3, 4, 5].map((n) => ent('f' + n, { spd: 7, sta: 7, pwr: 7, jmp: 6, gut: 6, wit: 6 }));
+    const g = [sprinter, ...filler];
+    const onSpeed = raceOdds(g, courseById('circuit'))[0].odds; // spd-weighted
+    const onStamina = raceOdds(g, courseById('sand'))[0].odds; // sta-weighted
+    expect(onSpeed).toBeLessThan(onStamina); // sprinter is favoured on the speed course
   });
 });
