@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useStore, type SpawnedPart } from '../store';
+import { useStore, dayKey, type SpawnedPart } from '../store';
 import { ENERGY_CAP, normalizeEnergy, msUntilNextEnergy } from '../logic/energy';
 import { colorSlotById, decoById, partName, partRarity, isColorId } from '../data/parts';
+import { GRASS_OKAWARI_COST } from '../data/coins';
 import type { HorseLook, DecoSlot } from '../types';
 import HorseView from '../components/HorseView';
+import CoinIcon from '../components/CoinIcon';
 import PartThumb from '../components/PartThumb';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Grass.module.css';
@@ -41,17 +43,33 @@ export default function Grass() {
   const energy = useStore((s) => s.energy);
   const energyUpdatedAt = useStore((s) => s.energyUpdatedAt);
   const horseCount = useStore((s) => s.horses.length);
+  const maxHorses = useStore((s) => s.maxHorses);
+  const coins = useStore((s) => s.coins);
+  const claimGrassBonus = useStore((s) => s.claimGrassBonus);
+  const buyOkawari = useStore((s) => s.buyOkawari);
+  const okawariUsed = useStore((s) => s.daily.okawari >= 1 && s.daily.day === dayKey());
 
   const reduced = usePrefersReducedMotion();
   const [now, setNow] = useState(() => Date.now());
   const [phase, setPhase] = useState<Phase>('ready');
   const [reward, setReward] = useState<SpawnedPart[]>([]);
   const [wild, setWild] = useState<HorseLook | null>(null);
+  const [bonus, setBonus] = useState(0); // grass first-of-day coin bonus toast
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // First couple of grass visits each day pay a small coin bonus (RACE_V4 §4.2).
+  useEffect(() => {
+    const got = claimGrassBonus();
+    if (got > 0) {
+      setBonus(got);
+      const t = setTimeout(() => setBonus(0), 2600);
+      return () => clearTimeout(t);
+    }
+  }, [claimGrassBonus]);
 
   const state = { energy, energyUpdatedAt };
   const stock = normalizeEnergy(state, now).energy;
@@ -144,8 +162,24 @@ export default function Grass() {
       </button>
 
       <div className={styles.footRow}>
-        <span className={styles.footNote}>マイウマ {horseCount}/10</span>
+        <span className={styles.footNote}>マイウマ {horseCount}/{maxHorses}</span>
+        {stock < ENERGY_CAP && (
+          <button
+            className={styles.okawari}
+            onClick={() => { if (buyOkawari()) setNow(Date.now()); }}
+            disabled={okawariUsed || coins < GRASS_OKAWARI_COST}
+            title={okawariUsed ? '今日はもう おかわりしました' : `${GRASS_OKAWARI_COST}コインでストック+1`}
+          >
+            <CoinIcon size={16} /> 草をおかわり（{GRASS_OKAWARI_COST}）
+          </button>
+        )}
       </div>
+
+      {bonus > 0 && (
+        <div className={styles.bonusToast} role="status">
+          <CoinIcon size={18} /> ログインボーナス ＋{bonus}
+        </div>
+      )}
 
       {phase === 'reveal' && (
         <div className={styles.reward}>
