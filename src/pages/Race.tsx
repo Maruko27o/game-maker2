@@ -12,8 +12,11 @@ import type { Horse, HorseLook, Badge, Stats } from '../types';
 import { RUN_STYLE_LABEL, STAT_KEYS } from '../types';
 import HorseView from '../components/HorseView';
 import BadgeIcon from '../components/BadgeIcon';
+import CoinIcon from '../components/CoinIcon';
 import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
+import { raceOdds, settleWin, type Bet } from '../logic/betting';
+import { BET_AMOUNTS, normalRaceCoins, BADGE_COINS } from '../data/coins';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
 
@@ -121,16 +124,21 @@ export default function Race() {
   const navigate = useNavigate();
   const reduced = usePrefersReducedMotion();
   const horses = useStore((s) => s.horses);
+  const coins = useStore((s) => s.coins);
   const finishNormalRace = useStore((s) => s.finishNormalRace);
+  const addCoins = useStore((s) => s.addCoins);
+  const spendCoins = useStore((s) => s.spendCoins);
+  const recordBet = useStore((s) => s.recordBet);
 
-  const [screen, setScreen] = useState<'menu' | 'setup' | 'gp' | 'roulette' | 'race' | 'result'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'setup' | 'gp' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
   const [horseId, setHorseId] = useState<string | null>(null);
   const [mode, setMode] = useState<30 | 60>(30);
   const [setup, setSetup] = useState<RaceSetup | null>(null);
   const [result, setResult] = useState<SimResult | null>(null);
-  const [reward, setReward] = useState<{ rank: number; awarded: Badge[] } | null>(null);
+  const [reward, setReward] = useState<{ rank: number; awarded: Badge[]; earned: number; payout: number } | null>(null);
   const [cutin, setCutin] = useState<Badge[]>([]); // achievement badges to celebrate
+  const [bet, setBet] = useState<Bet | null>(null); // the placed 単勝 bet (null = no bet)
   const rewardApplied = useRef(false);
 
   const player = horses.find((h) => h.id === horseId) ?? null;
@@ -157,6 +165,7 @@ export default function Race() {
     setSetup({ course, mode, seed, entrants, looks, grade });
     rewardApplied.current = false;
     setReward(null);
+    setBet(null);
     setScreen('roulette');
   }
 
@@ -178,10 +187,26 @@ export default function Race() {
       isJumpCourse: setup.course.surface === 'steeple',
       flawless,
     });
-    setReward({ rank, awarded });
-    // Cut-in only for achievement badges (placing badges are everyday).
+    // Coins (RACE_V4 §4): placing reward + a bonus per achievement badge, then
+    // settle the win bet (stake was already taken when it was placed).
     const achievements = awarded.filter((b) => !BADGES[b.id as keyof typeof BADGES]?.placing);
-    setCutin(achievements);
+    const earned = normalRaceCoins(rank) + achievements.length * BADGE_COINS;
+    const winnerIdx = result.order[0];
+    const payout = bet ? settleWin(bet, winnerIdx) : 0;
+    addCoins(earned + payout);
+    if (bet) {
+      recordBet({
+        courseId: setup.course.id,
+        target: setup.entrants[bet.targetIdx].name,
+        amount: bet.amount,
+        odds: bet.odds,
+        won: payout > 0,
+        payout,
+        at: Date.now(),
+      });
+    }
+    setReward({ rank, awarded, earned, payout });
+    setCutin(achievements); // cut-in only for achievement badges (placing are everyday)
     setScreen('result');
   }
 
@@ -275,7 +300,61 @@ export default function Race() {
   if (screen === 'roulette' && setup && player) {
     return (
       <div className={styles.page}>
-        <Roulette course={setup.course} player={player} reduced={reduced} onDone={() => setScreen('race')} />
+        <Roulette course={setup.course} player={player} reduced={reduced} onDone={() => setScreen('paddock')} />
+      </div>
+    );
+  }
+
+  // --- Paddock: 単勝 betting (RACE_V4 §4.4) ---
+  if (screen === 'paddock' && setup && player) {
+    const rows = raceOdds(setup.entrants, setup.course).sort((a, b) => a.pop - b.pop);
+    const place = (targetIdx: number, amount: number, odds: number) => {
+      if (!spendCoins(amount)) return; // not enough coins
+      setBet({ targetIdx, amount, odds });
+    };
+    return (
+      <div className={styles.page}>
+        <div className={styles.paddock}>
+          <h2 className={styles.h2}>パドック — 単勝を買う</h2>
+          <div className={styles.coinLine}><CoinIcon size={18} /> もっている: <b>{coins}</b></div>
+          <p className={styles.paddockLead}>1頭えらんで賭けよう（自分のウマにも賭けられる）。当たれば オッズ倍！ 賭けなくてもOK。</p>
+          <ul className={styles.oddsList}>
+            {rows.map((r) => {
+              const e = setup.entrants[r.idx];
+              const picked = bet?.targetIdx === r.idx;
+              return (
+                <li key={r.idx} className={`${styles.oddsRow} ${e.isPlayer ? styles.oddsMe : ''} ${picked ? styles.oddsPicked : ''}`}>
+                  <span className={styles.oddsPop}>{r.pop}番人気</span>
+                  <div className={styles.oddsHorse}><HorseView horse={setup.looks[e.horseId]} size={34} /></div>
+                  <span className={styles.oddsName}>{e.isPlayer ? 'あなた' : e.name}</span>
+                  <span className={styles.oddsVal}>{r.odds.toFixed(1)}倍</span>
+                  <span className={styles.oddsBtns}>
+                    {BET_AMOUNTS.map((amt) => (
+                      <button
+                        key={amt}
+                        className={styles.betBtn}
+                        disabled={bet != null || coins < amt}
+                        onClick={() => place(r.idx, amt, r.odds)}
+                      >
+                        {amt}
+                      </button>
+                    ))}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {bet && (
+            <div className={styles.betConfirm}>
+              <CoinIcon size={16} /> {setup.entrants[bet.targetIdx].name} に {bet.amount} コイン（{bet.odds.toFixed(1)}倍）
+              <button className={styles.betCancel} onClick={() => { addCoins(bet.amount); setBet(null); }}>取消</button>
+            </div>
+          )}
+          <div className={styles.raceActions}>
+            <button className="btn neutral" onClick={() => setScreen('race')}>{bet ? 'このまま出走' : '賭けずに出走'}</button>
+            {bet && <button className="btn" onClick={() => setScreen('race')}>出走！</button>}
+          </div>
+        </div>
       </div>
     );
   }
@@ -315,6 +394,16 @@ export default function Race() {
                   <span>{BADGES[b.id as keyof typeof BADGES]?.name}</span>
                 </div>
               ))}
+            </div>
+          )}
+          {reward && (
+            <div className={`${styles.coinReward} ${reduced ? '' : styles.coinPop}`}>
+              <span className={styles.coinGot}><CoinIcon size={22} /> ＋{reward.earned}</span>
+              {bet && (
+                <span className={reward.payout > 0 ? styles.betHit : styles.betMiss}>
+                  {reward.payout > 0 ? `単勝的中！ ＋${reward.payout}` : `単勝ハズレ… −${bet.amount}`}
+                </span>
+              )}
             </div>
           )}
           <ol className={styles.ranking}>

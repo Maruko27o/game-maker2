@@ -4,6 +4,7 @@ import { useStore } from './store';
 import CloudSync from './components/CloudSync';
 import SyncConflictModal from './components/SyncConflictModal';
 import AccountButton from './components/AccountButton';
+import CoinBalance from './components/CoinBalance';
 import Title from './components/Title';
 import styles from './App.module.css';
 
@@ -40,6 +41,7 @@ export default function App() {
       <CloudSync />
       <SyncConflictModal />
       {showTitle && <Title onStart={dismissTitle} />}
+      <CoinBalance />
       <AccountButton />
       {migrated && (
         <div className={styles.notice} role="status">

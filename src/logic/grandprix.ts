@@ -93,7 +93,8 @@ export function computeOdds(entrants: Entrant[], course: Course): { odds: number
   const order = probs.map((_, i) => i).sort((a, b) => probs[b] - probs[a]);
   const pop = new Array(entrants.length);
   order.forEach((idx, place) => (pop[idx] = place + 1));
-  return probs.map((p, i) => ({ odds: Math.min(99, Math.max(1.1, 1 / (p * 0.8))), pop: pop[i] }));
+  // 80% payout (0.80 takeout, RACE_V4 §4.4): fair decimal odds (1/p) × 0.80.
+  return probs.map((p, i) => ({ odds: Math.min(99, Math.max(1.1, (1 / p) * 0.8)), pop: pop[i] }));
 }
 
 /** Item drops for a grand-prix final placing (RACE_V2 §12.2; 60s ×1.5 floored). */
