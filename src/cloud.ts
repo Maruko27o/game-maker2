@@ -56,12 +56,14 @@ type AuthStore = {
   ready: boolean; // initial session check finished
   user: AuthUser | null;
   playerNo: number | null; // sequential public player number (RACE_V3 accounts)
+  displayName: string | null; // ranking username (改修④)
   sync: SyncState;
   error: string | null;
   conflict: ConflictInfo | null;
   wantAccount: boolean; // a request (e.g. from the title screen) to open the account panel
   setUser: (u: AuthUser | null) => void;
   setPlayerNo: (n: number | null) => void;
+  setDisplayName: (n: string | null) => void;
   setSync: (s: SyncState) => void;
   setError: (e: string | null) => void;
   setReady: (r: boolean) => void;
@@ -74,12 +76,14 @@ export const useAuth = create<AuthStore>((set) => ({
   ready: !CLOUD_ENABLED, // when unconfigured there is nothing to wait for
   user: null,
   playerNo: null,
+  displayName: null,
   sync: CLOUD_ENABLED ? 'idle' : 'offline',
   error: null,
   conflict: null,
   wantAccount: false,
   setUser: (user) => set({ user }),
   setPlayerNo: (playerNo) => set({ playerNo }),
+  setDisplayName: (displayName) => set({ displayName }),
   setSync: (sync) => set({ sync }),
   setError: (error) => set({ error }),
   setReady: (ready) => set({ ready }),
@@ -100,6 +104,69 @@ export async function loadPlayerNo(): Promise<number | null> {
 /** Format a player number as a zero-padded id (e.g. 123 → "ID-0000123"). */
 export function formatPlayerId(n: number): string {
   return 'ID-' + String(n).padStart(7, '0');
+}
+
+// ---- ranking / username (改修④) ---------------------------------------------
+// All best-effort: any failure (DB not set up, offline) degrades to null / no-op.
+
+/** Read the signed-in account's ranking username (null when unset/unavailable). */
+export async function loadDisplayName(): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const uid = (await supabase.auth.getUser()).data.user?.id;
+    if (!uid) return null;
+    const { data, error } = await supabase.from('profiles').select('display_name').eq('user_id', uid).maybeSingle();
+    if (error || !data) return null;
+    const n = (data as { display_name?: string | null }).display_name;
+    return n && n.trim() ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Set the account's ranking username. Returns the stored name, or null on failure. */
+export async function saveDisplayName(name: string): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc('set_display_name', { p_name: name });
+    if (error) return null;
+    return typeof data === 'string' ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Submit a winning bet's odds; the server keeps each account's best (1 row/user). */
+export async function submitBetScore(odds: number, courseId: string, username: string): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.rpc('submit_bet_score', { p_odds: odds, p_course: courseId, p_username: username });
+  } catch {
+    /* DB not set up / offline — non-fatal */
+  }
+}
+
+export type ScoreRow = { userId: string; username: string; bestOdds: number; courseId: string | null };
+
+/** Top scores by best hit odds (one row per user). Empty on any failure. */
+export async function loadLeaderboard(limit = 50): Promise<ScoreRow[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('bet_scores')
+      .select('user_id, username, best_odds, course_id')
+      .order('best_odds', { ascending: false })
+      .limit(limit);
+    if (error || !data) return [];
+    return (data as { user_id: string; username: string; best_odds: number; course_id: string | null }[]).map((r) => ({
+      userId: r.user_id,
+      username: r.username,
+      bestOdds: Number(r.best_odds),
+      courseId: r.course_id,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 function toUser(u: { id: string; email?: string | null } | null | undefined): AuthUser | null {

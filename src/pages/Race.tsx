@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
+import { useAuth, submitBetScore } from '../cloud';
+import { ENABLE_RANKING } from '../config';
 import { COURSES, type Course } from '../data/courses';
 import { type Entrant, type SimResult } from '../logic/raceSim2';
 import { mulberry32, statTotal } from '../logic/stats';
@@ -195,9 +197,11 @@ export default function Race() {
     const earned = normalRaceCoins(rank) + achievements.length * BADGE_COINS;
     // Settle every bet against the finishing order and sum the payouts.
     let payout = 0;
+    let bestWonOdds = 0;
     for (const b of bets) {
       const got = settle(b, result.order);
       payout += got;
+      if (got > 0) bestWonOdds = Math.max(bestWonOdds, b.odds);
       recordBet({
         courseId: setup.course.id,
         kind: b.kind,
@@ -210,6 +214,12 @@ export default function Race() {
       });
     }
     addCoins(earned + payout);
+    // Ranking (改修④): submit the best winning odds; the server keeps each
+    // account's max. Best-effort — no-op when signed out or the DB isn't set up.
+    if (ENABLE_RANKING && bestWonOdds > 0) {
+      const name = useAuth.getState().displayName;
+      if (useAuth.getState().user && name) submitBetScore(bestWonOdds, setup.course.id, name);
+    }
     setReward({ rank, awarded, earned, payout });
     setCutin(achievements); // cut-in only for achievement badges (placing are everyday)
     // Ranking foundation (RACE_V4 §5): buffer a verifiable submission locally.

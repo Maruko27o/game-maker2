@@ -166,3 +166,39 @@
   text-decoration: underline;
   padding: 4px;
 }
+
+/* ranking username edit (改修④) */
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+}
+.nameLabel {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.nameInput {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 2px solid var(--border-dark);
+  background: var(--panel-inner);
+  font-weight: 700;
+  font-family: inherit;
+}
+.nameSave {
+  flex: none;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 2px solid var(--border-dark);
+  background: var(--gold);
+  font-weight: 800;
+  color: #2b2118;
+}
+.nameSave:disabled {
+  opacity: 0.45;
+}

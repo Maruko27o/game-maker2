@@ -14,7 +14,7 @@ const NAV = [
   { to: '/create', label: 'つくる', icon: '🎨' },
   { to: '/collection', label: '図鑑', icon: '📖' },
   { to: '/race', label: 'レース', icon: '🏁' },
-  { to: '/vote', label: '投票', icon: '⭐' },
+  { to: '/ranking', label: 'ランキング', icon: '⭐' },
 ];
 
 export default function App() {
