@@ -103,27 +103,46 @@ create table if not exists public.bet_scores (
 );
 create index if not exists bet_scores_odds_idx on public.bet_scores (best_odds desc);
 alter table public.bet_scores enable row level security;
+-- ランキングに表示するプレイヤーのウマ（アイコン）。既存テーブルにも後付けで追加。
+alter table public.bet_scores add column if not exists avatar jsonb;
 
 -- 全員が閲覧できる（ランキング表示用）。書込は下の関数(SECURITY DEFINER)経由のみ。
 drop policy if exists "scores read all" on public.bet_scores;
 create policy "scores read all" on public.bet_scores for select using (true);
 
 -- 自己ベスト倍率を提出：既存より大きいときだけ更新。常に auth.uid() 自身の1行。
-create or replace function public.submit_bet_score(p_odds numeric, p_course text, p_username text)
+-- p_avatar（ウマの見た目）も一緒に保存し、ランキングにアイコンとして表示する。
+-- 旧3引数版が残っていると多重定義になるため、先に削除してから作り直す。
+drop function if exists public.submit_bet_score(numeric, text, text);
+create or replace function public.submit_bet_score(p_odds numeric, p_course text, p_username text, p_avatar jsonb default null)
 returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
 begin
-  insert into public.bet_scores (user_id, username, best_odds, course_id, updated_at)
-  values (auth.uid(), coalesce(nullif(btrim(p_username), ''), 'プレイヤー'), p_odds, p_course, now())
+  insert into public.bet_scores (user_id, username, best_odds, course_id, avatar, updated_at)
+  values (auth.uid(), coalesce(nullif(btrim(p_username), ''), 'プレイヤー'), p_odds, p_course, p_avatar, now())
   on conflict (user_id) do update
     set best_odds  = greatest(public.bet_scores.best_odds, excluded.best_odds),
         course_id  = case when excluded.best_odds > public.bet_scores.best_odds
                           then excluded.course_id else public.bet_scores.course_id end,
         username   = excluded.username,
+        avatar     = coalesce(excluded.avatar, public.bet_scores.avatar),
         updated_at = now();
 end;
 $$;
-grant execute on function public.submit_bet_score(numeric, text, text) to authenticated;
+grant execute on function public.submit_bet_score(numeric, text, text, jsonb) to authenticated;
+
+-- アイコンだけを更新（プロフィールでアイコンのウマを変えたとき）。行が無ければ何もしない。
+create or replace function public.set_bet_avatar(p_avatar jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.bet_scores set avatar = p_avatar where user_id = auth.uid();
+end;
+$$;
+grant execute on function public.set_bet_avatar(jsonb) to authenticated;

@@ -32,7 +32,7 @@
 }
 .row {
   display: grid;
-  grid-template-columns: 34px 1fr auto auto;
+  grid-template-columns: 34px auto 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
@@ -89,10 +89,16 @@
   border-radius: 5px;
   padding: 1px 5px;
 }
-.course {
-  font-size: 11px;
-  color: var(--ink-soft);
-  white-space: nowrap;
+.avatar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-dark);
+  background: var(--panel-inner);
+  display: grid;
+  place-items: center;
 }
 .odds {
   font-weight: 900;

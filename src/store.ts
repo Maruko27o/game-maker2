@@ -11,7 +11,6 @@ import type {
   Stats,
   StatKey,
   BetRecord,
-  DailyCounters,
 } from './types';
 import { allParts } from './data/parts';
 import { COURSES } from './data/courses';
@@ -24,6 +23,7 @@ import {
   GRASS_DAILY_BONUS,
   GRASS_DAILY_BONUS_MAX,
   GRASS_OKAWARI_COST,
+  GP_DAILY_LIMIT,
   SLOT_EXPAND_COST,
   SLOT_EXPAND_TO,
 } from './data/coins';
@@ -67,7 +67,19 @@ export function dayKey(now = Date.now()): string {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 function freshDaily(): SaveData['daily'] {
-  return { day: dayKey(), grassBonus: 0, okawari: 0 };
+  return { day: dayKey(), grassBonus: 0, okawari: 0, gp: 0 };
+}
+
+// Normalize a stored daily object, defaulting any missing counter (older saves
+// predate the `gp` field).
+function normDaily(v: unknown): SaveData['daily'] {
+  const d = (v ?? {}) as Partial<SaveData['daily']>;
+  return {
+    day: typeof d.day === 'string' ? d.day : dayKey(),
+    grassBonus: typeof d.grassBonus === 'number' ? d.grassBonus : 0,
+    okawari: typeof d.okawari === 'number' ? d.okawari : 0,
+    gp: typeof d.gp === 'number' ? d.gp : 0,
+  };
 }
 const BETS_CAP = 50; // keep only the most recent settled bets
 
@@ -137,10 +149,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   const coins = typeof d.coins === 'number' ? d.coins : 0;
   const bets = Array.isArray(d.bets) ? (d.bets as SaveData['bets']) : [];
   const maxHorses = typeof d.maxHorses === 'number' ? d.maxHorses : MAX_HORSES;
-  const daily =
-    d.daily && typeof d.daily === 'object' && typeof (d.daily as DailyCounters).day === 'string'
-      ? (d.daily as DailyCounters)
-      : freshDaily();
+  const daily = normDaily(d.daily);
 
   if (d.version === 6) {
     return {
@@ -272,8 +281,11 @@ type Store = SaveData & {
   recordBet: (bet: BetRecord) => void;
   /** Grass first-visits-of-day bonus (up to GRASS_DAILY_BONUS_MAX). Returns coins granted. */
   claimGrassBonus: () => number;
-  /** Buy an extra grass charge (300, once/day). Returns true on success. */
+  /** Buy an extra grass charge (300, repeatable). Returns true on success. */
   buyOkawari: () => boolean;
+  /** Begin a grand-prix attempt, consuming one of the day's plays (max
+   *  GP_DAILY_LIMIT). Returns false when the daily limit is reached. */
+  startGpAttempt: () => boolean;
   /** Expand the stable 10→15 for 3000 coins (once). Returns true on success. */
   expandSlots: () => boolean;
   // Profile (avatar horse + trophy shelf).
@@ -533,15 +545,31 @@ export const useStore = create<Store>((set, get) => {
     },
 
     buyOkawari: () => {
+      // Repeatable now: buy an extra grass charge any time coins allow and the
+      // stock isn't already full (no once-per-day cap).
       const s = get();
       const today = dayKey();
       const daily = s.daily.day === today ? s.daily : freshDaily();
-      if (daily.okawari >= 1 || s.coins < GRASS_OKAWARI_COST) return false;
+      if (s.coins < GRASS_OKAWARI_COST || s.energy >= ENERGY_CAP) return false;
       commit({
         coins: s.coins - GRASS_OKAWARI_COST,
         energy: Math.min(ENERGY_CAP, s.energy + 1),
         daily: { ...daily, okawari: daily.okawari + 1 },
       });
+      return true;
+    },
+
+    startGpAttempt: () => {
+      // Grand-prix is limited to GP_DAILY_LIMIT attempts per day (qualifier +
+      // final together count as one). Returns false when the day's limit is hit.
+      const s = get();
+      const today = dayKey();
+      const daily = s.daily.day === today ? s.daily : freshDaily();
+      if (daily.gp >= GP_DAILY_LIMIT) {
+        if (s.daily.day !== today) commit({ daily });
+        return false;
+      }
+      commit({ daily: { ...daily, gp: daily.gp + 1 } });
       return true;
     },
 

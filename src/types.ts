@@ -117,7 +117,7 @@ export type BetRecord = {
 };
 
 // Per-day counters (local date key), for the grass bonus and おかわり limits.
-export type DailyCounters = { day: string; grassBonus: number; okawari: number };
+export type DailyCounters = { day: string; grassBonus: number; okawari: number; gp: number };
 
 export type SaveData = {
   version: 6;

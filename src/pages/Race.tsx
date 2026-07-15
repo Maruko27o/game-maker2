@@ -219,7 +219,12 @@ export default function Race() {
     // account's max. Best-effort — no-op when signed out or the DB isn't set up.
     if (ENABLE_RANKING && bestWonOdds > 0) {
       const name = useAuth.getState().displayName;
-      if (useAuth.getState().user && name) submitBetScore(bestWonOdds, setup.course.id, name);
+      if (useAuth.getState().user && name) {
+        // Include the player's avatar horse so it shows next to their ranking row.
+        const st = useStore.getState();
+        const av = st.avatarHorseId ? st.horses.find((h) => h.id === st.avatarHorseId) : st.horses[0];
+        submitBetScore(bestWonOdds, setup.course.id, name, av ? { colors: av.colors, decos: av.decos } : null);
+      }
     }
     setReward({ rank, awarded, earned, payout });
     setCutin(achievements); // cut-in only for achievement badges (placing are everyday)

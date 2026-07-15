@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { useStore } from '../store';
+import { useStore, dayKey } from '../store';
 import { COURSES } from '../data/courses';
 import { statTotal, mulberry32 } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
@@ -16,7 +16,7 @@ import {
   type Qualifier,
 } from '../logic/grandprix';
 import { makeTrophy, rollItems } from '../logic/raceReward';
-import { GP_QUALIFY_COINS, gpFinalCoins } from '../data/coins';
+import { GP_QUALIFY_COINS, GP_DAILY_LIMIT, gpFinalCoins } from '../data/coins';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import type { Horse, HorseLook, Trophy, TrainingItem } from '../types';
 import { RUN_STYLE_LABEL, STAT_LABEL } from '../types';
@@ -57,6 +57,9 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const recordRace = useStore((s) => s.recordRace);
   const unlockGp = useStore((s) => s.unlockGp);
   const addCoins = useStore((s) => s.addCoins);
+  const startGpAttempt = useStore((s) => s.startGpAttempt);
+  const daily = useStore((s) => s.daily);
+  const gpLeft = Math.max(0, GP_DAILY_LIMIT - (daily.day === dayKey() ? daily.gp : 0));
 
   const [screen, setScreen] = useState<'grade' | 'card' | 'odds' | 'heat' | 'qualify' | 'final' | 'podium'>('grade');
   const [state, setState] = useState<GpState | null>(null);
@@ -143,8 +146,14 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       <div className={styles.page}>
         <h1 className={styles.title}>グランプリ</h1>
         <p className={styles.lead}>18頭・予選3組 → 上位＋敗者復活で本戦8頭。時間: {mode}秒</p>
+        <p className={styles.lead}>
+          本日ののこり: <b>{gpLeft}</b> / {GP_DAILY_LIMIT} 回（予選＋本戦で1回・毎日リセット）
+        </p>
+        {gpLeft <= 0 && (
+          <p className={styles.lead}>本日のグランプリは上限に達しました。また明日挑戦してね。</p>
+        )}
         {rows.map(({ g, locked, cond }) => (
-          <button key={g} className={`${styles.modeCard} ${locked ? styles.modeLocked : ''}`} disabled={locked} onClick={() => !locked && startGrade(g)}>
+          <button key={g} className={`${styles.modeCard} ${locked || gpLeft <= 0 ? styles.modeLocked : ''}`} disabled={locked || gpLeft <= 0} onClick={() => !locked && gpLeft > 0 && startGrade(g)}>
             <span className={styles.modeEmoji}><Icon name={g === 'g1' ? 'crown' : 'medal'} size={30} /></span>
             <span className={styles.modeText}>
               <span className={styles.modeName}>{GP_GRADES[g].name} グランプリ</span>
@@ -212,7 +221,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
         </div>
         <div className={styles.setupActions}>
           <button className="btn neutral" onClick={() => setScreen('card')}>もどる</button>
-          <button className="btn" onClick={() => setScreen('heat')}>予選スタート</button>
+          <button className="btn" onClick={() => { if (startGpAttempt()) setScreen('heat'); else onExit(); }}>予選スタート</button>
         </div>
       </div>
     );
