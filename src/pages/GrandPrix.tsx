@@ -17,6 +17,7 @@ import {
 } from '../logic/grandprix';
 import { makeTrophy, rollItems } from '../logic/raceReward';
 import { GP_QUALIFY_COINS, gpFinalCoins } from '../data/coins';
+import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import type { Horse, HorseLook, Trophy, TrainingItem } from '../types';
 import { RUN_STYLE_LABEL, STAT_LABEL } from '../types';
 import HorseView from '../components/HorseView';
@@ -122,6 +123,10 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     // top-3 placing reward.
     const coinReward = GP_QUALIFY_COINS + gpFinalCoins(rank);
     addCoins(coinReward);
+    // Ranking foundation (RACE_V4 §5): buffer the final locally (upload gated off).
+    bufferSubmission(
+      buildSubmission(finalists, state.course.id, mode, state.seed ^ 0x5f, res, finalists[playerIdx].horseId, finalLaps(mode)),
+    );
     setReward({ trophy, items, rank, qualified: true, coins: coinReward });
     setScreen('podium');
   }

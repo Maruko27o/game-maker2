@@ -16,6 +16,7 @@ import CoinIcon from '../components/CoinIcon';
 import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
 import { raceOdds, settleWin, type Bet } from '../logic/betting';
+import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import { BET_AMOUNTS, normalRaceCoins, BADGE_COINS } from '../data/coins';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
@@ -207,6 +208,11 @@ export default function Race() {
     }
     setReward({ rank, awarded, earned, payout });
     setCutin(achievements); // cut-in only for achievement badges (placing are everyday)
+    // Ranking foundation (RACE_V4 §5): buffer a verifiable submission locally.
+    // Nothing is uploaded while ENABLE_RANKING is off.
+    bufferSubmission(
+      buildSubmission(setup.entrants, setup.course.id, setup.mode, setup.seed, result, setup.entrants[0].horseId),
+    );
     setScreen('result');
   }
 

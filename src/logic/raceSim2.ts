@@ -63,6 +63,10 @@ export type SimResult = {
   };
 };
 
+// Bumped whenever the simulation's numeric behaviour changes, so ranking
+// submissions can only be compared/verified against the same engine (RACE_V4 §5).
+export const SIM_VERSION = 1;
+
 // ---- tunables (confirmed by the §8 test suite) --------------------------------
 const DT = 0.02;
 const HIT_R = 1.1;
