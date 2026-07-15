@@ -21,7 +21,7 @@ import GrandPrix from './GrandPrix';
 import { settle, type Bet } from '../logic/betting';
 import Paddock from '../components/Paddock';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
-import { normalRaceCoins, BADGE_COINS } from '../data/coins';
+import { normalRaceCoins, BADGE_COINS, MAX_BETS_PER_RACE } from '../data/coins';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Race.module.css';
 
@@ -341,7 +341,7 @@ export default function Race() {
           course={setup.course}
           coins={coins}
           bets={bets}
-          onAdd={(b) => { if (spendCoins(b.amount)) setBets((prev) => [...prev, b]); }}
+          onAdd={(b) => { if (bets.length >= MAX_BETS_PER_RACE) return; if (spendCoins(b.amount)) setBets((prev) => [...prev, b]); }}
           onRemove={(i) => { addCoins(bets[i].amount); setBets((prev) => prev.filter((_, k) => k !== i)); }}
           onStart={() => setScreen('race')}
         />

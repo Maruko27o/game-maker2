@@ -4,7 +4,7 @@ import type { Course } from '../data/courses';
 import type { HorseLook } from '../types';
 import { raceOdds, oddsFor, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
 import { winProbs } from '../logic/grandprix';
-import { BET_AMOUNTS } from '../data/coins';
+import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
 import HorseView from './HorseView';
 import CoinIcon from './CoinIcon';
 import styles from './Paddock.module.css';
@@ -39,6 +39,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
   const complete = sel.length === spec.pick;
   const curOdds = complete ? oddsFor(kind, sel, p) : 0;
   const staked = bets.reduce((s, b) => s + b.amount, 0);
+  const full = bets.length >= MAX_BETS_PER_RACE; // slip cap reached
 
   function toggle(idx: number) {
     setSel((prev) => {
@@ -50,7 +51,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
   }
 
   function add() {
-    if (!complete || coins < amount) return;
+    if (!complete || coins < amount || full) return;
     onAdd({ kind, sel: [...sel], amount, odds: curOdds });
     setSel([]);
   }
@@ -102,15 +103,15 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
             {a}
           </button>
         ))}
-        <button className={styles.add} disabled={!complete || coins < amount} onClick={add}>
-          {complete ? `${curOdds.toFixed(1)}倍で追加` : `${KIND_LABEL[kind]}を選ぶ`}
+        <button className={styles.add} disabled={!complete || coins < amount || full} onClick={add}>
+          {full ? '上限10パターン' : complete ? `${curOdds.toFixed(1)}倍で追加` : `${KIND_LABEL[kind]}を選ぶ`}
         </button>
       </div>
 
       {/* bet slip */}
       {bets.length > 0 && (
         <div className={styles.slip}>
-          <div className={styles.slipHead}>賭け伝票（合計 <CoinIcon size={13} /> {staked}）</div>
+          <div className={styles.slipHead}>賭け伝票 {bets.length}/{MAX_BETS_PER_RACE}（合計 <CoinIcon size={13} /> {staked}）</div>
           {bets.map((b, i) => (
             <div key={i} className={styles.slipRow}>
               <span className={styles.slipKind}>{KIND_LABEL[b.kind]}</span>
