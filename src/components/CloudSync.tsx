@@ -38,6 +38,8 @@ function snapshot(): SaveData {
     bets: s.bets,
     maxHorses: s.maxHorses,
     daily: s.daily,
+    avatarHorseId: s.avatarHorseId,
+    displayTrophies: s.displayTrophies,
     savedAt: s.savedAt,
   };
 }

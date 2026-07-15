@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useStore } from './store';
 import CloudSync from './components/CloudSync';
 import SyncConflictModal from './components/SyncConflictModal';
-import AccountButton from './components/AccountButton';
+import ProfileButton from './components/ProfileButton';
 import CoinBalance from './components/CoinBalance';
 import Title from './components/Title';
 import Icon, { type IconName } from './components/Icon';
@@ -41,8 +41,8 @@ export default function App() {
       <CloudSync />
       <SyncConflictModal />
       {showTitle && <Title onStart={dismissTitle} />}
+      <ProfileButton />
       <CoinBalance />
-      <AccountButton />
       {migrated && (
         <div className={styles.notice} role="status">
           <span>ステータスの仕組みが変わりました（合計40の割り振り制）。マイウマから1回だけ無料で振り直せます。</span>

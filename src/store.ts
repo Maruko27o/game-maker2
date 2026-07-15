@@ -89,8 +89,22 @@ function freshSave(): SaveData {
     bets: [],
     maxHorses: MAX_HORSES,
     daily: freshDaily(),
+    avatarHorseId: null,
+    displayTrophies: [],
     savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
+}
+
+// Profile prefs (icon horse + trophy shelf) — default sensibly for older saves.
+function normProfile(d: Record<string, unknown>): {
+  avatarHorseId: string | null;
+  displayTrophies: number[];
+} {
+  const avatarHorseId = typeof d.avatarHorseId === 'string' ? d.avatarHorseId : null;
+  const displayTrophies = Array.isArray(d.displayTrophies)
+    ? (d.displayTrophies as unknown[]).filter((n): n is number => n === 1 || n === 2 || n === 3).slice(0, 5)
+    : [];
+  return { avatarHorseId, displayTrophies };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -147,6 +161,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         bets,
         maxHorses,
         daily,
+        ...normProfile(d),
         savedAt,
       },
       migrated: false,
@@ -176,6 +191,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       bets,
       maxHorses,
       daily,
+      ...normProfile(d),
       savedAt,
     },
     migrated: isPreV4, // only the v3→v4 stat change warrants the one-time notice
@@ -260,6 +276,9 @@ type Store = SaveData & {
   buyOkawari: () => boolean;
   /** Expand the stable 10→15 for 3000 coins (once). Returns true on success. */
   expandSlots: () => boolean;
+  // Profile (avatar horse + trophy shelf).
+  setAvatarHorse: (id: string | null) => void;
+  setDisplayTrophies: (ranks: number[]) => void;
   resetAll: () => void;
 };
 
@@ -287,6 +306,8 @@ export const useStore = create<Store>((set, get) => {
       bets: next.bets,
       maxHorses: next.maxHorses,
       daily: next.daily,
+      avatarHorseId: next.avatarHorseId,
+      displayTrophies: next.displayTrophies,
       savedAt,
     };
     persist(data);
@@ -328,6 +349,8 @@ export const useStore = create<Store>((set, get) => {
         bets: s.bets,
         maxHorses: s.maxHorses,
         daily: s.daily,
+        avatarHorseId: s.avatarHorseId,
+        displayTrophies: s.displayTrophies,
         savedAt: s.savedAt,
       };
       return JSON.stringify(data);
@@ -528,6 +551,12 @@ export const useStore = create<Store>((set, get) => {
       commit({ coins: s.coins - SLOT_EXPAND_COST, maxHorses: SLOT_EXPAND_TO });
       return true;
     },
+
+    setAvatarHorse: (id) => commit({ avatarHorseId: id }),
+    setDisplayTrophies: (ranks) =>
+      commit({
+        displayTrophies: ranks.filter((n) => n === 1 || n === 2 || n === 3).slice(0, 5),
+      }),
 
     resetAll: () => commit({ ...freshSave() }),
   };
