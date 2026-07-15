@@ -135,8 +135,9 @@ export default function Race() {
   const spendCoins = useStore((s) => s.spendCoins);
   const recordBet = useStore((s) => s.recordBet);
 
-  const [screen, setScreen] = useState<'menu' | 'setup' | 'gp' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'setup' | 'course' | 'gp' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
+  const [pickMode, setPickMode] = useState(false); // choose course, no betting
   const [horseId, setHorseId] = useState<string | null>(null);
   const [mode, setMode] = useState<30 | 60>(30);
   const [setup, setSetup] = useState<RaceSetup | null>(null);
@@ -148,11 +149,11 @@ export default function Race() {
 
   const player = horses.find((h) => h.id === horseId) ?? null;
 
-  function begin() {
+  function begin(chosenCourse?: Course) {
     if (!player) return;
     const seed = (Math.random() * 2 ** 31) >>> 0;
     const rng = mulberry32(seed ^ 0x77);
-    const course = COURSES[Math.floor(rng() * COURSES.length)];
+    const course = chosenCourse ?? COURSES[Math.floor(rng() * COURSES.length)];
     // Keep CPUs within ±4 of the player's total so single races stay close
     // (RACE_V3 §3.5, user preference: 接戦に寄せる).
     const pt = statTotal(player.stats);
@@ -171,7 +172,8 @@ export default function Race() {
     rewardApplied.current = false;
     setReward(null);
     setBets([]);
-    setScreen('roulette');
+    // Chosen-course mode has no betting: skip the roulette + paddock, race now.
+    setScreen(chosenCourse ? 'race' : 'roulette');
   }
 
   function onFinish(result: SimResult) {
@@ -234,15 +236,23 @@ export default function Race() {
       <div className={styles.page}>
         <h1 className={styles.title}>レース</h1>
         <p className={styles.lead}>コースはランダム。あつめたウマを走らせよう！</p>
-        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setScreen('setup'); }}>
+        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(false); setScreen('setup'); }}>
           <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>ひとりでレース</span>
-            <span className={styles.modeDesc}>8頭立て・3位以内でメダル</span>
+            <span className={styles.modeDesc}>8頭立て・馬券あり・3位以内でメダル</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
-        <button className={styles.modeCard} onClick={() => { setGrade('gp'); setScreen('setup'); }}>
+        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(true); setScreen('setup'); }}>
+          <span className={styles.modeEmoji}><Icon name="flag" size={30} /></span>
+          <span className={styles.modeText}>
+            <span className={styles.modeName}>コースをえらぶ</span>
+            <span className={styles.modeDesc}>好きなコースで練習（馬券なし）</span>
+          </span>
+          <span className={styles.modeGo}>▶</span>
+        </button>
+        <button className={styles.modeCard} onClick={() => { setGrade('gp'); setPickMode(false); setScreen('setup'); }}>
           <span className={styles.modeEmoji}><Icon name="trophy" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>グランプリ</span>
@@ -297,7 +307,7 @@ export default function Race() {
               <button className="btn neutral" onClick={() => setScreen('menu')}>もどる</button>
               <button
                 className="btn"
-                onClick={() => (grade === 'gp' ? setScreen('gp') : begin())}
+                onClick={() => (grade === 'gp' ? setScreen('gp') : pickMode ? setScreen('course') : begin())}
                 disabled={!player}
               >
                 {player ? 'スタート' : 'ウマをえらんでね'}
@@ -305,6 +315,27 @@ export default function Race() {
             </div>
           </>
         )}
+      </div>
+    );
+  }
+
+  // --- Course select (chosen-course mode, no betting) ---
+  if (screen === 'course') {
+    return (
+      <div className={styles.page}>
+        <h1 className={styles.title}>コースをえらぶ</h1>
+        <p className={styles.lead}>好きなコースで走ろう（馬券なし・{mode}秒）。</p>
+        {COURSES.map((c) => (
+          <button key={c.id} className={styles.modeCard} onClick={() => begin(c)}>
+            <span className={styles.modeEmoji}><Icon name="flag" size={26} /></span>
+            <span className={styles.modeText}>
+              <span className={styles.modeName}>{c.name}</span>
+              <span className={styles.modeDesc}>路面: {surfaceLabel(c.surface)}</span>
+            </span>
+            <span className={styles.modeGo}>▶</span>
+          </button>
+        ))}
+        <button className={styles.exitLink} onClick={() => setScreen('setup')}>もどる</button>
       </div>
     );
   }
@@ -409,7 +440,7 @@ export default function Race() {
           </ol>
           <div className={styles.raceActions}>
             <button className="btn neutral" onClick={() => setScreen('setup')}>ウマ・時間をかえる</button>
-            <button className="btn" onClick={begin}>もう一回</button>
+            <button className="btn" onClick={() => (pickMode && setup ? begin(setup.course) : begin())}>もう一回</button>
           </div>
           <button className={styles.exitLink} onClick={() => setScreen('menu')}>モードせんたくへ</button>
         </div>

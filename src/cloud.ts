@@ -148,23 +148,13 @@ export async function submitBetScore(
   trophies: number[] | null,
 ): Promise<void> {
   if (!supabase) return;
+  const base = { p_odds: odds, p_course: courseId, p_username: username };
   try {
-    const { error } = await supabase.rpc('submit_bet_score', {
-      p_odds: odds,
-      p_course: courseId,
-      p_username: username,
-      p_avatar: avatar,
-      p_trophies: trophies,
-    });
-    // Fall back to the pre-trophies 4-arg RPC if the new one isn't applied yet.
-    if (error) {
-      await supabase.rpc('submit_bet_score', {
-        p_odds: odds,
-        p_course: courseId,
-        p_username: username,
-        p_avatar: avatar,
-      });
-    }
+    // Try newest signature first, then progressively older ones so the odds
+    // still record even if only an earlier version of the SQL is applied.
+    let { error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies });
+    if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar }));
+    if (error) await supabase.rpc('submit_bet_score', base);
   } catch {
     /* DB not set up / offline — non-fatal */
   }
@@ -217,23 +207,17 @@ export type ScoreRow = {
 /** Top scores by best hit odds (one row per user). Empty on any failure. */
 export async function loadLeaderboard(limit = 50): Promise<ScoreRow[]> {
   if (!supabase) return [];
+  const query = (cols: string) =>
+    supabase!.from('bet_scores').select(cols).order('best_odds', { ascending: false }).limit(limit);
   try {
-    let res = await supabase
-      .from('bet_scores')
-      .select('user_id, username, best_odds, course_id, avatar, display_trophies')
-      .order('best_odds', { ascending: false })
-      .limit(limit);
-    // Fall back to the pre-avatar columns if those columns aren't applied yet.
-    if (res.error) {
-      res = (await supabase
-        .from('bet_scores')
-        .select('user_id, username, best_odds, course_id')
-        .order('best_odds', { ascending: false })
-        .limit(limit)) as typeof res;
-    }
+    // Try the full column set, then progressively fewer, so one missing column
+    // (e.g. display_trophies not applied yet) doesn't wipe the whole list.
+    let res = await query('user_id, username, best_odds, course_id, avatar, display_trophies');
+    if (res.error) res = await query('user_id, username, best_odds, course_id, avatar');
+    if (res.error) res = await query('user_id, username, best_odds, course_id');
     if (res.error || !res.data) return [];
     return (
-      res.data as {
+      res.data as unknown as {
         user_id: string;
         username: string;
         best_odds: number;

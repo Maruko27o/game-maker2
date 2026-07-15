@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth, loadLeaderboard, type ScoreRow } from '../cloud';
+import { useStore } from '../store';
 import type { HorseLook } from '../types';
 import HorseFace from '../components/HorseFace';
 import RankingProfileCard from '../components/RankingProfileCard';
@@ -16,17 +17,39 @@ export default function Ranking() {
   const user = useAuth((s) => s.user);
   const displayName = useAuth((s) => s.displayName);
   const configured = useAuth((s) => s.configured);
+  const horses = useStore((s) => s.horses);
+  const avatarHorseId = useStore((s) => s.avatarHorseId);
+  const displayTrophies = useStore((s) => s.displayTrophies);
   const [rows, setRows] = useState<ScoreRow[] | null>(null);
   const [viewing, setViewing] = useState<ScoreRow | null>(null); // profile card being shown
 
   useEffect(() => {
     let live = true;
     setRows(null);
-    loadLeaderboard(50).then((r) => live && setRows(r));
+    const load = () => loadLeaderboard(50).then((r) => live && setRows(r));
+    load();
+    // Re-fetch when the tab regains focus, so changes made elsewhere show up.
+    const onFocus = () => load();
+    window.addEventListener('focus', onFocus);
     return () => {
       live = false;
+      window.removeEventListener('focus', onFocus);
     };
   }, [user]);
+
+  // The signed-in player's own avatar + trophies come from the local store, so
+  // their own row/card always reflects their current settings immediately (even
+  // before the server round-trips).
+  const myLook = useMemo<HorseLook>(() => {
+    const h = avatarHorseId ? horses.find((x) => x.id === avatarHorseId) : horses[0];
+    return h ?? DEFAULT_LOOK;
+  }, [avatarHorseId, horses]);
+
+  function withLocal(r: ScoreRow): ScoreRow {
+    if (!user || r.userId !== user.id) return r;
+    const h = avatarHorseId ? horses.find((x) => x.id === avatarHorseId) : horses[0];
+    return { ...r, avatar: h ? { colors: h.colors, decos: h.decos } : r.avatar, displayTrophies };
+  }
 
   function medal(place: number): string {
     return place === 1 ? styles.gold : place === 2 ? styles.silver : place === 3 ? styles.bronze : '';
@@ -49,14 +72,16 @@ export default function Ranking() {
         <ol className={styles.list}>
           {rows.map((r, i) => {
             const me = r.userId === user.id;
-            const look: HorseLook = r.avatar
-              ? { name: '', colors: r.avatar.colors, decos: r.avatar.decos }
-              : DEFAULT_LOOK;
+            const look: HorseLook = me
+              ? myLook
+              : r.avatar
+                ? { name: '', colors: r.avatar.colors, decos: r.avatar.decos }
+                : DEFAULT_LOOK;
             return (
               <li
                 key={r.userId}
                 className={`${styles.row} ${me ? styles.me : ''}`}
-                onClick={() => setViewing(r)}
+                onClick={() => setViewing(withLocal(r))}
                 role="button"
                 tabIndex={0}
               >
