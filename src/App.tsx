@@ -12,7 +12,6 @@ import styles from './App.module.css';
 const NAV: { to: string; label: string; icon: IconName; end?: boolean }[] = [
   { to: '/', label: '草むら', icon: 'leaf', end: true },
   { to: '/stable', label: 'マイウマ', icon: 'horse' },
-  { to: '/create', label: 'つくる', icon: 'palette' },
   { to: '/collection', label: '図鑑', icon: 'book' },
   { to: '/race', label: 'レース', icon: 'flag' },
   { to: '/ranking', label: 'ランキング', icon: 'trophy' },

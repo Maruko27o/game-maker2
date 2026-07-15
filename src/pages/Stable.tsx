@@ -30,18 +30,16 @@ function itemIndexFor(items: TrainingItem[], k: StatKey): number {
 }
 
 function TrophyRack({ trophies }: { trophies: Trophy[] }) {
-  // Group by rank+grade, order gold->silver->bronze then by first-acquired.
+  // Group by rank, order gold->silver->bronze then by first-acquired.
   const groups = useMemo(() => {
-    const map = new Map<string, { rank: 1 | 2 | 3; gp: boolean; count: number; at: number }>();
+    const map = new Map<1 | 2 | 3, { rank: 1 | 2 | 3; count: number; at: number }>();
     for (const t of trophies) {
-      const gp = t.grade === 'gp';
-      const key = `${t.rank}-${gp}`;
-      const g = map.get(key);
+      const g = map.get(t.rank);
       if (g) {
         g.count++;
         g.at = Math.min(g.at, t.at);
       } else {
-        map.set(key, { rank: t.rank, gp, count: 1, at: t.at });
+        map.set(t.rank, { rank: t.rank, count: 1, at: t.at });
       }
     }
     return [...map.values()].sort((a, b) => a.rank - b.rank || a.at - b.at);
@@ -54,7 +52,7 @@ function TrophyRack({ trophies }: { trophies: Trophy[] }) {
     <div className={styles.rack}>
       {groups.map((g, i) => (
         <div key={i} className={styles.rackItem}>
-          <TrophyIcon rank={g.rank} gp={g.gp} size={56} />
+          <TrophyIcon rank={g.rank} size={56} />
           {g.count > 1 && <span className={styles.rackCount}>×{g.count}</span>}
         </div>
       ))}

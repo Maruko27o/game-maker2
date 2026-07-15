@@ -238,10 +238,10 @@ export default function Race() {
         <h1 className={styles.title}>レース</h1>
         <p className={styles.lead}>コースはランダム。あつめたウマを走らせよう！</p>
         <button className={styles.modeCard} onClick={() => { setGrade('normal'); setScreen('setup'); }}>
-          <span className={styles.modeEmoji}><Icon name="horse" size={30} /></span>
+          <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>ひとりでレース</span>
-            <span className={styles.modeDesc}>8頭立て・3位以内でトロフィー</span>
+            <span className={styles.modeDesc}>8頭立て・3位以内でメダル</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
@@ -249,7 +249,7 @@ export default function Race() {
           <span className={styles.modeEmoji}><Icon name="trophy" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>グランプリ</span>
-            <span className={styles.modeDesc}>強敵ぞろい・入賞で育成アイテム</span>
+            <span className={styles.modeDesc}>強敵ぞろい・3位以内でトロフィー＋育成アイテム</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
@@ -373,7 +373,7 @@ export default function Race() {
     return (
       <div className={styles.page}>
         <div className={styles.resultCard}>
-          <h2 className={styles.resultTitle}>{playerRank === 1 ? (<><Icon name="trophy" size={22} /> ゆうしょう！</>) : `${playerRank}位`}</h2>
+          <h2 className={styles.resultTitle}>{playerRank === 1 ? (<><Icon name="medal" size={22} /> ゆうしょう！</>) : `${playerRank}位`}</h2>
           {reward && reward.awarded.length > 0 && (
             <div className={styles.badgeReward}>
               {reward.awarded.map((b, i) => (
