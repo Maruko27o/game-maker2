@@ -202,3 +202,71 @@
 .nameSave:disabled {
   opacity: 0.45;
 }
+
+/* password change + eye toggle */
+.okMsg {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--grass-dark);
+  text-align: center;
+}
+.pwBox {
+  width: 100%;
+  border-top: 2px dashed var(--border);
+  padding-top: 10px;
+  margin-top: 2px;
+}
+.pwToggle {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--blue-dark);
+  font-weight: 800;
+  font-size: 13px;
+  padding: 4px;
+  cursor: pointer;
+}
+.pwForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.pwField {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.pwField .pwInput {
+  flex: 1;
+  min-width: 0;
+}
+.pwInput {
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 700;
+  background: var(--panel-inner);
+  color: var(--ink);
+}
+.eyeBtn {
+  flex: none;
+  width: 44px;
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-inner);
+  color: var(--ink-soft);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.pwWarn {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--red-dark);
+  text-align: center;
+}

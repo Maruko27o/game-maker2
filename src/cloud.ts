@@ -188,54 +188,80 @@ export function initAuth(): void {
   });
 }
 
-// ---- player-id login (改修②) ------------------------------------------------
-// Players sign in with just a chosen ID + password — no email to remember. The
-// ID is mapped to a stable internal address so Supabase Auth (which is
-// email-based) still works; the address is never shown in the UI.
+// ---- player-number login (改修②/②改) ----------------------------------------
+// Players sign in with just their プレイヤーID (the sequential number, e.g.
+// 0000001) + password — no email at all. Supabase Auth is email-based, so signup
+// creates a throwaway internal address, and login resolves the number → that
+// address through a SECURITY DEFINER RPC. The address is never shown in the UI.
 const LOGIN_DOMAIN = 'uma-atsume.local';
 
-/** Canonical form of a login id: lowercase ASCII letters/digits/_.- only. */
-export function normalizeLoginId(id: string): string {
-  return id.trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+/** Parse a typed player id ("0000001", "1", "ID-0000001") to its number. */
+export function parsePlayerNo(s: string): number | null {
+  const digits = s.replace(/\D/g, '');
+  if (!digits) return null;
+  const n = parseInt(digits, 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-/** Map a player-facing login id to the internal auth email. A value that is
- *  already an email (contains '@') is used verbatim, so older email-based
- *  accounts stay reachable by typing their full address. */
-export function loginIdToEmail(id: string): string {
-  const raw = id.trim();
-  if (raw.includes('@')) return raw.toLowerCase();
-  return `${normalizeLoginId(raw)}@${LOGIN_DOMAIN}`;
-}
-
-/** The player-facing id to show back (strips the internal domain). */
-export function loginIdFromEmail(email: string): string {
-  const at = email.indexOf('@');
-  if (at < 0) return email;
-  return email.slice(at + 1) === LOGIN_DOMAIN ? email.slice(0, at) : email;
+/** Resolve a player number to its login email via RPC. Null when not found /
+ *  the RPC isn't applied yet. */
+async function emailForPlayerNo(no: number): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc('email_for_player_no', { p_no: no });
+    if (error) return null;
+    return typeof data === 'string' && data ? data : null;
+  } catch {
+    return null;
+  }
 }
 
 function friendly(message: string): string {
   const m = message.toLowerCase();
   if (m.includes('invalid login')) return 'プレイヤーIDかパスワードが違います。';
-  if (m.includes('already registered') || m.includes('already been registered'))
-    return 'このプレイヤーIDは使われています。別のIDにするか、ログインしてください。';
   if (m.includes('password')) return 'パスワードは6文字以上にしてください。';
-  if (m.includes('email')) return 'プレイヤーIDは英数字で入力してください。';
+  if (m.includes('email')) return '入力内容を確認してください。';
   return message;
 }
 
-export async function signUp(loginId: string, password: string): Promise<string | null> {
+/** Register a new account. The player only sets a password; an internal address
+ *  is generated and the sequential プレイヤーID is assigned after first sign-in. */
+export async function signUp(password: string): Promise<string | null> {
   if (!supabase) return 'クラウド機能が未設定です。';
-  if (normalizeLoginId(loginId).length < 3 && !loginId.includes('@'))
-    return 'プレイヤーIDは英数字3文字以上にしてください。';
-  const { error } = await supabase.auth.signUp({ email: loginIdToEmail(loginId), password });
+  if (password.length < 6) return 'パスワードは6文字以上にしてください。';
+  const email = `u${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@${LOGIN_DOMAIN}`;
+  const { error } = await supabase.auth.signUp({ email, password });
   return error ? friendly(error.message) : null;
 }
 
-export async function signIn(loginId: string, password: string): Promise<string | null> {
+/** Sign in with a プレイヤーID (number) + password. A value containing '@' is
+ *  treated as a literal address, so pre-existing email accounts stay reachable. */
+export async function signIn(identifier: string, password: string): Promise<string | null> {
   if (!supabase) return 'クラウド機能が未設定です。';
-  const { error } = await supabase.auth.signInWithPassword({ email: loginIdToEmail(loginId), password });
+  const raw = identifier.trim();
+  let email: string | null;
+  if (raw.includes('@')) {
+    email = raw.toLowerCase();
+  } else {
+    const no = parsePlayerNo(raw);
+    if (no == null) return 'プレイヤーIDは番号で入力してください（例: 0000001）。';
+    email = await emailForPlayerNo(no);
+    if (!email) return 'そのプレイヤーIDが見つかりません。番号を確認してください。';
+  }
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  return error ? friendly(error.message) : null;
+}
+
+/** Change the signed-in account's password. Requires the current password
+ *  (re-auth) before applying the new one. */
+export async function changePassword(oldPw: string, newPw: string): Promise<string | null> {
+  if (!supabase) return 'クラウド機能が未設定です。';
+  if (newPw.length < 6) return '新しいパスワードは6文字以上にしてください。';
+  const email = (await supabase.auth.getUser()).data.user?.email;
+  if (!email) return 'ログイン状態を確認できませんでした。もう一度ログインしてください。';
+  const { error: reauth } = await supabase.auth.signInWithPassword({ email, password: oldPw });
+  if (reauth) return '現在のパスワードが違います。';
+  const { error } = await supabase.auth.updateUser({ password: newPw });
   return error ? friendly(error.message) : null;
 }
 
