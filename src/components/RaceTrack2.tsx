@@ -1,21 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Course } from '../data/courses';
-import { centerline, centerlinePath, toWorld, lapLength, goalS, trackBounds } from '../logic/track';
+import { centerline, toWorld, lapLength, goalS, trackBounds } from '../logic/track';
 import { simulate2, type Entrant, type SimResult } from '../logic/raceSim2';
 import type { HorseLook } from '../types';
 import HorseDefs from './HorseDefs';
 import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
+import { buildScenery } from './trackScenery';
 import styles from './RaceTrack2.module.css';
-
-const SURFACE_COLOR: Record<string, string> = {
-  turf: '#8cc264',
-  dirt: '#b98a5a',
-  sand: '#e0c48a',
-  steeple: '#8cc264',
-  circuit: '#6d7ea0',
-  trail: '#8cc264',
-};
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -93,36 +85,52 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     h: b.maxY - b.minY + stands + pad * 2,
   };
 
-  // static track + stands (memoised so only horses update per frame).
+  // static racecourse scenery (RACE_V4 §1) — memoised so only horses update per
+  // frame: sky, mountains, stands, mowing stripes, fences, infield, furlong poles.
   const scenery = useMemo(() => {
-    const path = centerlinePath(track);
-    const surface = SURFACE_COLOR[course.surface] ?? '#8cc264';
     const goalPos = goalS(track);
     const goal = toWorld(track, goalPos, 0);
     const gc = centerline(track, goalPos);
+    const half = track.width * 0.5;
+    // checkered finish line: alternating blocks across the track width.
+    const blocks = [];
+    const NB = 8;
+    for (let i = 0; i < NB; i++) {
+      const n0 = -half + (i / NB) * track.width;
+      const n1 = -half + ((i + 1) / NB) * track.width;
+      const a = { x: goal.x + gc.nx * n0, y: goal.y + gc.ny * n0 };
+      const bpt = { x: goal.x + gc.nx * n1, y: goal.y + gc.ny * n1 };
+      const t0 = { x: a.x + gc.tx * 1.1, y: a.y + gc.ty * 1.1 };
+      const t1 = { x: bpt.x + gc.tx * 1.1, y: bpt.y + gc.ty * 1.1 };
+      blocks.push(
+        <polygon key={'gb' + i} points={`${a.x},${a.y} ${bpt.x},${bpt.y} ${t1.x},${t1.y} ${t0.x},${t0.y}`}
+          fill={i % 2 ? '#3b3f47' : '#f3efe0'} />,
+      );
+    }
+    const post = (sign: number) => {
+      const bs = toWorld(track, goalPos, sign * (half + 0.6));
+      const tp = toWorld(track, goalPos, sign * (half + 0.6));
+      return (
+        <g key={'gp' + sign}>
+          <rect x={bs.x - 0.5} y={bs.y - 6} width={1.0} height={6} fill="#e6e2d4" />
+          <rect x={tp.x - 1.6} y={tp.y - 7.5} width={3.2} height={2} rx={0.4} fill="#e05648" />
+        </g>
+      );
+    };
     return (
       <>
-        <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill={course.surface === 'circuit' ? '#2b3350' : '#bfe08a'} />
-        {/* stands (spectators drawn as a separate cheering layer) */}
-        <rect x={vb.x} y={vb.y} width={vb.w} height={stands + 4} fill="#c8a06a" />
-        {/* outer rail (white ring) then running surface */}
-        <path d={path} fill="none" stroke="#f3efe0" strokeWidth={track.width + 2.4} strokeLinejoin="round" />
-        <path d={path} fill="none" stroke={surface} strokeWidth={track.width} strokeLinejoin="round" />
-        {/* infield */}
-        <path d={path} fill="#a9d46a" stroke="none" transform="scale(1)" opacity="0" />
-        {/* goal line */}
-        <line
-          x1={goal.x + gc.nx * track.width * 0.5}
-          y1={goal.y + gc.ny * track.width * 0.5}
-          x2={goal.x - gc.nx * track.width * 0.5}
-          y2={goal.y - gc.ny * track.width * 0.5}
-          stroke="#d64b45"
-          strokeWidth="1.2"
-        />
-        <text x={goal.x + 4} y={goal.y} fontSize="4" fill="#d64b45" fontWeight="900">GOAL</text>
+        {buildScenery(track, course, vb, stands)}
+        {/* finish line (checkered) + goal posts + board */}
+        <g>{blocks}</g>
+        {post(-1)}
+        {post(1)}
+        <g>
+          <rect x={goal.x - 6} y={goal.y - (track.radius > 0 ? 0 : 0) - 11} width={12} height={4.4} rx={0.8} fill="#c33f39" />
+          <text x={goal.x} y={goal.y - 8.4} fontSize="3" fill="#fff" fontWeight="900" textAnchor="middle" dominantBaseline="central">GOAL</text>
+        </g>
       </>
     );
-  }, [track, course, lap, vb.x, vb.y, vb.w, vb.h, b.minX, b.maxX, b.minY, stands]);
+  }, [track, course, vb.x, vb.y, vb.w, vb.h, stands]);
 
   // Spectator seats (positions are static; they bob per-frame in the render).
   const crowdDots = useMemo(() => {
@@ -193,6 +201,14 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
 
   const leaderS = Math.max(...fr.runners.map((r) => r.s));
   const travelled = leaderS - result.startS; // distance run since the start/finish line
+  // Live leader (for the turf vision) and the finishing 1-2-3 (for the result board).
+  let leaderIdx = 0;
+  for (let i = 1; i < fr.runners.length; i++) if (fr.runners[i].rank < fr.runners[leaderIdx].rank) leaderIdx = i;
+  const top3 = result.order.slice(0, 3);
+  // turf-vision screen + flag poles sit on the grandstand (top band).
+  const tv = { x: -17, y: vb.y + 2.5, w: 34, h: 18 };
+  const flagXs = [0.24, 0.5, 0.76].map((f) => vb.x + vb.w * f);
+  const flagY = vb.y + stands * 0.34;
   const curLap = Math.min(totalLaps, Math.floor(travelled / lap) + 1);
   const remaining = Math.max(0, Math.round(result.distanceS - travelled));
 
@@ -257,6 +273,25 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
               <circle key={i} cx={d.x} cy={d.y - Math.abs(Math.sin(t + d.ph)) * amp} r={1.7} fill={d.fill} />
             ));
           })()}
+          {/* turf vision — a big screen showing the current leader's number/rank */}
+          <g>
+            <rect x={tv.x - 1} y={tv.y - 1} width={tv.w + 2} height={tv.h + 4} rx={1.2} fill="#2b2f38" />
+            <rect x={tv.x} y={tv.y} width={tv.w} height={tv.h} rx={0.8} fill="#0f1a22" />
+            <text x={tv.x + tv.w * 0.5} y={tv.y + 4.4} fontSize="3" fill="#8fe6c0" fontWeight="800" textAnchor="middle">先頭</text>
+            <text x={tv.x + tv.w * 0.5} y={tv.y + tv.h * 0.62} fontSize="9" fill="#f6d24a" fontWeight="900" textAnchor="middle" dominantBaseline="central">{result.gate[leaderIdx]}</text>
+            <line x1={tv.x + tv.w * 0.5} y1={tv.y + tv.h + 3} x2={tv.x + tv.w * 0.5} y2={tv.y + tv.h + 7} stroke="#2b2f38" strokeWidth={1} />
+          </g>
+          {/* three flags on the grandstand, fluttering */}
+          {flagXs.map((fx, i) => {
+            const wv = reduced ? 0 : Math.sin(elapsed.current * 4 + i * 1.3) * 1.4;
+            const col = ['#e0574a', '#4aa3e0', '#f2c14e'][i];
+            return (
+              <g key={'flag' + i}>
+                <line x1={fx} y1={flagY} x2={fx} y2={flagY + 10} stroke="#cfc6b2" strokeWidth={0.6} />
+                <path d={`M ${fx} ${flagY} Q ${fx + 4} ${flagY + 1 + wv} ${fx + 8} ${flagY + 0.5} L ${fx + 8} ${flagY + 4.5} Q ${fx + 4} ${flagY + 5 + wv} ${fx} ${flagY + 4} Z`} fill={col} />
+              </g>
+            );
+          })}
           {/* starting gate — fades as the field runs clear of it */}
           <g opacity={clamp(1 - travelled / 30, 0, 1)}>{startGate}</g>
           {/* boost panels + obstacles */}
@@ -292,6 +327,20 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
                 isPlayer={entrants[i].isPlayer}
               />
             ))}
+          {/* result board in the infield — shows the finishing 1-2-3 after the race */}
+          {phase === 'done' && (
+            <g>
+              <rect x={-15} y={-track.radius * 0.5 - 2} width={30} height={22} rx={1.5} fill="#3a3020" opacity={0.96} />
+              <rect x={-15} y={-track.radius * 0.5 - 2} width={30} height={5.5} rx={1.5} fill="#c33f39" />
+              <text x={0} y={-track.radius * 0.5 + 1} fontSize="3.2" fill="#fff" fontWeight="900" textAnchor="middle" dominantBaseline="central">着順</text>
+              {top3.map((idx, k) => (
+                <g key={'rb' + k}>
+                  <text x={-11} y={-track.radius * 0.5 + 8 + k * 5} fontSize="3.4" fill="#f6d24a" fontWeight="900" textAnchor="middle" dominantBaseline="central">{k + 1}</text>
+                  <text x={-4} y={-track.radius * 0.5 + 8 + k * 5} fontSize="3" fill="#fff" fontWeight="800" textAnchor="start" dominantBaseline="central">{result.gate[idx]}番 {entrants[idx].name.slice(0, 5)}</text>
+                </g>
+              ))}
+            </g>
+          )}
         </svg>
 
         {phase === 'countdown' && <div className={styles.countdown}>{count > 0 ? count : 'GO!'}</div>}
