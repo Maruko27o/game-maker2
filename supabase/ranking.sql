@@ -103,36 +103,41 @@ create table if not exists public.bet_scores (
 );
 create index if not exists bet_scores_odds_idx on public.bet_scores (best_odds desc);
 alter table public.bet_scores enable row level security;
--- ランキングに表示するプレイヤーのウマ（アイコン）。既存テーブルにも後付けで追加。
+-- ランキングに表示するプレイヤーのウマ（アイコン）と、飾っているトロフィー。既存テーブルにも後付け。
 alter table public.bet_scores add column if not exists avatar jsonb;
+alter table public.bet_scores add column if not exists display_trophies jsonb;
 
 -- 全員が閲覧できる（ランキング表示用）。書込は下の関数(SECURITY DEFINER)経由のみ。
 drop policy if exists "scores read all" on public.bet_scores;
 create policy "scores read all" on public.bet_scores for select using (true);
 
 -- 自己ベスト倍率を提出：既存より大きいときだけ更新。常に auth.uid() 自身の1行。
--- p_avatar（ウマの見た目）も一緒に保存し、ランキングにアイコンとして表示する。
--- 旧3引数版が残っていると多重定義になるため、先に削除してから作り直す。
+-- p_avatar（ウマの見た目）と p_trophies（飾りトロフィーのrank配列）も一緒に保存し、
+-- ランキングのプロフィール表示に使う。旧版が残ると多重定義になるため先に削除して作り直す。
 drop function if exists public.submit_bet_score(numeric, text, text);
-create or replace function public.submit_bet_score(p_odds numeric, p_course text, p_username text, p_avatar jsonb default null)
+drop function if exists public.submit_bet_score(numeric, text, text, jsonb);
+create or replace function public.submit_bet_score(
+  p_odds numeric, p_course text, p_username text, p_avatar jsonb default null, p_trophies jsonb default null
+)
 returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
 begin
-  insert into public.bet_scores (user_id, username, best_odds, course_id, avatar, updated_at)
-  values (auth.uid(), coalesce(nullif(btrim(p_username), ''), 'プレイヤー'), p_odds, p_course, p_avatar, now())
+  insert into public.bet_scores (user_id, username, best_odds, course_id, avatar, display_trophies, updated_at)
+  values (auth.uid(), coalesce(nullif(btrim(p_username), ''), 'プレイヤー'), p_odds, p_course, p_avatar, p_trophies, now())
   on conflict (user_id) do update
-    set best_odds  = greatest(public.bet_scores.best_odds, excluded.best_odds),
-        course_id  = case when excluded.best_odds > public.bet_scores.best_odds
-                          then excluded.course_id else public.bet_scores.course_id end,
-        username   = excluded.username,
-        avatar     = coalesce(excluded.avatar, public.bet_scores.avatar),
-        updated_at = now();
+    set best_odds        = greatest(public.bet_scores.best_odds, excluded.best_odds),
+        course_id        = case when excluded.best_odds > public.bet_scores.best_odds
+                                then excluded.course_id else public.bet_scores.course_id end,
+        username         = excluded.username,
+        avatar           = coalesce(excluded.avatar, public.bet_scores.avatar),
+        display_trophies = coalesce(excluded.display_trophies, public.bet_scores.display_trophies),
+        updated_at       = now();
 end;
 $$;
-grant execute on function public.submit_bet_score(numeric, text, text, jsonb) to authenticated;
+grant execute on function public.submit_bet_score(numeric, text, text, jsonb, jsonb) to authenticated;
 
 -- アイコンだけを更新（プロフィールでアイコンのウマを変えたとき）。行が無ければ何もしない。
 create or replace function public.set_bet_avatar(p_avatar jsonb)
@@ -146,3 +151,16 @@ begin
 end;
 $$;
 grant execute on function public.set_bet_avatar(jsonb) to authenticated;
+
+-- 飾りトロフィーだけを更新（プロフィールでトロフィーを飾る/外したとき）。行が無ければ何もしない。
+create or replace function public.set_bet_trophies(p_trophies jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.bet_scores set display_trophies = p_trophies where user_id = auth.uid();
+end;
+$$;
+grant execute on function public.set_bet_trophies(jsonb) to authenticated;
