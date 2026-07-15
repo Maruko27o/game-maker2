@@ -12,8 +12,11 @@ import {
   getRev,
   setRev,
   loadPlayerNo,
+  loadDisplayName,
+  saveDisplayName,
 } from '../cloud';
 import { reconcile } from '../logic/cloudReconcile';
+import { randomUsername } from '../logic/username';
 
 // Extract the persisted shape from the live store state.
 function snapshot(): SaveData {
@@ -52,9 +55,10 @@ export default function CloudSync() {
 
   // On sign-in: reconcile local vs cloud, and fetch the player number.
   useEffect(() => {
-    const { setSync, setPlayerNo } = useAuth.getState();
+    const { setSync, setPlayerNo, setDisplayName } = useAuth.getState();
     if (!user) {
       setPlayerNo(null);
+      setDisplayName(null);
       setRev(null);
       // Signing out: revert to the guest slot so the next person doesn't see
       // this account's data.
@@ -108,6 +112,15 @@ export default function CloudSync() {
 
       const no = await loadPlayerNo();
       if (!cancelled) setPlayerNo(no);
+
+      // Ranking username (改修④): load it; if the account has none yet, assign a
+      // friendly default and save it. Best-effort — no-ops without the DB.
+      let name = await loadDisplayName();
+      if (!name) {
+        const gen = randomUsername();
+        name = (await saveDisplayName(gen)) ?? gen;
+      }
+      if (!cancelled) setDisplayName(name);
     })();
     return () => {
       cancelled = true;

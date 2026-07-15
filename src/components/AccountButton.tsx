@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useAuth, signIn, signUp, signOut, resetPassword, formatPlayerId } from '../cloud';
+import { useAuth, signIn, signUp, signOut, resetPassword, formatPlayerId, saveDisplayName } from '../cloud';
+import { normalizeUsername } from '../logic/username';
 import styles from './AccountButton.module.css';
 
 const SYNC_LABEL: Record<string, string> = {
@@ -15,12 +16,26 @@ export default function AccountButton() {
   const ready = useAuth((s) => s.ready);
   const user = useAuth((s) => s.user);
   const playerNo = useAuth((s) => s.playerNo);
+  const displayName = useAuth((s) => s.displayName);
+  const setDisplayName = useAuth((s) => s.setDisplayName);
   const sync = useAuth((s) => s.sync);
 
   const wantAccount = useAuth((s) => s.wantAccount);
   const setWantAccount = useAuth((s) => s.setWantAccount);
 
   const [open, setOpen] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [nameBusy, setNameBusy] = useState(false);
+  useEffect(() => setNameDraft(displayName ?? ''), [displayName]);
+
+  async function saveName() {
+    const nm = normalizeUsername(nameDraft);
+    if (!nm || nm === displayName) return;
+    setNameBusy(true);
+    const saved = await saveDisplayName(nm);
+    setNameBusy(false);
+    if (saved) setDisplayName(saved);
+  }
 
   // The title screen (or elsewhere) can request the account panel be opened.
   useEffect(() => {
@@ -93,6 +108,24 @@ export default function AccountButton() {
                     プレイヤーID: <strong>{formatPlayerId(playerNo)}</strong>
                   </p>
                 )}
+                {/* Ranking username (改修④) — auto-assigned, editable here. */}
+                <div className={styles.nameRow}>
+                  <span className={styles.nameLabel}>ランキング名</span>
+                  <input
+                    className={styles.nameInput}
+                    value={nameDraft}
+                    maxLength={32}
+                    placeholder="なまえ"
+                    onChange={(e) => setNameDraft(e.target.value)}
+                  />
+                  <button
+                    className={styles.nameSave}
+                    onClick={saveName}
+                    disabled={nameBusy || !nameDraft.trim() || nameDraft.trim() === displayName}
+                  >
+                    {nameBusy ? '…' : '保存'}
+                  </button>
+                </div>
                 <p className={styles.syncLine}>状態: {SYNC_LABEL[sync] || '—'}</p>
                 <p className={styles.note}>ログインしたどの端末でもデータが同期されます。</p>
                 <button

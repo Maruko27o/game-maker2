@@ -8,7 +8,7 @@ import Stable from './pages/Stable';
 import Create from './pages/Create';
 import Collection from './pages/Collection';
 import Race from './pages/Race';
-import Placeholder from './pages/Placeholder';
+import Ranking from './pages/Ranking';
 
 // HashRouter keeps deep links working on GitHub Pages (no server rewrites).
 createRoot(document.getElementById('root')!).render(
@@ -21,10 +21,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="create" element={<Create />} />
           <Route path="collection" element={<Collection />} />
           <Route path="race" element={<Race />} />
-          <Route
-            path="vote"
-            element={<Placeholder title="人気投票" emoji="⭐" note="みんなのウマに投票する機能を準備中です。" />}
-          />
+          <Route path="ranking" element={<Ranking />} />
         </Route>
       </Routes>
     </HashRouter>
