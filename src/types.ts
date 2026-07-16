@@ -127,6 +127,13 @@ export type TaskProgress = {
   raceRewardClaimed: number; // number of per-N-race coin rewards already claimed
 };
 
+// Lifetime player stats shown on the profile (改修：プロフィール実績).
+export type PlayerStats = {
+  betsPlaced: number; // total bet tickets purchased
+  betsWon: number; // tickets that hit (for 的中率)
+  maxPayout: number; // best single-race total payout (最大獲得賞金)
+};
+
 export type SaveData = {
   version: 6;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
@@ -145,6 +152,7 @@ export type SaveData = {
   maxHorses: number; // stable slot cap (10, expandable to 15)
   daily: DailyCounters; // per-day bonus/おかわり counters
   tasks: TaskProgress; // coin-earning task progress (改修：タスク)
+  stats: PlayerStats; // lifetime profile stats (改修：プロフィール実績)
   avatarHorseId: string | null; // profile: which owned horse is the player's icon
   displayTrophies: number[]; // profile: trophy ranks (1|2|3) shown on the shelf (max 5)
   savedAt: number; // ms of the last change — used for cloud last-write-wins sync

@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
 import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies } from '../cloud';
 import { normalizeUsername } from '../logic/username';
+import { TOTAL_PARTS } from '../data/parts';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
 import TrophyIcon from './TrophyIcon';
+import CoinIcon from './CoinIcon';
 import AccountPanel from './AccountPanel';
 import styles from './ProfileModal.module.css';
 
@@ -24,12 +26,16 @@ export default function ProfileModal({
   const displayTrophies = useStore((s) => s.displayTrophies);
   const setAvatarHorse = useStore((s) => s.setAvatarHorse);
   const setDisplayTrophies = useStore((s) => s.setDisplayTrophies);
+  const owned = useStore((s) => s.owned);
+  const tasks = useStore((s) => s.tasks);
+  const pstats = useStore((s) => s.stats);
 
   const user = useAuth((s) => s.user);
   const displayName = useAuth((s) => s.displayName);
   const setDisplayName = useAuth((s) => s.setDisplayName);
 
   const [tab, setTab] = useState<'profile' | 'account'>(initialTab);
+  const [iconMode, setIconMode] = useState<'horse' | 'frame'>('horse'); // which icon aspect is being edited
 
   // Avatar: the chosen horse, or the first owned one, or a plain default.
   const avatar = useMemo<HorseLook>(() => {
@@ -38,11 +44,18 @@ export default function ProfileModal({
   }, [avatarHorseId, horses]);
 
   // Trophy counts owned per rank (gold/silver/bronze).
-  const owned = useMemo(() => {
+  const ownedTrophies = useMemo(() => {
     const c: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
     for (const t of trophies) c[t.rank]++;
     return c;
   }, [trophies]);
+
+  // Lifetime profile stats (改修：プロフィール実績).
+  const dexPct = useMemo(() => {
+    const distinct = Math.min(TOTAL_PARTS, Object.values(owned).filter((n) => n > 0).length);
+    return Math.round((distinct / TOTAL_PARTS) * 100);
+  }, [owned]);
+  const hitPct = pstats.betsPlaced > 0 ? Math.round((pstats.betsWon / pstats.betsPlaced) * 100) : null;
 
   const shelf = displayTrophies; // ranks, in order, max SLOTS
   const usedOf = (r: 1 | 2 | 3) => shelf.filter((x) => x === r).length;
@@ -53,14 +66,14 @@ export default function ProfileModal({
   }
   function addTrophy(r: 1 | 2 | 3) {
     if (shelf.length >= SLOTS) return;
-    if (usedOf(r) >= owned[r]) return;
+    if (usedOf(r) >= ownedTrophies[r]) return;
     saveShelf([...shelf, r]);
   }
   function removeSlot(i: number) {
     saveShelf(shelf.filter((_, idx) => idx !== i));
   }
 
-  // Ranking name edit.
+  // Ranking name edit (now lives in the header, next to the avatar).
   const [nameDraft, setNameDraft] = useState('');
   const [nameBusy, setNameBusy] = useState(false);
   useEffect(() => setNameDraft(displayName ?? ''), [displayName]);
@@ -73,16 +86,43 @@ export default function ProfileModal({
     if (saved) setDisplayName(saved);
   }
 
+  // Tapping the avatar jumps to the icon editor (horse mode) so it's obvious it's editable.
+  function editIcon() {
+    setTab('profile');
+    setIconMode('horse');
+  }
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* Header: avatar + name + trophy shelf */}
+        {/* Header: tappable avatar + editable name (+ save) + trophy shelf */}
         <div className={styles.head}>
-          <div className={styles.avatarBox}>
+          <button className={styles.avatarBtn} onClick={editIcon} aria-label="アイコンを変更">
             <HorseFace horse={avatar} size={84} />
-          </div>
+            <span className={styles.avatarEdit} aria-hidden>✎</span>
+          </button>
           <div className={styles.headInfo}>
-            <div className={styles.headName}>{displayName || 'ゲスト'}</div>
+            {user ? (
+              <div className={styles.nameRow}>
+                <input
+                  className={styles.nameInput}
+                  value={nameDraft}
+                  maxLength={32}
+                  placeholder="なまえ"
+                  aria-label="なまえ（ランキング名）"
+                  onChange={(e) => setNameDraft(e.target.value)}
+                />
+                <button
+                  className={styles.saveBtn}
+                  onClick={saveName}
+                  disabled={nameBusy || !nameDraft.trim() || nameDraft.trim() === displayName}
+                >
+                  {nameBusy ? '…' : '保存'}
+                </button>
+              </div>
+            ) : (
+              <div className={styles.headName}>{displayName || 'ゲスト'}</div>
+            )}
             <div className={styles.shelf}>
               {Array.from({ length: SLOTS }).map((_, i) => {
                 const r = shelf[i] as 1 | 2 | 3 | undefined;
@@ -102,6 +142,26 @@ export default function ProfileModal({
           </div>
         </div>
 
+        {/* Lifetime stats (プロフィール・アカウントの上) */}
+        <div className={styles.statGrid}>
+          <div className={styles.statCell}>
+            <span className={styles.statLabel}>総レース回数</span>
+            <span className={styles.statValue}>{tasks.racesFinished.toLocaleString()}<small>回</small></span>
+          </div>
+          <div className={styles.statCell}>
+            <span className={styles.statLabel}>最大的中率</span>
+            <span className={styles.statValue}>{hitPct === null ? '—' : <>{hitPct}<small>%</small></>}</span>
+          </div>
+          <div className={styles.statCell}>
+            <span className={styles.statLabel}>最大獲得賞金</span>
+            <span className={styles.statValue}><CoinIcon size={14} /> {pstats.maxPayout.toLocaleString()}</span>
+          </div>
+          <div className={styles.statCell}>
+            <span className={styles.statLabel}>図鑑コンプリート率</span>
+            <span className={styles.statValue}>{dexPct}<small>%</small></span>
+          </div>
+        </div>
+
         {/* Tabs */}
         <div className={styles.tabs}>
           <button className={`${styles.tab} ${tab === 'profile' ? styles.tabOn : ''}`} onClick={() => setTab('profile')}>
@@ -115,63 +175,54 @@ export default function ProfileModal({
         <div className={styles.body}>
           {tab === 'profile' ? (
             <>
-              {/* Ranking name */}
+              {/* Icon settings — a segmented control makes it clear whether you're
+                  editing the horse or the frame (改修：アイコン/フレームの切替). */}
               <section className={styles.section}>
-                <h3 className={styles.secTitle}>なまえ（ランキング名）</h3>
-                {user ? (
-                  <div className={styles.nameRow}>
-                    <input
-                      className={styles.nameInput}
-                      value={nameDraft}
-                      maxLength={32}
-                      placeholder="なまえ"
-                      onChange={(e) => setNameDraft(e.target.value)}
-                    />
-                    <button
-                      className={styles.saveBtn}
-                      onClick={saveName}
-                      disabled={nameBusy || !nameDraft.trim() || nameDraft.trim() === displayName}
-                    >
-                      {nameBusy ? '…' : '保存'}
-                    </button>
-                  </div>
-                ) : (
-                  <p className={styles.hint}>ログインすると、ランキング名を設定できます（「アカウント」タブ）。</p>
-                )}
-              </section>
+                <h3 className={styles.secTitle}>アイコン設定</h3>
+                <div className={styles.seg}>
+                  <button
+                    className={`${styles.segBtn} ${iconMode === 'horse' ? styles.segOn : ''}`}
+                    onClick={() => setIconMode('horse')}
+                  >
+                    ウマ
+                  </button>
+                  <button
+                    className={`${styles.segBtn} ${iconMode === 'frame' ? styles.segOn : ''}`}
+                    onClick={() => setIconMode('frame')}
+                  >
+                    フレーム
+                  </button>
+                </div>
 
-              {/* Avatar horse picker */}
-              <section className={styles.section}>
-                <h3 className={styles.secTitle}>アイコンにするウマ</h3>
-                {horses.length === 0 ? (
-                  <p className={styles.hint}>まだウマがいません。マイウマで作るとアイコンにできます。</p>
+                {iconMode === 'horse' ? (
+                  horses.length === 0 ? (
+                    <p className={styles.hint}>まだウマがいません。マイウマで作るとアイコンにできます。</p>
+                  ) : (
+                    <>
+                      <p className={styles.hint}>アイコンにするウマをえらぶ</p>
+                      <div className={styles.horseGrid}>
+                        {horses.map((h) => {
+                          const sel = (avatarHorseId ?? horses[0]?.id) === h.id;
+                          return (
+                            <button
+                              key={h.id}
+                              className={`${styles.horsePick} ${sel ? styles.picked : ''}`}
+                              onClick={() => {
+                                setAvatarHorse(h.id);
+                                if (user) setRankingAvatar({ colors: h.colors, decos: h.decos });
+                              }}
+                              title={h.name}
+                            >
+                              <HorseFace horse={h} size={54} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )
                 ) : (
-                  <div className={styles.horseGrid}>
-                    {horses.map((h) => {
-                      const sel = (avatarHorseId ?? horses[0]?.id) === h.id;
-                      return (
-                        <button
-                          key={h.id}
-                          className={`${styles.horsePick} ${sel ? styles.picked : ''}`}
-                          onClick={() => {
-                            setAvatarHorse(h.id);
-                            // Reflect the new icon on the ranking too (best-effort).
-                            if (user) setRankingAvatar({ colors: h.colors, decos: h.decos });
-                          }}
-                          title={h.name}
-                        >
-                          <HorseFace horse={h} size={54} />
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <p className={styles.hint}>フレーム装飾は近日実装予定です。お楽しみに！</p>
                 )}
-              </section>
-
-              {/* Icon frame — coming soon (今後実装予定) */}
-              <section className={styles.section}>
-                <h3 className={styles.secTitle}>アイコンのフレーム</h3>
-                <p className={styles.hint}>フレーム装飾は近日実装予定です。お楽しみに！</p>
               </section>
 
               {/* Trophy decoration */}
@@ -184,16 +235,16 @@ export default function ProfileModal({
                     <p className={styles.hint}>タップして上のたなに飾ろう。飾ったトロフィーを押すと外せます。</p>
                     <div className={styles.trophyPick}>
                       {([1, 2, 3] as const).map((r) =>
-                        owned[r] > 0 ? (
+                        ownedTrophies[r] > 0 ? (
                           <button
                             key={r}
                             className={styles.trophyOption}
                             onClick={() => addTrophy(r)}
-                            disabled={shelf.length >= SLOTS || usedOf(r) >= owned[r]}
+                            disabled={shelf.length >= SLOTS || usedOf(r) >= ownedTrophies[r]}
                           >
                             <TrophyIcon rank={r} size={40} />
                             <span className={styles.trophyCount}>
-                              {usedOf(r)}/{owned[r]}
+                              {usedOf(r)}/{ownedTrophies[r]}
                             </span>
                           </button>
                         ) : null,
