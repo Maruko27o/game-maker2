@@ -318,14 +318,8 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           })}
           {/* starting gate — fades as the field runs clear of it */}
           <g opacity={clamp(1 - travelled / 30, 0, 1)}>{startGate}</g>
-          {/* boost panels + obstacles */}
-          {result.boosts.map((bp, i) => {
-            const w = toWorld(track, bp.s, bp.d);
-            return (
-              <path key={'b' + i} transform={`translate(${w.x - 2.04},${w.y - 2.04}) scale(0.17)`}
-                d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#f6c945" stroke="#2b2118" strokeWidth={1.4} strokeLinejoin="round" />
-            );
-          })}
+          {/* boost panels are invisible during the race (hidden power-ups) — the
+              simulation still applies them, they're just not drawn. */}
           {result.obstacles.map((o, i) => {
             const c = centerline(track, o.s);
             const w = toWorld(track, o.s, 0);

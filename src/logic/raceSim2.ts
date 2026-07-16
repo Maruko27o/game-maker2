@@ -178,10 +178,15 @@ export function simulate2(
   const obstacles: Obstacle[] = isSteeple
     ? placements(dist, obsCount, rng, 25).map((s) => ({ s: s + s0, kind: kinds[Math.floor(rng() * 3)] }))
     : [];
-  const boostCount = Math.round((course.boostDensity * dist) / 1000);
+  // Boost panels: 1.5× the base count. They are invisible during the race (see
+  // RaceTrack2) and never sit in the innermost lane — keep ~one horse-width clear
+  // of the inner rail so the shortest rail line is a pure skill/positioning gain.
+  const boostCount = Math.round((course.boostDensity * dist * 1.5) / 1000);
+  const boostInner = -dLimit + 2 * HIT_R; // rail-lane kept clear (~1 horse wide)
+  const boostOuter = dLimit * 0.85;
   const boosts: BoostPanel[] = placements(dist, boostCount, rng).map((s) => ({
     s: s + s0,
-    d: (rng() * 2 - 1) * dLimit * 0.85,
+    d: boostInner + rng() * (boostOuter - boostInner),
   }));
   const slowCount = Math.round((course.drag * 12 * dist) / 1000);
   const slows: SlowZone[] = placements(dist, slowCount, rng).map((s) => ({
