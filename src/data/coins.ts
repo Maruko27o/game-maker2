@@ -31,3 +31,7 @@ export const GRASS_OKAWARI_COST = 300; // an extra grass charge (repeatable)
 export const SLOT_EXPAND_COST = 3000; // stable 10 → 15 (once)
 export const SLOT_EXPAND_TO = 15;
 export const RENAME_COST = 50; // rename a horse
+
+// Coin-earning tasks (改修：タスク). Finish this many races → claim this many coins.
+export const RACE_TASK_EVERY = 10; // races per reward
+export const RACE_TASK_REWARD = 1000; // coins granted per reward

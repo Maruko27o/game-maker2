@@ -119,6 +119,14 @@ export type BetRecord = {
 // Per-day counters (local date key), for the grass bonus and おかわり limits.
 export type DailyCounters = { day: string; grassBonus: number; okawari: number; gp: number };
 
+// Coin-earning tasks (改修：タスク). Progress that only advances when a race is
+// actually finished (result screen reached), so it can't be farmed by bailing out.
+// Designed to grow: add more fields/tasks over time.
+export type TaskProgress = {
+  racesFinished: number; // races that reached the result screen
+  raceRewardClaimed: number; // number of per-N-race coin rewards already claimed
+};
+
 export type SaveData = {
   version: 6;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
@@ -136,6 +144,7 @@ export type SaveData = {
   bets: BetRecord[]; // recent settled bets (capped)
   maxHorses: number; // stable slot cap (10, expandable to 15)
   daily: DailyCounters; // per-day bonus/おかわり counters
+  tasks: TaskProgress; // coin-earning task progress (改修：タスク)
   avatarHorseId: string | null; // profile: which owned horse is the player's icon
   displayTrophies: number[]; // profile: trophy ranks (1|2|3) shown on the shelf (max 5)
   savedAt: number; // ms of the last change — used for cloud last-write-wins sync

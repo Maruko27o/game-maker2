@@ -63,6 +63,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const spendCoins = useStore((s) => s.spendCoins);
   const coins = useStore((s) => s.coins);
   const startGpAttempt = useStore((s) => s.startGpAttempt);
+  const finishRaceTask = useStore((s) => s.finishRaceTask);
   const daily = useStore((s) => s.daily);
   const gpLeft = Math.max(0, GP_DAILY_LIMIT - (daily.day === dayKey() ? daily.gp : 0));
 
@@ -140,6 +141,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       return;
     }
     rewardApplied.current = true;
+    finishRaceTask(); // count the grand-prix final toward the task (result reached)
     // Settle the final bets against the final result (runs even if the player
     // didn't qualify — they can still bet on the final as a spectator).
     settleBets(finalBets, res.order, state.course.id);
