@@ -125,3 +125,59 @@
   font-weight: 600;
   color: var(--ink-soft);
 }
+
+/* ranking tabs (最大オッズ / 最大獲得賞金) */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+.tab {
+  flex: 1;
+  padding: 9px 4px;
+  border-radius: 10px;
+  border: 2px solid var(--border-dark);
+  background: var(--panel-inner);
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.tabOn {
+  background: var(--gold);
+  color: #2b2118;
+}
+
+/* prominent top-3 rows */
+.top {
+  grid-template-columns: 34px auto 1fr auto;
+  padding: 12px 14px;
+  border-width: 3px;
+  box-shadow: 0 3px 0 rgba(43, 33, 24, 0.12);
+}
+.top .place {
+  width: 34px;
+  height: 34px;
+  font-size: 17px;
+}
+.top .avatar {
+  width: 46px;
+  height: 46px;
+}
+.top .name {
+  font-size: 17px;
+}
+.top .odds {
+  font-size: 20px;
+}
+.top1 {
+  border-color: #ca9a00;
+  background: linear-gradient(180deg, #fff6d6, #ffe9a3);
+}
+.top2 {
+  border-color: #8b96a1;
+  background: linear-gradient(180deg, #f6f8fb, #dde3e9);
+}
+.top3 {
+  border-color: #a9673a;
+  background: linear-gradient(180deg, #ffe9d6, #f3c69f);
+}

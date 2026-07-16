@@ -23,6 +23,7 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
         </div>
         <div className={styles.name}>{row.username}</div>
         <div className={styles.oddsLine}>最高的中 {row.bestOdds.toFixed(1)} 倍</div>
+        {row.bestPayout > 0 && <div className={styles.oddsLine}>最大獲得賞金 {row.bestPayout.toLocaleString()}</div>}
 
         <div className={styles.trophyLabel}>飾っているトロフィー</div>
         {trophies.length === 0 ? (

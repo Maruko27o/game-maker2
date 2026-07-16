@@ -85,7 +85,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       addCoins(payout);
       setBetPayout((p) => p + payout);
     }
-    if (ENABLE_RANKING && best > 0) submitBestOdds(best, courseId);
+    if (ENABLE_RANKING && (best > 0 || payout > 0)) submitBestOdds(best, courseId, payout);
   }
 
   const [screen, setScreen] = useState<'grade' | 'card' | 'odds' | 'heat' | 'qualify' | 'finalPaddock' | 'final' | 'podium'>('grade');

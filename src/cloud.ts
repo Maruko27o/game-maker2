@@ -146,13 +146,15 @@ export async function submitBetScore(
   username: string,
   avatar: AvatarLook | null,
   trophies: number[] | null,
+  payout = 0,
 ): Promise<void> {
   if (!supabase) return;
   const base = { p_odds: odds, p_course: courseId, p_username: username };
   try {
-    // Try newest signature first, then progressively older ones so the odds
-    // still record even if only an earlier version of the SQL is applied.
-    let { error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies });
+    // Try newest signature first, then progressively older ones so the score
+    // still records even if only an earlier version of the SQL is applied.
+    let { error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies, p_payout: payout });
+    if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies }));
     if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar }));
     if (error) await supabase.rpc('submit_bet_score', base);
   } catch {
@@ -165,14 +167,14 @@ export async function submitBetScore(
  * avatar horse and displayed trophies from the live store. Best-effort no-op
  * when signed out. Shared by single races and grand-prix.
  */
-export async function submitBestOdds(odds: number, courseId: string): Promise<void> {
+export async function submitBestOdds(odds: number, courseId: string, payout = 0): Promise<void> {
   const auth = useAuth.getState();
   const name = auth.displayName;
-  if (!auth.user || !name || odds <= 0) return;
+  if (!auth.user || !name || (odds <= 0 && payout <= 0)) return;
   const st = useStore.getState();
   const av = st.avatarHorseId ? st.horses.find((h) => h.id === st.avatarHorseId) : st.horses[0];
   const avatar = av ? { colors: av.colors, decos: av.decos } : null;
-  await submitBetScore(odds, courseId, name, avatar, st.displayTrophies ?? null);
+  await submitBetScore(odds, courseId, name, avatar, st.displayTrophies ?? null, payout);
 }
 
 /** Update just the ranking avatar for the signed-in account (no-op if no row yet). */
@@ -199,20 +201,26 @@ export type ScoreRow = {
   userId: string;
   username: string;
   bestOdds: number;
+  bestPayout: number;
   courseId: string | null;
   avatar: AvatarLook | null;
   displayTrophies: number[];
 };
 
-/** Top scores by best hit odds (one row per user). Empty on any failure. */
-export async function loadLeaderboard(limit = 50): Promise<ScoreRow[]> {
+export type RankBy = 'odds' | 'payout';
+
+/** Top scores (one row per user), ordered by best hit odds or biggest payout.
+ *  Empty on any failure. Degrades if the best_payout column isn't applied yet. */
+export async function loadLeaderboard(limit = 50, by: RankBy = 'odds'): Promise<ScoreRow[]> {
   if (!supabase) return [];
+  const sortCol = by === 'payout' ? 'best_payout' : 'best_odds';
   const query = (cols: string) =>
-    supabase!.from('bet_scores').select(cols).order('best_odds', { ascending: false }).limit(limit);
+    supabase!.from('bet_scores').select(cols).order(sortCol, { ascending: false }).limit(limit);
   try {
     // Try the full column set, then progressively fewer, so one missing column
-    // (e.g. display_trophies not applied yet) doesn't wipe the whole list.
-    let res = await query('user_id, username, best_odds, course_id, avatar, display_trophies');
+    // (e.g. best_payout not applied yet) doesn't wipe the whole list.
+    let res = await query('user_id, username, best_odds, best_payout, course_id, avatar, display_trophies');
+    if (res.error) res = await query('user_id, username, best_odds, course_id, avatar, display_trophies');
     if (res.error) res = await query('user_id, username, best_odds, course_id, avatar');
     if (res.error) res = await query('user_id, username, best_odds, course_id');
     if (res.error || !res.data) return [];
@@ -221,6 +229,7 @@ export async function loadLeaderboard(limit = 50): Promise<ScoreRow[]> {
         user_id: string;
         username: string;
         best_odds: number;
+        best_payout?: number | null;
         course_id: string | null;
         avatar?: AvatarLook | null;
         display_trophies?: number[] | null;
@@ -229,6 +238,7 @@ export async function loadLeaderboard(limit = 50): Promise<ScoreRow[]> {
       userId: r.user_id,
       username: r.username,
       bestOdds: Number(r.best_odds),
+      bestPayout: Number(r.best_payout ?? 0),
       courseId: r.course_id,
       avatar: r.avatar ?? null,
       displayTrophies: Array.isArray(r.display_trophies) ? r.display_trophies : [],
