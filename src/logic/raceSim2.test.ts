@@ -3,6 +3,7 @@ import { simulate2, type Entrant } from './raceSim2';
 import { COURSES, courseById } from '../data/courses';
 import { rollStatsForStyle, mulberry32, statTotal } from './stats';
 import { styleFor } from './runStyle';
+import { centerline } from './track';
 import type { RunStyle, Stats } from '../types';
 
 const STYLES: RunStyle[] = ['nige', 'senko', 'sashi', 'oikomi'];
@@ -279,6 +280,40 @@ describe('raceSim2 post-position line', () => {
       const meanD = meanDByGate(cid);
       for (const d of meanD) expect(d).toBeLessThan(1.0); // never living on the outer half
       expect(meanD[0]).toBeLessThan(-1.5); // gate 1 hugs the rail (sanity)
+    }
+  });
+
+  // #20: the late-race complaint (screenshots のこり数百m). Trailing horses on the
+  // closing corners must run the shortest line — glued to the rail — not drift out.
+  // The only wide trips left there are genuine overtakes; when just keeping station
+  // a back-marker saves ground on the inside like a real jockey (インベタ).
+  function lateTrailingCornerLine(courseId: string, runs = 24): { meanD: number; wideFrac: number } {
+    const c = courseById(courseId);
+    const dLimit = c.track.width / 2 - 1.1; // halfW − HIT_R (see simulate2)
+    let sum = 0, n = 0, wide = 0;
+    for (let s = 0; s < runs; s++) {
+      const res = simulate2(field(s), c, 60, s * 3 + 1, { recordFrames: true });
+      for (const fr of res.frames) {
+        for (const ru of fr.runners) {
+          const progress = (ru.s - res.startS) / res.distanceS;
+          if (progress <= 0.55 || progress >= 0.9) continue; // the closing-corner window
+          if (centerline(c.track, ru.s).curvature <= 0) continue; // corners only
+          let ahead = 0;
+          for (const o of fr.runners) if (o.s > ru.s) ahead++;
+          if (ahead < 4) continue; // trailing half of the field
+          sum += ru.d; n++;
+          if (ru.d > dLimit * 0.45) wide++;
+        }
+      }
+    }
+    return { meanD: n ? sum / n : 0, wideFrac: n ? wide / n : 0 };
+  }
+
+  it('#20 trailing horses run the rail on the closing corners (not the outside)', () => {
+    for (const cid of ['green', 'trail']) {
+      const { meanD, wideFrac } = lateTrailingCornerLine(cid);
+      expect(meanD).toBeLessThan(-3.0); // averages deep on the inside (rail), not mid-track
+      expect(wideFrac).toBeLessThan(0.04); // <4% clearly-wide ticks — only real overtakes
     }
   });
 });
