@@ -27,13 +27,14 @@ type Props = {
   skippable: boolean;
   laps?: number; // override lap count (grand-prix heats/finals)
   bets?: Bet[]; // the player's placed bets — shown as a live strip that glows when winning
+  moods?: number[]; // per-entrant mood performance multipliers (must match the odds calc)
   onFinish: (result: SimResult) => void;
 };
 
-export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, bets, onFinish }: Props) {
+export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, bets, moods, onFinish }: Props) {
   const result = useMemo(
-    () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps }),
-    [entrants, course, mode, seed, laps],
+    () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps, moods }),
+    [entrants, course, mode, seed, laps, moods],
   );
   const track = course.track;
   const lap = lapLength(track);

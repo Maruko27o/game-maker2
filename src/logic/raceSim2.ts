@@ -65,7 +65,7 @@ export type SimResult = {
 
 // Bumped whenever the simulation's numeric behaviour changes, so ranking
 // submissions can only be compared/verified against the same engine (RACE_V4 §5).
-export const SIM_VERSION = 2;
+export const SIM_VERSION = 3;
 
 // ---- tunables (confirmed by the §8 test suite) --------------------------------
 const DT = 0.02;
@@ -79,6 +79,11 @@ const CORNER_PEN = 0.12;
 const VD_MAX_BASE = 1.6;
 const BLOCK_LIMIT = 0.8; // s of continuous block before forcing outward
 const DASH_TIME = 0.5;
+// Race-day luck (RACE §odds): a hidden per-race form factor so a small ability edge
+// isn't a near-lock — upsets happen, and win rates (hence odds) spread like real
+// racing instead of collapsing to one odds-on favourite. Folded into `perf` with the
+// shown mood; the Monte-Carlo odds integrate over it, so 倍率=勝率 stays exact.
+const LUCK = 0.16;
 
 function eff(stats: Stats, weights: Stats): Stats {
   const e = {} as Stats;
@@ -101,6 +106,7 @@ type R = {
   e: Entrant;
   eff: Stats;
   gate: number;
+  perf: number; // per-race performance factor = hidden luck × shown mood (RACE §odds)
   vMax0: number;
   accel0: number;
   spMax: number;
@@ -137,7 +143,7 @@ export function simulate2(
   course: Course,
   mode: 30 | 60,
   seed: number,
-  opts: { recordFrames?: boolean; laps?: number } = {},
+  opts: { recordFrames?: boolean; laps?: number; moods?: number[] } = {},
 ): SimResult {
   const rng = mulberry32(seed >>> 0);
   const track = course.track;
@@ -185,9 +191,12 @@ export function simulate2(
     halfWid: 4,
   }));
 
-  const runners: R[] = entrants.map((e) => {
+  const runners: R[] = entrants.map((e, ei) => {
     const ef = eff(e.stats, course.weights);
     const gate = gateOf[entrants.indexOf(e)];
+    // hidden race-day luck (varies per seed) × shown mood (fixed for this race)
+    const luck = 1 + (rng() * 2 - 1) * LUCK;
+    const perf = luck * (opts.moods?.[ei] ?? 1);
     // Inner posts start nearer the inner rail, but the draw is compressed toward
     // the middle (not the full track width) so an outer post isn't a near-certain
     // loss before the field even funnels to the rail.
@@ -197,6 +206,7 @@ export function simulate2(
       e,
       eff: ef,
       gate,
+      perf,
       vMax0: 9 + ef.spd * 0.6,
       accel0: 1.8 + ef.pwr * 0.26,
       spMax: 44 + ef.sta * 13,
@@ -264,7 +274,7 @@ export function simulate2(
       // --- longitudinal speed target ---
       // Tightly compressed base spread (spd barely moves top speed) so raw speed
       // can't run away; stamina failure, pace and positioning decide the winner.
-      let vMax = (13.0 + ef.spd * 0.36) * paceAt(r.e.style, progress);
+      let vMax = (13.0 + ef.spd * 0.36) * paceAt(r.e.style, progress) * r.perf;
       vMax *= 1 - Math.max(0, course.drag - ef.pwr * 0.015);
       if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.03);
       // Graduated fatigue: as the tank runs low the top speed sags, so stamina

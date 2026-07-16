@@ -9,7 +9,9 @@ import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
 import HorseView from './HorseView';
 import StatRadar from './StatRadar';
+import MoodFace from './MoodFace';
 import CoinIcon from './CoinIcon';
+import { MOODS, type MoodLevel } from '../logic/mood';
 import styles from './Paddock.module.css';
 
 type Props = {
@@ -24,6 +26,7 @@ type Props = {
   maxBets?: number; // slip cap (default MAX_BETS_PER_RACE); grand-prix passes MAX_BETS_GP
   startLabel?: string; // override the start button label (e.g. "予選スタート")
   probs?: number[]; // pre-computed win probabilities (Monte-Carlo); falls back to the heuristic
+  moods?: MoodLevel[]; // per-entrant mood for this race (shown as a face; already priced in)
 };
 
 const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
@@ -31,7 +34,7 @@ const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', qu
 // Paddock: pick a market, select the horse(s), stake, and add to the bet slip —
 // as many bets as you like (RACE_V4 改修①). Odds come from the same model as the
 // popularity, with the 0.80 takeout. Bet on your own horse is allowed.
-export default function Paddock({ entrants, looks, course, coins, bets, onAdd, onRemove, onStart, maxBets = MAX_BETS_PER_RACE, startLabel, probs }: Props) {
+export default function Paddock({ entrants, looks, course, coins, bets, onAdd, onRemove, onStart, maxBets = MAX_BETS_PER_RACE, startLabel, probs, moods }: Props) {
   const p = useMemo(() => probs ?? winProbs(entrants, course), [probs, entrants, course]);
   const rows = useMemo(() => raceOddsFromProbs(p).slice().sort((a, b) => a.pop - b.pop), [p]);
 
@@ -94,7 +97,10 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
             <li key={r.idx} className={`${styles.item} ${e.isPlayer ? styles.me : ''}`}>
               <div className={`${styles.row} ${on ? styles.on : ''}`} onClick={() => toggle(r.idx)}>
                 <span className={styles.pop}>{r.pop}人気</span>
-                <div className={styles.horse}><HorseView horse={looks[e.horseId]} size={32} /></div>
+                <div className={styles.horse}>
+                  <HorseView horse={looks[e.horseId]} size={32} />
+                  {moods && <span className={styles.moodBadge}><MoodFace level={moods[r.idx]} size={17} title={false} /></span>}
+                </div>
                 <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
                 <span className={styles.win}>{r.odds.toFixed(1)}倍</span>
                 <button
@@ -113,7 +119,14 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                 <div className={styles.stats}>
                   <StatRadar stats={e.stats} size={132} />
                   <div className={styles.statMeta}>
-                    <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
+                    <div className={styles.chipRow}>
+                      <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
+                      {moods && (
+                        <span className={styles.moodChip} style={{ background: MOODS[moods[r.idx]].color, color: MOODS[moods[r.idx]].ink }}>
+                          <MoodFace level={moods[r.idx]} size={16} title={false} /> {MOODS[moods[r.idx]].label}
+                        </span>
+                      )}
+                    </div>
                     <dl className={styles.statNums}>
                       {STAT_KEYS.map((k: StatKey) => (
                         <div key={k} className={styles.statNum}>
