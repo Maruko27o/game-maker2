@@ -109,6 +109,9 @@
   gap: 2px;
   min-width: 0;
 }
+.statWide {
+  grid-column: 1 / -1;
+}
 .statLabel {
   font-size: 11px;
   font-weight: 700;

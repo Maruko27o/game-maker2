@@ -244,7 +244,7 @@ export default function Race() {
       });
     }
     addCoins(earned + payout);
-    recordBetStats({ placed: bets.length, staked, payout }); // profile 実績（回収率）
+    recordBetStats({ placed: bets.length, staked, payout, wonOdds: bestWonOdds }); // profile 実績
     // Ranking (改修④): submit the best winning odds; the server keeps each
     // account's max. Best-effort — no-op when signed out or the DB isn't set up.
     if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup.course.id, payout);

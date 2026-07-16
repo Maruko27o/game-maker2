@@ -88,7 +88,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       addCoins(payout);
       setBetPayout((p) => p + payout);
     }
-    recordBetStats({ placed: bets.length, staked, payout }); // profile 実績（回収率）
+    recordBetStats({ placed: bets.length, staked, payout, wonOdds: best }); // profile 実績
     if (ENABLE_RANKING && (best > 0 || payout > 0)) submitBestOdds(best, courseId, payout);
   }
 

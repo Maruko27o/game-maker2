@@ -132,6 +132,7 @@ export type PlayerStats = {
   betsPlaced: number; // total bet tickets purchased (to tell "no bets yet" from 0%)
   maxPayout: number; // best single-race total payout (最大獲得賞金)
   maxRecoveryPct: number; // best single-race 回収率 = payout ÷ staked, as a % (最高回収率)
+  maxOdds: number; // highest odds of a winning bet (最大オッズ)
 };
 
 export type SaveData = {

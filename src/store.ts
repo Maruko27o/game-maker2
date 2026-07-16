@@ -98,7 +98,7 @@ function normTasks(v: unknown): SaveData['tasks'] {
 }
 
 function freshStats(): SaveData['stats'] {
-  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0 };
+  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0 };
 }
 // Default any missing profile stat (older saves predate the profile-stats feature).
 function normStats(v: unknown): SaveData['stats'] {
@@ -107,6 +107,7 @@ function normStats(v: unknown): SaveData['stats'] {
     betsPlaced: typeof s.betsPlaced === 'number' ? s.betsPlaced : 0,
     maxPayout: typeof s.maxPayout === 'number' ? s.maxPayout : 0,
     maxRecoveryPct: typeof s.maxRecoveryPct === 'number' ? s.maxRecoveryPct : 0,
+    maxOdds: typeof s.maxOdds === 'number' ? s.maxOdds : 0,
   };
 }
 
@@ -330,8 +331,9 @@ type Store = SaveData & {
   /** Claim all earned per-N-race rewards. Returns the coins granted (0 if none). */
   claimRaceReward: () => number;
   /** Fold one race's betting outcome into the lifetime profile stats: best single
-   *  payout (最大獲得賞金) and best single-race 回収率 = payout ÷ staked (最高回収率). */
-  recordBetStats: (r: { placed: number; staked: number; payout: number }) => void;
+   *  payout (最大獲得賞金), best single-race 回収率 = payout ÷ staked (最高回収率),
+   *  and the highest winning odds (最大オッズ). */
+  recordBetStats: (r: { placed: number; staked: number; payout: number; wonOdds: number }) => void;
   // Profile (avatar horse + trophy shelf).
   setAvatarHorse: (id: string | null) => void;
   setDisplayTrophies: (ranks: number[]) => void;
@@ -645,7 +647,7 @@ export const useStore = create<Store>((set, get) => {
       return coins;
     },
 
-    recordBetStats: ({ placed, staked, payout }) => {
+    recordBetStats: ({ placed, staked, payout, wonOdds }) => {
       if (placed <= 0 && payout <= 0) return;
       const s = get().stats;
       const recovery = staked > 0 ? Math.round((payout / staked) * 100) : 0;
@@ -654,6 +656,7 @@ export const useStore = create<Store>((set, get) => {
           betsPlaced: s.betsPlaced + Math.max(0, placed),
           maxPayout: Math.max(s.maxPayout, payout),
           maxRecoveryPct: Math.max(s.maxRecoveryPct, recovery),
+          maxOdds: Math.max(s.maxOdds, wonOdds),
         },
       });
     },

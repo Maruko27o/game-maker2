@@ -150,16 +150,20 @@ export default function ProfileModal({
             <span className={styles.statValue}>{tasks.racesFinished.toLocaleString()}<small>回</small></span>
           </div>
           <div className={styles.statCell}>
+            <span className={styles.statLabel}>最大オッズ</span>
+            <span className={styles.statValue}>{pstats.maxOdds > 0 ? <>{pstats.maxOdds.toLocaleString(undefined, { maximumFractionDigits: 1 })}<small>倍</small></> : '—'}</span>
+          </div>
+          <div className={styles.statCell}>
             <span className={styles.statLabel}>最高回収率</span>
             <span className={styles.statValue}>{recoveryPct === null ? '—' : <>{recoveryPct.toLocaleString()}<small>%</small></>}</span>
           </div>
           <div className={styles.statCell}>
-            <span className={styles.statLabel}>最大獲得賞金</span>
-            <span className={styles.statValue}><CoinIcon size={14} /> {pstats.maxPayout.toLocaleString()}</span>
-          </div>
-          <div className={styles.statCell}>
             <span className={styles.statLabel}>図鑑コンプリート率</span>
             <span className={styles.statValue}>{dexPct}<small>%</small></span>
+          </div>
+          <div className={`${styles.statCell} ${styles.statWide}`}>
+            <span className={styles.statLabel}>最大獲得賞金</span>
+            <span className={styles.statValue}><CoinIcon size={14} /> {pstats.maxPayout.toLocaleString()}</span>
           </div>
         </div>
 
