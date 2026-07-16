@@ -705,12 +705,14 @@ function chooseGap(runners: R[], r: R, jam: R, c: number, vMax: number, dLimit: 
 function railTarget(r: R, dInner: number, rr: number, progress: number, dLimit: number): number {
   const style = r.e.style;
   if (style === 'nige' || style === 'senko') return dInner + 1.2 * rr;
-  const early = progress < 0.55; // closers wait off the rail, then drift in
-  // Late (from ~55%): tuck onto the rail to save ground through the corners —
-  // the wide 大外 charge is reserved for the home straight (see homeTarget), so a
-  // closer on a bend still runs the shortest line like a real jockey (インベタ).
-  if (style === 'sashi') return early ? 0 : dInner + 1.3 * rr;
-  return early ? dLimit * 0.35 : dInner + 1.5 * rr; // oikomi
+  const early = progress < 0.55; // closers stalk off the rail, then take it
+  // Early: closers stalk from just inside centre — off the rail for a clear late run
+  // and to pay some ground (their handicap vs the late kick), but NOT out in the outer
+  // third, so even a horse that loses the break tucks toward the rail on the first
+  // bend instead of fanning wide. Late (from ~55%): they take the rail outright; the
+  // wide 大外 charge is reserved for the home straight (see homeTarget).
+  if (style === 'sashi') return early ? -0.8 : dInner + 1.3 * rr;
+  return early ? dLimit * 0.2 : dInner + 1.5 * rr; // oikomi
 }
 
 // HOME target — the final straight (§3.8). Front-runners hold their line and only
