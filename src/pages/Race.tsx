@@ -139,6 +139,7 @@ export default function Race() {
   const addCoins = useStore((s) => s.addCoins);
   const spendCoins = useStore((s) => s.spendCoins);
   const recordBet = useStore((s) => s.recordBet);
+  const finishRaceTask = useStore((s) => s.finishRaceTask);
 
   const [screen, setScreen] = useState<'menu' | 'setup' | 'course' | 'gp' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
@@ -206,6 +207,7 @@ export default function Race() {
       return;
     }
     rewardApplied.current = true;
+    finishRaceTask(); // count this race toward the task — only here, on the result screen
     const rank = result.ranks[0]; // player is entrant 0
     const flawless = !result.frames.some((f) => f.runners[0]?.state === 'stumble');
     const awarded = finishNormalRace({

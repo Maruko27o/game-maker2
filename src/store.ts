@@ -26,7 +26,9 @@ import {
   GP_DAILY_LIMIT,
   SLOT_EXPAND_COST,
   SLOT_EXPAND_TO,
+  RACE_TASK_REWARD,
 } from './data/coins';
+import { claimableRaceRewards } from './logic/tasks';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 10;
@@ -83,6 +85,18 @@ function normDaily(v: unknown): SaveData['daily'] {
 }
 const BETS_CAP = 50; // keep only the most recent settled bets
 
+function freshTasks(): SaveData['tasks'] {
+  return { racesFinished: 0, raceRewardClaimed: 0 };
+}
+// Default any missing task counter (older saves predate the tasks feature).
+function normTasks(v: unknown): SaveData['tasks'] {
+  const t = (v ?? {}) as Partial<SaveData['tasks']>;
+  return {
+    racesFinished: typeof t.racesFinished === 'number' ? t.racesFinished : 0,
+    raceRewardClaimed: typeof t.raceRewardClaimed === 'number' ? t.raceRewardClaimed : 0,
+  };
+}
+
 function freshSave(): SaveData {
   return {
     version: 6,
@@ -101,6 +115,7 @@ function freshSave(): SaveData {
     bets: [],
     maxHorses: MAX_HORSES,
     daily: freshDaily(),
+    tasks: freshTasks(),
     avatarHorseId: null,
     displayTrophies: [],
     savedAt: 0, // untouched save loses to any real cloud data on first sync
@@ -150,6 +165,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   const bets = Array.isArray(d.bets) ? (d.bets as SaveData['bets']) : [];
   const maxHorses = typeof d.maxHorses === 'number' ? d.maxHorses : MAX_HORSES;
   const daily = normDaily(d.daily);
+  const tasks = normTasks(d.tasks);
 
   if (d.version === 6) {
     return {
@@ -170,6 +186,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         bets,
         maxHorses,
         daily,
+        tasks,
         ...normProfile(d),
         savedAt,
       },
@@ -200,6 +217,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       bets,
       maxHorses,
       daily,
+      tasks,
       ...normProfile(d),
       savedAt,
     },
@@ -288,6 +306,12 @@ type Store = SaveData & {
   startGpAttempt: () => boolean;
   /** Expand the stable 10→15 for 3000 coins (once). Returns true on success. */
   expandSlots: () => boolean;
+  // Coin-earning tasks (改修：タスク).
+  /** Count one finished race toward the task. Call ONLY on the result screen so
+   *  it can't be farmed by starting a race and bailing out. */
+  finishRaceTask: () => void;
+  /** Claim all earned per-N-race rewards. Returns the coins granted (0 if none). */
+  claimRaceReward: () => number;
   // Profile (avatar horse + trophy shelf).
   setAvatarHorse: (id: string | null) => void;
   setDisplayTrophies: (ranks: number[]) => void;
@@ -318,6 +342,7 @@ export const useStore = create<Store>((set, get) => {
       bets: next.bets,
       maxHorses: next.maxHorses,
       daily: next.daily,
+      tasks: next.tasks,
       avatarHorseId: next.avatarHorseId,
       displayTrophies: next.displayTrophies,
       savedAt,
@@ -361,6 +386,7 @@ export const useStore = create<Store>((set, get) => {
         bets: s.bets,
         maxHorses: s.maxHorses,
         daily: s.daily,
+        tasks: s.tasks,
         avatarHorseId: s.avatarHorseId,
         displayTrophies: s.displayTrophies,
         savedAt: s.savedAt,
@@ -578,6 +604,23 @@ export const useStore = create<Store>((set, get) => {
       if (s.maxHorses >= SLOT_EXPAND_TO || s.coins < SLOT_EXPAND_COST) return false;
       commit({ coins: s.coins - SLOT_EXPAND_COST, maxHorses: SLOT_EXPAND_TO });
       return true;
+    },
+
+    finishRaceTask: () => {
+      const t = get().tasks;
+      commit({ tasks: { ...t, racesFinished: t.racesFinished + 1 } });
+    },
+
+    claimRaceReward: () => {
+      const s = get();
+      const rewards = claimableRaceRewards(s.tasks);
+      if (rewards <= 0) return 0;
+      const coins = rewards * RACE_TASK_REWARD;
+      commit({
+        coins: s.coins + coins,
+        tasks: { ...s.tasks, raceRewardClaimed: s.tasks.raceRewardClaimed + rewards },
+      });
+      return coins;
     },
 
     setAvatarHorse: (id) => commit({ avatarHorseId: id }),

@@ -4,6 +4,7 @@ import { useStore } from './store';
 import CloudSync from './components/CloudSync';
 import SyncConflictModal from './components/SyncConflictModal';
 import ProfileButton from './components/ProfileButton';
+import TaskButton from './components/TaskButton';
 import CoinBalance from './components/CoinBalance';
 import Title from './components/Title';
 import Icon, { type IconName } from './components/Icon';
@@ -42,6 +43,7 @@ export default function App() {
       <SyncConflictModal />
       {showTitle && <Title onStart={dismissTitle} />}
       <ProfileButton />
+      <TaskButton />
       <CoinBalance />
       {migrated && (
         <div className={styles.notice} role="status">

@@ -1,0 +1,199 @@
+/* Task FAB — same size/shape as the profile icon, placed just to its right. */
+.fab {
+  position: fixed;
+  top: 10px;
+  left: calc(50% - 240px + 12px + 54px); /* profile fab is 46px + gap */
+  z-index: 30;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid var(--border-dark);
+  background: var(--panel-inner);
+  box-shadow: 0 3px 0 var(--border);
+  padding: 0;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+}
+@media (max-width: 520px) {
+  .fab {
+    left: 66px; /* 12 + 46 + 8 */
+  }
+}
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e0468f;
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 11px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+/* overlay + modal ---------------------------------------------------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 28, 14, 0.55);
+  display: grid;
+  place-items: start center;
+  padding: 20px 16px;
+  overflow-y: auto;
+  z-index: 60;
+}
+.modal {
+  width: 100%;
+  max-width: 380px;
+  margin: auto 0;
+  background: var(--paper);
+  border: 4px solid var(--border-dark);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+/* task card ---------------------------------------------------------------- */
+.card {
+  border: 2px solid var(--border-dark);
+  border-radius: 14px;
+  background: var(--panel-inner);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cardTitle {
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--ink);
+}
+.reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 900;
+  color: #8a6410;
+  font-variant-numeric: tabular-nums;
+}
+.desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.progRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bar {
+  flex: 1;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  overflow: hidden;
+}
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f7a83c, #e0468f);
+  transition: width 0.3s ease;
+}
+.progText {
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  min-width: 42px;
+  text-align: right;
+}
+.claim {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border-dark);
+  background: var(--gold);
+  color: #2b2118;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+}
+.claim:disabled {
+  background: var(--panel);
+  color: var(--ink-soft);
+  cursor: default;
+  opacity: 0.8;
+}
+.foot {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+/* claim flourish ----------------------------------------------------------- */
+.pop {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 70;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #2b2118;
+  color: #ffe08a;
+  font-weight: 900;
+  font-size: 22px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 3px solid #ffe08a;
+  animation: popUp 1.6s ease forwards;
+}
+@keyframes popUp {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.7); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  70% { opacity: 1; transform: translate(-50%, -55%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -75%) scale(1); }
+}

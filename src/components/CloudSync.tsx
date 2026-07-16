@@ -38,6 +38,7 @@ function snapshot(): SaveData {
     bets: s.bets,
     maxHorses: s.maxHorses,
     daily: s.daily,
+    tasks: s.tasks,
     avatarHorseId: s.avatarHorseId,
     displayTrophies: s.displayTrophies,
     savedAt: s.savedAt,
