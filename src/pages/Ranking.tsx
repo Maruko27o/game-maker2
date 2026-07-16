@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAuth, loadLeaderboard, type ScoreRow } from '../cloud';
+import { useAuth, loadLeaderboard, type ScoreRow, type RankBy } from '../cloud';
 import { useStore } from '../store';
 import type { HorseLook } from '../types';
 import HorseFace from '../components/HorseFace';
@@ -22,11 +22,12 @@ export default function Ranking() {
   const displayTrophies = useStore((s) => s.displayTrophies);
   const [rows, setRows] = useState<ScoreRow[] | null>(null);
   const [viewing, setViewing] = useState<ScoreRow | null>(null); // profile card being shown
+  const [tab, setTab] = useState<RankBy>('odds');
 
   useEffect(() => {
     let live = true;
     setRows(null);
-    const load = () => loadLeaderboard(50).then((r) => live && setRows(r));
+    const load = () => loadLeaderboard(50, tab).then((r) => live && setRows(r));
     load();
     // Re-fetch when the tab regains focus, so changes made elsewhere show up.
     const onFocus = () => load();
@@ -35,7 +36,13 @@ export default function Ranking() {
       live = false;
       window.removeEventListener('focus', onFocus);
     };
-  }, [user]);
+  }, [user, tab]);
+
+  const metric = (r: ScoreRow) =>
+    tab === 'payout'
+      ? <><CoinIcon size={14} /> {r.bestPayout.toLocaleString()}</>
+      : <>{r.bestOdds.toFixed(1)}倍</>;
+  const shown = (rows ?? []).filter((r) => (tab === 'payout' ? r.bestPayout > 0 : r.bestOdds > 0));
 
   // The signed-in player's own avatar + trophies come from the local store, so
   // their own row/card always reflects their current settings immediately (even
@@ -58,7 +65,15 @@ export default function Ranking() {
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>ランキング</h1>
-      <p className={styles.lead}>単勝・馬連・3連単…どんな馬券でも、いちばん高い的中オッズで競争！</p>
+      <div className={styles.tabs}>
+        <button className={`${styles.tab} ${tab === 'odds' ? styles.tabOn : ''}`} onClick={() => setTab('odds')}>最大オッズ</button>
+        <button className={`${styles.tab} ${tab === 'payout' ? styles.tabOn : ''}`} onClick={() => setTab('payout')}>最大獲得賞金</button>
+      </div>
+      <p className={styles.lead}>
+        {tab === 'payout'
+          ? '1レースの馬券でいちばん多く払戻を得たプレイヤーは誰だ！'
+          : 'どんな馬券でも、いちばん高い的中オッズで競争！'}
+      </p>
 
       {!configured ? (
         <div className={styles.note}>クラウド機能が未設定です。</div>
@@ -66,12 +81,15 @@ export default function Ranking() {
         <div className={styles.note}>ランキングに載るには、左上のアイコンからログインしてね。</div>
       ) : rows === null ? (
         <div className={styles.note}>読み込み中…</div>
-      ) : rows.length === 0 ? (
-        <div className={styles.note}>まだ記録がありません。レースで馬券を的中させよう！</div>
+      ) : shown.length === 0 ? (
+        <div className={styles.note}>
+          {tab === 'payout' ? 'まだ記録がありません。馬券を的中させて払戻を得よう！' : 'まだ記録がありません。レースで馬券を的中させよう！'}
+        </div>
       ) : (
         <ol className={styles.list}>
-          {rows.map((r, i) => {
+          {shown.map((r, i) => {
             const me = r.userId === user.id;
+            const place = i + 1;
             const look: HorseLook = me
               ? myLook
               : r.avatar
@@ -80,20 +98,20 @@ export default function Ranking() {
             return (
               <li
                 key={r.userId}
-                className={`${styles.row} ${me ? styles.me : ''}`}
+                className={`${styles.row} ${me ? styles.me : ''} ${place <= 3 ? `${styles.top} ${styles['top' + place]}` : ''}`}
                 onClick={() => setViewing(withLocal(r))}
                 role="button"
                 tabIndex={0}
               >
-                <span className={`${styles.place} ${medal(i + 1)}`}>{i + 1}</span>
+                <span className={`${styles.place} ${medal(place)}`}>{place}</span>
                 <span className={styles.avatar}>
-                  <HorseFace horse={look} size={34} />
+                  <HorseFace horse={look} size={place <= 3 ? 46 : 34} />
                 </span>
                 <span className={styles.name}>
                   {r.username}
                   {me && <span className={styles.youTag}>あなた</span>}
                 </span>
-                <span className={styles.odds}>{r.bestOdds.toFixed(1)}倍</span>
+                <span className={styles.odds}>{metric(r)}</span>
               </li>
             );
           })}

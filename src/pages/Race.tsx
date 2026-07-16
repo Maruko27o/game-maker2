@@ -241,7 +241,7 @@ export default function Race() {
     addCoins(earned + payout);
     // Ranking (改修④): submit the best winning odds; the server keeps each
     // account's max. Best-effort — no-op when signed out or the DB isn't set up.
-    if (ENABLE_RANKING && bestWonOdds > 0) submitBestOdds(bestWonOdds, setup.course.id);
+    if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup.course.id, payout);
     setReward({ rank, awarded, earned, payout });
     setCutin(achievements); // cut-in only for achievement badges (placing are everyday)
     // Ranking foundation (RACE_V4 §5): buffer a verifiable submission locally.
