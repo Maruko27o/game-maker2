@@ -246,3 +246,39 @@ describe('raceSim2 jockey AI (RACE_V4 §3)', () => {
     expect(avg(M.ot)).toBeGreaterThanOrEqual(8);
   });
 });
+
+// Post-position line: an outer-gate horse must tuck toward the inside (take the
+// shortest path), not run the whole race around the outside. Measured with 8
+// identical horses so only the draw differs — the mean lateral offset (d) per
+// gate must stay off the outer half of the track.
+describe('raceSim2 post-position line', () => {
+  function identical8(): Entrant[] {
+    const stats: Stats = { spd: 7, sta: 7, pwr: 7, jmp: 7, gut: 6, wit: 6 };
+    return Array.from({ length: 8 }, (_, i) => ({
+      horseId: 'g' + i,
+      name: 'g' + i,
+      isPlayer: false,
+      stats,
+      style: styleFor('g' + i, stats),
+    }));
+  }
+  function meanDByGate(courseId: string, runs = 30): number[] {
+    const c = courseById(courseId);
+    const sum = new Array(8).fill(0);
+    let n = 0;
+    for (let s = 0; s < runs; s++) {
+      const res = simulate2(identical8(), c, 30, s * 3 + 1, { recordFrames: true });
+      for (const fr of res.frames) for (let e = 0; e < 8; e++) sum[res.gate[e] - 1] += fr.runners[e].d;
+      n += res.frames.length;
+    }
+    return sum.map((x) => x / n);
+  }
+
+  it('#19 outer gates take the inside line — no gate averages the outer half', () => {
+    for (const cid of ['green', 'trail']) {
+      const meanD = meanDByGate(cid);
+      for (const d of meanD) expect(d).toBeLessThan(1.0); // never living on the outer half
+      expect(meanD[0]).toBeLessThan(-1.5); // gate 1 hugs the rail (sanity)
+    }
+  });
+});
