@@ -20,7 +20,7 @@ export const BET_KINDS: { kind: BetKind; label: string; pick: number; ordered: b
 ];
 
 const TAKEOUT = 0.8; // 80% payout
-export const MAX_ODDS = 99999; // display/pay cap — high enough to show big 3連単 etc.
+export const MAX_ODDS = 30000; // display/pay cap — near the real JRA 3連単 record (~29,835倍)
 const clampOdds = (o: number) => Math.min(MAX_ODDS, Math.max(1.1, o));
 
 export type Bet = { kind: BetKind; sel: number[]; amount: number; odds: number };

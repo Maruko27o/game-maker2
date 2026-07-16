@@ -70,8 +70,13 @@ export const SIM_VERSION = 1;
 // ---- tunables (confirmed by the §8 test suite) --------------------------------
 const DT = 0.02;
 const HIT_R = 1.1;
+const START_SPREAD = 0.9; // gate draw spans ±0.9·dLimit (slightly compressed)
+// How strongly a wide trip costs centreline distance on corners. 1.0 = exact
+// geometry (made an outer post a near-certain loss); tuned below 1 so positioning
+// — not the draw — decides the race, closer to real post-position bias.
+const CORNER_DIST_K = 1.0;
 const CORNER_PEN = 0.12;
-const VD_MAX_BASE = 1.4;
+const VD_MAX_BASE = 1.6;
 const BLOCK_LIMIT = 0.8; // s of continuous block before forcing outward
 const DASH_TIME = 0.5;
 
@@ -183,8 +188,10 @@ export function simulate2(
   const runners: R[] = entrants.map((e) => {
     const ef = eff(e.stats, course.weights);
     const gate = gateOf[entrants.indexOf(e)];
-    // Inner posts start nearer the inner rail.
-    const startD = -dLimit + ((gate - 1) / Math.max(1, N - 1)) * (2 * dLimit);
+    // Inner posts start nearer the inner rail, but the draw is compressed toward
+    // the middle (not the full track width) so an outer post isn't a near-certain
+    // loss before the field even funnels to the rail.
+    const startD = (-dLimit + ((gate - 1) / Math.max(1, N - 1)) * (2 * dLimit)) * START_SPREAD;
     const late = ef.wit < 5 && rng() < 0.3 ? rng() * 0.4 : 0;
     return {
       e,
@@ -358,7 +365,11 @@ export function simulate2(
           weaveCost = 0.025; // §3.6: accelerating through — half the weave penalty
         } else if (r.aim === 'RAIL') {
           dTarget = railTarget(r, dInner, rr, progress, dLimit);
-          vdScale = 0.6; // ease onto the rail, don't cut across (§3.4)
+          // Converge onto the rail faster the farther out you are, so an
+          // outer-gate horse can save ground into the first turn instead of
+          // running the whole way wide (real jockeys tuck in). Near the rail it
+          // stays gentle so the line doesn't jitter.
+          vdScale = Math.min(1, 0.58 + Math.abs(dTarget - r.d) * 0.12);
           if (innerOccupied(runners, r, rr)) dTarget = r.d; // don't shove a rail neighbour
           if (r.passedRef) dTarget = Math.max(dTarget, r.d); // no cutting inside yet (§3.7)
         }
@@ -403,8 +414,9 @@ export function simulate2(
         }
       }
 
-      // advance along the track (inner path is shorter)
-      r.s += (r.v * DT) / (1 + r.d * c);
+      // advance along the track (inner path is shorter; softened by CORNER_DIST_K
+      // so an outer draw isn't fatal — positioning still matters, the rail still helps)
+      r.s += (r.v * DT) / (1 + r.d * c * CORNER_DIST_K);
 
       // boost panels
       while (r.nextBoost < boosts.length && r.s >= boosts[r.nextBoost].s) {
@@ -646,7 +658,7 @@ function frontJam(runners: R[], r: R, vMax: number): R | null {
 function innerOccupied(runners: R[], r: R, rr: number): boolean {
   for (const o of runners) {
     if (o === r || o.finished) continue;
-    if (o.d < r.d && Math.abs(o.d - r.d) < 2 * rr && Math.abs(o.s - r.s) < 1.5 * rr) return true;
+    if (o.d < r.d && Math.abs(o.d - r.d) < 2 * rr && Math.abs(o.s - r.s) < 0.9 * rr) return true;
   }
   return false;
 }
