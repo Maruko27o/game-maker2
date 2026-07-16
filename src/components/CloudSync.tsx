@@ -14,6 +14,7 @@ import {
   loadPlayerNo,
   loadDisplayName,
   saveDisplayName,
+  loadMyBetScore,
 } from '../cloud';
 import { reconcile } from '../logic/cloudReconcile';
 import { randomUsername } from '../logic/username';
@@ -116,6 +117,11 @@ export default function CloudSync() {
 
       const no = await loadPlayerNo();
       if (!cancelled) setPlayerNo(no);
+
+      // Backfill profile stats from the account's ranking history so an existing
+      // player's past 最大オッズ / 最大獲得賞金 show up (raise-only merge).
+      const my = await loadMyBetScore();
+      if (my && !cancelled) useStore.getState().foldStats({ maxOdds: my.bestOdds, maxPayout: my.bestPayout });
 
       // Ranking username (改修④): load it; if the account has none yet, assign a
       // friendly default and save it. Best-effort — no-ops without the DB.

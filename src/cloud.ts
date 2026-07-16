@@ -207,6 +207,23 @@ export type ScoreRow = {
   displayTrophies: number[];
 };
 
+/** Read the signed-in player's own ranking row (best odds/payout), to backfill
+ *  the profile stats from history. Null when signed out / no row / DB missing. */
+export async function loadMyBetScore(): Promise<{ bestOdds: number; bestPayout: number } | null> {
+  if (!supabase) return null;
+  const uid = useAuth.getState().user?.id;
+  if (!uid) return null;
+  try {
+    let res = await supabase.from('bet_scores').select('best_odds, best_payout').eq('user_id', uid).maybeSingle();
+    if (res.error) res = await supabase.from('bet_scores').select('best_odds').eq('user_id', uid).maybeSingle();
+    if (res.error || !res.data) return null;
+    const d = res.data as { best_odds?: number | null; best_payout?: number | null };
+    return { bestOdds: Number(d.best_odds ?? 0), bestPayout: Number(d.best_payout ?? 0) };
+  } catch {
+    return null;
+  }
+}
+
 export type RankBy = 'odds' | 'payout';
 
 /** Top scores (one row per user), ordered by best hit odds or biggest payout.
