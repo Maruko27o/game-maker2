@@ -64,9 +64,13 @@ export function oddsFor(kind: BetKind, sel: number[], p: number[]): number {
 // Win odds/popularity table for the paddock header (people bet from 人気).
 export type OddsRow = { idx: number; odds: number; pop: number };
 export function raceOdds(entrants: Entrant[], course: Course): OddsRow[] {
-  const p = winProbs(entrants, course);
+  return raceOddsFromProbs(winProbs(entrants, course));
+}
+
+/** Same as raceOdds but from pre-computed win probabilities (e.g. Monte-Carlo). */
+export function raceOddsFromProbs(p: number[]): OddsRow[] {
   const order = p.map((_, i) => i).sort((a, b) => p[b] - p[a]);
-  const pop = new Array<number>(entrants.length);
+  const pop = new Array<number>(p.length);
   order.forEach((idx, place) => (pop[idx] = place + 1));
   return p.map((pi, idx) => ({ idx, odds: clampOdds((1 / pi) * TAKEOUT), pop: pop[idx] }));
 }

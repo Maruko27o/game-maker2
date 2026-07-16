@@ -3,7 +3,7 @@ import type { Entrant } from '../logic/raceSim2';
 import type { Course } from '../data/courses';
 import type { HorseLook, StatKey } from '../types';
 import { STAT_KEYS, STAT_LABEL, RUN_STYLE_LABEL } from '../types';
-import { raceOdds, oddsFor, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
+import { raceOddsFromProbs, oddsFor, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
 import { statTotal } from '../logic/stats';
 import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
@@ -23,6 +23,7 @@ type Props = {
   onStart: () => void;
   maxBets?: number; // slip cap (default MAX_BETS_PER_RACE); grand-prix passes MAX_BETS_GP
   startLabel?: string; // override the start button label (e.g. "予選スタート")
+  probs?: number[]; // pre-computed win probabilities (Monte-Carlo); falls back to the heuristic
 };
 
 const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
@@ -30,9 +31,9 @@ const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', qu
 // Paddock: pick a market, select the horse(s), stake, and add to the bet slip —
 // as many bets as you like (RACE_V4 改修①). Odds come from the same model as the
 // popularity, with the 0.80 takeout. Bet on your own horse is allowed.
-export default function Paddock({ entrants, looks, course, coins, bets, onAdd, onRemove, onStart, maxBets = MAX_BETS_PER_RACE, startLabel }: Props) {
-  const p = useMemo(() => winProbs(entrants, course), [entrants, course]);
-  const rows = useMemo(() => raceOdds(entrants, course).slice().sort((a, b) => a.pop - b.pop), [entrants, course]);
+export default function Paddock({ entrants, looks, course, coins, bets, onAdd, onRemove, onStart, maxBets = MAX_BETS_PER_RACE, startLabel, probs }: Props) {
+  const p = useMemo(() => probs ?? winProbs(entrants, course), [probs, entrants, course]);
+  const rows = useMemo(() => raceOddsFromProbs(p).slice().sort((a, b) => a.pop - b.pop), [p]);
 
   const [kind, setKind] = useState<BetKind>('win');
   const [sel, setSel] = useState<number[]>([]); // entrant indices, in tap order

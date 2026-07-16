@@ -13,6 +13,7 @@ type Props = {
   order: number[]; // finishing order as entrant indices (1st..last)
   bets: Bet[];
   course: Course;
+  probs?: number[]; // pre-computed win probabilities (Monte-Carlo); falls back to the heuristic
 };
 
 type BoardLine = { combo: number[]; mult: number; ordered: boolean };
@@ -34,8 +35,8 @@ function Combo({ combo, ordered }: { combo: number[]; ordered: boolean }) {
 // Official-style payout board (払戻金) computed from the actual finishing order,
 // plus the player's own slip with per-bet hit/miss and the net result. Modelled on
 // a real 競馬 payout screen: 収支プラスは赤、マイナスは青。
-export default function BetResult({ entrants, gate, order, bets, course }: Props) {
-  const p = winProbs(entrants, course);
+export default function BetResult({ entrants, gate, order, bets, course, probs }: Props) {
+  const p = probs ?? winProbs(entrants, course);
   const g = (idx: number) => gate[idx];
   const top = order.slice(0, 3);
   const per100 = (m: number) => Math.floor(m * 100);
