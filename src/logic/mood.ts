@@ -20,6 +20,23 @@ export function rollMoods(seed: number, n: number): MoodLevel[] {
   return Array.from({ length: n }, () => Math.floor(rng() * 5) as MoodLevel);
 }
 
+/** Mood biased by ability: the weaker a horse looks, the more its mood leans good
+ *  (好調/絶好調), so no runner is a hopeless 大穴 stuck at the odds floor — a longshot
+ *  "in great form today" is genuinely more competitive, which pulls its odds in. The
+ *  Monte-Carlo odds price whatever mood is shown, so 倍率=勝率 stays exact.
+ *  `strengths` is any per-entrant ability proxy (higher = stronger), e.g. winProbs. */
+export function assignMoods(strengths: number[], seed: number): MoodLevel[] {
+  const rng = mulberry32((seed ^ 0x9e3779b9) >>> 0);
+  const n = strengths.length;
+  const order = strengths.map((s, i) => ({ s, i })).sort((a, b) => a.s - b.s); // weakest first
+  const weakness = new Array<number>(n).fill(0);
+  order.forEach((o, rank) => (weakness[o.i] = n > 1 ? 1 - rank / (n - 1) : 0)); // 1 weak … 0 strong
+  return strengths.map((_, i) => {
+    const level = Math.round(rng() * 4 + weakness[i] * 2.2); // weak horses ride good form
+    return Math.max(0, Math.min(4, level)) as MoodLevel;
+  });
+}
+
 /** Performance multipliers to feed simulate2({ moods }). */
 export function moodMultipliers(levels: MoodLevel[]): number[] {
   return levels.map((l) => MOODS[l].mult);
