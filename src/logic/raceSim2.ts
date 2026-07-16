@@ -338,7 +338,7 @@ export function simulate2(
             const gap = chooseGap(runners, r, jam, c, vMax, dLimit);
             if (gap != null) { r.aim = 'PASS'; r.passRef = jam; r.passDTarget = gap; }
             else if (t - r.seekSince > 2.5) { // waited too long — force outside (§3.5)
-              r.aim = 'PASS'; r.passRef = jam; r.passDTarget = Math.min(dLimit, r.d + 3 * rr);
+              r.aim = 'PASS'; r.passRef = jam; r.passDTarget = Math.min(dLimit - 1.6, r.d + 3 * rr);
             }
           }
         } else if (r.aim === 'PASS') {
@@ -680,7 +680,8 @@ function chooseGap(runners: R[], r: R, jam: R, c: number, vMax: number, dLimit: 
   const gain = Math.max(0, vMax - jam.v) * 1.4; // ~ speed we'd unlock by getting by
   const evalSide = (dir: -1 | 1): { d: number; score: number } | null => {
     const dTarget = jam.d + dir * need;
-    if (dTarget < -dLimit || dTarget > dLimit) return null;
+    // Keep an inner run a horse-width off the rail so we never scrape/bounce it (柵検知).
+    if (dTarget < -dLimit + 1.6 || dTarget > dLimit) return null;
     let occ = 0;
     for (const o of runners) {
       if (o === r || o === jam || o.finished) continue;
@@ -691,7 +692,12 @@ function chooseGap(runners: R[], r: R, jam: R, c: number, vMax: number, dLimit: 
     const move = Math.abs(dTarget - r.d);
     const costDistance = dir === 1 ? move * c * 6 : 0; // outer on a corner is dear; inner is free
     const width = dir === -1 ? jam.d + dLimit : dLimit - jam.d;
-    let costRisk = occ * 0.6 + (dir === -1 ? 0.8 : 0) + (width < 3 * rr ? 1.0 : 0);
+    // Diving inside is a real option when the rail is open. On a STRAIGHT it costs no
+    // ground either way, so take the inner run freely (real jockeys do). On a CORNER an
+    // inner run saves ground — which would over-reward closers — so it stays cautious
+    // there; only a genuinely tight rail (no room) is ever penalised hard.
+    const innerPen = c > 0.002 ? 0.8 : 0.72;
+    let costRisk = occ * 0.6 + (dir === -1 ? innerPen : 0) + (width < 3 * rr ? 1.4 : 0);
     costRisk *= 1 - Math.min(0.5, r.eff.wit * 0.03); // wit sees the risk truer
     return { d: dTarget, score: gain - costDistance - costRisk };
   };
