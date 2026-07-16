@@ -12,8 +12,11 @@ export const MC_SAMPLES = 120; // sims per odds calc (≈20ms each → ~2.4s, ru
 const seedAt = (i: number) => ((i * 2654435761) >>> 0) + 1;
 
 // Laplace-smoothed empirical win probabilities from `samples` simulated races.
+// alpha sets the odds floor for a horse that never wins: with 120 samples & 8 horses,
+// alpha=1 → ~0.78% → ~100x max単勝, so there's no fixed 200x "ceiling" cluster (the
+// weakest 大穴 shows a real, varied longshot instead). Barely shifts real win rates.
 function probsFromWins(wins: number[], samples: number): number[] {
-  const alpha = 0.5; // so a horse that never wins still gets long (not infinite) odds
+  const alpha = 1.0;
   const tot = samples + alpha * wins.length;
   return wins.map((w) => (w + alpha) / tot);
 }

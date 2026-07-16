@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rollMoods, moodMultipliers, MOODS } from './mood';
+import { rollMoods, moodMultipliers, assignMoods, MOODS } from './mood';
 
 describe('mood', () => {
   it('rolls 5 levels deterministically per seed', () => {
@@ -19,5 +19,20 @@ describe('mood', () => {
     // symmetric-ish
     expect(MOODS[4].mult - 1).toBeCloseTo(1 - MOODS[0].mult, 2);
     expect(moodMultipliers([0, 2, 4])).toEqual([MOODS[0].mult, 1, MOODS[4].mult]);
+  });
+
+  it('assignMoods leans weak horses toward good form (no hopeless 大穴)', () => {
+    // strengths ascending in index: horse 0 weakest … horse 7 strongest.
+    const strengths = [0.02, 0.05, 0.08, 0.11, 0.14, 0.17, 0.2, 0.23];
+    let weakAvg = 0, strongAvg = 0;
+    const T = 40;
+    for (let s = 0; s < T; s++) {
+      const m = assignMoods(strengths, s + 1);
+      expect(m.length).toBe(8);
+      weakAvg += m[0]; // weakest
+      strongAvg += m[7]; // strongest
+    }
+    // over many seeds the weakest horse averages a clearly better mood than the strongest
+    expect(weakAvg / T).toBeGreaterThan(strongAvg / T + 1);
   });
 });

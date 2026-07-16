@@ -20,7 +20,8 @@ import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
 import { settle, type Bet } from '../logic/betting';
 import { mcWinProbsAsync } from '../logic/odds';
-import { rollMoods, moodMultipliers, type MoodLevel } from '../logic/mood';
+import { winProbs } from '../logic/grandprix';
+import { assignMoods, moodMultipliers, type MoodLevel } from '../logic/mood';
 import Paddock from '../components/Paddock';
 import BetResult from '../components/BetResult';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
@@ -189,7 +190,7 @@ export default function Race() {
       entrants.push(cpu.entrant);
       looks[cpu.entrant.horseId] = cpu.look;
     }
-    const moods = rollMoods(seed, entrants.length);
+    const moods = assignMoods(winProbs(entrants, course), seed);
     setSetup({ course, mode, seed, entrants, looks, grade, moods });
     rewardApplied.current = false;
     setReward(null);

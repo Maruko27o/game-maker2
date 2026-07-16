@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Entrant } from '../logic/raceSim2';
 import type { Course } from '../data/courses';
 import { oddsFor, settle, type Bet, type BetKind } from '../logic/betting';
@@ -40,6 +41,7 @@ export default function BetResult({ entrants, gate, order, bets, course, probs }
   const g = (idx: number) => gate[idx];
   const top = order.slice(0, 3);
   const per100 = (m: number) => Math.floor(m * 100);
+  const [open, setOpen] = useState(false); // the per-bet slip is collapsed by default
 
   // Winning payouts for every market, from the result.
   const board: { kind: BetKind; lines: BoardLine[] }[] = [
@@ -80,7 +82,7 @@ export default function BetResult({ entrants, gate, order, bets, course, probs }
               {lines.map((ln, i) => (
                 <div key={i} className={styles.boardLine}>
                   <Combo combo={ln.combo} ordered={ln.ordered} />
-                  <span className={styles.pay}>{per100(ln.mult).toLocaleString()}<span className={styles.per}>円 /100</span></span>
+                  <span className={styles.pay}><CoinIcon size={12} /> {per100(ln.mult).toLocaleString()}<span className={styles.per}>/100</span></span>
                 </div>
               ))}
             </div>
@@ -88,11 +90,14 @@ export default function BetResult({ entrants, gate, order, bets, course, probs }
         ))}
       </div>
 
-      {/* Player's slip */}
+      {/* Player's slip — totals always shown; the per-bet list folds under ▼ */}
       {bets.length > 0 ? (
         <div className={styles.slip}>
-          <div className={styles.slipHead}>あなたの馬券</div>
-          {slip.map(({ b, net: bn, hit }, i) => (
+          <button className={styles.slipHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+            <span>あなたの馬券 <span className={styles.slipCount}>{bets.length}件</span></span>
+            <span className={styles.caret}>明細を{open ? 'とじる ▲' : 'みる ▼'}</span>
+          </button>
+          {open && slip.map(({ b, net: bn, hit }, i) => (
             <div key={i} className={`${styles.slipRow} ${hit ? styles.rowHit : styles.rowMiss}`}>
               <span className={`${styles.badge} ${hit ? styles.badgeHit : styles.badgeMiss}`}>{hit ? '的中' : 'ハズレ'}</span>
               <span className={styles.slipKind}>{KIND_LABEL[b.kind]}</span>
