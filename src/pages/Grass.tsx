@@ -5,6 +5,7 @@ import { colorSlotById, decoById, partName, partRarity, isColorId } from '../dat
 import { GRASS_OKAWARI_COST } from '../data/coins';
 import type { HorseLook, DecoSlot } from '../types';
 import HorseView from '../components/HorseView';
+import GrassScene from '../components/GrassScene';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import PartThumb from '../components/PartThumb';
@@ -130,6 +131,7 @@ export default function Grass() {
         disabled={!available || phase !== 'ready'}
         aria-label={available ? '草むらをタップしてウマをさがす' : '次のチャージまで待つ'}
       >
+        <GrassScene />
         <div className={styles.grassRow} aria-hidden>
           {Array.from({ length: 7 }).map((_, i) => (
             <span key={i} className={styles.blade} style={{ animationDelay: `${i * 0.06}s` }}>

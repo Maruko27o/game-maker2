@@ -40,9 +40,10 @@
   flex: 1;
   min-height: 0; /* allow the flex child to shrink so it can scroll internally */
   overflow-y: auto;
-  /* Top padding reserves the fixed top band (coin pill + account button, y≈10–50)
-     so no page's content sits under them. */
-  padding: 56px 14px calc(var(--nav-h) + 20px);
+  /* Top padding reserves the fixed top band (profile + task FAB + coin pill,
+     y≈10–56 incl. their drop shadow) with a clear gap so no page's content
+     touches them. */
+  padding: 68px 14px calc(var(--nav-h) + 20px);
   overflow-x: hidden;
 }
 
