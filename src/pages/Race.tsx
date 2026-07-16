@@ -237,15 +237,15 @@ export default function Race() {
       <div className={styles.page}>
         <h1 className={styles.title}>レース</h1>
         <p className={styles.lead}>コースはランダム。あつめたウマを走らせよう！</p>
-        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(false); setScreen('setup'); }}>
+        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(false); setMode(60); setScreen('setup'); }}>
           <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>ひとりでレース</span>
-            <span className={styles.modeDesc}>8頭立て・馬券あり・3位以内でメダル</span>
+            <span className={styles.modeDesc}>8頭立て・2周・馬券あり・3位以内でメダル</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
-        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(true); setScreen('setup'); }}>
+        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(true); setMode(60); setScreen('setup'); }}>
           <span className={styles.modeEmoji}><Icon name="flag" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>コースをえらぶ</span>
@@ -296,14 +296,20 @@ export default function Race() {
                 </button>
               ))}
             </div>
-            <h2 className={styles.h2}>レース時間</h2>
-            <div className={styles.modeSwitch}>
-              {([30, 60] as const).map((m) => (
-                <button key={m} className={`${styles.modeBtn} ${mode === m ? styles.modeBtnSel : ''}`} onClick={() => setMode(m)}>
-                  {m}秒{m === 60 && grade === 'gp' ? '（報酬1.5倍）' : ''}{m === 30 ? '（約1周）' : '（約2周）'}
-                </button>
-              ))}
-            </div>
+            {grade === 'gp' ? (
+              <>
+                <h2 className={styles.h2}>レース時間</h2>
+                <div className={styles.modeSwitch}>
+                  {([30, 60] as const).map((m) => (
+                    <button key={m} className={`${styles.modeBtn} ${mode === m ? styles.modeBtnSel : ''}`} onClick={() => setMode(m)}>
+                      {m}秒{m === 60 ? '（報酬1.5倍）' : ''}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className={styles.h2}>2周のコースで走ります</p>
+            )}
             <div className={styles.setupActions}>
               <button className="btn neutral" onClick={() => setScreen('menu')}>もどる</button>
               <button
