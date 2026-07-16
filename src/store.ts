@@ -11,6 +11,7 @@ import type {
   Stats,
   StatKey,
   BetRecord,
+  PlayerStats,
 } from './types';
 import { allParts } from './data/parts';
 import { COURSES } from './data/courses';
@@ -100,6 +101,23 @@ function normTasks(v: unknown): SaveData['tasks'] {
 function freshStats(): SaveData['stats'] {
   return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0 };
 }
+// Reconstruct profile stats from a player's saved bet history, so existing users
+// see their past 最大オッズ / 回収率 / 獲得賞金 rather than starting at zero. Recovery
+// here is per-ticket (payout ÷ stake) — the best available from saved records.
+function deriveStatsFromBets(bets: SaveData['bets']): SaveData['stats'] {
+  let maxOdds = 0;
+  let maxPayout = 0;
+  let maxRecoveryPct = 0;
+  for (const b of bets) {
+    if (b.won && b.odds > maxOdds) maxOdds = b.odds;
+    if (b.payout > maxPayout) maxPayout = b.payout;
+    if (b.amount > 0) {
+      const rec = Math.round((b.payout / b.amount) * 100);
+      if (rec > maxRecoveryPct) maxRecoveryPct = rec;
+    }
+  }
+  return { betsPlaced: bets.length, maxPayout, maxRecoveryPct, maxOdds };
+}
 // Default any missing profile stat (older saves predate the profile-stats feature).
 function normStats(v: unknown): SaveData['stats'] {
   const s = (v ?? {}) as Partial<SaveData['stats']>;
@@ -181,7 +199,11 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   const maxHorses = typeof d.maxHorses === 'number' ? d.maxHorses : MAX_HORSES;
   const daily = normDaily(d.daily);
   const tasks = normTasks(d.tasks);
-  const stats = normStats(d.stats);
+  // Profile stats: normalize, and one-time backfill from bet history for saves
+  // that predate the feature (missing, or still all-zero) so past data shows up.
+  let stats = normStats(d.stats);
+  const statsEmpty = stats.betsPlaced === 0 && stats.maxOdds === 0 && stats.maxPayout === 0 && stats.maxRecoveryPct === 0;
+  if ((d.stats == null || statsEmpty) && bets.length > 0) stats = deriveStatsFromBets(bets);
 
   if (d.version === 6) {
     return {
@@ -334,6 +356,9 @@ type Store = SaveData & {
    *  payout (最大獲得賞金), best single-race 回収率 = payout ÷ staked (最高回収率),
    *  and the highest winning odds (最大オッズ). */
   recordBetStats: (r: { placed: number; staked: number; payout: number; wonOdds: number }) => void;
+  /** Merge external maxima into the profile stats (raise-only). Used to backfill
+   *  from the account's ranking history (best odds/payout) on sign-in. */
+  foldStats: (p: Partial<PlayerStats>) => void;
   // Profile (avatar horse + trophy shelf).
   setAvatarHorse: (id: string | null) => void;
   setDisplayTrophies: (ranks: number[]) => void;
@@ -659,6 +684,24 @@ export const useStore = create<Store>((set, get) => {
           maxOdds: Math.max(s.maxOdds, wonOdds),
         },
       });
+    },
+
+    foldStats: (p) => {
+      const s = get().stats;
+      const next: PlayerStats = {
+        betsPlaced: Math.max(s.betsPlaced, p.betsPlaced ?? 0),
+        maxPayout: Math.max(s.maxPayout, p.maxPayout ?? 0),
+        maxRecoveryPct: Math.max(s.maxRecoveryPct, p.maxRecoveryPct ?? 0),
+        maxOdds: Math.max(s.maxOdds, p.maxOdds ?? 0),
+      };
+      if (
+        next.betsPlaced !== s.betsPlaced ||
+        next.maxPayout !== s.maxPayout ||
+        next.maxRecoveryPct !== s.maxRecoveryPct ||
+        next.maxOdds !== s.maxOdds
+      ) {
+        commit({ stats: next });
+      }
     },
 
     setAvatarHorse: (id) => commit({ avatarHorseId: id }),
