@@ -64,6 +64,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const coins = useStore((s) => s.coins);
   const startGpAttempt = useStore((s) => s.startGpAttempt);
   const finishRaceTask = useStore((s) => s.finishRaceTask);
+  const recordBetStats = useStore((s) => s.recordBetStats);
   const daily = useStore((s) => s.daily);
   const gpLeft = Math.max(0, GP_DAILY_LIMIT - (daily.day === dayKey() ? daily.gp : 0));
 
@@ -77,6 +78,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   function settleBets(bets: Bet[], order: number[], courseId: string) {
     let payout = 0;
     let best = 0;
+    const staked = bets.reduce((s, b) => s + b.amount, 0);
     for (const b of bets) {
       const got = settle(b, order);
       payout += got;
@@ -86,6 +88,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       addCoins(payout);
       setBetPayout((p) => p + payout);
     }
+    recordBetStats({ placed: bets.length, staked, payout, wonOdds: best }); // profile 実績
     if (ENABLE_RANKING && (best > 0 || payout > 0)) submitBestOdds(best, courseId, payout);
   }
 

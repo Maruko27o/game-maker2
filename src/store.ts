@@ -97,6 +97,20 @@ function normTasks(v: unknown): SaveData['tasks'] {
   };
 }
 
+function freshStats(): SaveData['stats'] {
+  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0 };
+}
+// Default any missing profile stat (older saves predate the profile-stats feature).
+function normStats(v: unknown): SaveData['stats'] {
+  const s = (v ?? {}) as Partial<SaveData['stats']>;
+  return {
+    betsPlaced: typeof s.betsPlaced === 'number' ? s.betsPlaced : 0,
+    maxPayout: typeof s.maxPayout === 'number' ? s.maxPayout : 0,
+    maxRecoveryPct: typeof s.maxRecoveryPct === 'number' ? s.maxRecoveryPct : 0,
+    maxOdds: typeof s.maxOdds === 'number' ? s.maxOdds : 0,
+  };
+}
+
 function freshSave(): SaveData {
   return {
     version: 6,
@@ -116,6 +130,7 @@ function freshSave(): SaveData {
     maxHorses: MAX_HORSES,
     daily: freshDaily(),
     tasks: freshTasks(),
+    stats: freshStats(),
     avatarHorseId: null,
     displayTrophies: [],
     savedAt: 0, // untouched save loses to any real cloud data on first sync
@@ -166,6 +181,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   const maxHorses = typeof d.maxHorses === 'number' ? d.maxHorses : MAX_HORSES;
   const daily = normDaily(d.daily);
   const tasks = normTasks(d.tasks);
+  const stats = normStats(d.stats);
 
   if (d.version === 6) {
     return {
@@ -187,6 +203,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         maxHorses,
         daily,
         tasks,
+        stats,
         ...normProfile(d),
         savedAt,
       },
@@ -218,6 +235,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       maxHorses,
       daily,
       tasks,
+      stats,
       ...normProfile(d),
       savedAt,
     },
@@ -312,6 +330,10 @@ type Store = SaveData & {
   finishRaceTask: () => void;
   /** Claim all earned per-N-race rewards. Returns the coins granted (0 if none). */
   claimRaceReward: () => number;
+  /** Fold one race's betting outcome into the lifetime profile stats: best single
+   *  payout (最大獲得賞金), best single-race 回収率 = payout ÷ staked (最高回収率),
+   *  and the highest winning odds (最大オッズ). */
+  recordBetStats: (r: { placed: number; staked: number; payout: number; wonOdds: number }) => void;
   // Profile (avatar horse + trophy shelf).
   setAvatarHorse: (id: string | null) => void;
   setDisplayTrophies: (ranks: number[]) => void;
@@ -343,6 +365,7 @@ export const useStore = create<Store>((set, get) => {
       maxHorses: next.maxHorses,
       daily: next.daily,
       tasks: next.tasks,
+      stats: next.stats,
       avatarHorseId: next.avatarHorseId,
       displayTrophies: next.displayTrophies,
       savedAt,
@@ -387,6 +410,7 @@ export const useStore = create<Store>((set, get) => {
         maxHorses: s.maxHorses,
         daily: s.daily,
         tasks: s.tasks,
+        stats: s.stats,
         avatarHorseId: s.avatarHorseId,
         displayTrophies: s.displayTrophies,
         savedAt: s.savedAt,
@@ -621,6 +645,20 @@ export const useStore = create<Store>((set, get) => {
         tasks: { ...s.tasks, raceRewardClaimed: s.tasks.raceRewardClaimed + rewards },
       });
       return coins;
+    },
+
+    recordBetStats: ({ placed, staked, payout, wonOdds }) => {
+      if (placed <= 0 && payout <= 0) return;
+      const s = get().stats;
+      const recovery = staked > 0 ? Math.round((payout / staked) * 100) : 0;
+      commit({
+        stats: {
+          betsPlaced: s.betsPlaced + Math.max(0, placed),
+          maxPayout: Math.max(s.maxPayout, payout),
+          maxRecoveryPct: Math.max(s.maxRecoveryPct, recovery),
+          maxOdds: Math.max(s.maxOdds, wonOdds),
+        },
+      });
     },
 
     setAvatarHorse: (id) => commit({ avatarHorseId: id }),

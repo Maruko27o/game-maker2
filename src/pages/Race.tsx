@@ -140,6 +140,7 @@ export default function Race() {
   const spendCoins = useStore((s) => s.spendCoins);
   const recordBet = useStore((s) => s.recordBet);
   const finishRaceTask = useStore((s) => s.finishRaceTask);
+  const recordBetStats = useStore((s) => s.recordBetStats);
 
   const [screen, setScreen] = useState<'menu' | 'setup' | 'course' | 'gp' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
@@ -226,6 +227,7 @@ export default function Race() {
     // Settle every bet against the finishing order and sum the payouts.
     let payout = 0;
     let bestWonOdds = 0;
+    const staked = bets.reduce((s, b) => s + b.amount, 0);
     for (const b of bets) {
       const got = settle(b, result.order);
       payout += got;
@@ -242,6 +244,7 @@ export default function Race() {
       });
     }
     addCoins(earned + payout);
+    recordBetStats({ placed: bets.length, staked, payout, wonOdds: bestWonOdds }); // profile 実績
     // Ranking (改修④): submit the best winning odds; the server keeps each
     // account's max. Best-effort — no-op when signed out or the DB isn't set up.
     if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup.course.id, payout);
