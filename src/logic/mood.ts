@@ -6,12 +6,15 @@ import { mulberry32 } from './stats';
 
 export type MoodLevel = 0 | 1 | 2 | 3 | 4;
 
-export const MOODS: { label: string; short: string; mult: number; color: string; ink: string }[] = [
-  { label: '絶不調', short: '不', mult: 0.93, color: '#5b8def', ink: '#fff' },   // 0
-  { label: 'イマイチ', short: '↓', mult: 0.965, color: '#8fc2f0', ink: '#22374d' }, // 1
-  { label: 'ふつう', short: '−', mult: 1.0, color: '#cfc7b6', ink: '#3a2c1c' },   // 2
-  { label: '好調', short: '↑', mult: 1.035, color: '#7fce77', ink: '#1e3f1c' },   // 3
-  { label: '絶好調', short: '絶', mult: 1.07, color: '#ff8a4c', ink: '#fff' },     // 4
+// Five やる気 grades styled after the classic ウマ娘 marks: a glossy pill in the
+// grade colour with a white directional arrow (⬇↘➡↗⬆). `color`/`deep` are the
+// gradient top/bottom; `ink` is the chip's label colour (dark on the light yellow).
+export const MOODS: { label: string; arrow: number; mult: number; color: string; deep: string; ink: string }[] = [
+  { label: '絶不調', arrow: 180, mult: 0.93, color: '#a86ee0', deep: '#7b3fc4', ink: '#fff' },     // 0 ⬇ purple
+  { label: '不調', arrow: 135, mult: 0.965, color: '#4db8ec', deep: '#2b8fd6', ink: '#fff' },      // 1 ↘ blue
+  { label: '普通', arrow: 90, mult: 1.0, color: '#ffd23f', deep: '#f2a71b', ink: '#6a4a06' },      // 2 ➡ yellow
+  { label: '好調', arrow: 45, mult: 1.035, color: '#f7a83c', deep: '#e86a12', ink: '#fff' },       // 3 ↗ orange
+  { label: '絶好調', arrow: 0, mult: 1.07, color: '#f14e9c', deep: '#c9227a', ink: '#fff' },        // 4 ⬆ pink
 ];
 
 /** Deterministic per-race mood for each entrant (uniform over the 5 levels). */

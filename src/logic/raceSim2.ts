@@ -85,6 +85,16 @@ const DASH_TIME = 0.5;
 // shown mood; the Monte-Carlo odds integrate over it, so 倍率=勝率 stays exact.
 const LUCK = 0.16;
 
+// How the shown mood is dealt out over the race distance (0→1 progress). It grows
+// from a small early edge to the full swing at the line, so a good mood reads as a
+// horse "coming ↑" and a bad one "fading ↓" — the direction the やる気 arrows point.
+// Mean over the trip ≈ 1, so the average effect matches the shown level and the
+// Monte-Carlo odds price it exactly. 2-lap races give this room to actually play out.
+function moodRamp(progress: number): number {
+  const p = progress < 0 ? 0 : progress > 1 ? 1 : progress;
+  return 0.4 + p * 1.2; // 0.4 at the break → 1.6 at the finish (mean 1.0)
+}
+
 function eff(stats: Stats, weights: Stats): Stats {
   const e = {} as Stats;
   for (const k of STAT_KEYS) e[k] = stats[k] * weights[k as StatKey];
@@ -106,7 +116,8 @@ type R = {
   e: Entrant;
   eff: Stats;
   gate: number;
-  perf: number; // per-race performance factor = hidden luck × shown mood (RACE §odds)
+  perf: number; // hidden race-day luck (flat, RACE §odds)
+  moodDelta: number; // shown mood as a signed swing; ramps in over the race (⬆/⬇)
   vMax0: number;
   accel0: number;
   spMax: number;
@@ -199,9 +210,10 @@ export function simulate2(
   const runners: R[] = entrants.map((e, ei) => {
     const ef = eff(e.stats, course.weights);
     const gate = gateOf[entrants.indexOf(e)];
-    // hidden race-day luck (varies per seed) × shown mood (fixed for this race)
+    // hidden race-day luck (flat, varies per seed) and the shown mood kept apart:
+    // luck is a constant factor, mood is a signed swing that builds over the race.
     const luck = 1 + (rng() * 2 - 1) * LUCK;
-    const perf = luck * (opts.moods?.[ei] ?? 1);
+    const moodDelta = (opts.moods?.[ei] ?? 1) - 1;
     // Inner posts start nearer the inner rail, but the draw is compressed toward
     // the middle (not the full track width) so an outer post isn't a near-certain
     // loss before the field even funnels to the rail.
@@ -211,7 +223,8 @@ export function simulate2(
       e,
       eff: ef,
       gate,
-      perf,
+      perf: luck,
+      moodDelta,
       vMax0: 9 + ef.spd * 0.6,
       accel0: 1.8 + ef.pwr * 0.26,
       spMax: 44 + ef.sta * 13,
@@ -279,7 +292,12 @@ export function simulate2(
       // --- longitudinal speed target ---
       // Tightly compressed base spread (spd barely moves top speed) so raw speed
       // can't run away; stamina failure, pace and positioning decide the winner.
-      let vMax = (13.0 + ef.spd * 0.36) * paceAt(r.e.style, progress) * r.perf;
+      // Mood plays out across the (2-lap) race like the やる気 arrows: a good mood
+      // trends the horse UP and a bad one DOWN as the laps go by — a small edge at
+      // the break, the full swing by the run home. Averaged over the trip it equals
+      // the shown level, so the Monte-Carlo odds still price it exactly (倍率=勝率).
+      const moodFactor = 1 + r.moodDelta * moodRamp(progress);
+      let vMax = (13.0 + ef.spd * 0.36) * paceAt(r.e.style, progress) * r.perf * moodFactor;
       vMax *= 1 - Math.max(0, course.drag - ef.pwr * 0.015);
       if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.03);
       // Graduated fatigue: as the tank runs low the top speed sags, so stamina
