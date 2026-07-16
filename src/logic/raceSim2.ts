@@ -65,7 +65,7 @@ export type SimResult = {
 
 // Bumped whenever the simulation's numeric behaviour changes, so ranking
 // submissions can only be compared/verified against the same engine (RACE_V4 §5).
-export const SIM_VERSION = 1;
+export const SIM_VERSION = 2;
 
 // ---- tunables (confirmed by the §8 test suite) --------------------------------
 const DT = 0.02;
@@ -273,7 +273,7 @@ export function simulate2(
       const tired = r.sp <= 0;
       const spFrac = Math.max(0, r.sp / r.spMax);
       if (spFrac < 0.35) vMax *= 0.53 + (spFrac / 0.35) * 0.47; // 0.53x empty → 1.0x at 35%
-      if (progress >= 0.7) vMax *= 1 + ef.gut * 0.025; // gut = a strong late kick
+      if (progress >= 0.7) vMax *= 1 + ef.gut * 0.019; // gut = a strong late kick
       const boosting = t < r.boostUntil;
       if (boosting) vMax *= 1.25;
       // Slipstream vs clean-air: a horse leading its line cuts the air and is a
@@ -289,7 +289,7 @@ export function simulate2(
       if (progress > 0.75) {
         const behind = leaderS - r.s;
         if (behind > 0 && behind < 45) {
-          const towCap = 0.16 + ef.gut * 0.012; // gut10 => up to +0.28
+          const towCap = 0.13 + ef.gut * 0.009; // gut10 => up to +0.22
           vMax *= 1 + Math.min(towCap, (behind / 45) * towCap);
         }
       }
@@ -692,11 +692,11 @@ function chooseGap(runners: R[], r: R, jam: R, c: number, vMax: number, dLimit: 
     const move = Math.abs(dTarget - r.d);
     const costDistance = dir === 1 ? move * c * 6 : 0; // outer on a corner is dear; inner is free
     const width = dir === -1 ? jam.d + dLimit : dLimit - jam.d;
-    // Diving inside is a real option when the rail is open. On a STRAIGHT it costs no
-    // ground either way, so take the inner run freely (real jockeys do). On a CORNER an
-    // inner run saves ground — which would over-reward closers — so it stays cautious
-    // there; only a genuinely tight rail (no room) is ever penalised hard.
-    const innerPen = c > 0.002 ? 0.8 : 0.72;
+    // Diving inside is a real option whenever the rail is open — take the inner run
+    // (on a corner it also saves ground). Closers doing this more is compensated by a
+    // gentler late kick/tow below, so §4 balance holds. Only a genuinely tight rail
+    // (no room) is penalised hard, and the fence margin above stops any scraping.
+    const innerPen = 0.4;
     let costRisk = occ * 0.6 + (dir === -1 ? innerPen : 0) + (width < 3 * rr ? 1.4 : 0);
     costRisk *= 1 - Math.min(0.5, r.eff.wit * 0.03); // wit sees the risk truer
     return { d: dTarget, score: gain - costDistance - costRisk };
