@@ -6,8 +6,9 @@ import HorseDefs from './HorseDefs';
 
 // A round, cropped portrait of a horse's head + mane crest (RACE_V3 §1.4).
 // Reused by the race rank panel and anywhere a compact "which horse" chip helps.
-// Only the head decoration slot is drawn (hats/horns read at this size; the rest
-// don't). The crop is centred on the base horse's crest→muzzle in 520-space.
+// The head AND face decoration slots are drawn (hats/horns/眼帯/メガネ all sit on the
+// portrait), so the icon reflects the horse's look — including face gear. Back/tail
+// decos live on the body, outside this crop. Centred on the crest→muzzle in 520-space.
 const VB = { x: 260, y: 55, s: 220 }; // square viewBox window over the head
 const C = { cx: 370, cy: 165, r: 104 }; // clip/ring circle inside that window
 
@@ -34,6 +35,7 @@ function HorseFace({
   const mane = colorById[horse.colors.mane]?.value ?? '#6b4326';
   const hoof = colorById[horse.colors.hoof]?.value ?? '#3a2c1c';
   const headDeco = horse.decos.head ? decoById[horse.decos.head]?.svg : null;
+  const faceDeco = horse.decos.face ? decoById[horse.decos.face]?.svg : null;
   const clip = 'face-' + useId().replace(/:/g, '');
 
   const style = {
@@ -62,7 +64,9 @@ function HorseFace({
       <g clipPath={`url(#${clip})`}>
         <rect x={VB.x} y={VB.y} width={VB.s} height={VB.s} fill={tint(body)} />
         <g dangerouslySetInnerHTML={{ __html: HORSE_BASE_INNER }} />
+        {/* head gear, then face gear on top — matches the full-body draw order */}
         {headDeco && <g dangerouslySetInnerHTML={{ __html: headDeco }} />}
+        {faceDeco && <g dangerouslySetInnerHTML={{ __html: faceDeco }} />}
       </g>
       <circle cx={C.cx} cy={C.cy} r={C.r} fill="none" stroke="#5c4326" strokeWidth={9} />
     </svg>
