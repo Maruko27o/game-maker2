@@ -372,6 +372,12 @@ export function simulate2(
           // running the whole way wide (real jockeys tuck in). Near the rail it
           // stays gentle so the line doesn't jitter.
           vdScale = Math.min(1, 0.66 + Math.abs(dTarget - r.d) * 0.14);
+          // A closer making its one big move off the outer stalking line to the rail
+          // snaps in briskly, so the cut-in lands on a straight instead of stringing
+          // out around the final bend (the ground is still paid — only the transition
+          // is quicker, not the position). No inside neighbour to shove (guarded below).
+          const closer = r.e.style === 'sashi' || r.e.style === 'oikomi';
+          if (closer && r.d - dTarget > 2 * rr) vdScale = Math.min(1.6, 0.85 + Math.abs(dTarget - r.d) * 0.16);
           if (innerOccupied(runners, r, rr)) dTarget = r.d; // don't shove a rail neighbour
           if (r.passedRef) dTarget = Math.max(dTarget, r.d); // no cutting inside yet (§3.7)
         }
