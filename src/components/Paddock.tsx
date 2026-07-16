@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Entrant } from '../logic/raceSim2';
 import type { Course } from '../data/courses';
-import type { HorseLook } from '../types';
+import type { HorseLook, StatKey } from '../types';
+import { STAT_KEYS, STAT_LABEL, RUN_STYLE_LABEL } from '../types';
 import { raceOdds, oddsFor, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
 import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
 import HorseView from './HorseView';
+import StatRadar from './StatRadar';
 import CoinIcon from './CoinIcon';
 import styles from './Paddock.module.css';
 
@@ -34,6 +36,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
   const [kind, setKind] = useState<BetKind>('win');
   const [sel, setSel] = useState<number[]>([]); // entrant indices, in tap order
   const [amount, setAmount] = useState<number>(BET_AMOUNTS[0]);
+  const [openStats, setOpenStats] = useState<number | null>(null); // entrant idx whose 能力 panel is open
   const spec = BET_KINDS.find((k) => k.kind === kind)!;
 
   useEffect(() => setSel([]), [kind]); // reset selection when switching market
@@ -84,15 +87,41 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
           const e = entrants[r.idx];
           const order = sel.indexOf(r.idx); // -1 if unselected
           const on = order >= 0;
+          const open = openStats === r.idx;
           return (
-            <li key={r.idx} className={`${styles.row} ${e.isPlayer ? styles.me : ''} ${on ? styles.on : ''}`} onClick={() => toggle(r.idx)}>
-              <span className={styles.pop}>{r.pop}人気</span>
-              <div className={styles.horse}><HorseView horse={looks[e.horseId]} size={32} /></div>
-              <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
-              <span className={styles.win}>{r.odds.toFixed(1)}倍</span>
-              <span className={`${styles.mark} ${on ? styles.markOn : ''}`}>
-                {on ? (spec.ordered ? order + 1 : '✓') : ''}
-              </span>
+            <li key={r.idx} className={`${styles.item} ${e.isPlayer ? styles.me : ''}`}>
+              <div className={`${styles.row} ${on ? styles.on : ''}`} onClick={() => toggle(r.idx)}>
+                <span className={styles.pop}>{r.pop}人気</span>
+                <div className={styles.horse}><HorseView horse={looks[e.horseId]} size={32} /></div>
+                <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
+                <span className={styles.win}>{r.odds.toFixed(1)}倍</span>
+                <button
+                  className={`${styles.info} ${open ? styles.infoOn : ''}`}
+                  aria-label="能力を見る"
+                  onClick={(ev) => { ev.stopPropagation(); setOpenStats(open ? null : r.idx); }}
+                >
+                  能力
+                </button>
+                <span className={`${styles.mark} ${on ? styles.markOn : ''}`}>
+                  {on ? (spec.ordered ? order + 1 : '✓') : ''}
+                </span>
+              </div>
+              {open && (
+                <div className={styles.stats}>
+                  <StatRadar stats={e.stats} size={132} />
+                  <div className={styles.statMeta}>
+                    <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
+                    <dl className={styles.statNums}>
+                      {STAT_KEYS.map((k: StatKey) => (
+                        <div key={k} className={styles.statNum}>
+                          <dt>{STAT_LABEL[k]}</dt>
+                          <dd>{e.stats[k]}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </div>
+              )}
             </li>
           );
         })}
