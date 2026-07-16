@@ -104,10 +104,29 @@
   font-weight: 900;
   color: #c33f39;
 }
-.betHitGlow {
+/* 普通（銀）— a pick is contending */
+.betSilver {
   color: #2b2118;
-  background: #fff2cf;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 2px var(--gold), 0 0 10px rgba(240, 195, 60, 0.8);
+  background: linear-gradient(180deg, #f2f4f7, #d7dde3);
+  border-color: #9aa4ad;
+}
+/* ニアピン（金）— right horses, wrong order / one place off */
+.betGold {
+  color: #2b2118;
+  background: linear-gradient(180deg, #ffe9a8, #f2c44e);
+  border-color: #b8892a;
+  box-shadow: 0 0 0 1px rgba(240, 195, 60, 0.6);
+}
+/* 的中（虹）— would pay if the race ended now */
+.betRainbow {
+  color: #2b2118;
+  border-color: #fff;
+  background: linear-gradient(90deg, #ff5f6d, #ffc371, #f7ff7a, #7afcb0, #6ec3ff, #b98bff, #ff8bd0);
+  background-size: 300% 100%;
+  animation: betRainbowShift 2.2s linear infinite;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.7);
   transform: translateY(-1px);
+}
+@keyframes betRainbowShift {
+  to { background-position: 300% 0; }
 }

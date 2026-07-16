@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { raceOdds, oddsFor, selProb, settle, wouldWin, MAX_ODDS, type Bet } from './betting';
+import { raceOdds, oddsFor, selProb, settle, wouldWin, betTier, MAX_ODDS, type Bet } from './betting';
 import { winProbs } from './grandprix';
 import { COURSES, courseById } from '../data/courses';
 import { styleFor } from './runStyle';
@@ -77,6 +77,28 @@ describe('settlement', () => {
   it('trifecta: exact 1-2-3 order', () => {
     expect(settle(bet('trifecta', [2, 5, 1]), order)).toBe(400);
     expect(settle(bet('trifecta', [2, 1, 5]), order)).toBe(0); // right horses, wrong order
+  });
+});
+
+describe('betTier (in-race closeness: 虹/金/銀/無地)', () => {
+  // ranks[entrantIdx] = current rank. Here entrant i is currently in rank i+1.
+  const ranks = [1, 2, 3, 4, 5, 6, 7, 8];
+  it('3=的中 when the bet would pay now', () => {
+    expect(betTier({ kind: 'win', sel: [0], amount: 10, odds: 2 }, ranks)).toBe(3);
+    expect(betTier({ kind: 'trifecta', sel: [0, 1, 2], amount: 10, odds: 2 }, ranks)).toBe(3);
+  });
+  it('2=ニアピン for the right horses in the wrong order / one place off', () => {
+    expect(betTier({ kind: 'trifecta', sel: [2, 1, 0], amount: 10, odds: 2 }, ranks)).toBe(2); // top3, wrong order
+    expect(betTier({ kind: 'win', sel: [1], amount: 10, odds: 2 }, ranks)).toBe(2); // currently 2nd
+    expect(betTier({ kind: 'place', sel: [3], amount: 10, odds: 2 }, ranks)).toBe(2); // currently 4th
+  });
+  it('1=普通 when a pick is merely contending', () => {
+    expect(betTier({ kind: 'win', sel: [3], amount: 10, odds: 2 }, ranks)).toBe(1); // 4th
+    expect(betTier({ kind: 'trifecta', sel: [0, 1, 5], amount: 10, odds: 2 }, ranks)).toBe(1); // 2 of 3 in top3
+  });
+  it('0=圏外 when nothing is close', () => {
+    expect(betTier({ kind: 'win', sel: [7], amount: 10, odds: 2 }, ranks)).toBe(0); // last
+    expect(betTier({ kind: 'trifecta', sel: [5, 6, 7], amount: 10, odds: 2 }, ranks)).toBe(0);
   });
 });
 
