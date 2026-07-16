@@ -70,7 +70,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
     <div className={styles.paddock}>
       <div className={styles.head}>
         <h2 className={styles.h2}>パドック</h2>
-        <span className={styles.coins}><CoinIcon size={18} /> {coins.toLocaleString()}</span>
+        <span className={styles.coins}><CoinIcon size={16} /> {coins.toLocaleString()}</span>
       </div>
 
       {/* market tabs */}
@@ -102,7 +102,6 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                   {moods && <span className={styles.moodBadge}><MoodFace level={moods[r.idx]} size={17} title={false} /></span>}
                 </div>
                 <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
-                <span className={styles.win}>{r.odds.toFixed(1)}倍</span>
                 <button
                   className={`${styles.info} ${open ? styles.infoOn : ''}`}
                   aria-label="能力を見る"
@@ -111,6 +110,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                   <StatRadar stats={e.stats} size={22} bare />
                   <span className={styles.infoTxt}>能力<span className={styles.infoTotal}>総合 {statTotal(e.stats)}</span></span>
                 </button>
+                <span className={styles.win}>{r.odds.toFixed(1)}倍</span>
                 <span className={`${styles.mark} ${on ? styles.markOn : ''}`}>
                   {on ? (spec.ordered ? order + 1 : '✓') : ''}
                 </span>

@@ -46,15 +46,20 @@
 .hint {
   font-size: 12px;
   color: var(--ink-soft);
-  margin: 6px 2px 8px;
+  margin: 5px 2px 6px;
 }
 .list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 2px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  /* Cap the field so the stake row and 出走 button always stay on one screen —
+     the list scrolls internally instead of pushing the controls off the bottom. */
+  max-height: 48vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .item {
   display: flex;
@@ -63,10 +68,10 @@
 }
 .row {
   display: grid;
-  grid-template-columns: auto 36px 1fr auto auto 22px;
+  grid-template-columns: auto 34px 1fr auto auto 20px;
   align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
+  gap: 7px;
+  padding: 4px 7px;
   background: var(--panel-inner);
   border: 2px solid var(--border);
   border-radius: 12px;
@@ -183,6 +188,9 @@
   font-weight: 900;
   color: #c33f39;
   font-size: 15px;
+  text-align: right;
+  min-width: 54px;
+  font-variant-numeric: tabular-nums;
 }
 .mark {
   width: 20px;
@@ -201,7 +209,7 @@
 .stakeRow {
   display: flex;
   gap: 5px;
-  margin-top: 10px;
+  margin-top: 8px;
   align-items: stretch;
 }
 .amt {
@@ -285,7 +293,7 @@
   font-size: 12px;
 }
 .actions {
-  margin-top: 12px;
+  margin-top: 10px;
   display: flex;
   justify-content: center;
 }
