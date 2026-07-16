@@ -20,6 +20,7 @@ import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
 import { settle, type Bet } from '../logic/betting';
 import Paddock from '../components/Paddock';
+import BetResult from '../components/BetResult';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import { normalRaceCoins, BADGE_COINS, MAX_BETS_PER_RACE } from '../data/coins';
 import { usePrefersReducedMotion } from '../hooks';
@@ -414,16 +415,10 @@ export default function Race() {
           )}
           {reward && (
             <div className={`${styles.coinReward} ${reduced ? '' : styles.coinPop}`}>
-              <span className={styles.coinGot}><CoinIcon size={22} /> ＋{reward.earned}</span>
-              {bets.length > 0 && (
-                <span className={reward.payout > 0 ? styles.betHit : styles.betMiss}>
-                  {reward.payout > 0
-                    ? `馬券的中！ 払戻 ＋${reward.payout}`
-                    : `馬券ハズレ… −${bets.reduce((s, b) => s + b.amount, 0)}`}
-                </span>
-              )}
+              <span className={styles.coinGot}><CoinIcon size={22} /> 賞金 ＋{reward.earned}</span>
             </div>
           )}
+          <BetResult entrants={setup.entrants} gate={result.gate} order={result.order} bets={bets} course={setup.course} />
           <ol className={styles.ranking}>
             {order.map(({ idx, rank, time }) => {
               const rc = rankColor(rank, setup.entrants.length);

@@ -44,6 +44,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const elapsed = useRef(0);
   const [, force] = useState(0);
   const startRef = useRef(0);
+  const handedOff = useRef(false); // guard so the finish is handed back exactly once
   const cam = useRef<{ x: number; y: number; span: number } | null>(null);
 
   useEffect(() => {
@@ -59,6 +60,9 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     return () => t.forEach(clearTimeout);
   }, [reduced]);
 
+  // Cool-down: after the last horse crosses the line, hold on the scene for a beat
+  // while the finishers ease down to a walk (余韻) before handing back the result.
+  const LINGER = reduced ? 0.2 : 2.2; // sim-seconds
   useEffect(() => {
     if (phase !== 'run') return;
     const speed = reduced ? 4 : 1;
@@ -66,10 +70,10 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     const loop = (now: number) => {
       if (!startRef.current) startRef.current = now;
       elapsed.current = ((now - startRef.current) / 1000) * speed;
-      if (elapsed.current >= result.duration) {
-        elapsed.current = result.duration;
-        setPhase('done');
-        window.setTimeout(() => onFinish(result), reduced ? 100 : 700);
+      if (elapsed.current >= result.duration + LINGER) {
+        elapsed.current = result.duration + LINGER;
+        force((x) => x + 1);
+        if (!handedOff.current) { handedOff.current = true; onFinish(result); }
         return;
       }
       force((x) => x + 1);
@@ -77,7 +81,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [phase, reduced, result, onFinish]);
+  }, [phase, reduced, result, onFinish, LINGER]);
 
   // viewport (meter coords) with room for stands above.
   const b = trackBounds(track);
@@ -204,6 +208,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const nf = result.frames[Math.min(fi + 1, result.frames.length - 1)];
   const alpha = Math.min(1, Math.max(0, elapsed.current / dt - fi));
 
+  const done = phase === 'run' && elapsed.current >= result.duration; // race over, in cool-down
   const leaderS = Math.max(...fr.runners.map((r) => r.s));
   const travelled = leaderS - result.startS; // distance run since the start/finish line
   // Live leader (for the turf vision) and the finishing 1-2-3 (for the result board).
@@ -219,11 +224,20 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
 
   // Interpolated horse world positions (also used to drive the follow camera).
   const positions = fr.runners.map((rf, i) => {
-    const s = rf.s + (nf.runners[i].s - rf.s) * alpha;
+    let s = rf.s + (nf.runners[i].s - rf.s) * alpha;
     const d = rf.d + (nf.runners[i].d - rf.d) * alpha;
+    let speed = (nf.runners[i].s - rf.s) / dt; // m/s over this frame
+    // Cool-down walk (余韻): once a horse has crossed the line the sim freezes it,
+    // so ease it down to a gentle walk and let it stroll a little past the post
+    // instead of stopping dead (real horses gallop out and pull up).
+    const ft = result.finishTimes[i];
+    if (Number.isFinite(ft) && elapsed.current >= ft) {
+      const dtf = elapsed.current - ft; // seconds since this horse finished
+      s = rf.s + 7 * (1 - Math.exp(-dtf * 0.7)) + 1.1 * dtf; // decel gallop-out into a walk
+      speed = 1.1 + 5 * Math.exp(-dtf * 0.7); // eases toward a ~1.1 m/s walk
+    }
     const c = centerline(track, s);
     const w = toWorld(track, s, d);
-    const speed = (nf.runners[i].s - rf.s) / dt; // m/s over this frame
     return {
       x: w.x,
       y: w.y,
@@ -234,14 +248,16 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     };
   });
 
-  // Smoothed auto-fit camera: keep every horse (incl. the player) in frame,
-  // zoomed as close as the spread allows (RACE_V2 §2.3).
+  // Smoothed auto-fit camera: frame the front of the race — the top ~5 by rank
+  // (only they decide the finish) plus the player's own horse — so the shot stays
+  // tight on the action instead of zooming out for stragglers (RACE_V2 §2.3).
   const AR = vb.w / vb.h;
   let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
-  for (const p of positions) {
+  positions.forEach((p, i) => {
+    if (fr.runners[i].rank > 5 && !entrants[i].isPlayer) return; // off-camera straggler
     minx = Math.min(minx, p.x); maxx = Math.max(maxx, p.x);
     miny = Math.min(miny, p.y); maxy = Math.max(maxy, p.y);
-  }
+  });
   const padM = 16;
   const targetSpan = Math.min(vb.w, Math.max(48, (maxx - minx) + padM * 2, ((maxy - miny) + padM * 2) * AR));
   const targetX = (minx + maxx) / 2;
@@ -272,7 +288,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           {scenery}
           {/* cheering crowd — bobs harder down the final stretch and at the finish */}
           {(() => {
-            const hype = phase === 'done' ? 1 : travelled / result.distanceS > 0.85 ? 0.7 : 0.28;
+            const hype = done ? 1 : travelled / result.distanceS > 0.85 ? 0.7 : 0.28;
             const amp = reduced ? 0 : 1.4 * hype;
             const t = elapsed.current * 7;
             return crowdDots.map((d, i) => (
@@ -338,7 +354,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
               />
             ))}
           {/* result board in the infield — shows the finishing 1-2-3 after the race */}
-          {phase === 'done' && (
+          {done && (
             <g>
               <rect x={-15} y={-track.radius * 0.5 - 2} width={30} height={22} rx={1.5} fill="#3a3020" opacity={0.96} />
               <rect x={-15} y={-track.radius * 0.5 - 2} width={30} height={5.5} rx={1.5} fill="#c33f39" />
@@ -354,7 +370,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         </svg>
 
         {phase === 'countdown' && <div className={styles.countdown}>{count > 0 ? count : 'GO!'}</div>}
-        {travelled / result.distanceS > 0.85 && phase === 'run' && (
+        {travelled / result.distanceS > 0.85 && phase === 'run' && !done && (
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
@@ -379,11 +395,11 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         looks={looks}
         gate={result.gate}
         ranks={fr.runners.map((r) => r.rank)}
-        finished={phase === 'done'}
+        finished={done}
       />
       {/* Skip unlocks only in the second half of the race (RACE_V4 §2 request). */}
-      {skippable && phase === 'run' && travelled / result.distanceS >= 0.5 && (
-        <button className={styles.skip} onClick={() => { elapsed.current = result.duration; setPhase('done'); onFinish(result); }}>
+      {skippable && phase === 'run' && !done && travelled / result.distanceS >= 0.5 && (
+        <button className={styles.skip} onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}>
           スキップ <Icon name="skip" size={14} />
         </button>
       )}
