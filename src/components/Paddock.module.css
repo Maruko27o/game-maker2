@@ -81,19 +81,41 @@
   box-shadow: 0 0 0 2px var(--gold) inset;
 }
 .info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 2px solid var(--border-dark);
   background: var(--panel);
   border-radius: 8px;
-  padding: 3px 7px;
+  padding: 2px 6px;
   font-weight: 800;
   font-size: 11px;
   color: var(--ink-soft);
   white-space: nowrap;
 }
+.info svg {
+  display: block;
+  flex: 0 0 auto;
+}
+.infoTxt {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  align-items: flex-start;
+}
+.infoTotal {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  opacity: 0.85;
+}
 .infoOn {
   background: var(--blue);
   border-color: var(--blue-dark);
   color: #fff;
+}
+.infoOn .infoTotal {
+  color: #eaf2ff;
 }
 .stats {
   display: flex;

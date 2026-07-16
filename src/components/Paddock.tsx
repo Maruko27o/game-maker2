@@ -4,6 +4,7 @@ import type { Course } from '../data/courses';
 import type { HorseLook, StatKey } from '../types';
 import { STAT_KEYS, STAT_LABEL, RUN_STYLE_LABEL } from '../types';
 import { raceOdds, oddsFor, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
+import { statTotal } from '../logic/stats';
 import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
 import HorseView from './HorseView';
@@ -100,7 +101,8 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                   aria-label="能力を見る"
                   onClick={(ev) => { ev.stopPropagation(); setOpenStats(open ? null : r.idx); }}
                 >
-                  能力
+                  <StatRadar stats={e.stats} size={22} bare />
+                  <span className={styles.infoTxt}>能力<span className={styles.infoTotal}>総合 {statTotal(e.stats)}</span></span>
                 </button>
                 <span className={`${styles.mark} ${on ? styles.markOn : ''}`}>
                   {on ? (spec.ordered ? order + 1 : '✓') : ''}
