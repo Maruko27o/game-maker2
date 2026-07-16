@@ -350,8 +350,10 @@ export function simulate2(
             r.aim = 'RAIL'; r.passRef = null; r.seekSince = -1;
           }
         }
-        // clear the no-cut-inside lock once we're 3r clear of the passed horse
-        if (r.passedRef && (r.passedRef.finished || r.s - r.passedRef.s > 3 * rr)) r.passedRef = null;
+        // clear the no-cut-inside lock once we're safely (2r) clear of the passed
+        // horse, so a passer ducks back to the rail promptly instead of running the
+        // long way round the bend after an overtake (still no 斜行 — §3.7).
+        if (r.passedRef && (r.passedRef.finished || r.s - r.passedRef.s > 2 * rr)) r.passedRef = null;
 
         // dTarget by state
         let dTarget = r.d;
@@ -369,7 +371,7 @@ export function simulate2(
           // outer-gate horse can save ground into the first turn instead of
           // running the whole way wide (real jockeys tuck in). Near the rail it
           // stays gentle so the line doesn't jitter.
-          vdScale = Math.min(1, 0.58 + Math.abs(dTarget - r.d) * 0.12);
+          vdScale = Math.min(1, 0.66 + Math.abs(dTarget - r.d) * 0.14);
           if (innerOccupied(runners, r, rr)) dTarget = r.d; // don't shove a rail neighbour
           if (r.passedRef) dTarget = Math.max(dTarget, r.d); // no cutting inside yet (§3.7)
         }
@@ -378,7 +380,7 @@ export function simulate2(
 
         // physics: centrifugal drift out on corners + soft rail cushions
         let extra = 0;
-        if (onCorner) extra += c * r.v * r.v * 0.02;
+        if (onCorner) extra += c * r.v * r.v * 0.014;
         if (r.d > dLimit - 1.5) extra -= (r.d - (dLimit - 1.5)) * 3.0;
         if (r.d < -dLimit + 1.5) extra += (-dLimit + 1.5 - r.d) * 3.0;
 
@@ -698,8 +700,11 @@ function railTarget(r: R, dInner: number, rr: number, progress: number, dLimit: 
   const style = r.e.style;
   if (style === 'nige' || style === 'senko') return dInner + 1.2 * rr;
   const early = progress < 0.55; // closers wait off the rail, then drift in
-  if (style === 'sashi') return early ? 0 : dInner + 1.6 * rr;
-  return early ? dLimit * 0.35 : dInner + 2.0 * rr; // oikomi
+  // Late (from ~55%): tuck onto the rail to save ground through the corners —
+  // the wide 大外 charge is reserved for the home straight (see homeTarget), so a
+  // closer on a bend still runs the shortest line like a real jockey (インベタ).
+  if (style === 'sashi') return early ? 0 : dInner + 1.3 * rr;
+  return early ? dLimit * 0.35 : dInner + 1.5 * rr; // oikomi
 }
 
 // HOME target — the final straight (§3.8). Front-runners hold their line and only
