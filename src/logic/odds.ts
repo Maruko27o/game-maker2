@@ -23,11 +23,11 @@ export function mcWinProbs(
   entrants: Entrant[],
   course: Course,
   mode: 30 | 60,
-  opts: { laps?: number; samples?: number } = {},
+  opts: { laps?: number; samples?: number; moods?: number[] } = {},
 ): number[] {
   const N = opts.samples ?? MC_SAMPLES;
   const wins = new Array(entrants.length).fill(0);
-  for (let s = 0; s < N; s++) wins[simulate2(entrants, course, mode, seedAt(s), { laps: opts.laps }).order[0]]++;
+  for (let s = 0; s < N; s++) wins[simulate2(entrants, course, mode, seedAt(s), { laps: opts.laps, moods: opts.moods }).order[0]]++;
   return probsFromWins(wins, N);
 }
 
@@ -37,13 +37,13 @@ export async function mcWinProbsAsync(
   entrants: Entrant[],
   course: Course,
   mode: 30 | 60,
-  opts: { laps?: number; samples?: number; onProgress?: (frac: number) => void } = {},
+  opts: { laps?: number; samples?: number; moods?: number[]; onProgress?: (frac: number) => void } = {},
 ): Promise<number[]> {
   const N = opts.samples ?? MC_SAMPLES;
   const batch = 6;
   const wins = new Array(entrants.length).fill(0);
   for (let s = 0; s < N; s++) {
-    wins[simulate2(entrants, course, mode, seedAt(s), { laps: opts.laps }).order[0]]++;
+    wins[simulate2(entrants, course, mode, seedAt(s), { laps: opts.laps, moods: opts.moods }).order[0]]++;
     if ((s + 1) % batch === 0) {
       opts.onProgress?.((s + 1) / N);
       await new Promise((r) => setTimeout(r));

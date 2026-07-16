@@ -20,6 +20,7 @@ import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
 import { settle, type Bet } from '../logic/betting';
 import { mcWinProbsAsync } from '../logic/odds';
+import { rollMoods, moodMultipliers, type MoodLevel } from '../logic/mood';
 import Paddock from '../components/Paddock';
 import BetResult from '../components/BetResult';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
@@ -73,6 +74,7 @@ type RaceSetup = {
   entrants: Entrant[];
   looks: Record<string, HorseLook>;
   grade: 'normal' | 'gp';
+  moods: MoodLevel[]; // per-entrant mood for this race (shown + folded into perf)
 };
 
 // ---- Course reveal roulette (RACE_V2 §10) -------------------------------------
@@ -162,6 +164,7 @@ export default function Race() {
     setOdds(null);
     setOddsPct(0);
     mcWinProbsAsync(setup.entrants, setup.course, setup.mode, {
+      moods: moodMultipliers(setup.moods),
       onProgress: (f) => { if (alive) setOddsPct(f); },
     }).then((p) => { if (alive) setOdds(p); });
     return () => { alive = false; };
@@ -186,7 +189,8 @@ export default function Race() {
       entrants.push(cpu.entrant);
       looks[cpu.entrant.horseId] = cpu.look;
     }
-    setSetup({ course, mode, seed, entrants, looks, grade });
+    const moods = rollMoods(seed, entrants.length);
+    setSetup({ course, mode, seed, entrants, looks, grade, moods });
     rewardApplied.current = false;
     setReward(null);
     setBets([]);
@@ -401,6 +405,7 @@ export default function Race() {
           coins={coins}
           bets={bets}
           probs={odds}
+          moods={setup.moods}
           onAdd={(b) => { if (bets.length >= MAX_BETS_PER_RACE) return; if (spendCoins(b.amount)) setBets((prev) => [...prev, b]); }}
           onRemove={(i) => { addCoins(bets[i].amount); setBets((prev) => prev.filter((_, k) => k !== i)); }}
           onStart={() => setScreen('race')}
@@ -425,6 +430,7 @@ export default function Race() {
           reduced={reduced}
           skippable
           bets={bets}
+          moods={moodMultipliers(setup.moods)}
           onFinish={onFinish}
         />
       </div>
