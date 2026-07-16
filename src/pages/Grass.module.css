@@ -68,7 +68,8 @@
   width: 100%;
   border: 4px solid var(--border-dark);
   border-radius: 22px;
-  background: linear-gradient(180deg, #bfe08a 0%, #9ccb63 100%);
+  /* sky→grass fallback; the GrassScene SVG paints the full scene on top */
+  background: linear-gradient(180deg, #bfe6ff 0%, #eaf7ff 45%, #8ec756 100%);
   min-height: 320px;
   padding: 20px;
   display: flex;
@@ -97,6 +98,7 @@
   bottom: 10px;
   left: 0;
   right: 0;
+  z-index: 1;
   display: flex;
   justify-content: space-around;
   font-size: 40px;
@@ -140,6 +142,7 @@
   margin: 4px 0;
   font-weight: 800;
   font-size: 18px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
 }
 .tapEmoji {
   font-size: 40px;
