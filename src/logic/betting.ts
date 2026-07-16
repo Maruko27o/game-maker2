@@ -109,3 +109,29 @@ export function wouldWin(bet: Bet, ranks: number[]): boolean {
   const order = ranks.map((_, i) => i).sort((x, y) => ranks[x] - ranks[y]);
   return settle({ ...bet, amount: Math.max(1, bet.amount) }, order) > 0;
 }
+
+// How close a bet is to hitting *right now* (RACE §in-race見込み): 3 的中 (would pay
+// if the race ended now), 2 ニアピン (right horses, wrong order / one place off), 1 普通
+// (a pick is contending), 0 圏外. Drives the tag colour and the top-left sort.
+export type BetTier = 0 | 1 | 2 | 3;
+export function betTier(bet: Bet, ranks: number[]): BetTier {
+  if (wouldWin(bet, ranks)) return 3;
+  const rs = bet.sel.map((i) => ranks[i] ?? Infinity); // current rank of each pick
+  const within = (k: number) => rs.filter((r) => r <= k).length;
+  switch (bet.kind) {
+    case 'win':
+      return rs[0] === 2 ? 2 : rs[0] <= 4 ? 1 : 0;
+    case 'place':
+      return rs[0] === 4 ? 2 : rs[0] <= 6 ? 1 : 0;
+    case 'quinella':
+      if (within(3) === 2) return 2; // both top-3, just not the exact top-2
+      return within(2) >= 1 || within(4) === 2 ? 1 : 0;
+    case 'wide':
+      if (within(3) === 1 && within(4) === 2) return 2; // one in, the other 4th
+      return within(3) >= 1 ? 1 : 0;
+    case 'trifecta':
+      if (rs.every((r) => r <= 3) && new Set(rs).size === 3) return 2; // right 3, wrong order
+      return within(3) >= 2 ? 1 : 0;
+  }
+  return 0;
+}

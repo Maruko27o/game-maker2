@@ -7,7 +7,7 @@ import HorseDefs from './HorseDefs';
 import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
 import { buildScenery } from './trackScenery';
-import { wouldWin, type Bet, type BetKind } from '../logic/betting';
+import { betTier, type Bet, type BetKind } from '../logic/betting';
 import Icon from './Icon';
 import styles from './RaceTrack2.module.css';
 
@@ -374,22 +374,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
-      {/* Bet slip strip — glows when a bet would win if the race ended right now. */}
-      {bets && bets.length > 0 && (
-        <div className={styles.betStrip}>
-          {bets.map((b, i) => {
-            const hit = wouldWin(b, fr.runners.map((r) => r.rank));
-            const picks = b.sel.map((idx) => result.gate[idx]).join(b.kind === 'trifecta' ? '→' : '・');
-            return (
-              <span key={i} className={`${styles.betTag} ${hit ? styles.betHitGlow : ''}`}>
-                <span className={styles.betTagKind}>{KIND_LABEL[b.kind]}</span>
-                {picks}
-                <span className={styles.betTagOdds}>{b.odds.toFixed(1)}倍</span>
-              </span>
-            );
-          })}
-        </div>
-      )}
+      {/* Running order (horses) sits on top, fixed. */}
       <RankPanel
         entrants={entrants}
         looks={looks}
@@ -397,6 +382,30 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         ranks={fr.runners.map((r) => r.rank)}
         finished={done}
       />
+      {/* Bet slip strip below — each tag is tinted by how close it is to hitting
+          right now (虹=的中 / 金=ニアピン / 銀=普通 / 無地=圏外) and the closest bets
+          sort to the front (top-left), like the rank cards reshuffle. */}
+      {bets && bets.length > 0 && (() => {
+        const ranks = fr.runners.map((r) => r.rank);
+        const tierClass = ['', styles.betSilver, styles.betGold, styles.betRainbow];
+        const ordered = bets
+          .map((b, i) => ({ b, i, tier: betTier(b, ranks) }))
+          .sort((a, z) => z.tier - a.tier); // stable: equal tiers keep their order
+        return (
+          <div className={styles.betStrip}>
+            {ordered.map(({ b, i, tier }) => {
+              const picks = b.sel.map((idx) => result.gate[idx]).join(b.kind === 'trifecta' ? '→' : '・');
+              return (
+                <span key={i} className={`${styles.betTag} ${tierClass[tier]}`}>
+                  <span className={styles.betTagKind}>{KIND_LABEL[b.kind]}</span>
+                  {picks}
+                  <span className={styles.betTagOdds}>{b.odds.toFixed(1)}倍</span>
+                </span>
+              );
+            })}
+          </div>
+        );
+      })()}
       {/* Skip unlocks only in the second half of the race (RACE_V4 §2 request). */}
       {skippable && phase === 'run' && !done && travelled / result.distanceS >= 0.5 && (
         <button className={styles.skip} onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}>
