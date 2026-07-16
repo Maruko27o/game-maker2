@@ -19,6 +19,7 @@ import Icon from '../components/Icon';
 import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
 import { settle, type Bet } from '../logic/betting';
+import { mcWinProbsAsync } from '../logic/odds';
 import Paddock from '../components/Paddock';
 import BetResult from '../components/BetResult';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
@@ -146,9 +147,25 @@ export default function Race() {
   const [reward, setReward] = useState<{ rank: number; awarded: Badge[]; earned: number; payout: number } | null>(null);
   const [cutin, setCutin] = useState<Badge[]>([]); // achievement badges to celebrate
   const [bets, setBets] = useState<Bet[]>([]); // the placed bets (empty = no bet)
+  const [odds, setOdds] = useState<number[] | null>(null); // Monte-Carlo win probs for the paddock
+  const [oddsPct, setOddsPct] = useState(0); // odds-calc progress 0..1
   const rewardApplied = useRef(false);
 
   const player = horses.find((h) => h.id === horseId) ?? null;
+
+  // Price the race off the *real* simulation: run it many times and read the actual
+  // win rates, so the odds match the true chances (RACE §odds整合性). Kicked off as
+  // soon as the field is set (during the roulette) so it's usually ready by the paddock.
+  useEffect(() => {
+    if (!setup || pickMode || setup.grade === 'gp') return; // only the betting single race uses this
+    let alive = true;
+    setOdds(null);
+    setOddsPct(0);
+    mcWinProbsAsync(setup.entrants, setup.course, setup.mode, {
+      onProgress: (f) => { if (alive) setOddsPct(f); },
+    }).then((p) => { if (alive) setOdds(p); });
+    return () => { alive = false; };
+  }, [setup, pickMode]);
 
   function begin(chosenCourse?: Course) {
     if (!player) return;
@@ -363,6 +380,18 @@ export default function Race() {
 
   // --- Paddock: betting (RACE_V4 §4 / 改修①) ---
   if (screen === 'paddock' && setup && player) {
+    if (!odds) {
+      return (
+        <div className={styles.page}>
+          <div className={styles.oddsLoading}>
+            <div className={styles.oddsSpinner} aria-hidden />
+            <p className={styles.oddsLoadingText}>オッズを計算中…</p>
+            <div className={styles.oddsBar}><div className={styles.oddsBarFill} style={{ width: `${Math.round(oddsPct * 100)}%` }} /></div>
+            <p className={styles.oddsLoadingSub}>本番と同じレースを何度も試して、実際の勝率からオッズを算出しています</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className={styles.page}>
         <Paddock
@@ -371,6 +400,7 @@ export default function Race() {
           course={setup.course}
           coins={coins}
           bets={bets}
+          probs={odds}
           onAdd={(b) => { if (bets.length >= MAX_BETS_PER_RACE) return; if (spendCoins(b.amount)) setBets((prev) => [...prev, b]); }}
           onRemove={(i) => { addCoins(bets[i].amount); setBets((prev) => prev.filter((_, k) => k !== i)); }}
           onStart={() => setScreen('race')}
@@ -424,7 +454,7 @@ export default function Race() {
               <span className={styles.coinGot}><CoinIcon size={22} /> 賞金 ＋{reward.earned}</span>
             </div>
           )}
-          <BetResult entrants={setup.entrants} gate={result.gate} order={result.order} bets={bets} course={setup.course} />
+          <BetResult entrants={setup.entrants} gate={result.gate} order={result.order} bets={bets} course={setup.course} probs={odds ?? undefined} />
           <ol className={styles.ranking}>
             {order.map(({ idx, rank, time }) => {
               const rc = rankColor(rank, setup.entrants.length);
