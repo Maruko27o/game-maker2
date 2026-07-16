@@ -78,17 +78,17 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   function settleBets(bets: Bet[], order: number[], courseId: string) {
     let payout = 0;
     let best = 0;
-    let wonCount = 0;
+    const staked = bets.reduce((s, b) => s + b.amount, 0);
     for (const b of bets) {
       const got = settle(b, order);
       payout += got;
-      if (got > 0) { best = Math.max(best, b.odds); wonCount++; }
+      if (got > 0) best = Math.max(best, b.odds);
     }
     if (payout > 0) {
       addCoins(payout);
       setBetPayout((p) => p + payout);
     }
-    recordBetStats({ placed: bets.length, won: wonCount, payout }); // profile 実績
+    recordBetStats({ placed: bets.length, staked, payout }); // profile 実績（回収率）
     if (ENABLE_RANKING && (best > 0 || payout > 0)) submitBestOdds(best, courseId, payout);
   }
 

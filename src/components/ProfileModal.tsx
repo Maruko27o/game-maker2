@@ -55,7 +55,8 @@ export default function ProfileModal({
     const distinct = Math.min(TOTAL_PARTS, Object.values(owned).filter((n) => n > 0).length);
     return Math.round((distinct / TOTAL_PARTS) * 100);
   }, [owned]);
-  const hitPct = pstats.betsPlaced > 0 ? Math.round((pstats.betsWon / pstats.betsPlaced) * 100) : null;
+  // 最高回収率：1レースの「獲得賞金 ÷ 合計賭け金」の自己ベスト（% ）。
+  const recoveryPct = pstats.betsPlaced > 0 ? pstats.maxRecoveryPct : null;
 
   const shelf = displayTrophies; // ranks, in order, max SLOTS
   const usedOf = (r: 1 | 2 | 3) => shelf.filter((x) => x === r).length;
@@ -149,8 +150,8 @@ export default function ProfileModal({
             <span className={styles.statValue}>{tasks.racesFinished.toLocaleString()}<small>回</small></span>
           </div>
           <div className={styles.statCell}>
-            <span className={styles.statLabel}>最大的中率</span>
-            <span className={styles.statValue}>{hitPct === null ? '—' : <>{hitPct}<small>%</small></>}</span>
+            <span className={styles.statLabel}>最高回収率</span>
+            <span className={styles.statValue}>{recoveryPct === null ? '—' : <>{recoveryPct.toLocaleString()}<small>%</small></>}</span>
           </div>
           <div className={styles.statCell}>
             <span className={styles.statLabel}>最大獲得賞金</span>

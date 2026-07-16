@@ -227,11 +227,11 @@ export default function Race() {
     // Settle every bet against the finishing order and sum the payouts.
     let payout = 0;
     let bestWonOdds = 0;
-    let wonCount = 0;
+    const staked = bets.reduce((s, b) => s + b.amount, 0);
     for (const b of bets) {
       const got = settle(b, result.order);
       payout += got;
-      if (got > 0) { bestWonOdds = Math.max(bestWonOdds, b.odds); wonCount++; }
+      if (got > 0) bestWonOdds = Math.max(bestWonOdds, b.odds);
       recordBet({
         courseId: setup.course.id,
         kind: b.kind,
@@ -244,7 +244,7 @@ export default function Race() {
       });
     }
     addCoins(earned + payout);
-    recordBetStats({ placed: bets.length, won: wonCount, payout }); // profile 実績
+    recordBetStats({ placed: bets.length, staked, payout }); // profile 実績（回収率）
     // Ranking (改修④): submit the best winning odds; the server keeps each
     // account's max. Best-effort — no-op when signed out or the DB isn't set up.
     if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup.course.id, payout);

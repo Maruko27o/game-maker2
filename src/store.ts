@@ -98,15 +98,15 @@ function normTasks(v: unknown): SaveData['tasks'] {
 }
 
 function freshStats(): SaveData['stats'] {
-  return { betsPlaced: 0, betsWon: 0, maxPayout: 0 };
+  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0 };
 }
 // Default any missing profile stat (older saves predate the profile-stats feature).
 function normStats(v: unknown): SaveData['stats'] {
   const s = (v ?? {}) as Partial<SaveData['stats']>;
   return {
     betsPlaced: typeof s.betsPlaced === 'number' ? s.betsPlaced : 0,
-    betsWon: typeof s.betsWon === 'number' ? s.betsWon : 0,
     maxPayout: typeof s.maxPayout === 'number' ? s.maxPayout : 0,
+    maxRecoveryPct: typeof s.maxRecoveryPct === 'number' ? s.maxRecoveryPct : 0,
   };
 }
 
@@ -329,8 +329,9 @@ type Store = SaveData & {
   finishRaceTask: () => void;
   /** Claim all earned per-N-race rewards. Returns the coins granted (0 if none). */
   claimRaceReward: () => number;
-  /** Fold one race's betting outcome into the lifetime profile stats. */
-  recordBetStats: (r: { placed: number; won: number; payout: number }) => void;
+  /** Fold one race's betting outcome into the lifetime profile stats: best single
+   *  payout (最大獲得賞金) and best single-race 回収率 = payout ÷ staked (最高回収率). */
+  recordBetStats: (r: { placed: number; staked: number; payout: number }) => void;
   // Profile (avatar horse + trophy shelf).
   setAvatarHorse: (id: string | null) => void;
   setDisplayTrophies: (ranks: number[]) => void;
@@ -644,14 +645,15 @@ export const useStore = create<Store>((set, get) => {
       return coins;
     },
 
-    recordBetStats: ({ placed, won, payout }) => {
+    recordBetStats: ({ placed, staked, payout }) => {
       if (placed <= 0 && payout <= 0) return;
       const s = get().stats;
+      const recovery = staked > 0 ? Math.round((payout / staked) * 100) : 0;
       commit({
         stats: {
           betsPlaced: s.betsPlaced + Math.max(0, placed),
-          betsWon: s.betsWon + Math.max(0, won),
           maxPayout: Math.max(s.maxPayout, payout),
+          maxRecoveryPct: Math.max(s.maxRecoveryPct, recovery),
         },
       });
     },

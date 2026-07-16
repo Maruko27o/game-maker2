@@ -129,9 +129,9 @@ export type TaskProgress = {
 
 // Lifetime player stats shown on the profile (改修：プロフィール実績).
 export type PlayerStats = {
-  betsPlaced: number; // total bet tickets purchased
-  betsWon: number; // tickets that hit (for 的中率)
+  betsPlaced: number; // total bet tickets purchased (to tell "no bets yet" from 0%)
   maxPayout: number; // best single-race total payout (最大獲得賞金)
+  maxRecoveryPct: number; // best single-race 回収率 = payout ÷ staked, as a % (最高回収率)
 };
 
 export type SaveData = {
