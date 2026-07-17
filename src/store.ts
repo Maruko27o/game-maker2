@@ -27,9 +27,12 @@ import {
   GP_DAILY_LIMIT,
   SLOT_EXPAND_COST,
   SLOT_EXPAND_TO,
+  RACE_TASK_EVERY,
   RACE_TASK_REWARD,
+  GRASS_TASK_EVERY,
+  GRASS_TASK_REWARD,
 } from './data/coins';
-import { claimableRaceRewards } from './logic/tasks';
+import { cyclesOf, newlyBanked } from './logic/tasks';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 10;
@@ -87,15 +90,29 @@ function normDaily(v: unknown): SaveData['daily'] {
 const BETS_CAP = 50; // keep only the most recent settled bets
 
 function freshTasks(): SaveData['tasks'] {
-  return { racesFinished: 0, raceRewardClaimed: 0 };
+  return { racesFinished: 0, raceBanked: 0, grassSpawns: 0, grassBanked: 0, bank: 0 };
 }
-// Default any missing task counter (older saves predate the tasks feature).
+// Normalize the tasks object, defaulting any missing counter and converting the
+// old {racesFinished, raceRewardClaimed} shape: any race rewards that were earned
+// but not yet claimed carry over into the new shared bank.
 function normTasks(v: unknown): SaveData['tasks'] {
-  const t = (v ?? {}) as Partial<SaveData['tasks']>;
-  return {
-    racesFinished: typeof t.racesFinished === 'number' ? t.racesFinished : 0,
-    raceRewardClaimed: typeof t.raceRewardClaimed === 'number' ? t.raceRewardClaimed : 0,
-  };
+  const t = (v ?? {}) as Record<string, unknown>;
+  const num = (x: unknown): number => (typeof x === 'number' && isFinite(x) ? x : 0);
+  const racesFinished = num(t.racesFinished);
+  const isNew = t.bank !== undefined || t.raceBanked !== undefined || t.grassSpawns !== undefined;
+  if (isNew) {
+    return {
+      racesFinished,
+      raceBanked: num(t.raceBanked),
+      grassSpawns: num(t.grassSpawns),
+      grassBanked: num(t.grassBanked),
+      bank: num(t.bank),
+    };
+  }
+  // Old shape → carry any unclaimed race rewards into the bank.
+  const cycles = cyclesOf(racesFinished, RACE_TASK_EVERY);
+  const owed = Math.max(0, cycles - num(t.raceRewardClaimed)) * RACE_TASK_REWARD;
+  return { racesFinished, raceBanked: cycles, grassSpawns: 0, grassBanked: 0, bank: owed };
 }
 
 function freshStats(): SaveData['stats'] {
@@ -347,11 +364,11 @@ type Store = SaveData & {
   /** Expand the stable 10→15 for 3000 coins (once). Returns true on success. */
   expandSlots: () => boolean;
   // Coin-earning tasks (改修：タスク).
-  /** Count one finished race toward the task. Call ONLY on the result screen so
-   *  it can't be farmed by starting a race and bailing out. */
+  /** Count one finished race toward the task (also banks a reward every N). Call
+   *  ONLY on the result screen so it can't be farmed by bailing out mid-race. */
   finishRaceTask: () => void;
-  /** Claim all earned per-N-race rewards. Returns the coins granted (0 if none). */
-  claimRaceReward: () => number;
+  /** Claim the whole task bank at once. Returns the coins granted (0 if empty). */
+  claimTaskBank: () => number;
   /** Fold one race's betting outcome into the lifetime profile stats: best single
    *  payout (最大獲得賞金), best single-race 回収率 = payout ÷ staked (最高回収率),
    *  and the highest winning odds (最大オッズ). */
@@ -468,7 +485,17 @@ export const useStore = create<Store>((set, get) => {
         owned[id] = (owned[id] ?? 0) + 1;
         return { id, isNew };
       });
-      commit({ owned, energy: spent.energy, energyUpdatedAt: spent.energyUpdatedAt });
+      // Grass task (改修：タスク): every 10 draws banks a reward.
+      const t = get().tasks;
+      const grassSpawns = t.grassSpawns + 1;
+      const gCycles = cyclesOf(grassSpawns, GRASS_TASK_EVERY);
+      const tasks = {
+        ...t,
+        grassSpawns,
+        grassBanked: Math.max(t.grassBanked, gCycles),
+        bank: t.bank + newlyBanked(grassSpawns, t.grassBanked, GRASS_TASK_EVERY, GRASS_TASK_REWARD),
+      };
+      commit({ owned, energy: spent.energy, energyUpdatedAt: spent.energyUpdatedAt, tasks });
       return { parts, energyLeft: spent.energy };
     },
 
@@ -657,18 +684,23 @@ export const useStore = create<Store>((set, get) => {
 
     finishRaceTask: () => {
       const t = get().tasks;
-      commit({ tasks: { ...t, racesFinished: t.racesFinished + 1 } });
+      const racesFinished = t.racesFinished + 1;
+      const cycles = cyclesOf(racesFinished, RACE_TASK_EVERY);
+      commit({
+        tasks: {
+          ...t,
+          racesFinished,
+          raceBanked: Math.max(t.raceBanked, cycles),
+          bank: t.bank + newlyBanked(racesFinished, t.raceBanked, RACE_TASK_EVERY, RACE_TASK_REWARD),
+        },
+      });
     },
 
-    claimRaceReward: () => {
+    claimTaskBank: () => {
       const s = get();
-      const rewards = claimableRaceRewards(s.tasks);
-      if (rewards <= 0) return 0;
-      const coins = rewards * RACE_TASK_REWARD;
-      commit({
-        coins: s.coins + coins,
-        tasks: { ...s.tasks, raceRewardClaimed: s.tasks.raceRewardClaimed + rewards },
-      });
+      const coins = s.tasks.bank;
+      if (coins <= 0) return 0;
+      commit({ coins: s.coins + coins, tasks: { ...s.tasks, bank: 0 } });
       return coins;
     },
 

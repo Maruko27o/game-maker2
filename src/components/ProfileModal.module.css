@@ -74,9 +74,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.shelf {
+/* header trophy shelf — a single button that opens the trophy editor */
+.shelfBtn {
+  position: relative;
   display: flex;
   gap: 4px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
 .shelfSlot {
   flex: 1;
@@ -89,8 +96,21 @@
   place-items: center;
   padding: 2px;
 }
-.shelfSlot:disabled {
-  cursor: default;
+.shelfEdit {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #2b2118;
+  border: 2px solid #fff;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* lifetime stats ----------------------------------------------------------- */
@@ -291,4 +311,66 @@
   font-weight: 800;
   text-decoration: underline;
   padding: 4px;
+}
+
+/* pop-up editors (opened by tapping the avatar / trophy shelf) -------------- */
+.editorOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 28, 14, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 20px 16px;
+  overflow-y: auto;
+  z-index: 70;
+}
+.editorCard {
+  width: 100%;
+  max-width: 360px;
+  background: var(--paper);
+  border: 4px solid var(--border-dark);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.editorHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.editorTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.shelfEdit2 {
+  display: flex;
+  gap: 6px;
+}
+.shelfSlot2 {
+  flex: 1;
+  aspect-ratio: 1;
+  min-width: 0;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-inner);
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  cursor: pointer;
+}
+.shelfSlot2:disabled {
+  cursor: default;
 }
