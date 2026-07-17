@@ -38,10 +38,44 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.oddsLine {
-  font-size: 14px;
+.stats {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 2px;
+}
+.stat {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: var(--panel-2);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 6px 8px;
+}
+.statLabel {
+  font-size: 10px;
   font-weight: 800;
-  color: #c33f39;
+  color: var(--ink-soft);
+}
+.statVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.statVal small {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  margin-left: 1px;
 }
 .trophyLabel {
   margin-top: 6px;
@@ -57,15 +91,17 @@
 }
 .shelf {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 4px;
   justify-content: center;
+  width: 100%;
 }
 .slot {
+  flex: 0 0 auto;
   border: 2px solid var(--border);
   border-radius: 10px;
   background: var(--panel-2);
-  padding: 4px;
+  padding: 3px;
   display: grid;
   place-items: center;
 }
