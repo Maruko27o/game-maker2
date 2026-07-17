@@ -2,6 +2,7 @@ import type { ScoreRow } from '../cloud';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
 import TrophyIcon from './TrophyIcon';
+import CoinIcon from './CoinIcon';
 import styles from './RankingProfileCard.module.css';
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
@@ -22,8 +23,18 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
           <HorseFace horse={look} size={104} />
         </div>
         <div className={styles.name}>{row.username}</div>
-        <div className={styles.oddsLine}>最高的中 {row.bestOdds.toFixed(1)} 倍</div>
-        {row.bestPayout > 0 && <div className={styles.oddsLine}>最大獲得賞金 {row.bestPayout.toLocaleString()}</div>}
+        <div className={styles.stats}>
+          <div className={styles.stat}>
+            <span className={styles.statLabel}>最高的中</span>
+            <span className={styles.statVal}>{row.bestOdds.toFixed(1)}<small>倍</small></span>
+          </div>
+          {row.bestPayout > 0 && (
+            <div className={styles.stat}>
+              <span className={styles.statLabel}>最大獲得賞金</span>
+              <span className={styles.statVal}><CoinIcon size={13} /> {row.bestPayout.toLocaleString()}</span>
+            </div>
+          )}
+        </div>
 
         <div className={styles.trophyLabel}>飾っているトロフィー</div>
         {trophies.length === 0 ? (
@@ -32,7 +43,7 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
           <div className={styles.shelf}>
             {trophies.map((r, i) => (
               <div key={i} className={styles.slot}>
-                <TrophyIcon rank={r} size={40} />
+                <TrophyIcon rank={r} size={34} />
               </div>
             ))}
           </div>

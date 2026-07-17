@@ -9,6 +9,10 @@ import styles from './Collection.module.css';
 
 type Entry = { id: string; name: string; rarity: Rarity };
 
+// Group each category by rarity so N / R / SR don't interleave in the grid.
+// Common → rare reads as a natural progression; ties keep their original order.
+const RARITY_ORDER: Record<Rarity, number> = { N: 0, R: 1, SR: 2 };
+
 const SECTIONS: { title: string; tab: string; entries: Entry[] }[] = [
   { title: 'ボディカラー', tab: 'ボディ', entries: colorsBySlot.body },
   { title: 'たてがみカラー', tab: 'たてがみ', entries: colorsBySlot.mane },
@@ -19,11 +23,9 @@ const SECTIONS: { title: string; tab: string; entries: Entry[] }[] = [
   { title: 'しっぽ', tab: 'しっぽ', entries: decosBySlot.tail },
 ].map((s) => ({
   ...s,
-  entries: (s.entries as (ColorPart | DecoPart)[]).map((p) => ({
-    id: p.id,
-    name: p.name,
-    rarity: p.rarity,
-  })),
+  entries: (s.entries as (ColorPart | DecoPart)[])
+    .map((p) => ({ id: p.id, name: p.name, rarity: p.rarity }))
+    .sort((a, b) => RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity]),
 }));
 
 const TOTAL = SECTIONS.reduce((n, s) => n + s.entries.length, 0);
