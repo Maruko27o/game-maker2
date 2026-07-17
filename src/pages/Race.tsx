@@ -147,7 +147,6 @@ export default function Race() {
   const [pickMode, setPickMode] = useState(false); // choose course, no betting
   const [horseId, setHorseId] = useState<string | null>(null);
   const [mode, setMode] = useState<30 | 60>(30);
-  const [fieldSize, setFieldSize] = useState<6 | 8 | 12>(8); // 出走頭数（ひとりでレース・2周固定）
   const [setup, setSetup] = useState<RaceSetup | null>(null);
   const [result, setResult] = useState<SimResult | null>(null);
   const [reward, setReward] = useState<{ rank: number; awarded: Badge[]; earned: number; payout: number } | null>(null);
@@ -188,8 +187,7 @@ export default function Race() {
       { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) },
     ];
     const avoidBody = colorById[player.colors.body]?.value;
-    const cpuCount = (grade === 'gp' ? 8 : fieldSize) - 1; // player + CPUs = field size
-    for (let i = 0; i < cpuCount; i++) {
+    for (let i = 0; i < 7; i++) {
       const cpu = makeCpu(`cpu${i}`, rng, band, grade === 'gp' ? 0.8 : 0.5, undefined, avoidBody);
       entrants.push(cpu.entrant);
       looks[cpu.entrant.horseId] = cpu.look;
@@ -270,7 +268,7 @@ export default function Race() {
           <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>ひとりでレース</span>
-            <span className={styles.modeDesc}>6・8・12頭からえらぶ・2周・馬券あり・3位以内でメダル</span>
+            <span className={styles.modeDesc}>8頭立て・2周・馬券あり・3位以内でメダル</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
@@ -337,17 +335,7 @@ export default function Race() {
                 </div>
               </>
             ) : (
-              <>
-                <h2 className={styles.h2}>出走頭数</h2>
-                <div className={styles.modeSwitch}>
-                  {([6, 8, 12] as const).map((n) => (
-                    <button key={n} className={`${styles.modeBtn} ${fieldSize === n ? styles.modeBtnSel : ''}`} onClick={() => setFieldSize(n)}>
-                      {n}頭
-                    </button>
-                  ))}
-                </div>
-                <p className={styles.h2}>すべて2周のコースで走ります</p>
-              </>
+              <p className={styles.h2}>2周のコースで走ります</p>
             )}
             <div className={styles.setupActions}>
               <button className="btn neutral" onClick={() => setScreen('menu')}>もどる</button>
