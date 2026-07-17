@@ -18,6 +18,7 @@ import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import RaceTrack2 from '../components/RaceTrack2';
 import GrandPrix from './GrandPrix';
+import Arena from './Arena';
 import { settle, type Bet } from '../logic/betting';
 import { mcWinProbsAsync } from '../logic/odds';
 import { winProbs } from '../logic/grandprix';
@@ -176,7 +177,7 @@ export default function Race() {
   const setRaceSession = useStore((s) => s.setRaceSession);
   const patchRaceSession = useStore((s) => s.patchRaceSession);
 
-  const [screen, setScreen] = useState<'menu' | 'setup' | 'course' | 'gp' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'setup' | 'course' | 'gp' | 'arena' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
   const [pickMode, setPickMode] = useState(false); // choose course, no betting
   const [horseId, setHorseId] = useState<string | null>(null);
@@ -378,14 +379,14 @@ export default function Race() {
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
-        <div className={`${styles.modeCard} ${styles.modeLocked}`} aria-disabled>
+        <button className={styles.modeCard} onClick={() => setScreen('arena')}>
           <span className={styles.modeEmoji}><Icon name="swords" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>たいせん</span>
-            <span className={styles.modeDesc}>ともだちと対戦</span>
+            <span className={styles.modeDesc}>毎日の勝ち抜きトーナメント・優勝で1万コイン</span>
           </span>
-          <span className={styles.soon}>準備中</span>
-        </div>
+          <span className={styles.modeGo}>▶</span>
+        </button>
       </div>
     );
   }
@@ -467,6 +468,11 @@ export default function Race() {
   // --- Grand prix (its own multi-stage flow) ---
   if (screen === 'gp' && player) {
     return <GrandPrix player={player} mode={mode} onExit={() => setScreen('menu')} />;
+  }
+
+  // --- 対戦（デイリー勝ち抜きトーナメント。自前でウマ選択するので player 不要） ---
+  if (screen === 'arena') {
+    return <Arena onExit={() => setScreen('menu')} />;
   }
 
   // --- Roulette ---

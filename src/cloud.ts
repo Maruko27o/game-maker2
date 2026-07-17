@@ -2,7 +2,7 @@
 // "local only" when the project isn't configured (see supabaseConfig.ts).
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import type { SaveData, HorseLook } from './types';
+import type { SaveData, HorseLook, ArenaHorseSnapshot } from './types';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from './supabaseConfig';
 import { migrate, useStore } from './store';
 
@@ -260,6 +260,63 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds'): Promise<
       avatar: r.avatar ?? null,
       displayTrophies: Array.isArray(r.display_trophies) ? r.display_trophies : [],
     }));
+  } catch {
+    return [];
+  }
+}
+
+// ---- 対戦（デイリー勝ち抜きトーナメント）------------------------------------
+// Cross-user arena. Players register one horse per day into a shared pool; the
+// next day their tournament draws opponents from everyone who entered that day.
+// All best-effort: with cloud off / the SQL not applied, entering is a no-op and
+// the pool is empty, so the tournament simply fills with COM (logic/arena.ts).
+
+/** Register the signed-in player's entry for `day` (YYYY-MM-DD). Best-effort. */
+export async function enterArena(day: string, snap: ArenaHorseSnapshot): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.rpc('enter_arena', {
+      p_day: day,
+      p_name: snap.name,
+      p_look: { colors: snap.colors, decos: snap.decos },
+      p_stats: snap.stats,
+      p_style: snap.style,
+    });
+  } catch {
+    /* table/RPC not set up or offline — non-fatal (tournament fills with COM) */
+  }
+}
+
+/** Read other players' entries for `day` as opponent snapshots. Empty on any
+ *  failure. Excludes the signed-in player's own row. */
+export async function loadArenaPool(day: string, limit = 60): Promise<ArenaHorseSnapshot[]> {
+  if (!supabase) return [];
+  try {
+    const uid = useAuth.getState().user?.id;
+    let q = supabase
+      .from('arena_entries')
+      .select('user_id, player_no, horse_name, look, stats, style')
+      .eq('race_day', day)
+      .limit(limit);
+    if (uid) q = q.neq('user_id', uid);
+    const { data, error } = await q;
+    if (error || !data) return [];
+    return (data as Record<string, unknown>[])
+      .map((r, i) => {
+        const look = (r.look ?? {}) as { colors?: ArenaHorseSnapshot['colors']; decos?: ArenaHorseSnapshot['decos'] };
+        return {
+          horseId: `pool_${i}`,
+          name: typeof r.horse_name === 'string' && r.horse_name ? r.horse_name : 'ライバル',
+          colors: look.colors,
+          decos: look.decos ?? {},
+          stats: r.stats as ArenaHorseSnapshot['stats'],
+          style: r.style as ArenaHorseSnapshot['style'],
+          isPlayer: false,
+          isCom: false,
+          playerNo: typeof r.player_no === 'number' ? r.player_no : null,
+        } as ArenaHorseSnapshot;
+      })
+      .filter((s) => s.colors && s.stats && s.style);
   } catch {
     return [];
   }
