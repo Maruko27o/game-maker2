@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import Icon from '../components/Icon';
@@ -18,6 +18,27 @@ import styles from './Create.module.css';
 
 const COLOR_LABEL: Record<ColorSlot, string> = { body: 'からだ', mane: 'たてがみ', hoof: 'ひづめ' };
 const DECO_LABEL: Record<DecoSlot, string> = { head: '頭', face: '顔', back: '背中', tail: 'しっぽ' };
+
+// Where each slot's decorations live on the horse — so the picker can show the part
+// itself (no horse), cropped to its region, instead of just a text label.
+const DECO_VIEWBOX: Record<DecoSlot, string> = {
+  head: '346 -6 134 120',
+  face: '356 96 148 90',
+  back: '80 108 250 244',
+  tail: '32 248 120 162',
+};
+const GLYPH_VARS = { ['--body']: '#e8e2d6', ['--mane']: '#8a6b4a', ['--hoof']: '#3a2c1c' } as CSSProperties;
+
+// A small standalone illustration of a decoration (改修：部品を絵で選ぶ). Renders the
+// deco's own SVG cropped to its slot region; --body/--mane let body-matched parts
+// (ねこみみ等) show in a neutral colour.
+function DecoGlyph({ slot, svg }: { slot: DecoSlot; svg: string }) {
+  return (
+    <svg className={styles.decoGlyph} viewBox={DECO_VIEWBOX[slot]} style={GLYPH_VARS} aria-hidden>
+      <g dangerouslySetInnerHTML={{ __html: svg }} />
+    </svg>
+  );
+}
 
 // Starting spreads offered so a new player isn't stuck on a blank allocation
 // (RACE_V3 §3.3). Each sums to exactly STAT_ALLOC_TOTAL (40).
@@ -184,8 +205,9 @@ export default function Create() {
               <h2 className={styles.sectionTitle}>{DECO_LABEL[slot]}</h2>
               <div className={styles.decoRow}>
                 <button
-                  className={`${styles.decoChip} ${!decos[slot] ? styles.selected : ''}`}
+                  className={`${styles.decoChip} ${styles.decoNone} ${!decos[slot] ? styles.selected : ''}`}
                   onClick={() => setDecos((p) => ({ ...p, [slot]: undefined }))}
+                  title="なし"
                 >
                   なし
                 </button>
@@ -200,8 +222,11 @@ export default function Create() {
                       }`}
                       disabled={!has}
                       onClick={() => setDecos((p) => ({ ...p, [slot]: d.id }))}
+                      title={has ? d.name : `${d.name}（未所持）`}
+                      aria-label={d.name}
                     >
-                      {has ? d.name : (<><Icon name="lock" size={11} /> {d.name}</>)}
+                      <DecoGlyph slot={slot} svg={d.svg} />
+                      {!has && <span className={styles.lock}><Icon name="lock" size={14} /></span>}
                     </button>
                   );
                 })}
