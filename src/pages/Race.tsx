@@ -4,7 +4,7 @@ import { useStore } from '../store';
 import { submitBestOdds } from '../cloud';
 import { ENABLE_RANKING } from '../config';
 import { COURSES, type Course } from '../data/courses';
-import { type Entrant, type SimResult } from '../logic/raceSim2';
+import { simulate2, type Entrant, type SimResult } from '../logic/raceSim2';
 import { mulberry32, statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { makeCpu } from '../logic/cpu';
@@ -78,6 +78,37 @@ type RaceSetup = {
   moods: MoodLevel[]; // per-entrant mood for this race (shown + folded into perf)
 };
 
+// Rebuild the exact single-race field from its seed (改修：レース継続). Mirrors the
+// generation in begin() so a resumed race is byte-for-byte identical. When the
+// course was chosen (pickMode), pass it so the RNG isn't consumed for the draw.
+function buildSingleSetup(seed: number, player: Horse, mode: 30 | 60, chosenCourse?: Course): RaceSetup {
+  const rng = mulberry32(seed ^ 0x77);
+  const course = chosenCourse ?? COURSES[Math.floor(rng() * COURSES.length)];
+  const pt = statTotal(player.stats);
+  const band: [number, number] = [Math.max(34, pt - 4), Math.min(48, pt + 4)];
+  const looks: Record<string, HorseLook> = { [player.id]: player };
+  const entrants: Entrant[] = [
+    { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) },
+  ];
+  const avoidBody = colorById[player.colors.body]?.value;
+  for (let i = 0; i < 7; i++) {
+    const cpu = makeCpu(`cpu${i}`, rng, band, 0.5, undefined, avoidBody);
+    entrants.push(cpu.entrant);
+    looks[cpu.entrant.horseId] = cpu.look;
+  }
+  const moods = assignMoods(winProbs(entrants, course), seed);
+  return { course, mode, seed, entrants, looks, grade: 'normal', moods };
+}
+
+// Wall-clock ms at which a race's playback is fully over (past the cool-down), so a
+// long-absent player returning lands straight on the result. Mirrors RaceTrack2.
+function raceDoneAt(anchorMs: number, durationS: number, reduced: boolean): number {
+  const speed = reduced ? 4 : 1;
+  const cdMs = (reduced ? 220 : 700) * 3;
+  const linger = reduced ? 0.2 : 2.2;
+  return anchorMs + cdMs + ((durationS + linger) / speed) * 1000;
+}
+
 // ---- Course reveal roulette (RACE_V2 §10) -------------------------------------
 function Roulette({ course, player, reduced, onDone }: { course: Course; player: Horse; reduced: boolean; onDone: () => void }) {
   const [spinning, setSpinning] = useState(!reduced);
@@ -141,6 +172,9 @@ export default function Race() {
   const recordBet = useStore((s) => s.recordBet);
   const finishRaceTask = useStore((s) => s.finishRaceTask);
   const recordBetStats = useStore((s) => s.recordBetStats);
+  const raceSession = useStore((s) => s.raceSession);
+  const setRaceSession = useStore((s) => s.setRaceSession);
+  const patchRaceSession = useStore((s) => s.patchRaceSession);
 
   const [screen, setScreen] = useState<'menu' | 'setup' | 'course' | 'gp' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
@@ -175,88 +209,132 @@ export default function Race() {
 
   function begin(chosenCourse?: Course) {
     if (!player) return;
+    setRaceSession(null); // drop any previous (finished/abandoned) session
     const seed = (Math.random() * 2 ** 31) >>> 0;
-    const rng = mulberry32(seed ^ 0x77);
-    const course = chosenCourse ?? COURSES[Math.floor(rng() * COURSES.length)];
-    // Keep CPUs within ±4 of the player's total so single races stay close
-    // (RACE_V3 §3.5, user preference: 接戦に寄せる).
-    const pt = statTotal(player.stats);
-    const band: [number, number] = [Math.max(34, pt - 4), Math.min(48, pt + 4)];
-    const looks: Record<string, HorseLook> = { [player.id]: player };
-    const entrants: Entrant[] = [
-      { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) },
-    ];
-    const avoidBody = colorById[player.colors.body]?.value;
-    for (let i = 0; i < 7; i++) {
-      const cpu = makeCpu(`cpu${i}`, rng, band, grade === 'gp' ? 0.8 : 0.5, undefined, avoidBody);
-      entrants.push(cpu.entrant);
-      looks[cpu.entrant.horseId] = cpu.look;
-    }
-    const moods = assignMoods(winProbs(entrants, course), seed);
-    setSetup({ course, mode, seed, entrants, looks, grade, moods });
+    const setup0 = buildSingleSetup(seed, player, mode, chosenCourse);
+    setSetup(setup0);
     rewardApplied.current = false;
     setReward(null);
     setBets([]);
-    // Chosen-course mode has no betting: skip the roulette + paddock, race now.
-    setScreen(chosenCourse ? 'race' : 'roulette');
+    if (chosenCourse) {
+      // Chosen-course mode has no betting: skip the roulette + paddock, race now,
+      // opening a resumable session anchored to this moment.
+      openRaceSession(setup0, [], true);
+      setScreen('race');
+    } else {
+      setScreen('roulette'); // betting flow; the session opens when the race starts
+    }
+  }
+
+  // Persist the running race so it survives tab switches / reloads (改修：レース継続).
+  // The race is deterministic, so we store only the seed/choices + a wall-clock anchor.
+  function openRaceSession(setup0: RaceSetup, betList: Bet[], pick: boolean) {
+    if (!player) return;
+    setRaceSession({
+      kind: 'single',
+      screen: 'race',
+      pickMode: pick,
+      seed: setup0.seed,
+      mode: setup0.mode,
+      courseId: setup0.course.id,
+      player,
+      bets: betList.map((b) => ({ kind: b.kind, sel: b.sel, amount: b.amount, odds: b.odds })),
+      anchorMs: Date.now(),
+      rewardApplied: false,
+      reward: null,
+    });
+  }
+
+  // Settle a finished single race exactly once: task count, badges, coins, bets,
+  // ranking. Returns the reward payload + achievement badges (for the cut-in).
+  function settleRace(setup0: RaceSetup, betList: Bet[], res: SimResult) {
+    finishRaceTask();
+    const rank = res.ranks[0]; // player is entrant 0
+    const flawless = !res.frames.some((f) => f.runners[0]?.state === 'stumble');
+    const awarded = finishNormalRace({
+      horseId: setup0.entrants[0].horseId,
+      courseId: setup0.course.id,
+      mode: setup0.mode,
+      rank,
+      time: res.finishTimes[0],
+      isJumpCourse: setup0.course.surface === 'steeple',
+      flawless,
+    });
+    const achievements = awarded.filter((b) => !BADGES[b.id as keyof typeof BADGES]?.placing);
+    const earned = normalRaceCoins(rank) + achievements.length * BADGE_COINS;
+    let payout = 0;
+    let bestWonOdds = 0;
+    const staked = betList.reduce((s, b) => s + b.amount, 0);
+    for (const b of betList) {
+      const got = settle(b, res.order);
+      payout += got;
+      if (got > 0) bestWonOdds = Math.max(bestWonOdds, b.odds);
+      recordBet({ courseId: setup0.course.id, kind: b.kind, picks: b.sel.map((i) => res.gate[i]), amount: b.amount, odds: b.odds, won: got > 0, payout: got, at: Date.now() });
+    }
+    addCoins(earned + payout);
+    recordBetStats({ placed: betList.length, staked, payout, wonOdds: bestWonOdds });
+    if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup0.course.id, payout);
+    bufferSubmission(buildSubmission(setup0.entrants, setup0.course.id, setup0.mode, setup0.seed, res, setup0.entrants[0].horseId));
+    return { reward: { rank, awarded, earned, payout }, achievements };
   }
 
   function onFinish(result: SimResult) {
     setResult(result);
-    if (!setup || rewardApplied.current) {
-      setScreen('result');
-      return;
+    if (!setup) { setScreen('result'); return; }
+    const sess = useStore.getState().raceSession;
+    if (rewardApplied.current || sess?.rewardApplied) {
+      if (sess?.reward) setReward(sess.reward);
+    } else {
+      rewardApplied.current = true;
+      const { reward, achievements } = settleRace(setup, bets, result);
+      setReward(reward);
+      setCutin(achievements); // cut-in only for achievement badges (placing are everyday)
+      patchRaceSession({ rewardApplied: true, reward });
     }
-    rewardApplied.current = true;
-    finishRaceTask(); // count this race toward the task — only here, on the result screen
-    const rank = result.ranks[0]; // player is entrant 0
-    const flawless = !result.frames.some((f) => f.runners[0]?.state === 'stumble');
-    const awarded = finishNormalRace({
-      horseId: setup.entrants[0].horseId,
-      courseId: setup.course.id,
-      mode: setup.mode,
-      rank,
-      time: result.finishTimes[0],
-      isJumpCourse: setup.course.surface === 'steeple',
-      flawless,
-    });
-    // Coins (RACE_V4 §4): placing reward + a bonus per achievement badge, then
-    // settle the win bet (stake was already taken when it was placed).
-    const achievements = awarded.filter((b) => !BADGES[b.id as keyof typeof BADGES]?.placing);
-    const earned = normalRaceCoins(rank) + achievements.length * BADGE_COINS;
-    // Settle every bet against the finishing order and sum the payouts.
-    let payout = 0;
-    let bestWonOdds = 0;
-    const staked = bets.reduce((s, b) => s + b.amount, 0);
-    for (const b of bets) {
-      const got = settle(b, result.order);
-      payout += got;
-      if (got > 0) bestWonOdds = Math.max(bestWonOdds, b.odds);
-      recordBet({
-        courseId: setup.course.id,
-        kind: b.kind,
-        picks: b.sel.map((i) => result.gate[i]),
-        amount: b.amount,
-        odds: b.odds,
-        won: got > 0,
-        payout: got,
-        at: Date.now(),
-      });
-    }
-    addCoins(earned + payout);
-    recordBetStats({ placed: bets.length, staked, payout, wonOdds: bestWonOdds }); // profile 実績
-    // Ranking (改修④): submit the best winning odds; the server keeps each
-    // account's max. Best-effort — no-op when signed out or the DB isn't set up.
-    if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup.course.id, payout);
-    setReward({ rank, awarded, earned, payout });
-    setCutin(achievements); // cut-in only for achievement badges (placing are everyday)
-    // Ranking foundation (RACE_V4 §5): buffer a verifiable submission locally.
-    // Nothing is uploaded while ENABLE_RANKING is off.
-    bufferSubmission(
-      buildSubmission(setup.entrants, setup.course.id, setup.mode, setup.seed, result, setup.entrants[0].horseId),
-    );
+    patchRaceSession({ screen: 'result' });
     setScreen('result');
   }
+
+  // Resume an in-progress race after a tab switch / reload (改修：レース継続). The
+  // race is rebuilt from its seed; if the wall clock says it already finished, we
+  // settle it (once) and jump to the result — otherwise playback resumes via anchor.
+  const rehydrated = useRef(false);
+  useEffect(() => {
+    if (rehydrated.current) return;
+    rehydrated.current = true;
+    const s = useStore.getState().raceSession;
+    if (!s || s.kind !== 'single') return;
+    const course = COURSES.find((c) => c.id === s.courseId);
+    if (!course) { setRaceSession(null); return; }
+    const setup0 = buildSingleSetup(s.seed, s.player, s.mode, s.pickMode ? course : undefined);
+    const bets0 = s.bets as unknown as Bet[];
+    setHorseId(s.player.id);
+    setPickMode(s.pickMode);
+    setMode(s.mode);
+    setGrade('normal');
+    setSetup(setup0);
+    setBets(bets0);
+    rewardApplied.current = s.rewardApplied;
+    const res = simulate2(setup0.entrants, setup0.course, setup0.mode, setup0.seed, { recordFrames: true, moods: setup0.moods });
+    const finished = s.screen === 'result' || (s.anchorMs != null && Date.now() >= raceDoneAt(s.anchorMs, res.duration, reduced));
+    if (finished) {
+      setResult(res);
+      if (s.rewardApplied) {
+        if (s.reward) setReward(s.reward);
+        patchRaceSession({ screen: 'result' });
+      } else {
+        rewardApplied.current = true;
+        const { reward, achievements } = settleRace(setup0, bets0, res);
+        setReward(reward);
+        setCutin(achievements);
+        patchRaceSession({ rewardApplied: true, reward, screen: 'result' });
+      }
+      setScreen('result');
+    } else {
+      setScreen('race'); // still running — resume the animation from the anchor
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- Menu ---
   if (screen === 'menu') {
@@ -414,7 +492,7 @@ export default function Race() {
           moods={setup.moods}
           onAdd={(b) => { if (bets.length >= MAX_BETS_PER_RACE) return; if (spendCoins(b.amount)) setBets((prev) => [...prev, b]); }}
           onRemove={(i) => { addCoins(bets[i].amount); setBets((prev) => prev.filter((_, k) => k !== i)); }}
-          onStart={() => setScreen('race')}
+          onStart={() => { openRaceSession(setup, bets, false); setScreen('race'); }}
         />
       </div>
     );
@@ -437,6 +515,7 @@ export default function Race() {
           skippable
           bets={bets}
           moods={moodMultipliers(setup.moods)}
+          anchorMs={raceSession?.anchorMs ?? undefined}
           onFinish={onFinish}
         />
       </div>
@@ -482,10 +561,10 @@ export default function Race() {
             })}
           </ol>
           <div className={styles.raceActions}>
-            <button className="btn neutral" onClick={() => setScreen('setup')}>ウマ・時間をかえる</button>
+            <button className="btn neutral" onClick={() => { setRaceSession(null); setScreen('setup'); }}>ウマ・時間をかえる</button>
             <button className="btn" onClick={() => (pickMode && setup ? begin(setup.course) : begin())}>もう一回</button>
           </div>
-          <button className={styles.exitLink} onClick={() => setScreen('menu')}>モードせんたくへ</button>
+          <button className={styles.exitLink} onClick={() => { setRaceSession(null); setScreen('menu'); }}>モードせんたくへ</button>
         </div>
         {cutin.length > 0 && <BadgeCutin badges={cutin} onDone={() => setCutin([])} />}
       </div>

@@ -138,6 +138,25 @@ export type PlayerStats = {
   maxOdds: number; // highest odds of a winning bet (最大オッズ)
 };
 
+// An in-progress race kept in the save so it survives tab switches / reloads and
+// resumes where it left off (改修：レース継続). The race is deterministic, so only
+// the seeds/choices + a wall-clock anchor are stored; entrants/result are rebuilt.
+export type SavedBet = { kind: string; sel: number[]; amount: number; odds: number };
+export type SingleRaceReward = { rank: number; awarded: Badge[]; earned: number; payout: number };
+export type RaceSession = {
+  kind: 'single';
+  screen: 'roulette' | 'paddock' | 'race' | 'result';
+  pickMode: boolean; // chosen-course practice (no betting) vs. the betting single race
+  seed: number;
+  mode: 30 | 60;
+  courseId: string; // the resolved course
+  player: Horse; // snapshot at race start (for an identical deterministic rebuild)
+  bets: SavedBet[];
+  anchorMs: number | null; // wall-clock ms when the countdown started (playback anchor)
+  rewardApplied: boolean; // rewards/coins settled exactly once
+  reward: SingleRaceReward | null; // stored for the result screen after a resume
+};
+
 export type SaveData = {
   version: 6;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
@@ -159,5 +178,6 @@ export type SaveData = {
   stats: PlayerStats; // lifetime profile stats (改修：プロフィール実績)
   avatarHorseId: string | null; // profile: which owned horse is the player's icon
   displayTrophies: number[]; // profile: trophy ranks (1|2|3) shown on the shelf (max 5)
+  raceSession?: RaceSession | null; // in-progress race, resumable across reloads
   savedAt: number; // ms of the last change — used for cloud last-write-wins sync
 };

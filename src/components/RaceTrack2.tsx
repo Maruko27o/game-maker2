@@ -28,10 +28,11 @@ type Props = {
   laps?: number; // override lap count (grand-prix heats/finals)
   bets?: Bet[]; // the player's placed bets — shown as a live strip that glows when winning
   moods?: number[]; // per-entrant mood performance multipliers (must match the odds calc)
+  anchorMs?: number; // wall-clock start (ms) of the countdown; drives resumable playback
   onFinish: (result: SimResult) => void;
 };
 
-export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, bets, moods, onFinish }: Props) {
+export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, bets, moods, anchorMs, onFinish }: Props) {
   const result = useMemo(
     () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps, moods }),
     [entrants, course, mode, seed, laps, moods],
@@ -48,25 +49,29 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const handedOff = useRef(false); // guard so the finish is handed back exactly once
   const cam = useRef<{ x: number; y: number; span: number } | null>(null);
 
-  useEffect(() => {
-    const step = reduced ? 220 : 700;
-    const t = [
-      window.setTimeout(() => setCount(2), step),
-      window.setTimeout(() => setCount(1), step * 2),
-      window.setTimeout(() => {
-        setCount(0);
-        setPhase('run');
-      }, step * 3),
-    ];
-    return () => t.forEach(clearTimeout);
-  }, [reduced]);
-
+  const speed = reduced ? 4 : 1;
+  const CD_STEP = reduced ? 220 : 700; // countdown step (ms)
+  const CD_MS = CD_STEP * 3; // total countdown (ms)
   // Cool-down: after the last horse crosses the line, hold on the scene for a beat
   // while the finishers ease down to a walk (余韻) before handing back the result.
   const LINGER = reduced ? 0.2 : 2.2; // sim-seconds
+  // Anchored playback (改修：レース継続). When the parent passes a wall-clock start
+  // (persisted in the save), the whole timeline derives from `Date.now() - anchorMs`,
+  // so the race resumes at the right point after a tab switch or reload.
+  const anchored = anchorMs != null;
+
+  // Legacy (non-anchored) countdown + run clock — kept for callers without an anchor.
   useEffect(() => {
-    if (phase !== 'run') return;
-    const speed = reduced ? 4 : 1;
+    if (anchored) return;
+    const t = [
+      window.setTimeout(() => setCount(2), CD_STEP),
+      window.setTimeout(() => setCount(1), CD_STEP * 2),
+      window.setTimeout(() => { setCount(0); setPhase('run'); }, CD_STEP * 3),
+    ];
+    return () => t.forEach(clearTimeout);
+  }, [anchored, CD_STEP]);
+  useEffect(() => {
+    if (anchored || phase !== 'run') return;
     let raf = 0;
     const loop = (now: number) => {
       if (!startRef.current) startRef.current = now;
@@ -82,7 +87,26 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [phase, reduced, result, onFinish, LINGER]);
+  }, [anchored, phase, speed, result, onFinish, LINGER]);
+
+  // Anchored run loop: re-render from the wall clock until the race is done.
+  useEffect(() => {
+    if (!anchored) return;
+    let raf = 0;
+    const loop = () => {
+      const realMs = Math.max(0, Date.now() - anchorMs);
+      const se = ((realMs - CD_MS) / 1000) * speed;
+      if (realMs >= CD_MS && se >= result.duration + LINGER) {
+        force((x) => x + 1);
+        if (!handedOff.current) { handedOff.current = true; onFinish(result); }
+        return;
+      }
+      force((x) => x + 1);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [anchored, anchorMs, speed, CD_MS, result, onFinish, LINGER]);
 
   // viewport (meter coords) with room for stands above.
   const b = trackBounds(track);
@@ -202,6 +226,21 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     );
   }, [track, entrants.length]);
 
+  // Effective timeline — wall-clock derived when anchored (so playback resumes),
+  // else the local countdown/RAF state. Sets elapsed.current for the frame reads.
+  let phaseEff: 'countdown' | 'run' = phase === 'done' ? 'run' : phase;
+  let countEff = count;
+  if (anchored) {
+    const realMs = Math.max(0, Date.now() - anchorMs);
+    if (realMs < CD_MS) {
+      phaseEff = 'countdown';
+      countEff = Math.max(1, 3 - Math.floor(realMs / CD_STEP));
+    } else {
+      phaseEff = 'run';
+      elapsed.current = Math.min(((realMs - CD_MS) / 1000) * speed, result.duration + LINGER);
+    }
+  }
+
   // current frame (interpolated)
   const dt = result.dt;
   const fi = Math.min(Math.floor(elapsed.current / dt), result.frames.length - 1);
@@ -209,7 +248,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const nf = result.frames[Math.min(fi + 1, result.frames.length - 1)];
   const alpha = Math.min(1, Math.max(0, elapsed.current / dt - fi));
 
-  const done = phase === 'run' && elapsed.current >= result.duration; // race over, in cool-down
+  const done = phaseEff === 'run' && elapsed.current >= result.duration; // race over, in cool-down
   const leaderS = Math.max(...fr.runners.map((r) => r.s));
   const travelled = leaderS - result.startS; // distance run since the start/finish line
   // Live leader (for the turf vision) and the finishing 1-2-3 (for the result board).
@@ -364,11 +403,11 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           )}
         </svg>
 
-        {phase === 'countdown' && <div className={styles.countdown}>{count > 0 ? count : 'GO!'}</div>}
+        {phaseEff === 'countdown' && <div className={styles.countdown}>{countEff > 0 ? countEff : 'GO!'}</div>}
         {/* The finish sits at the centre of the home straight, so the leader is on
             the real final straight only within the last half-straight of the race —
             not at a fixed % of total distance (which lands mid-lap on 2-lap races). */}
-        {remaining <= track.straight / 2 && phase === 'run' && !done && (
+        {remaining <= track.straight / 2 && phaseEff === 'run' && !done && (
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
@@ -405,7 +444,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         );
       })()}
       {/* Skip unlocks only in the second half of the race (RACE_V4 §2 request). */}
-      {skippable && phase === 'run' && !done && travelled / result.distanceS >= 0.5 && (
+      {skippable && phaseEff === 'run' && !done && travelled / result.distanceS >= 0.5 && (
         <button className={styles.skip} onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}>
           スキップ <Icon name="skip" size={14} />
         </button>
