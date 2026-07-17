@@ -183,6 +183,138 @@
         "value": "url(#gradAurora)",
         "rarity": "SR",
         "swatch": "linear-gradient(160deg,#3ad7c0,#5bd97a,#7a5fe0)"
+      },
+      {
+        "id": "body_red",
+        "name": "レッド",
+        "value": "#d8412f",
+        "rarity": "N"
+      },
+      {
+        "id": "body_orange",
+        "name": "オレンジ",
+        "value": "#ef8a2b",
+        "rarity": "N"
+      },
+      {
+        "id": "body_yellow",
+        "name": "イエロー",
+        "value": "#f4cf3e",
+        "rarity": "N"
+      },
+      {
+        "id": "body_lime",
+        "name": "ライム",
+        "value": "#a6d84a",
+        "rarity": "N"
+      },
+      {
+        "id": "body_green",
+        "name": "グリーン",
+        "value": "#3fae5a",
+        "rarity": "N"
+      },
+      {
+        "id": "body_emerald",
+        "name": "エメラルド",
+        "value": "#16a37a",
+        "rarity": "R"
+      },
+      {
+        "id": "body_turquoise",
+        "name": "ターコイズ",
+        "value": "#2bbfcf",
+        "rarity": "R"
+      },
+      {
+        "id": "body_blue",
+        "name": "ブルー",
+        "value": "#3f6fd6",
+        "rarity": "N"
+      },
+      {
+        "id": "body_cobalt",
+        "name": "コバルト",
+        "value": "#2f4bb0",
+        "rarity": "R"
+      },
+      {
+        "id": "body_indigo",
+        "name": "インディゴ",
+        "value": "#3b3a7a",
+        "rarity": "R"
+      },
+      {
+        "id": "body_purple",
+        "name": "パープル",
+        "value": "#8a49c0",
+        "rarity": "N"
+      },
+      {
+        "id": "body_magenta",
+        "name": "マゼンタ",
+        "value": "#cf3f9e",
+        "rarity": "R"
+      },
+      {
+        "id": "body_rose",
+        "name": "ローズ",
+        "value": "#e2557f",
+        "rarity": "N"
+      },
+      {
+        "id": "body_salmon",
+        "name": "サーモン",
+        "value": "#f2907a",
+        "rarity": "N"
+      },
+      {
+        "id": "body_apricot",
+        "name": "アプリコット",
+        "value": "#f2b57a",
+        "rarity": "N"
+      },
+      {
+        "id": "body_mustard",
+        "name": "マスタード",
+        "value": "#d6a52a",
+        "rarity": "N"
+      },
+      {
+        "id": "body_khaki",
+        "name": "カーキ",
+        "value": "#9a8b52",
+        "rarity": "N"
+      },
+      {
+        "id": "body_burgundy",
+        "name": "バーガンディ",
+        "value": "#7a2233",
+        "rarity": "R"
+      },
+      {
+        "id": "body_maroon",
+        "name": "マルーン",
+        "value": "#8a3a2a",
+        "rarity": "N"
+      },
+      {
+        "id": "body_plum",
+        "name": "プラム",
+        "value": "#7b3f6e",
+        "rarity": "R"
+      },
+      {
+        "id": "body_lilac",
+        "name": "ライラック",
+        "value": "#c9a6e0",
+        "rarity": "R"
+      },
+      {
+        "id": "body_denim",
+        "name": "デニム",
+        "value": "#4a6b93",
+        "rarity": "N"
       }
     ],
     "mane": [
@@ -307,6 +439,78 @@
         "value": "url(#gradAurora)",
         "rarity": "SR",
         "swatch": "linear-gradient(160deg,#3ad7c0,#5bd97a,#7a5fe0)"
+      },
+      {
+        "id": "mane_white",
+        "name": "ホワイト",
+        "value": "#f2ede2",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_red",
+        "name": "レッド",
+        "value": "#d8412f",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_orange",
+        "name": "オレンジ",
+        "value": "#ef8a2b",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_yellow",
+        "name": "イエロー",
+        "value": "#f0c62e",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_green",
+        "name": "グリーン",
+        "value": "#3fae5a",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_blue",
+        "name": "ブルー",
+        "value": "#3f6fd6",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_navy",
+        "name": "ネイビー",
+        "value": "#2f3a66",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_purple",
+        "name": "パープル",
+        "value": "#8a49c0",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_pink",
+        "name": "ピンク",
+        "value": "#f28fb8",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_mint",
+        "name": "ミント",
+        "value": "#8fd6b6",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_wine",
+        "name": "ワイン",
+        "value": "#7a2233",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_khaki",
+        "name": "カーキ",
+        "value": "#9a8b52",
+        "rarity": "N"
       }
     ],
     "hoof": [
@@ -394,6 +598,54 @@
         "value": "url(#gradRainbow)",
         "rarity": "SR",
         "swatch": "linear-gradient(90deg,#ff5b5b,#ffb14e,#ffe066,#5bd97a,#5bc8e0,#7a5fe0,#e05be0)"
+      },
+      {
+        "id": "hoof_white",
+        "name": "ホワイト",
+        "value": "#f0ece2",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_red",
+        "name": "レッド",
+        "value": "#c83a2f",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_blue",
+        "name": "ブルー",
+        "value": "#3f6fd6",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_green",
+        "name": "グリーン",
+        "value": "#3fae5a",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_navy",
+        "name": "ネイビー",
+        "value": "#2f3a66",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_pink",
+        "name": "ピンク",
+        "value": "#f28fb8",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_silver",
+        "name": "シルバー",
+        "value": "#c9ced6",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_copper",
+        "name": "カッパー",
+        "value": "#b06a3a",
+        "rarity": "R"
       }
     ]
   },
