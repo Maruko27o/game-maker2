@@ -4,8 +4,12 @@
 -- Supabase の SQL Editor に貼り付けて一度だけ実行してください。
 -- ・各プレイヤーは1日1頭を arena_entries に登録（enter_arena）。
 -- ・翌日、他プレイヤーの当日エントリーからトーナメントの相手を抽選する。
+-- ・溜め込み防止：登録のたびに古い行を自動削除し、テーブルは常に「今日・昨日ぶん
+--   （＋時差ズレの保険1日）」だけに保たれる（enter_arena の中で掃除）。
 -- ・未適用でもアプリは動作します（登録は握りつぶし・相手はCOMで自動補充）。
 -- ・前提：profiles(profiles.sql) 適用済み（player_no を引くため）。
+-- ・すでに適用済みの場合も、このファイルを再実行すれば enter_arena が上書きされ、
+--   自動掃除が有効になります（テーブル・ポリシーは if not exists / drop→create で安全）。
 -- ---------------------------------------------------------------------------
 
 create table if not exists public.arena_entries (
@@ -53,6 +57,11 @@ begin
         style      = excluded.style,
         player_no  = excluded.player_no,
         created_at = now();
+
+  -- 溜め込み防止：不要になった過去のエントリーを掃除する。翌日開示のため「今日・
+  -- 昨日ぶん」は残す必要があり、端末ごとの時差ズレの保険にもう1日足して、
+  -- current_date より2日以上前の行だけを削除する（テーブルは常に数日ぶんに保たれる）。
+  delete from public.arena_entries where race_day < current_date - interval '2 days';
 end;
 $$;
 grant execute on function public.enter_arena(date, text, jsonb, jsonb, text) to authenticated;
