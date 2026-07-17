@@ -9,8 +9,10 @@ import HorseDefs from './HorseDefs';
 // The head AND face decoration slots are drawn (hats/horns/眼帯/メガネ all sit on the
 // portrait), so the icon reflects the horse's look — including face gear. Back/tail
 // decos live on the body, outside this crop. Centred on the crest→muzzle in 520-space.
-const VB = { x: 260, y: 55, s: 220 }; // square viewBox window over the head
-const C = { cx: 370, cy: 165, r: 104 }; // clip/ring circle inside that window
+// Raised the window/circle up the head so head-slot hats (帽子・ツノ・かんむり) sit
+// inside the portrait instead of being clipped off the top; muzzle still fits below.
+const VB = { x: 256, y: 18, s: 228 }; // square viewBox window over the head
+const C = { cx: 370, cy: 132, r: 104 }; // clip/ring circle inside that window
 
 // Lighten a #rrggbb toward white for the portrait background; gradients fall back.
 function tint(value: string | undefined): string {
