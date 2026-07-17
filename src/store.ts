@@ -12,6 +12,7 @@ import type {
   StatKey,
   BetRecord,
   PlayerStats,
+  RaceSession,
 } from './types';
 import { allParts } from './data/parts';
 import { COURSES } from './data/courses';
@@ -168,6 +169,7 @@ function freshSave(): SaveData {
     stats: freshStats(),
     avatarHorseId: null,
     displayTrophies: [],
+    raceSession: null,
     savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
 }
@@ -191,6 +193,15 @@ function normGp(v: unknown): { g2: boolean; g1: boolean } {
 
 // Balanced 40-point spread for horses that predate any stats (v1/v2).
 const BALANCED_40: Stats = { spd: 7, sta: 7, pwr: 7, jmp: 7, gut: 6, wit: 6 };
+
+// Keep a stored in-progress race only if it's structurally sound (改修：レース継続);
+// anything unexpected just drops back to "no active race".
+function normRaceSession(v: unknown): RaceSession | null {
+  if (!v || typeof v !== 'object') return null;
+  const s = v as Record<string, unknown>;
+  if (s.kind !== 'single' || typeof s.seed !== 'number' || typeof s.courseId !== 'string' || !s.player) return null;
+  return s as unknown as RaceSession;
+}
 
 // Migrate any stored payload up to v4, preserving collection/horses.
 // Returns { data, migrated } — migrated=true when an upgrade happened.
@@ -244,6 +255,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         tasks,
         stats,
         ...normProfile(d),
+        raceSession: normRaceSession(d.raceSession),
         savedAt,
       },
       migrated: false,
@@ -379,6 +391,10 @@ type Store = SaveData & {
   // Profile (avatar horse + trophy shelf).
   setAvatarHorse: (id: string | null) => void;
   setDisplayTrophies: (ranks: number[]) => void;
+  // In-progress race, kept in the save so it resumes across reloads (改修：レース継続).
+  raceSession: RaceSession | null;
+  setRaceSession: (s: RaceSession | null) => void;
+  patchRaceSession: (patch: Partial<RaceSession>) => void;
   resetAll: () => void;
 };
 
@@ -410,6 +426,7 @@ export const useStore = create<Store>((set, get) => {
       stats: next.stats,
       avatarHorseId: next.avatarHorseId,
       displayTrophies: next.displayTrophies,
+      raceSession: next.raceSession ?? null,
       savedAt,
     };
     persist(data);
@@ -418,6 +435,7 @@ export const useStore = create<Store>((set, get) => {
 
   return {
     ...initial,
+    raceSession: initial.raceSession ?? null,
     migrated,
     clearMigrated: () => set({ migrated: false }),
 
@@ -741,6 +759,13 @@ export const useStore = create<Store>((set, get) => {
       commit({
         displayTrophies: ranks.filter((n) => n === 1 || n === 2 || n === 3).slice(0, 5),
       }),
+
+    setRaceSession: (s) => commit({ raceSession: s }),
+    patchRaceSession: (patch) => {
+      const cur = get().raceSession;
+      if (!cur) return;
+      commit({ raceSession: { ...cur, ...patch } });
+    },
 
     resetAll: () => commit({ ...freshSave() }),
   };
