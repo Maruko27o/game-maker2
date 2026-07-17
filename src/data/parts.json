@@ -9,31 +9,31 @@
       },
       {
         "id": "body_chestnut",
-        "name": "くりげ",
+        "name": "チェスナット",
         "value": "#c98a4b",
         "rarity": "N"
       },
       {
         "id": "body_bay",
-        "name": "かげ",
+        "name": "ブラウン",
         "value": "#8a5a33",
         "rarity": "N"
       },
       {
         "id": "body_black",
-        "name": "あおかげ",
+        "name": "ダークブラウン",
         "value": "#4a423c",
         "rarity": "N"
       },
       {
         "id": "body_gray",
-        "name": "あしげ",
+        "name": "グレー",
         "value": "#a9adb4",
         "rarity": "N"
       },
       {
         "id": "body_sand",
-        "name": "さくらげ",
+        "name": "ベージュ",
         "value": "#e0b98f",
         "rarity": "N"
       },
@@ -87,13 +87,13 @@
       },
       {
         "id": "body_roan",
-        "name": "あわげ",
+        "name": "トープ",
         "value": "#bfa093",
         "rarity": "N"
       },
       {
         "id": "body_liver",
-        "name": "かちぐり",
+        "name": "チョコレート",
         "value": "#5b3a2c",
         "rarity": "N"
       },
@@ -111,7 +111,7 @@
       },
       {
         "id": "body_peach",
-        "name": "ももずり",
+        "name": "ピーチ",
         "value": "#f6c6a6",
         "rarity": "N"
       },
