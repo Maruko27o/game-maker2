@@ -13,6 +13,9 @@ import type {
   BetRecord,
   PlayerStats,
   RaceSession,
+  ArenaState,
+  ArenaEntry,
+  ArenaResult,
 } from './types';
 import { allParts } from './data/parts';
 import { COURSES } from './data/courses';
@@ -170,6 +173,7 @@ function freshSave(): SaveData {
     avatarHorseId: null,
     displayTrophies: [],
     raceSession: null,
+    arena: freshArena(),
     savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
 }
@@ -203,6 +207,24 @@ function normRaceSession(v: unknown): RaceSession | null {
   if (s.kind === 'single' && typeof s.courseId === 'string') return s as unknown as RaceSession;
   if (s.kind === 'gp' && typeof s.grade === 'string') return s as unknown as RaceSession;
   return null;
+}
+
+// 対戦（デイリー勝ち抜きトーナメント）の保存状態。壊れていれば空に戻す。
+function freshArena(): ArenaState {
+  return { entry: null, result: null };
+}
+function normArena(v: unknown): ArenaState {
+  if (!v || typeof v !== 'object') return freshArena();
+  const a = v as Record<string, unknown>;
+  const entry =
+    a.entry && typeof a.entry === 'object' && typeof (a.entry as { seed?: unknown }).seed === 'number'
+      ? (a.entry as ArenaState['entry'])
+      : null;
+  const result =
+    a.result && typeof a.result === 'object' && Array.isArray((a.result as { rounds?: unknown }).rounds)
+      ? (a.result as ArenaState['result'])
+      : null;
+  return { entry, result };
 }
 
 // Migrate any stored payload up to v4, preserving collection/horses.
@@ -258,6 +280,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         stats,
         ...normProfile(d),
         raceSession: normRaceSession(d.raceSession),
+        arena: normArena(d.arena),
         savedAt,
       },
       migrated: false,
@@ -397,6 +420,12 @@ type Store = SaveData & {
   raceSession: RaceSession | null;
   setRaceSession: (s: RaceSession | null) => void;
   patchRaceSession: (patch: Partial<RaceSession>) => void;
+  // 対戦（デイリー勝ち抜きトーナメント）.
+  arena: ArenaState | null;
+  /** Register today's entry (fee already spent by the caller). */
+  arenaEnter: (entry: ArenaEntry) => void;
+  /** Reveal a settled tournament: credit its prize once, store it, clear the entry. */
+  arenaSettle: (result: ArenaResult) => void;
   resetAll: () => void;
 };
 
@@ -429,6 +458,7 @@ export const useStore = create<Store>((set, get) => {
       avatarHorseId: next.avatarHorseId,
       displayTrophies: next.displayTrophies,
       raceSession: next.raceSession ?? null,
+      arena: next.arena ?? freshArena(),
       savedAt,
     };
     persist(data);
@@ -438,6 +468,7 @@ export const useStore = create<Store>((set, get) => {
   return {
     ...initial,
     raceSession: initial.raceSession ?? null,
+    arena: initial.arena ?? freshArena(),
     migrated,
     clearMigrated: () => set({ migrated: false }),
 
@@ -475,6 +506,7 @@ export const useStore = create<Store>((set, get) => {
         stats: s.stats,
         avatarHorseId: s.avatarHorseId,
         displayTrophies: s.displayTrophies,
+        arena: s.arena,
         savedAt: s.savedAt,
       };
       return JSON.stringify(data);
@@ -768,6 +800,22 @@ export const useStore = create<Store>((set, get) => {
       if (!cur) return;
       // Same-kind patch; the spread of a discriminated union needs a cast.
       commit({ raceSession: { ...cur, ...patch } as RaceSession });
+    },
+
+    arenaEnter: (entry) => {
+      const cur = get().arena ?? freshArena();
+      commit({ arena: { entry, result: cur.result } });
+    },
+    arenaSettle: (result) => {
+      const cur = get().arena ?? freshArena();
+      // Credit the prize exactly once: skip if this result was already awarded, or
+      // the stored result for the same day is already settled (reload / re-watch).
+      const already = result.awarded || (cur.result?.day === result.day && cur.result.awarded);
+      const payout = already ? 0 : result.payout;
+      commit({
+        coins: Math.max(0, get().coins + payout),
+        arena: { entry: null, result: { ...result, awarded: true } },
+      });
     },
 
     resetAll: () => commit({ ...freshSave() }),

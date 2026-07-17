@@ -177,6 +177,56 @@ export type GpRaceSession = {
 };
 export type RaceSession = SingleRaceSession | GpRaceSession;
 
+// ---- 対戦（デイリー勝ち抜きトーナメント）------------------------------------
+// A horse snapshot used as an arena entrant — carries everything needed to both
+// simulate the race and draw the horse, so a settled tournament replays offline.
+export type ArenaHorseSnapshot = {
+  horseId: string; // unique within a round
+  name: string;
+  colors: Record<ColorSlot, string>;
+  decos: Partial<Record<DecoSlot, string>>;
+  stats: Stats;
+  style: RunStyle;
+  isPlayer: boolean;
+  isCom: boolean; // true = filler CPU; false + !isPlayer = another player's horse
+  playerNo: number | null; // shown for real opponents (ID-000…)
+};
+// One round of the tournament, stored so it can be replayed identically.
+export type ArenaRoundResult = {
+  round: 0 | 1 | 2; // 予選1回戦 / 予選2回戦 / 本線
+  seed: number;
+  courseId: string;
+  field: ArenaHorseSnapshot[]; // the 8 entrants (index-aligned with ranks/finishTimes)
+  playerIdx: number;
+  order: number[]; // finishing order (indices into field)
+  ranks: number[]; // rank per entrant index
+  finishTimes: number[];
+  playerRank: number;
+  advanced: boolean; // player made the cut (qualifiers only)
+};
+export type ArenaOutcome = 'champion' | 'final' | 'q2out' | 'q1out';
+// The result of a whole tournament for one entry-day.
+export type ArenaResult = {
+  day: string; // the entry day this tournament belongs to
+  mode: 30 | 60;
+  rounds: ArenaRoundResult[]; // 1..3 rounds actually raced
+  outcome: ArenaOutcome;
+  finalRank: number | null; // placing in the 本線 if reached
+  payout: number;
+  awarded: boolean; // coins credited exactly once
+};
+// A pending entry: competes on `day`; results become viewable the next day (翌日開示).
+export type ArenaEntry = {
+  day: string; // entry day (= tournament day)
+  seed: number; // deterministic seed for this tournament
+  horseId: string; // which owned horse was entered
+  snapshot: ArenaHorseSnapshot; // frozen at entry, so deletion/edits don't change it
+};
+export type ArenaState = {
+  entry: ArenaEntry | null; // current entry (if entry.day < today → ready to reveal)
+  result: ArenaResult | null; // last revealed tournament (re-watchable)
+};
+
 export type SaveData = {
   version: 6;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
@@ -199,5 +249,6 @@ export type SaveData = {
   avatarHorseId: string | null; // profile: which owned horse is the player's icon
   displayTrophies: number[]; // profile: trophy ranks (1|2|3) shown on the shelf (max 5)
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads
+  arena?: ArenaState | null; // 対戦: pending entry + last revealed tournament
   savedAt: number; // ms of the last change — used for cloud last-write-wins sync
 };

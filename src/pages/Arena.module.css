@@ -1,0 +1,390 @@
+/* 対戦（デイリー勝ち抜きトーナメント）の画面スタイル。theme は global.css。 */
+
+.section {
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--ink);
+  margin-bottom: 9px;
+}
+
+/* ---- result callout ---- */
+.callout {
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.calloutNew {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #f6e6bd, var(--panel-inner));
+}
+.calloutHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.calloutTitle {
+  font-size: 14px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.newBadge {
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--red);
+  border-radius: 7px;
+  padding: 2px 7px;
+}
+.calloutSub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+.bigGold {
+  width: 100%;
+  background: var(--gold);
+  color: #fff;
+  font-size: 16px;
+}
+.bigGreen {
+  width: 100%;
+  background: var(--grass-dark);
+  color: #fff;
+  font-size: 16px;
+}
+
+/* ---- entry ---- */
+.pickRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+.pickCard {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 6px 8px;
+  color: var(--ink);
+}
+.pickSel {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(63, 127, 214, 0.35) inset;
+}
+.pickName {
+  font-size: 11px;
+  font-weight: 800;
+  max-width: 74px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pickInfo {
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin-bottom: 10px;
+}
+.pickInfo b {
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+.feeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.fee {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--red);
+}
+.note {
+  text-align: center;
+  color: var(--red-dark);
+  font-weight: 800;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 9px;
+}
+.entered {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+.enteredSub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.lockedEntry {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  padding: 8px 0;
+}
+.empty {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ---- flow diagram ---- */
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+.flowStep {
+  flex: 1;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 4px;
+  line-height: 1.35;
+}
+.flowFinal {
+  background: linear-gradient(180deg, #f6dd9a, var(--panel-inner));
+  border-color: var(--gold);
+}
+.flowArrow {
+  align-self: center;
+  color: var(--ink-soft);
+}
+.flowGo {
+  color: var(--grass-dark);
+}
+.flowWin {
+  color: var(--red);
+}
+
+/* ---- prize table ---- */
+.prizes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.prize {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 11px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+.prizeTop {
+  background: linear-gradient(90deg, #f6dd9a, var(--panel-inner));
+  border: 3px solid var(--gold);
+  padding: 9px 12px;
+  font-size: 15px;
+}
+.prizeAmt {
+  color: var(--red);
+}
+.balanceNote {
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin-top: 9px;
+  line-height: 1.5;
+}
+
+/* ---- loading ---- */
+.loading {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  padding: 40px 0;
+}
+
+/* ---- interstitial ---- */
+.interCard {
+  background: var(--paper);
+  border: 4px solid var(--gold);
+  border-radius: 18px;
+  padding: 24px 18px;
+  text-align: center;
+  box-shadow: 0 8px 0 var(--border);
+}
+.interBig {
+  font-size: 40px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.interMsg {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--grass-dark);
+  margin: 4px 0 4px;
+}
+.interSub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+}
+
+/* ---- summary ---- */
+.resultTop {
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.resultTopWin {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #f6e6bd, var(--panel-inner));
+}
+.resultBig {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.resultPay {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  background: var(--red);
+  color: #fff;
+  font-weight: 900;
+  border-radius: 10px;
+  padding: 7px 18px;
+  font-size: 17px;
+}
+
+/* ---- round board ---- */
+.board {
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 11px;
+  margin-bottom: 10px;
+}
+.boardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.boardName {
+  font-size: 13px;
+  font-weight: 900;
+}
+.boardSub {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.brow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 2px solid transparent;
+  border-radius: 9px;
+  padding: 3px 7px;
+}
+.bmine {
+  background: var(--panel-inner);
+  border-color: var(--gold);
+}
+.bmedal {
+  width: 22px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 900;
+}
+.bface {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-dark);
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--panel-inner);
+}
+.bname {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tagCom {
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  background: var(--panel-2);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.tagPass {
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.tagGo {
+  background: var(--grass-dark);
+}
+.tagWin {
+  background: var(--red);
+}
+.poolNote {
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 2px 0 12px;
+}
