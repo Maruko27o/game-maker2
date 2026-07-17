@@ -158,15 +158,7 @@ export default function ProfileModal({
         </div>
 
         <div className={styles.body}>
-          {tab === 'profile' ? (
-            <section className={styles.section}>
-              <p className={styles.hint}>
-                アイコンは上の<b>ウマの絵</b>を、トロフィーは<b>トロフィー棚</b>をタップすると設定できます。
-              </p>
-            </section>
-          ) : (
-            <AccountPanel />
-          )}
+          {tab === 'profile' ? null : <AccountPanel />}
         </div>
 
         <button className={styles.closeLink} onClick={onClose}>とじる</button>
