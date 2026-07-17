@@ -186,7 +186,7 @@ export default function Stable() {
             {view === 'detail' ? (
               <>
                 <div className={styles.modalThumb}>
-                  <HorseView horse={selected} size={190} shadow />
+                  <HorseView horse={selected} size={140} shadow />
                 </div>
                 <div className={styles.renameRow}>
                   <input
@@ -213,20 +213,17 @@ export default function Stable() {
                 <div className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</div>
 
                 <div className={styles.statsBlock}>
-                  <StatRadar stats={selected.stats} size={190} />
-                  <div className={styles.statBars}>
+                  <StatRadar stats={selected.stats} size={168} />
+                  <div className={styles.statGrid}>
                     {STAT_KEYS.map((k) => (
-                      <div key={k} className={styles.statBarRow}>
-                        <span className={styles.statLabel}>{STAT_LABEL[k]}</span>
-                        <div className={styles.statTrack}>
-                          <div className={styles.statFill} style={{ width: `${(selected.stats[k] / STAT_CAP) * 100}%` }} />
-                        </div>
-                        <span className={styles.statVal}>{selected.stats[k]}</span>
+                      <div key={k} className={styles.statCell}>
+                        <span className={styles.statCellLabel}>{STAT_LABEL[k]}</span>
+                        <span className={styles.statCellVal}>{selected.stats[k]}</span>
                       </div>
                     ))}
-                    <div className={styles.statTotal}>
-                      合計 {total} / {STAT_TOTAL_CAP}
-                    </div>
+                  </div>
+                  <div className={styles.statTotal}>
+                    合計 {total} / {STAT_TOTAL_CAP}
                   </div>
                 </div>
 
