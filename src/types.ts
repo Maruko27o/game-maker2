@@ -123,8 +123,11 @@ export type DailyCounters = { day: string; grassBonus: number; okawari: number; 
 // actually finished (result screen reached), so it can't be farmed by bailing out.
 // Designed to grow: add more fields/tasks over time.
 export type TaskProgress = {
-  racesFinished: number; // races that reached the result screen
-  raceRewardClaimed: number; // number of per-N-race coin rewards already claimed
+  racesFinished: number; // total races that reached the result screen (also 総レース回数)
+  raceBanked: number; // race 10-cycles already credited to the reward bank
+  grassSpawns: number; // total grass draws performed
+  grassBanked: number; // grass 10-cycles already credited to the reward bank
+  bank: number; // coins earned by tasks, waiting to be claimed together
 };
 
 // Lifetime player stats shown on the profile (改修：プロフィール実績).

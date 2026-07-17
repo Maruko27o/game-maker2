@@ -32,6 +32,9 @@ export const SLOT_EXPAND_COST = 3000; // stable 10 → 15 (once)
 export const SLOT_EXPAND_TO = 15;
 export const RENAME_COST = 50; // rename a horse
 
-// Coin-earning tasks (改修：タスク). Finish this many races → claim this many coins.
+// Coin-earning tasks (改修：タスク). Every N actions banks this many coins; the bank
+// is claimed all at once from the top of the task screen.
 export const RACE_TASK_EVERY = 10; // races per reward
-export const RACE_TASK_REWARD = 1000; // coins granted per reward
+export const RACE_TASK_REWARD = 1000; // coins banked per race cycle
+export const GRASS_TASK_EVERY = 10; // grass draws per reward
+export const GRASS_TASK_REWARD = 1000; // coins banked per grass cycle
