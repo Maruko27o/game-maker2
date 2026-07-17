@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore, dayKey } from '../store';
 import { COURSES } from '../data/courses';
 import { statTotal, mulberry32 } from '../logic/stats';
@@ -22,7 +22,7 @@ import Paddock from '../components/Paddock';
 import BetResult from '../components/BetResult';
 import { GP_QUALIFY_COINS, GP_DAILY_LIMIT, MAX_BETS_GP, gpFinalCoins } from '../data/coins';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
-import type { Horse, HorseLook, Trophy, TrainingItem } from '../types';
+import type { Horse, HorseLook, Trophy, TrainingItem, GpRaceReward } from '../types';
 import { RUN_STYLE_LABEL, STAT_LABEL } from '../types';
 import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
@@ -53,6 +53,27 @@ type GpState = {
   playerHeat: number;
 };
 
+// Rebuild the whole grand prix from its seed (改修：レース継続②) so a resumed
+// attempt is identical: course, heats, looks — all deterministic.
+function buildGpState(grade: GpGrade, seed: number, player: Horse): GpState {
+  const rng = mulberry32(seed ^ 0x1234);
+  const course = COURSES[Math.floor(rng() * COURSES.length)];
+  const playerEntrant: Entrant = { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) };
+  const field = buildGpField(playerEntrant, player, grade, seed);
+  return { grade, course, seed, ...field };
+}
+function computeHeatResults(st: GpState, mode: 30 | 60): SimResult[] {
+  return st.heats.map((heat, h) => simulate2(heat, st.course, mode, st.seed + h * 101, { laps: heatLaps(mode) }));
+}
+// Wall-clock ms when a race's playback is fully over (mirrors RaceTrack2/Race).
+function gpRaceDoneAt(anchorMs: number, durationS: number, reduced: boolean): number {
+  const speed = reduced ? 4 : 1;
+  const cdMs = (reduced ? 220 : 700) * 3;
+  const linger = reduced ? 0.2 : 2.2;
+  return anchorMs + cdMs + ((durationS + linger) / speed) * 1000;
+}
+const toSaved = (b: Bet) => ({ kind: b.kind, sel: b.sel, amount: b.amount, odds: b.odds });
+
 export default function GrandPrix({ player, mode, onExit }: { player: Horse; mode: 30 | 60; onExit: () => void }) {
   const reduced = usePrefersReducedMotion();
   const gpUnlocked = useStore((s) => s.gpUnlocked);
@@ -66,6 +87,9 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const startGpAttempt = useStore((s) => s.startGpAttempt);
   const finishRaceTask = useStore((s) => s.finishRaceTask);
   const recordBetStats = useStore((s) => s.recordBetStats);
+  const raceSession = useStore((s) => s.raceSession);
+  const setRaceSession = useStore((s) => s.setRaceSession);
+  const patchRaceSession = useStore((s) => s.patchRaceSession);
   const daily = useStore((s) => s.daily);
   const gpLeft = Math.max(0, GP_DAILY_LIMIT - (daily.day === dayKey() ? daily.gp : 0));
 
@@ -97,17 +121,16 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const [reward, setReward] = useState<{ trophy: Trophy | null; items: TrainingItem[]; rank: number; qualified: boolean; coins: number } | null>(null);
   const rewardApplied = useRef(false);
 
-  const playerEntrant: Entrant = useMemo(
-    () => ({ horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) }),
-    [player],
-  );
+  // Clear any resumable session when leaving the grand prix for good.
+  function exitGp() {
+    setRaceSession(null);
+    onExit();
+  }
 
   function startGrade(grade: GpGrade) {
+    setRaceSession(null); // drop any stale attempt
     const seed = (Math.random() * 2 ** 31) >>> 0;
-    const rng = mulberry32(seed ^ 0x1234);
-    const course = COURSES[Math.floor(rng() * COURSES.length)];
-    const field = buildGpField(playerEntrant, player, grade, seed);
-    setState({ grade, course, seed, ...field });
+    setState(buildGpState(grade, seed, player));
     setHeatResults(null);
     setQualifiers(null);
     setFinalResult(null);
@@ -118,58 +141,103 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     setScreen('card');
   }
 
-  // After the player's heat: simulate the other heats, compute the 8 finalists.
-  function afterPlayerHeat(playerRes: SimResult) {
-    if (!state) return;
-    const results: SimResult[] = [];
-    state.heats.forEach((heat, h) => {
-      if (h === state.playerHeat) results[h] = playerRes;
-      else results[h] = simulate2(heat, state.course, mode, state.seed + h * 101, { laps: heatLaps(mode) });
-    });
-    // Settle the qualifier bets against the player's heat result.
-    settleBets(heatBets, playerRes.order, state.course.id);
-    setHeatResults(results);
-    setQualifiers(computeQualifiers(state.heats, results));
+  // Settle the heat once (qualifier bets) and move to the board.
+  function finalizeHeat(st: GpState, heatRes: SimResult[], quals: Qualifier[], heatBetsArg: Bet[]) {
+    const s = useStore.getState().raceSession;
+    if (!(s && s.kind === 'gp' && s.heatSettled)) settleBets(heatBetsArg, heatRes[st.playerHeat].order, st.course.id);
+    setHeatResults(heatRes);
+    setQualifiers(quals);
+    patchRaceSession({ screen: 'qualify', heatSettled: true, anchorMs: null });
     setScreen('qualify');
   }
 
-  function afterFinal(res: SimResult) {
-    setFinalResult(res);
-    if (!state || !qualifiers || rewardApplied.current) {
+  // Settle the final once (bets + trophy/coins/items/records/unlocks) → podium.
+  function finalizeFinal(st: GpState, quals: Qualifier[], finalBetsArg: Bet[], finalRes: SimResult) {
+    setFinalResult(finalRes);
+    const s = useStore.getState().raceSession;
+    if (rewardApplied.current || (s && s.kind === 'gp' && s.finalSettled)) {
+      if (s && s.kind === 'gp' && s.reward) setReward(s.reward);
+      patchRaceSession({ screen: 'podium', anchorMs: null });
       setScreen('podium');
       return;
     }
     rewardApplied.current = true;
     finishRaceTask(); // count the grand-prix final toward the task (result reached)
-    // Settle the final bets against the final result (runs even if the player
-    // didn't qualify — they can still bet on the final as a spectator).
-    settleBets(finalBets, res.order, state.course.id);
-    const finalists = qualifiers.map((q) => q.entrant);
+    settleBets(finalBetsArg, finalRes.order, st.course.id);
+    const finalists = quals.map((q) => q.entrant);
     const playerIdx = finalists.findIndex((e) => e.isPlayer);
+    let reward: GpRaceReward;
     if (playerIdx < 0) {
-      setReward({ trophy: null, items: [], rank: 0, qualified: false, coins: 0 });
-      setScreen('podium');
-      return;
+      reward = { trophy: null, items: [], rank: 0, qualified: false, coins: 0 };
+    } else {
+      const rank = finalRes.ranks[playerIdx];
+      const trophy = makeTrophy(player.id, rank, st.course.id, mode, 'gp');
+      const items = rollItems(mulberry32((st.seed ^ rank ^ 0xabc) >>> 0), gpItemCount(st.grade, rank, mode));
+      if (trophy) addTrophies([trophy]);
+      if (items.length) grantItems(items);
+      recordRace(st.course.id, mode, rank, finalRes.finishTimes[playerIdx]);
+      if (st.grade === 'g3' && rank <= 3) unlockGp({ g2: true });
+      if (st.grade === 'g2' && rank === 1) unlockGp({ g1: true });
+      const coinReward = GP_QUALIFY_COINS + gpFinalCoins(rank);
+      addCoins(coinReward);
+      bufferSubmission(buildSubmission(finalists, st.course.id, mode, st.seed ^ 0x5f, finalRes, finalists[playerIdx].horseId, finalLaps(mode)));
+      reward = { trophy, items, rank, qualified: true, coins: coinReward };
     }
-    const rank = res.ranks[playerIdx];
-    const trophy = makeTrophy(player.id, rank, state.course.id, mode, 'gp');
-    const items = rollItems(mulberry32((state.seed ^ rank ^ 0xabc) >>> 0), gpItemCount(state.grade, rank, mode));
-    if (trophy) addTrophies([trophy]);
-    if (items.length) grantItems(items);
-    recordRace(state.course.id, mode, rank, res.finishTimes[playerIdx]);
-    if (state.grade === 'g3' && rank <= 3) unlockGp({ g2: true });
-    if (state.grade === 'g2' && rank === 1) unlockGp({ g1: true });
-    // Coins (RACE_V4 §4.2): reaching the final pays a qualifying bonus, plus a
-    // top-3 placing reward.
-    const coinReward = GP_QUALIFY_COINS + gpFinalCoins(rank);
-    addCoins(coinReward);
-    // Ranking foundation (RACE_V4 §5): buffer the final locally (upload gated off).
-    bufferSubmission(
-      buildSubmission(finalists, state.course.id, mode, state.seed ^ 0x5f, res, finalists[playerIdx].horseId, finalLaps(mode)),
-    );
-    setReward({ trophy, items, rank, qualified: true, coins: coinReward });
+    setReward(reward);
+    patchRaceSession({ screen: 'podium', finalSettled: true, reward, anchorMs: null });
     setScreen('podium');
   }
+
+  function afterPlayerHeat(playerRes: SimResult) {
+    if (!state) return;
+    const results = computeHeatResults(state, mode);
+    results[state.playerHeat] = playerRes; // the heat actually shown
+    finalizeHeat(state, results, computeQualifiers(state.heats, results), heatBets);
+  }
+
+  function afterFinal(res: SimResult) {
+    if (!state || !qualifiers) { setScreen('podium'); return; }
+    finalizeFinal(state, qualifiers, finalBets, res);
+  }
+
+  // Resume a grand prix after a tab switch / reload (改修：レース継続②). Rebuilds the
+  // whole attempt from its seed; races that already finished settle once and jump
+  // ahead, otherwise playback resumes via the wall-clock anchor.
+  const rehydrated = useRef(false);
+  useEffect(() => {
+    if (rehydrated.current) return;
+    rehydrated.current = true;
+    const s = useStore.getState().raceSession;
+    if (!s || s.kind !== 'gp') return;
+    const st = buildGpState(s.grade, s.seed, s.player);
+    setState(st);
+    setHeatBets(s.heatBets as unknown as Bet[]);
+    setFinalBets(s.finalBets as unknown as Bet[]);
+    rewardApplied.current = s.finalSettled;
+    const heatRes = computeHeatResults(st, s.mode);
+    const quals = computeQualifiers(st.heats, heatRes);
+    if (s.screen === 'heat') {
+      const done = s.anchorMs != null && Date.now() >= gpRaceDoneAt(s.anchorMs, heatRes[st.playerHeat].duration, reduced);
+      if (done) finalizeHeat(st, heatRes, quals, s.heatBets as unknown as Bet[]);
+      else setScreen('heat');
+    } else if (s.screen === 'qualify' || s.screen === 'finalPaddock') {
+      setHeatResults(heatRes);
+      setQualifiers(quals);
+      setScreen(s.screen);
+    } else {
+      // final or podium
+      setHeatResults(heatRes);
+      setQualifiers(quals);
+      const finalists = quals.map((q) => q.entrant);
+      const finalRes = simulate2(finalists, st.course, s.mode, st.seed ^ 0x5f, { laps: finalLaps(s.mode) });
+      if (s.screen === 'final' && !(s.anchorMs != null && Date.now() >= gpRaceDoneAt(s.anchorMs, finalRes.duration, reduced))) {
+        setScreen('final'); // resume the final animation
+      } else {
+        finalizeFinal(st, quals, s.finalBets as unknown as Bet[], finalRes);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ---- grade select ----
   if (screen === 'grade') {
@@ -249,7 +317,16 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           startLabel="予選スタート"
           onAdd={(b) => { if (heatBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) setHeatBets((prev) => [...prev, b]); }}
           onRemove={(i) => { addCoins(heatBets[i].amount); setHeatBets((prev) => prev.filter((_, k) => k !== i)); }}
-          onStart={() => { if (startGpAttempt()) setScreen('heat'); else onExit(); }}
+          onStart={() => {
+            if (!startGpAttempt()) { onExit(); return; }
+            // The daily attempt is now spent — persist a resumable session from here on.
+            setRaceSession({
+              kind: 'gp', screen: 'heat', grade: state.grade, seed: state.seed, mode,
+              player, heatBets: heatBets.map(toSaved), finalBets: [], anchorMs: Date.now(),
+              heatSettled: false, finalSettled: false, reward: null,
+            });
+            setScreen('heat');
+          }}
         />
         <button className={styles.exitLink} onClick={() => { heatBets.forEach((b) => addCoins(b.amount)); setHeatBets([]); setScreen('card'); }}>
           もどる（賭けを取り消す）
@@ -273,6 +350,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           skippable
           laps={heatLaps(mode)}
           bets={heatBets}
+          anchorMs={raceSession?.anchorMs ?? undefined}
           onFinish={afterPlayerHeat}
         />
       </div>
@@ -316,8 +394,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           />
         )}
         <div className={styles.setupActions}>
-          <button className="btn neutral" onClick={onExit}>やめる</button>
-          <button className="btn" onClick={() => setScreen('finalPaddock')}>{playerIn ? '本戦へ' : '本戦を観る'}</button>
+          <button className="btn neutral" onClick={exitGp}>やめる</button>
+          <button className="btn" onClick={() => { patchRaceSession({ screen: 'finalPaddock' }); setScreen('finalPaddock'); }}>{playerIn ? '本戦へ' : '本戦を観る'}</button>
         </div>
       </div>
     );
@@ -337,11 +415,11 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           bets={finalBets}
           maxBets={MAX_BETS_GP}
           startLabel="本戦スタート"
-          onAdd={(b) => { if (finalBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) setFinalBets((prev) => [...prev, b]); }}
-          onRemove={(i) => { addCoins(finalBets[i].amount); setFinalBets((prev) => prev.filter((_, k) => k !== i)); }}
-          onStart={() => setScreen('final')}
+          onAdd={(b) => { if (finalBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) { const nb = [...finalBets, b]; setFinalBets(nb); patchRaceSession({ finalBets: nb.map(toSaved) }); } }}
+          onRemove={(i) => { addCoins(finalBets[i].amount); const nb = finalBets.filter((_, k) => k !== i); setFinalBets(nb); patchRaceSession({ finalBets: nb.map(toSaved) }); }}
+          onStart={() => { patchRaceSession({ screen: 'final', anchorMs: Date.now() }); setScreen('final'); }}
         />
-        <button className={styles.exitLink} onClick={() => { finalBets.forEach((b) => addCoins(b.amount)); setFinalBets([]); setScreen('qualify'); }}>
+        <button className={styles.exitLink} onClick={() => { finalBets.forEach((b) => addCoins(b.amount)); setFinalBets([]); patchRaceSession({ screen: 'qualify', finalBets: [] }); setScreen('qualify'); }}>
           もどる（賭けを取り消す）
         </button>
       </div>
@@ -364,6 +442,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           skippable
           laps={finalLaps(mode)}
           bets={finalBets}
+          anchorMs={raceSession?.anchorMs ?? undefined}
           onFinish={afterFinal}
         />
       </div>
@@ -418,8 +497,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
             })}
           </ol>
           <div className={styles.raceActions}>
-            <button className="btn neutral" onClick={onExit}>レースメニューへ</button>
-            <button className="btn" onClick={() => setScreen('grade')}>もう一度</button>
+            <button className="btn neutral" onClick={exitGp}>レースメニューへ</button>
+            <button className="btn" onClick={() => { setRaceSession(null); setScreen('grade'); }}>もう一度</button>
           </div>
         </div>
       </div>

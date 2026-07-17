@@ -282,8 +282,9 @@ export default function Race() {
     setResult(result);
     if (!setup) { setScreen('result'); return; }
     const sess = useStore.getState().raceSession;
-    if (rewardApplied.current || sess?.rewardApplied) {
-      if (sess?.reward) setReward(sess.reward);
+    const single = sess && sess.kind === 'single' ? sess : null;
+    if (rewardApplied.current || single?.rewardApplied) {
+      if (single?.reward) setReward(single.reward);
     } else {
       rewardApplied.current = true;
       const { reward, achievements } = settleRace(setup, bets, result);
@@ -303,7 +304,18 @@ export default function Race() {
     if (rehydrated.current) return;
     rehydrated.current = true;
     const s = useStore.getState().raceSession;
-    if (!s || s.kind !== 'single') return;
+    if (!s) return;
+    if (s.kind === 'gp') {
+      // A grand prix is in progress — route to it; GrandPrix resumes its own flow.
+      const horse = horses.find((h) => h.id === s.player.id);
+      if (!horse) { setRaceSession(null); return; }
+      setHorseId(s.player.id);
+      setMode(s.mode);
+      setGrade('gp');
+      setScreen('gp');
+      return;
+    }
+    if (s.kind !== 'single') return;
     const course = COURSES.find((c) => c.id === s.courseId);
     if (!course) { setRaceSession(null); return; }
     const setup0 = buildSingleSetup(s.seed, s.player, s.mode, s.pickMode ? course : undefined);
