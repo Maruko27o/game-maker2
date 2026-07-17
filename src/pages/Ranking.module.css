@@ -101,6 +101,13 @@
   display: grid;
   place-items: center;
 }
+/* Fill the circle exactly so the portrait (and its ring) isn't clipped by the
+   border box — otherwise the top edge shows a stray line and the nose is cut. */
+.avatar :global(svg) {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
 .odds {
   font-weight: 900;
   color: #c33f39;
