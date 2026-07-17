@@ -46,30 +46,39 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 .card {
   background: var(--panel-inner);
   border: 3px solid var(--border);
-  border-radius: 16px;
-  padding: 8px;
+  border-radius: 14px;
+  padding: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  min-width: 0;
 }
 .cardThumb {
   background: linear-gradient(180deg, #d7ecb4, #bfe08a);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 2px solid var(--border);
   width: 100%;
+  aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
-  padding: 4px;
+  padding: 2px;
+  overflow: hidden;
+}
+/* Let the horse scale to the (now narrower) 3-up card instead of overflowing. */
+.cardThumb :global(svg) {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 .cardName {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--ink);
   white-space: nowrap;
@@ -80,18 +89,19 @@
 .add {
   background: var(--panel);
   border: 3px dashed var(--border);
-  border-radius: 16px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   color: var(--ink-soft);
   font-weight: 800;
-  min-height: 150px;
+  font-size: 13px;
+  min-height: 128px;
 }
 .plus {
-  font-size: 40px;
+  font-size: 34px;
   line-height: 1;
 }
 
@@ -156,6 +166,34 @@
   border: 3px solid var(--border);
   border-radius: 14px;
   padding: 10px;
+}
+/* Compact stat readout for the detail view (radar already shows the shape). */
+.statGrid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.statCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: var(--paper);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 5px 2px;
+}
+.statCellLabel {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.statCellVal {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 .statBars {
   width: 100%;
