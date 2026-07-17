@@ -1,21 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520" width="520" height="520">
   <g stroke="#2b2118" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
     <g id="legs-far">
-      <path id="leg-back-far"   fill="var(--body,#fff)" d="M 182,285 L 214,285 L 212,360 L 216,432 L 186,432 L 182,360 Z"/>
-      <path id="hoof-back-far"  fill="var(--hoof,#fff)" d="M 184,428 L 218,428 L 218,458 L 184,458 Z"/>
-      <path id="leg-front-far"  fill="var(--body,#fff)" d="M 258,290 L 290,290 L 288,360 L 292,432 L 262,432 L 258,360 Z"/>
-      <path id="hoof-front-far" fill="var(--hoof,#fff)" d="M 260,428 L 294,428 L 294,458 L 260,458 Z"/>
+      <path id="leg-back-far"   fill="var(--body,#fff)" d="M 185,300 C 183,286 190,279 199,279 C 208,279 215,286 213,300 C 211,332 210,346 211,362 C 212,392 213,410 212,430 L 186,430 C 185,410 186,392 187,362 C 188,346 187,332 185,300 Z"/>
+      <path id="hoof-back-far"  fill="var(--hoof,#fff)" d="M 186,424 L 212,424 L 213,450 C 213,457 209,459 203,459 L 195,459 C 189,459 185,457 185,450 Z"/>
+      <path id="leg-front-far"  fill="var(--body,#fff)" d="M 261,304 C 259,290 266,283 275,283 C 284,283 291,290 289,304 C 287,334 286,348 287,362 C 288,392 289,410 288,430 L 262,430 C 261,410 262,392 263,362 C 264,348 263,334 261,304 Z"/>
+      <path id="hoof-front-far" fill="var(--hoof,#fff)" d="M 262,424 L 288,424 L 289,450 C 289,457 285,459 279,459 L 271,459 C 265,459 261,457 261,450 Z"/>
     </g>
     <path id="tail" fill="var(--mane,#fff)" d="M 140,230 C 100,214 74,242 67,292 C 60,344 78,382 96,398 C 88,352 90,300 112,270 C 123,254 133,247 142,262 Z"/>
     <ellipse id="body" fill="var(--body,#fff)" cx="230" cy="265" rx="105" ry="72"/>
-    <ellipse id="belly" fill="#ffffff" stroke="none" cx="238" cy="312" rx="66" ry="20"/>
+    <ellipse id="belly" fill="rgba(255,255,255,0.42)" stroke="none" cx="238" cy="314" rx="70" ry="22"/>
     <ellipse id="body-outline" fill="none" cx="230" cy="265" rx="105" ry="72"/>
     <path id="neck" fill="var(--body,#fff)" d="M 263,214 C 284,160 324,124 366,102 L 396,150 C 361,176 331,216 321,264 Z"/>
     <g id="legs-near">
-      <path id="leg-back-near"   fill="var(--body,#fff)" d="M 150,288 L 192,288 L 188,360 L 192,432 L 152,432 L 152,360 Z"/>
-      <path id="hoof-back-near"  fill="var(--hoof,#fff)" d="M 148,428 L 194,428 L 194,460 L 148,460 Z"/>
-      <path id="leg-front-near"  fill="var(--body,#fff)" d="M 290,285 L 332,285 L 328,360 L 332,432 L 294,432 L 292,360 Z"/>
-      <path id="hoof-front-near" fill="var(--hoof,#fff)" d="M 290,428 L 336,428 L 336,460 L 290,460 Z"/>
+      <path id="leg-back-near"   fill="var(--body,#fff)" d="M 153,304 C 151,288 161,280 172,280 C 183,280 193,288 191,304 C 190,334 188,348 189,364 C 190,394 191,410 190,430 L 154,430 C 153,410 153,394 154,364 C 155,348 154,334 153,304 Z"/>
+      <path id="hoof-back-near"  fill="var(--hoof,#fff)" d="M 154,424 L 190,424 L 191,452 C 191,459 186,461 179,461 L 165,461 C 158,461 153,459 153,452 Z"/>
+      <path id="leg-front-near"  fill="var(--body,#fff)" d="M 293,300 C 291,285 301,278 312,278 C 323,278 333,285 331,300 C 330,332 328,346 329,362 C 330,392 331,410 330,430 L 294,430 C 293,410 293,392 294,362 C 295,346 294,332 293,300 Z"/>
+      <path id="hoof-front-near" fill="var(--hoof,#fff)" d="M 294,424 L 330,424 L 331,452 C 331,459 326,461 319,461 L 305,461 C 298,461 293,459 293,452 Z"/>
     </g>
     <path id="mane" fill="var(--mane,#fff)" d="M 258,212 C 282,155 322,120 364,99 L 382,120 C 341,142 301,182 279,232 Z"/>
     <path id="ear"  fill="var(--body,#fff)" d="M 386,90 L 377,50 L 410,82 Z"/>
