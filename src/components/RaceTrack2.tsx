@@ -365,7 +365,10 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         </svg>
 
         {phase === 'countdown' && <div className={styles.countdown}>{count > 0 ? count : 'GO!'}</div>}
-        {travelled / result.distanceS > 0.85 && phase === 'run' && !done && (
+        {/* The finish sits at the centre of the home straight, so the leader is on
+            the real final straight only within the last half-straight of the race —
+            not at a fixed % of total distance (which lands mid-lap on 2-lap races). */}
+        {remaining <= track.straight / 2 && phase === 'run' && !done && (
           <div className={styles.callout}>最後の直線！</div>
         )}
       </div>
