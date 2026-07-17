@@ -199,8 +199,10 @@ const BALANCED_40: Stats = { spd: 7, sta: 7, pwr: 7, jmp: 7, gut: 6, wit: 6 };
 function normRaceSession(v: unknown): RaceSession | null {
   if (!v || typeof v !== 'object') return null;
   const s = v as Record<string, unknown>;
-  if (s.kind !== 'single' || typeof s.seed !== 'number' || typeof s.courseId !== 'string' || !s.player) return null;
-  return s as unknown as RaceSession;
+  if (typeof s.seed !== 'number' || !s.player) return null;
+  if (s.kind === 'single' && typeof s.courseId === 'string') return s as unknown as RaceSession;
+  if (s.kind === 'gp' && typeof s.grade === 'string') return s as unknown as RaceSession;
+  return null;
 }
 
 // Migrate any stored payload up to v4, preserving collection/horses.
@@ -764,7 +766,8 @@ export const useStore = create<Store>((set, get) => {
     patchRaceSession: (patch) => {
       const cur = get().raceSession;
       if (!cur) return;
-      commit({ raceSession: { ...cur, ...patch } });
+      // Same-kind patch; the spread of a discriminated union needs a cast.
+      commit({ raceSession: { ...cur, ...patch } as RaceSession });
     },
 
     resetAll: () => commit({ ...freshSave() }),

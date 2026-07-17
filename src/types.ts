@@ -143,7 +143,7 @@ export type PlayerStats = {
 // the seeds/choices + a wall-clock anchor are stored; entrants/result are rebuilt.
 export type SavedBet = { kind: string; sel: number[]; amount: number; odds: number };
 export type SingleRaceReward = { rank: number; awarded: Badge[]; earned: number; payout: number };
-export type RaceSession = {
+export type SingleRaceSession = {
   kind: 'single';
   screen: 'roulette' | 'paddock' | 'race' | 'result';
   pickMode: boolean; // chosen-course practice (no betting) vs. the betting single race
@@ -156,6 +156,26 @@ export type RaceSession = {
   rewardApplied: boolean; // rewards/coins settled exactly once
   reward: SingleRaceReward | null; // stored for the result screen after a resume
 };
+// Grand prix in progress (改修：レース継続②). Everything is deterministic from
+// (grade, seed, player), so heats/qualifiers/results are rebuilt; only the placed
+// bets, a wall-clock anchor for the current race, and the once-only settlement
+// flags are stored. Persisted from the heat onward (once the daily attempt is used).
+export type GpRaceReward = { trophy: Trophy | null; items: TrainingItem[]; rank: number; qualified: boolean; coins: number };
+export type GpRaceSession = {
+  kind: 'gp';
+  screen: 'heat' | 'qualify' | 'finalPaddock' | 'final' | 'podium';
+  grade: 'g3' | 'g2' | 'g1';
+  seed: number;
+  mode: 30 | 60;
+  player: Horse;
+  heatBets: SavedBet[];
+  finalBets: SavedBet[];
+  anchorMs: number | null; // wall-clock start of the current animating race (heat/final)
+  heatSettled: boolean; // qualifier bets settled exactly once
+  finalSettled: boolean; // final bets + trophies/coins/items/unlocks settled exactly once
+  reward: GpRaceReward | null; // stored for the podium after a resume
+};
+export type RaceSession = SingleRaceSession | GpRaceSession;
 
 export type SaveData = {
   version: 6;
