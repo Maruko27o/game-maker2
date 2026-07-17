@@ -22,7 +22,23 @@ export default function Ranking() {
   const displayTrophies = useStore((s) => s.displayTrophies);
   const [rows, setRows] = useState<ScoreRow[] | null>(null);
   const [viewing, setViewing] = useState<ScoreRow | null>(null); // profile card being shown
-  const [tab, setTab] = useState<RankBy>('odds');
+  // Remember the chosen tab across reloads (pull-to-refresh reloads the page), so
+  // it doesn't snap back to 最大オッズ. Persisted in localStorage.
+  const [tab, setTab] = useState<RankBy>(() => {
+    try {
+      return localStorage.getItem('rankTab') === 'payout' ? 'payout' : 'odds';
+    } catch {
+      return 'odds';
+    }
+  });
+  function selectTab(t: RankBy) {
+    setTab(t);
+    try {
+      localStorage.setItem('rankTab', t);
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     let live = true;
@@ -66,8 +82,8 @@ export default function Ranking() {
     <div className={styles.page}>
       <h1 className={styles.title}>ランキング</h1>
       <div className={styles.tabs}>
-        <button className={`${styles.tab} ${tab === 'odds' ? styles.tabOn : ''}`} onClick={() => setTab('odds')}>最大オッズ</button>
-        <button className={`${styles.tab} ${tab === 'payout' ? styles.tabOn : ''}`} onClick={() => setTab('payout')}>最大獲得賞金</button>
+        <button className={`${styles.tab} ${tab === 'odds' ? styles.tabOn : ''}`} onClick={() => selectTab('odds')}>最大オッズ</button>
+        <button className={`${styles.tab} ${tab === 'payout' ? styles.tabOn : ''}`} onClick={() => selectTab('payout')}>最大獲得賞金</button>
       </div>
       <p className={styles.lead}>
         {tab === 'payout'
