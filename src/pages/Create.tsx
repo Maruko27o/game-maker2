@@ -214,19 +214,18 @@ export default function Create() {
                 {decosBySlot[slot].map((d) => {
                   const has = (owned[d.id] ?? 0) > 0;
                   const selected = decos[slot] === d.id;
+                  // Unowned decorations are a secret (改修：未所持はシークレット): hide the
+                  // art behind a "？" tile so owned (illustrated) vs not is obvious.
                   return (
                     <button
                       key={d.id}
-                      className={`${styles.decoChip} ${selected ? styles.selected : ''} ${
-                        has ? '' : styles.lockedChip
-                      }`}
+                      className={`${styles.decoChip} ${selected ? styles.selected : ''} ${has ? '' : styles.secretChip}`}
                       disabled={!has}
                       onClick={() => setDecos((p) => ({ ...p, [slot]: d.id }))}
-                      title={has ? d.name : `${d.name}（未所持）`}
-                      aria-label={d.name}
+                      title={has ? d.name : 'シークレット（未所持）'}
+                      aria-label={has ? d.name : 'シークレット'}
                     >
-                      <DecoGlyph slot={slot} svg={d.svg} />
-                      {!has && <span className={styles.lock}><Icon name="lock" size={14} /></span>}
+                      {has ? <DecoGlyph slot={slot} svg={d.svg} /> : <span className={styles.secretMark}>？</span>}
                     </button>
                   );
                 })}

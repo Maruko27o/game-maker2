@@ -83,9 +83,17 @@
   outline: 4px solid var(--blue);
   outline-offset: 1px;
 }
+/* Locked colour: a dark scrim + a clear white lock, so it reads as locked no
+   matter the underlying colour (a grey swatch used to look ownable). */
 .lockedSwatch {
-  filter: grayscale(0.85) brightness(0.85);
   cursor: not-allowed;
+}
+.lockedSwatch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9px;
+  background: rgba(28, 20, 10, 0.62);
 }
 .lock {
   position: absolute;
@@ -93,6 +101,8 @@
   display: grid;
   place-items: center;
   font-size: 16px;
+  color: #fff;
+  z-index: 1;
 }
 .decoRow {
   display: flex;
@@ -123,9 +133,17 @@
   font-weight: 800;
   color: var(--ink-soft);
 }
-.lockedChip {
-  filter: grayscale(0.85) brightness(0.92);
+/* Unowned decoration: a secret "？" tile — visually distinct from owned art. */
+.secretChip {
+  background: var(--panel-2);
+  border-style: dashed;
   cursor: not-allowed;
+}
+.secretMark {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  line-height: 1;
 }
 .nameInput {
   width: 100%;
