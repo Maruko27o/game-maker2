@@ -68,7 +68,7 @@
 }
 .row {
   display: grid;
-  grid-template-columns: auto 34px 1fr auto auto 20px;
+  grid-template-columns: auto 34px 1fr auto auto 30px;
   align-items: center;
   gap: 7px;
   padding: 4px 7px;
@@ -77,13 +77,17 @@
   border-radius: 12px;
   cursor: pointer;
   user-select: none;
+  transition: background 0.12s, box-shadow 0.12s;
 }
 .me .row {
   background: #fff7e6;
 }
-.on {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 2px var(--gold) inset;
+/* Selected row — make the pick obvious: amber fill + thick gold ring.
+   `.row.on` beats `.me .row` so the player's own row also turns amber. */
+.row.on {
+  border-color: #d99a1a;
+  background: #ffe9a8;
+  box-shadow: 0 0 0 3px #f4c534 inset, 0 2px 0 rgba(120, 84, 10, 0.25);
 }
 .info {
   display: inline-flex;
@@ -193,18 +197,19 @@
   font-variant-numeric: tabular-nums;
 }
 .mark {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 900;
 }
 .markOn {
-  background: var(--gold);
+  background: #f4b400;
   color: #2b2118;
-  border: 2px solid var(--border-dark);
+  border: 2.5px solid var(--border-dark);
+  box-shadow: 0 2px 0 rgba(120, 84, 10, 0.35);
 }
 .stakeRow {
   display: flex;
