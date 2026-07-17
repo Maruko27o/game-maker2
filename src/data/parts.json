@@ -655,63 +655,63 @@
       "name": "カウボーイハット",
       "slot": "head",
       "rarity": "N",
-      "svg": "<path fill=\"#8a5a33\" d=\"M 374,92 C 370,52 386,40 410,42 C 434,44 445,58 442,94 Z\"/>\n<ellipse fill=\"#a8703f\" cx=\"406\" cy=\"94\" rx=\"70\" ry=\"14\"/>\n<path fill=\"#5c3620\" stroke=\"none\" d=\"M 340,80 L 472,94 L 470,104 L 340,90 Z\"/>"
+      "svg": "<ellipse fill=\"#5c3620\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" cx=\"406\" cy=\"97\" rx=\"76\" ry=\"16\"/>\n<ellipse fill=\"#7a4e2c\" stroke=\"none\" cx=\"406\" cy=\"93\" rx=\"70\" ry=\"11\"/>\n<path fill=\"#8a5a33\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 372,94 C 366,50 388,36 410,38 C 434,40 448,56 444,94 Z\"/>\n<path fill=\"#a8703f\" stroke=\"none\" d=\"M 380,90 C 376,58 390,46 404,47 C 402,60 401,78 402,90 Z\"/>\n<path fill=\"#4e2f1c\" stroke=\"none\" d=\"M 372,86 L 444,90 L 443,97 L 372,93 Z\"/>\n<rect fill=\"#e0b23c\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"2.5\" x=\"401\" y=\"84\" width=\"11\" height=\"10\" rx=\"2\"/>"
     },
     {
       "id": "head_explorer",
       "name": "たんけんキャップ",
       "slot": "head",
       "rarity": "N",
-      "svg": "<path fill=\"#a9762f\" d=\"M 366,96 C 360,56 384,38 410,40 C 438,42 450,64 446,98 Z\"/>\n<path fill=\"#8a5c22\" stroke=\"none\" d=\"M 366,84 L 448,92 L 447,102 L 366,94 Z\"/>"
+      "svg": "<path fill=\"#6f4a1c\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 364,92 L 454,100 L 453,111 L 364,103 Z\"/>\n<path fill=\"#a9762f\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 366,96 C 360,56 384,38 410,40 C 438,42 450,64 446,96 Z\"/>\n<path fill=\"#c69049\" stroke=\"none\" d=\"M 374,90 C 370,58 386,46 404,47 C 401,62 400,80 402,90 Z\"/>\n<path fill=\"#5f3f18\" stroke=\"none\" d=\"M 368,84 L 446,90 L 445,96 L 368,90 Z\"/>"
     },
     {
       "id": "head_party",
       "name": "パーティーハット",
       "slot": "head",
       "rarity": "N",
-      "svg": "<path fill=\"#ff7bb0\" d=\"M 380,92 L 412,20 L 442,96 Z\"/>\n<path fill=\"none\" stroke=\"#ffe066\" stroke-width=\"6\" d=\"M 392,72 L 428,80 M 400,50 L 424,56\"/>\n<circle fill=\"#ffe066\" cx=\"412\" cy=\"16\" r=\"12\"/>"
+      "svg": "<path fill=\"#ff7bb0\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 380,94 L 412,16 L 442,96 Z\"/>\n<path fill=\"#ff9ec4\" stroke=\"none\" d=\"M 401,92 L 412,24 L 417,92 Z\"/>\n<path fill=\"#7fd0e0\" stroke=\"none\" d=\"M 388,74 L 436,80 L 435,86 L 388,80 Z\"/>\n<path fill=\"none\" stroke=\"#ffe066\" stroke-width=\"7\" stroke-linecap=\"round\" d=\"M 392,60 L 428,66 M 398,44 L 424,50\"/>\n<circle fill=\"#ffe066\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" cx=\"412\" cy=\"13\" r=\"12\"/>"
     },
     {
       "id": "head_knight",
       "name": "ナイトヘルム",
       "slot": "head",
       "rarity": "R",
-      "svg": "<path fill=\"#b9c2cc\" d=\"M 366,98 C 358,58 384,36 412,38 C 442,40 454,66 448,100 Z\"/>\n<path fill=\"#8d97a3\" stroke=\"none\" d=\"M 380,100 L 388,64 L 400,66 L 394,102 Z\"/>\n<path fill=\"#e2454f\" d=\"M 408,36 C 404,10 424,4 438,12 C 424,18 420,26 424,38 Z\"/>"
+      "svg": "<path fill=\"#e2454f\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 408,38 C 402,6 426,0 440,10 C 424,16 420,28 424,40 Z\"/>\n<path fill=\"#b9c2cc\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 366,100 C 358,58 384,34 412,36 C 442,38 456,66 448,102 Z\"/>\n<path fill=\"#d7dee5\" stroke=\"none\" d=\"M 374,96 C 368,60 386,42 406,43 C 402,64 401,84 402,98 Z\"/>\n<rect fill=\"#3a2118\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"3\" x=\"384\" y=\"60\" width=\"13\" height=\"44\" rx=\"5\"/>"
     },
     {
       "id": "head_samurai",
       "name": "かぶと",
       "slot": "head",
       "rarity": "R",
-      "svg": "<path fill=\"#c9a227\" d=\"M 372,58 C 350,38 344,24 346,10 C 368,22 386,40 392,56 Z\"/>\n<path fill=\"#c9a227\" d=\"M 444,60 C 466,40 472,26 470,12 C 448,24 432,42 428,58 Z\"/>\n<path fill=\"#3f4a63\" d=\"M 370,96 C 364,58 388,40 412,42 C 438,44 450,66 446,96 Z\"/>\n<ellipse fill=\"#5b6a8a\" cx=\"408\" cy=\"96\" rx=\"52\" ry=\"12\"/>"
+      "svg": "<path fill=\"#c9a227\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 372,58 C 348,38 342,22 344,8 C 368,20 388,40 394,56 Z\"/>\n<path fill=\"#c9a227\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 444,60 C 468,40 474,24 472,10 C 448,22 430,42 426,58 Z\"/>\n<path fill=\"#3f4a63\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 368,98 C 362,56 388,38 412,40 C 438,42 452,66 448,98 Z\"/>\n<path fill=\"#556184\" stroke=\"none\" d=\"M 376,94 C 370,58 388,44 408,45 C 404,64 402,82 404,94 Z\"/>\n<ellipse fill=\"#2b3350\" stroke=\"none\" cx=\"406\" cy=\"97\" rx=\"50\" ry=\"10\"/>\n<circle fill=\"#e0b23c\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"3\" cx=\"408\" cy=\"66\" r=\"8\"/>"
     },
     {
       "id": "head_ice_crown",
       "name": "こおりのかんむり",
       "slot": "head",
       "rarity": "R",
-      "svg": "<path fill=\"#9fe6ff\" d=\"M 372,92 L 358,34 L 396,66 L 404,20 L 420,70 L 448,40 L 438,94 Z\"/>\n<path fill=\"#d8f6ff\" stroke=\"none\" d=\"M 386,86 L 380,52 L 404,74 Z\"/>"
+      "svg": "<path fill=\"#9fe6ff\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 372,94 L 356,32 L 396,66 L 404,16 L 420,70 L 450,38 L 438,96 Z\"/>\n<path fill=\"#d8f6ff\" stroke=\"none\" d=\"M 384,88 L 372,44 L 398,72 Z\"/>\n<circle fill=\"#ffffff\" stroke=\"#7fc9e8\" stroke-width=\"2\" cx=\"404\" cy=\"82\" r=\"5\"/>"
     },
     {
       "id": "head_fire_crest",
       "name": "ほのおのたてがみ",
       "slot": "head",
       "rarity": "SR",
-      "svg": "<path fill=\"#ff8a3d\" d=\"M 366,92 C 352,62 376,46 366,14 C 398,42 410,64 402,92 Z\"/>\n<path fill=\"#ffd34d\" stroke=\"none\" d=\"M 378,88 C 372,68 384,58 380,40 C 396,58 400,72 396,88 Z\"/>"
+      "svg": "<path fill=\"#ff6a2c\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 366,94 C 350,62 378,46 366,12 C 400,42 412,66 402,94 Z\"/>\n<path fill=\"#ffb03d\" stroke=\"none\" d=\"M 375,90 C 369,66 383,54 377,32 C 396,54 402,72 395,90 Z\"/>\n<path fill=\"#ffe9a0\" stroke=\"none\" d=\"M 383,86 C 379,70 388,60 385,46 C 395,62 396,76 392,86 Z\"/>"
     },
     {
       "id": "head_unicorn",
       "name": "ユニコーンの角",
       "slot": "head",
       "rarity": "SR",
-      "svg": "<path fill=\"#ffd45e\" d=\"M 396,88 L 414,22 L 428,92 Z\"/>\n<path fill=\"none\" stroke=\"#e0a92e\" stroke-width=\"5\" d=\"M 402,74 L 424,78 M 406,58 L 421,61\"/>"
+      "svg": "<path fill=\"#ffd45e\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 396,90 L 414,16 L 428,92 Z\"/>\n<path fill=\"#fff0b0\" stroke=\"none\" d=\"M 408,88 L 414,24 L 419,88 Z\"/>\n<path fill=\"none\" stroke=\"#e0a92e\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M 401,76 L 425,80 M 404,60 L 423,63 M 407,44 L 421,47\"/>"
     },
     {
       "id": "head_antenna",
       "name": "ロボアンテナ",
       "slot": "head",
       "rarity": "SR",
-      "svg": "<path fill=\"#c9ced8\" d=\"M 388,78 L 404,20 L 424,26 L 412,84 Z\"/>\n<circle fill=\"#ff5b5b\" cx=\"410\" cy=\"16\" r=\"11\"/>"
+      "svg": "<path fill=\"#c9ced8\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 388,80 L 404,16 L 424,22 L 412,86 Z\"/>\n<path fill=\"#eef1f5\" stroke=\"none\" d=\"M 394,78 L 406,24 L 412,26 L 404,80 Z\"/>\n<circle fill=\"#ff5b5b\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" cx=\"410\" cy=\"12\" r=\"11\"/>\n<circle fill=\"#ffc0c0\" stroke=\"none\" cx=\"406\" cy=\"8\" r=\"3.4\"/>"
     },
     {
       "id": "face_bandana",
@@ -802,56 +802,56 @@
       "name": "はなかんむり",
       "slot": "head",
       "rarity": "N",
-      "svg": "<path fill=\"none\" stroke=\"#4d7c3a\" stroke-width=\"7\" d=\"M 364,98 C 378,70 424,64 450,92\"/>\n<circle fill=\"#ff9ec4\" cx=\"374\" cy=\"84\" r=\"12\"/><circle fill=\"#ffe066\" stroke=\"none\" cx=\"374\" cy=\"84\" r=\"4\"/>\n<circle fill=\"#fff0a8\" cx=\"402\" cy=\"70\" r=\"13\"/><circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"402\" cy=\"70\" r=\"4\"/>\n<circle fill=\"#ff9ec4\" cx=\"432\" cy=\"78\" r=\"11\"/><circle fill=\"#ffe066\" stroke=\"none\" cx=\"432\" cy=\"78\" r=\"4\"/>"
+      "svg": "<path fill=\"none\" stroke=\"#4d7c3a\" stroke-width=\"8\" stroke-linecap=\"round\" d=\"M 362,98 C 378,68 424,62 452,92\"/>\n<path fill=\"#5fa33a\" stroke=\"none\" d=\"M 388,92 C 382,80 394,76 402,84 C 396,92 392,94 388,92 Z\"/>\n<circle fill=\"#ff9ec4\" stroke=\"#c95e86\" stroke-width=\"3\" cx=\"374\" cy=\"84\" r=\"12\"/><circle fill=\"#ffe066\" stroke=\"none\" cx=\"374\" cy=\"84\" r=\"4\"/>\n<circle fill=\"#fff0a8\" stroke=\"#e0b23c\" stroke-width=\"3\" cx=\"402\" cy=\"68\" r=\"13\"/><circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"402\" cy=\"68\" r=\"4.5\"/>\n<circle fill=\"#b6a4e0\" stroke=\"#7a5fb0\" stroke-width=\"3\" cx=\"432\" cy=\"78\" r=\"11\"/><circle fill=\"#ffe066\" stroke=\"none\" cx=\"432\" cy=\"78\" r=\"4\"/>"
     },
     {
       "id": "head_straw_hat",
       "name": "むぎわらぼうし",
       "slot": "head",
       "rarity": "N",
-      "svg": "<path fill=\"#e0c069\" d=\"M 376,92 C 372,58 388,46 410,48 C 432,50 442,62 440,94 Z\"/>\n<ellipse fill=\"#efd58c\" cx=\"406\" cy=\"94\" rx=\"76\" ry=\"16\"/>\n<path fill=\"#c9455e\" stroke=\"none\" d=\"M 344,84 L 470,96 L 469,106 L 344,94 Z\"/>"
+      "svg": "<ellipse fill=\"#cda94f\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" cx=\"406\" cy=\"97\" rx=\"82\" ry=\"18\"/>\n<ellipse fill=\"#efd58c\" stroke=\"none\" cx=\"406\" cy=\"93\" rx=\"75\" ry=\"13\"/>\n<path fill=\"#e0c069\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 376,94 C 372,56 388,44 410,46 C 432,48 442,60 440,94 Z\"/>\n<path fill=\"#f0dc9c\" stroke=\"none\" d=\"M 384,90 C 380,60 392,50 406,51 C 403,64 402,80 404,90 Z\"/>\n<path fill=\"#c9455e\" stroke=\"none\" d=\"M 366,86 L 446,90 L 445,97 L 366,93 Z\"/>\n<path fill=\"none\" stroke=\"#c9a227\" stroke-width=\"2\" d=\"M 344,94 L 468,102 M 388,66 L 432,70\"/>"
     },
     {
       "id": "head_bow",
       "name": "あたまリボン",
       "slot": "head",
       "rarity": "N",
-      "svg": "<path fill=\"#ff7bb0\" d=\"M 380,74 C 356,60 350,80 362,92 C 374,102 388,90 392,76 Z\"/>\n<path fill=\"#ff7bb0\" d=\"M 404,76 C 428,58 446,70 440,88 C 434,104 414,98 404,84 Z\"/>\n<circle fill=\"#ffd0e2\" cx=\"398\" cy=\"80\" r=\"11\"/>"
+      "svg": "<path fill=\"#ff7bb0\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 382,74 C 356,58 348,82 362,94 C 378,104 392,90 394,76 Z\"/>\n<path fill=\"#ff7bb0\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 402,76 C 428,56 448,70 442,90 C 434,106 412,98 404,84 Z\"/>\n<path fill=\"#ff9ec4\" stroke=\"none\" d=\"M 380,80 C 368,74 366,86 373,91 C 366,84 370,78 380,80 Z\"/>\n<circle fill=\"#ffd0e2\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" cx=\"398\" cy=\"80\" r=\"11\"/>"
     },
     {
       "id": "head_ninja_hood",
       "name": "にんじゃずきん",
       "slot": "head",
       "rarity": "R",
-      "svg": "<path fill=\"#2f3a4a\" d=\"M 352,150 C 338,102 364,76 402,78 C 442,80 454,106 448,130 L 396,120 C 380,140 366,150 352,150 Z\"/>\n<path fill=\"#c9455e\" stroke=\"none\" d=\"M 356,112 L 452,124 L 450,136 L 355,124 Z\"/>"
+      "svg": "<path fill=\"#2f3a4a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 352,152 C 336,100 364,74 402,76 C 444,78 456,106 450,132 L 396,120 C 380,142 366,152 352,152 Z\"/>\n<path fill=\"#41506a\" stroke=\"none\" d=\"M 360,122 C 352,94 372,80 398,82 C 388,98 378,112 372,126 Z\"/>\n<path fill=\"#c9455e\" stroke=\"none\" d=\"M 354,112 L 452,124 L 450,138 L 353,126 Z\"/>\n<path fill=\"#8f2b3c\" stroke=\"none\" d=\"M 449,123 L 466,118 L 463,142 L 450,138 Z\"/>"
     },
     {
       "id": "head_witch_hat",
       "name": "まじょのぼうし",
       "slot": "head",
       "rarity": "R",
-      "svg": "<path fill=\"#4a3a6a\" d=\"M 374,94 C 382,52 402,22 434,6 C 424,42 418,72 440,96 Z\"/>\n<ellipse fill=\"#5c497f\" cx=\"406\" cy=\"96\" rx=\"74\" ry=\"15\"/>\n<path fill=\"#ffd45e\" stroke=\"none\" d=\"M 380,84 L 442,90 L 441,100 L 379,94 Z\"/>"
+      "svg": "<ellipse fill=\"#3a2e55\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" cx=\"406\" cy=\"99\" rx=\"80\" ry=\"16\"/>\n<ellipse fill=\"#5c497f\" stroke=\"none\" cx=\"406\" cy=\"95\" rx=\"73\" ry=\"12\"/>\n<path fill=\"#4a3a6a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 374,98 C 382,52 402,20 436,4 C 424,42 418,72 442,98 Z\"/>\n<path fill=\"#5c497f\" stroke=\"none\" d=\"M 388,92 C 394,58 406,38 424,26 C 416,50 412,72 420,94 Z\"/>\n<path fill=\"#ffd45e\" stroke=\"none\" d=\"M 382,88 L 442,94 L 441,102 L 381,96 Z\"/>\n<path fill=\"#ffe066\" stroke=\"#2b2118\" stroke-width=\"1.5\" d=\"M 409,82 l3,7 8,0 -6,5 2,8 -7,-4 -7,4 2,-8 -6,-5 8,0 z\"/>"
     },
     {
       "id": "head_oni_horns",
       "name": "おにのツノ",
       "slot": "head",
       "rarity": "R",
-      "svg": "<path fill=\"#f2e3c4\" d=\"M 378,86 L 364,34 L 398,74 Z\"/>\n<path fill=\"#f2e3c4\" d=\"M 424,80 L 450,32 L 446,88 Z\"/>"
+      "svg": "<path fill=\"#f2e3c4\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 378,88 L 360,28 L 400,74 Z\"/>\n<path fill=\"#f2e3c4\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 424,80 L 454,26 L 448,90 Z\"/>\n<path fill=\"#fff6e0\" stroke=\"none\" d=\"M 384,82 L 372,42 L 392,72 Z\"/>\n<path fill=\"#d9c49c\" stroke=\"none\" d=\"M 440,78 L 450,40 L 446,82 Z\"/>"
     },
     {
       "id": "head_crown",
       "name": "おうかん",
       "slot": "head",
       "rarity": "SR",
-      "svg": "<path fill=\"#ffd45e\" d=\"M 372,96 L 366,42 L 392,70 L 408,34 L 426,72 L 452,46 L 444,98 Z\"/>\n<circle fill=\"#e2454f\" stroke=\"none\" cx=\"408\" cy=\"80\" r=\"7\"/>\n<circle fill=\"#3ad7ff\" stroke=\"none\" cx=\"382\" cy=\"86\" r=\"6\"/>\n<circle fill=\"#3ad7ff\" stroke=\"none\" cx=\"434\" cy=\"86\" r=\"6\"/>"
+      "svg": "<path fill=\"#ffd45e\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 372,98 L 364,40 L 392,70 L 408,32 L 426,72 L 454,44 L 444,100 Z\"/>\n<path fill=\"#ffe9a0\" stroke=\"none\" d=\"M 379,94 L 372,52 L 390,74 Z\"/>\n<rect fill=\"#c9932a\" stroke=\"none\" x=\"372\" y=\"90\" width=\"73\" height=\"9\"/>\n<circle fill=\"#3ad7ff\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"3\" cx=\"382\" cy=\"88\" r=\"6\"/>\n<circle fill=\"#e2454f\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"3\" cx=\"408\" cy=\"82\" r=\"7\"/>\n<circle fill=\"#3ad7ff\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"3\" cx=\"434\" cy=\"88\" r=\"6\"/>"
     },
     {
       "id": "head_halo",
       "name": "てんしのわ",
       "slot": "head",
       "rarity": "SR",
-      "svg": "<ellipse fill=\"none\" stroke=\"#ffd45e\" stroke-width=\"12\" cx=\"412\" cy=\"28\" rx=\"44\" ry=\"13\"/>\n<ellipse fill=\"none\" stroke=\"#fff3c4\" stroke-width=\"4\" cx=\"412\" cy=\"28\" rx=\"44\" ry=\"13\"/>"
+      "svg": "<ellipse fill=\"none\" stroke=\"#e0a92e\" stroke-width=\"13\" cx=\"412\" cy=\"26\" rx=\"46\" ry=\"14\"/>\n<ellipse fill=\"none\" stroke=\"#ffd45e\" stroke-width=\"9\" cx=\"412\" cy=\"26\" rx=\"46\" ry=\"14\"/>\n<ellipse fill=\"none\" stroke=\"#fff6c4\" stroke-width=\"3\" cx=\"412\" cy=\"24\" rx=\"44\" ry=\"12\"/>"
     },
     {
       "id": "face_glasses",
