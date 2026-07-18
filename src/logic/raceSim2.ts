@@ -399,7 +399,7 @@ export function simulate2(
           dTarget = r.passDTarget;
           weaveCost = 0.025; // §3.6: accelerating through — half the weave penalty
         } else if (r.aim === 'RAIL') {
-          dTarget = railTarget(r, dInner, rr, progress, dLimit);
+          dTarget = railTarget(r, dInner, rr, progress, dLimit, onCorner);
           // Converge onto the rail faster the farther out you are, so an
           // outer-gate horse can save ground into the first turn instead of
           // running the whole way wide (real jockeys tuck in). Near the rail it
@@ -741,7 +741,7 @@ function chooseGap(runners: R[], r: R, jam: R, c: number, vMax: number, dLimit: 
 }
 
 // RAIL target — style dispersion so the field doesn't wall up on the rail (#17).
-function railTarget(r: R, dInner: number, rr: number, progress: number, dLimit: number): number {
+function railTarget(r: R, dInner: number, rr: number, progress: number, dLimit: number, onCorner: boolean): number {
   const style = r.e.style;
   if (style === 'nige' || style === 'senko') return dInner + 1.2 * rr;
   const early = progress < 0.55; // closers stalk off the rail, then take it
@@ -750,8 +750,13 @@ function railTarget(r: R, dInner: number, rr: number, progress: number, dLimit: 
   // third, so even a horse that loses the break tucks toward the rail on the first
   // bend instead of fanning wide. Late (from ~55%): they take the rail outright; the
   // wide 大外 charge is reserved for the home straight (see homeTarget).
+  //
+  // 改修：早いラップのコーナーでも内ラチへ寄せる。本物の競馬同様「コーナーは内で
+  // 距離を詰め、直線でふくらむ」動きにする。early でもコーナー上なら内寄り（ただし
+  // ラチべったりではなく数馬身外＝地面はいくらか払う）を狙い、直線ではストーキング
+  // 位置へ戻す。後半（≥55%）は従来どおりラチを取り切る。
   if (style === 'sashi') return early ? -0.8 : dInner + 1.3 * rr;
-  return early ? dLimit * 0.2 : dInner + 1.5 * rr; // oikomi
+  return early ? (onCorner ? dInner + 3.8 * rr : dLimit * 0.2) : dInner + 1.5 * rr; // oikomi
 }
 
 // HOME target — the final straight (§3.8). Front-runners hold their line and only
