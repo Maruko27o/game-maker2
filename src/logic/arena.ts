@@ -8,7 +8,7 @@ import { simulate2, type Entrant } from './raceSim2';
 import { mulberry32, statTotal } from './stats';
 import { makeCpu } from './cpu';
 import { colorById } from '../data/parts';
-import { ARENA_FIELD, ARENA_ADVANCE, ARENA_REAL_CAP, arenaPrize } from '../data/arena';
+import { ARENA_FIELD, ARENA_ADVANCE, ARENA_REAL_CAP, arenaPrize, periodLabel } from '../data/arena';
 import type { ArenaHorseSnapshot, ArenaRoundResult, ArenaResult, ArenaOutcome, HorseLook } from '../types';
 
 /** entrant/look へ変換するヘルパ（simulate2・HorseView 用）。 */
@@ -91,7 +91,7 @@ export function runTournament(
   seed: number,
   pool: ArenaHorseSnapshot[],
   mode: 30 | 60,
-  day: string,
+  period: number,
 ): ArenaResult {
   const crng = mulberry32((seed ^ 0xa0a0) >>> 0);
   const course = COURSES[Math.floor(crng() * COURSES.length)];
@@ -130,7 +130,7 @@ export function runTournament(
   }
 
   const payout = arenaPrize(outcome, finalRank ?? 0);
-  return { day, mode, rounds, outcome, finalRank, payout, awarded: false };
+  return { period, label: periodLabel(period), seed, mode, rounds, outcome, finalRank, payout, awarded: false, seen: false };
 }
 
 /** Build the player's own entry snapshot from a live horse. */

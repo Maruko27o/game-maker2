@@ -388,3 +388,150 @@
   text-align: center;
   margin: 2px 0 12px;
 }
+
+/* ---- period bar + countdown ---- */
+.periodBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.periodBar b {
+  color: var(--ink);
+  font-size: 13px;
+}
+.countdown {
+  font-weight: 800;
+  color: var(--blue-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- results list ---- */
+.newCount {
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--red);
+  border-radius: 7px;
+  padding: 2px 7px;
+  margin-left: 6px;
+}
+.emptyResults {
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 10px 4px;
+  line-height: 1.5;
+}
+.resultList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.resultRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 11px;
+  padding: 8px 11px;
+  text-align: left;
+  color: var(--ink);
+}
+.resultNew {
+  border-color: var(--gold);
+  background: linear-gradient(90deg, #f6dd9a, var(--panel-inner));
+}
+.resMedal {
+  font-size: 18px;
+  width: 22px;
+  text-align: center;
+  flex: none;
+}
+.resInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.resLabel {
+  font-size: 12px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.newDot {
+  font-size: 9px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--red);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.resOutcome {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.resPay {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--red);
+  flex: none;
+}
+.resPlay {
+  font-size: 13px;
+  color: var(--blue-dark);
+  flex: none;
+}
+
+/* ---- auto (standing) entry ---- */
+.autoOn {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.autoRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--panel-inner);
+  border: 3px solid var(--grass-dark);
+  border-radius: 12px;
+  padding: 10px;
+}
+.autoText b {
+  font-size: 14px;
+}
+.autoSub {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.autoState {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.autoBtn {
+  width: 100%;
+  margin-top: 9px;
+}
+
+/* ---- summary period label ---- */
+.resultLabel {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+}

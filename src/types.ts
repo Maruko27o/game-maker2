@@ -205,26 +205,32 @@ export type ArenaRoundResult = {
   advanced: boolean; // player made the cut (qualifiers only)
 };
 export type ArenaOutcome = 'champion' | 'final' | 'q2out' | 'q1out';
-// The result of a whole tournament for one entry-day.
+// The result of a whole tournament for one 開催「部」(period). Kept in a growing
+// list so results pile up (結果が溜まっていく).
 export type ArenaResult = {
-  day: string; // the entry day this tournament belongs to
+  period: number; // the 12h period this tournament belongs to
+  label: string; // display label (e.g. "7/18 12時の部")
+  seed: number; // deterministic seed (kept for reference)
   mode: 30 | 60;
   rounds: ArenaRoundResult[]; // 1..3 rounds actually raced
   outcome: ArenaOutcome;
   finalRank: number | null; // placing in the 本線 if reached
   payout: number;
   awarded: boolean; // coins credited exactly once
+  seen: boolean; // whether the player has watched it (for the NEW badge)
 };
-// A pending entry: competes on `day`; results become viewable the next day (翌日開示).
+// A pending entry: competes in `period`; resolves into a result once the period closes.
 export type ArenaEntry = {
-  day: string; // entry day (= tournament day)
+  period: number; // the 12h period this entry competes in
   seed: number; // deterministic seed for this tournament
   horseId: string; // which owned horse was entered
   snapshot: ArenaHorseSnapshot; // frozen at entry, so deletion/edits don't change it
 };
 export type ArenaState = {
-  entry: ArenaEntry | null; // current entry (if entry.day < today → ready to reveal)
-  result: ArenaResult | null; // last revealed tournament (re-watchable)
+  auto: { horseId: string } | null; // 固定/自動エントリー（資金がある限り毎回参加）
+  pending: ArenaEntry | null; // entry for the current (still-open) period
+  lastPeriod: number | null; // highest period an entry was made for (drives catch-up)
+  results: ArenaResult[]; // resolved tournaments, newest first (capped)
 };
 
 export type SaveData = {
