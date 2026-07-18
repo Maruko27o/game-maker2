@@ -2,6 +2,8 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import Icon from '../components/Icon';
+import CoinIcon from '../components/CoinIcon';
+import { CREATE_COST } from '../data/coins';
 import { colorsBySlot, decosBySlot, COLOR_SLOTS, DECO_SLOTS } from '../data/parts';
 import { predictStyle } from '../logic/runStyle';
 import type { ColorSlot, DecoSlot, HorseLook, Stats, StatKey } from '../types';
@@ -70,10 +72,14 @@ export default function Create() {
   const rebalanceHorse = useStore((s) => s.rebalanceHorse);
   const freeRebalance = useStore((s) => s.freeRebalance);
   const maxHorses = useStore((s) => s.maxHorses);
+  const coins = useStore((s) => s.coins);
+  const spendCoins = useStore((s) => s.spendCoins);
 
   const editing = editId ? horses.find((h) => h.id === editId) ?? null : null;
   const rebalancing = rebalanceId ? horses.find((h) => h.id === rebalanceId) ?? null : null;
-  const atCap = !editing && !rebalancing && horses.length >= maxHorses;
+  const isNew = !editing && !rebalancing; // brand-new horse (costs CREATE_COST)
+  const atCap = isNew && horses.length >= maxHorses;
+  const poor = isNew && coins < CREATE_COST; // can't afford to create
 
   // Whether the player owns at least one color in every color slot.
   const canBuild = COLOR_SLOTS.every((s) => colorsBySlot[s].some((c) => (owned[c.id] ?? 0) > 0));
@@ -112,7 +118,7 @@ export default function Create() {
   const canSave = rebalancing
     ? freeRebalance && remaining === 0
     : allocMode
-      ? lookReady && remaining === 0
+      ? lookReady && remaining === 0 && !poor
       : lookReady;
 
   function bump(k: StatKey, dir: 1 | -1) {
@@ -131,6 +137,7 @@ export default function Create() {
     } else if (editing) {
       updateHorse(editing.id, { name: finalName, colors, decos });
     } else {
+      if (!spendCoins(CREATE_COST)) return; // 作成は有料（farm loop 防止）
       addHorse({ name: finalName, colors, decos }, stats);
     }
     navigate('/stable');
@@ -305,9 +312,11 @@ export default function Create() {
             ? '振り直す'
             : editing
               ? 'ほぞんする'
-              : remaining === 0
-                ? 'このウマにする'
-                : `のこり ${remaining} ポイント`}
+              : remaining !== 0
+                ? `のこり ${remaining} ポイント`
+                : poor
+                  ? 'コインが足りません'
+                  : `このウマにする（${CREATE_COST}）`}
         </button>
       </div>
 
@@ -324,6 +333,9 @@ export default function Create() {
                 </span>
               ))}
             </div>
+            <p className={styles.confirmMsg} style={{ textAlign: 'center', margin: '0 0 12px' }}>
+              作成に <CoinIcon size={15} /> <strong>{CREATE_COST.toLocaleString()}</strong> コインかかります
+            </p>
             <div className={styles.confirmActions}>
               <button className="btn neutral" onClick={() => setConfirming(false)}>
                 やめる

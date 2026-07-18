@@ -43,15 +43,19 @@ export const GRASS_TASK_REWARD = 1000; // coins banked per grass cycle
 // マイウマがステーブルにいるだけで時間経過でコインを生む。総合力・トロフィー数で
 // レートが決まり、開いたときにまとめて回収する。溜め込みは FARM_CAP_HOURS で頭打ち
 // （毎日開く動機＋放置しすぎても無限には増えない）。
-export const FARM_BASE_PER_HORSE = 4; // 1頭あたりの基礎 coins/時
-export const FARM_PER_STAT = 0.4; // 総合力1につき coins/時
+export const FARM_BASE_PER_HORSE = 30; // 1頭あたりの基礎 coins/時（作りたて総合40で計50/時）
+export const FARM_PER_STAT = 0.5; // 総合力1につき coins/時
 export const FARM_PER_TROPHY = 12; // トロフィー1個につき coins/時
 export const FARM_CAP_HOURS = 12; // これ以上の放置は加算されない
 
+// ---- ウマ作成コスト（farm loop 防止）---------------------------------------
+// 作成を有料化して「無料で作って引退で稼ぐ」荒稼ぎを封じる（作成1000＞引退ベース500）。
+export const CREATE_COST = 1000; // 新しいウマを1頭つくるのに必要なコイン
+
 // ---- 引退（retire a horse for coins, 稼ぐコンテンツB）------------------------
 // 余った馬をコインに換えて馬房を空ける。育てた分（40超の強化）とトロフィー・バッジ＝
-// 「投資」に価値を置き、作りたてのフラット40頭を量産しても稼げない（farm防止）。
-export const RETIRE_BASE = 100; // 作りたて（未強化・無冠）でも最低これだけ
+// 「投資」に価値を置き、作りたてを量産しても稼げない（作成1000＞引退ベース500で必ず赤字）。
+export const RETIRE_BASE = 500; // 作りたて（未強化・無冠）でも最低これだけ
 export const RETIRE_PER_TRAINED = 150; // 合計40を超えて強化した1につき
 export const RETIRE_PER_TROPHY = 700; // トロフィー1個につき
 export const RETIRE_PER_BADGE = 40; // バッジ1個につき

@@ -44,7 +44,7 @@ import { periodId, ARENA_ENTRY_FEE, ARENA_MODE, ARENA_CATCHUP_MAX, ARENA_RESULTS
 import { farmRatePerHour, farmAccrued, retireValueOf } from './logic/farm';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
-export const MAX_HORSES = 10;
+export const MAX_HORSES = 6; // 所持できるマイウマの上限（拡張なし）
 
 // Which localStorage slot we currently read/write. Guests use STORAGE_KEY; a
 // signed-in user uses a per-account slot so two accounts on the same browser
@@ -260,7 +260,8 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   // v6 (RACE_V4 §4) economy fields — default sensibly for older saves.
   const coins = typeof d.coins === 'number' ? d.coins : 0;
   const bets = Array.isArray(d.bets) ? (d.bets as SaveData['bets']) : [];
-  const maxHorses = typeof d.maxHorses === 'number' ? d.maxHorses : MAX_HORSES;
+  // 上限は6頭に統一（旧セーブが10/15でも6にクランプ。既存の馬は消さない）。
+  const maxHorses = Math.min(typeof d.maxHorses === 'number' ? d.maxHorses : MAX_HORSES, MAX_HORSES);
   const daily = normDaily(d.daily);
   const tasks = normTasks(d.tasks);
   // Profile stats: normalize, and one-time backfill from bet history for saves
