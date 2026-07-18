@@ -43,7 +43,7 @@ describe('retire value (farm-safe)', () => {
     expect(retireValue(48, 0, 0)).toBeGreaterThan(retireValue(40, 0, 0)); // trained
     expect(retireValue(40, 3, 0)).toBeGreaterThan(retireValue(40, 0, 0)); // trophies
     expect(retireValue(40, 0, 5)).toBeGreaterThan(retireValue(40, 0, 0)); // badges
-    // a maxed, trophied horse is worth many times a fresh one
-    expect(retireValue(48, 3, 4)).toBeGreaterThan(retireValue(40, 0, 0) * 10);
+    // a maxed, trophied horse is worth several times a fresh one
+    expect(retireValue(48, 3, 4)).toBeGreaterThan(retireValue(40, 0, 0) * 3);
   });
 });

@@ -4,7 +4,7 @@ import { useStore, trophyCount } from '../store';
 import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
-import { RENAME_COST, SLOT_EXPAND_COST, SLOT_EXPAND_TO } from '../data/coins';
+import { RENAME_COST } from '../data/coins';
 import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf } from '../logic/farm';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Trophy, Badge, TrainingItem, StatKey } from '../types';
@@ -102,7 +102,6 @@ export default function Stable() {
   const maxHorses = useStore((s) => s.maxHorses);
   const coins = useStore((s) => s.coins);
   const spendCoins = useStore((s) => s.spendCoins);
-  const expandSlots = useStore((s) => s.expandSlots);
   const farmClaimedAt = useStore((s) => s.farmClaimedAt);
   const claimFarm = useStore((s) => s.claimFarm);
   const retireHorse = useStore((s) => s.retireHorse);
@@ -166,17 +165,6 @@ export default function Stable() {
           </div>
           <div className={styles.farmNote}>{farmFullMsg} ・ ウマを育てる・集めると増えるよ</div>
         </div>
-      )}
-
-      {maxHorses < SLOT_EXPAND_TO && horses.length >= maxHorses && (
-        <button
-          className={styles.expandSlot}
-          onClick={() => expandSlots()}
-          disabled={coins < SLOT_EXPAND_COST}
-          title={coins < SLOT_EXPAND_COST ? 'コインが足りません' : ''}
-        >
-          <CoinIcon size={18} /> 馬房を{SLOT_EXPAND_TO}に拡張（{SLOT_EXPAND_COST}コイン）
-        </button>
       )}
 
       {horses.length === 0 ? (
