@@ -25,7 +25,7 @@ export const GRASS_DAILY_BONUS_MAX = 2; // …up to this many times a day
 
 // ---- spending (§4.3) ----------------------------------------------------------
 export const BET_AMOUNTS = [10, 100, 500, 1000] as const;
-export const MAX_BETS_PER_RACE = 20; // bet-slip cap per single race
+export const MAX_BETS_PER_RACE = 10; // bet-slip cap per single race
 export const MAX_BETS_GP = 20; // bet-slip cap per grand-prix round (heat / final)
 export const GRASS_OKAWARI_COST = 300; // an extra grass charge (repeatable)
 export const SLOT_EXPAND_COST = 3000; // stable 10 → 15 (once)
