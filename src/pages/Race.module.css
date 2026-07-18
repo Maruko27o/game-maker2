@@ -665,6 +665,33 @@
   0% { transform: scale(0.4); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* ---- result: compact 賞金/馬券収支 + すぐ押せるアクション（改修） ---- */
+.resultSummary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 8px 0 12px;
+}
+.betNet {
+  display: inline-flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 900;
+  border-radius: 10px;
+  padding: 3px 12px;
+}
+.betPlus { color: #fff; background: var(--grass-dark); }
+.betMinus { color: #fff; background: var(--blue); }
+.resultActions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 6px;
+}
+.resultActions button { flex: 1; font-size: 16px; }
 .betHit { font-weight: 900; color: #2e9e5b; }
 .betMiss { font-weight: 800; color: var(--ink-soft); }
 

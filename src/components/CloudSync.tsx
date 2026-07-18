@@ -43,6 +43,9 @@ function snapshot(): SaveData {
     stats: s.stats,
     avatarHorseId: s.avatarHorseId,
     displayTrophies: s.displayTrophies,
+    raceSession: s.raceSession ?? null,
+    arena: s.arena ?? null,
+    farmClaimedAt: s.farmClaimedAt, // 牧場の放置収入アンカー（クラウドでも保持しオフライン加算を保つ）
     savedAt: s.savedAt,
   };
 }
