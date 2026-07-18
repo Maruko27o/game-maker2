@@ -1391,6 +1391,202 @@
       "name": "ゆきのしっぽ",
       "rarity": "R",
       "svg": "<g stroke=\"#bfe6ff\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" transform=\"translate(88,324)\">\n<path d=\"M 0,-32 L 0,32 M -28,-16 L 28,16 M -28,16 L 28,-16\"/>\n<path d=\"M 0,-32 l -8,10 M 0,-32 l 8,10 M 0,32 l -8,-10 M 0,32 l 8,-10 M -28,-16 l 1,-13 M 28,16 l -1,13\"/>\n</g>\n<circle fill=\"#ffffff\" stroke=\"#bfe6ff\" stroke-width=\"4\" cx=\"88\" cy=\"324\" r=\"6\"/>"
+    },
+    {
+      "id": "head_maple",
+      "slot": "head",
+      "name": "もみじ",
+      "rarity": "R",
+      "svg": "<path fill=\"#d84a2f\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" d=\"M 406,52 L 416,72 L 436,66 L 424,84 L 442,92 L 420,96 L 424,112 L 406,102 L 388,112 L 392,96 L 370,92 L 388,84 L 376,66 L 396,72 Z\"/>\n<path fill=\"none\" stroke=\"#8f2b1f\" stroke-width=\"3\" stroke-linecap=\"round\" d=\"M 406,100 L 406,72 M 406,86 L 420,80 M 406,86 L 392,80\"/>"
+    },
+    {
+      "id": "head_mushroom",
+      "slot": "head",
+      "name": "きのこ",
+      "rarity": "N",
+      "svg": "<rect fill=\"#f6efe0\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" x=\"397\" y=\"88\" width=\"20\" height=\"20\" rx=\"5\"/>\n<path fill=\"#d8483a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 370,92 C 372,62 442,62 444,92 C 428,100 386,100 370,92 Z\"/>\n<circle fill=\"#fff3ea\" stroke=\"none\" cx=\"392\" cy=\"82\" r=\"5\"/><circle fill=\"#fff3ea\" stroke=\"none\" cx=\"414\" cy=\"76\" r=\"6\"/><circle fill=\"#fff3ea\" stroke=\"none\" cx=\"428\" cy=\"86\" r=\"4\"/>"
+    },
+    {
+      "id": "head_hibiscus",
+      "slot": "head",
+      "name": "ハイビスカス",
+      "rarity": "N",
+      "svg": "<g transform=\"translate(407,82)\">\n<circle fill=\"#ff8fc0\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"0\" cy=\"-16\" r=\"11\"/>\n<circle fill=\"#ff8fc0\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"16\" cy=\"-5\" r=\"11\"/>\n<circle fill=\"#ff8fc0\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"10\" cy=\"14\" r=\"11\"/>\n<circle fill=\"#ff8fc0\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"-10\" cy=\"14\" r=\"11\"/>\n<circle fill=\"#ff8fc0\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"-16\" cy=\"-5\" r=\"11\"/>\n<circle fill=\"#ffd45e\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"0\" cy=\"0\" r=\"7\"/>\n<path fill=\"none\" stroke=\"#e0a92e\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M 0,0 L 0,-9 M 0,0 L 6,-5\"/>\n</g>"
+    },
+    {
+      "id": "head_feather_band",
+      "slot": "head",
+      "name": "フェザーバンド",
+      "rarity": "R",
+      "svg": "<g stroke=\"#2b2118\" stroke-width=\"3\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n<path fill=\"#e05a45\" d=\"M 402,94 C 396,62 400,52 406,48 C 412,52 416,62 410,94 Z\"/>\n<path fill=\"#4a86c9\" d=\"M 388,96 C 380,72 382,62 388,58 C 393,63 394,74 392,96 Z\"/>\n<path fill=\"#e0b23c\" d=\"M 416,96 C 424,72 422,62 416,58 C 411,63 410,74 412,96 Z\"/>\n</g>\n<path fill=\"#c94f3d\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 366,100 C 388,92 428,92 448,100\"/>\n<path fill=\"none\" stroke=\"#fff\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M 406,90 L 406,58\"/>"
+    },
+    {
+      "id": "head_lotus",
+      "slot": "head",
+      "name": "はすのはな",
+      "rarity": "R",
+      "svg": "<g transform=\"translate(407,86)\" stroke=\"#2b2118\" stroke-width=\"3\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n<path fill=\"#ffb3d2\" d=\"M 0,4 C -22,-2 -30,-20 -26,-30 C -14,-24 -4,-10 0,4 Z\"/>\n<path fill=\"#ffb3d2\" d=\"M 0,4 C 22,-2 30,-20 26,-30 C 14,-24 4,-10 0,4 Z\"/>\n<path fill=\"#ff96c1\" d=\"M 0,6 C -14,2 -18,-16 -12,-30 C -4,-18 0,-6 0,6 Z\"/>\n<path fill=\"#ff96c1\" d=\"M 0,6 C 14,2 18,-16 12,-30 C 4,-18 0,-6 0,6 Z\"/>\n<path fill=\"#ff7bb0\" d=\"M 0,8 C -6,0 -6,-20 0,-32 C 6,-20 6,0 0,8 Z\"/>\n</g>"
+    },
+    {
+      "id": "head_moon_hat",
+      "slot": "head",
+      "name": "みかづき",
+      "rarity": "SR",
+      "svg": "<path fill=\"#ffe9a8\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" d=\"M 398,50 C 372,58 372,98 398,106 C 384,90 384,66 398,50 Z\"/>\n<circle fill=\"#fff6d0\" stroke=\"none\" cx=\"390\" cy=\"70\" r=\"3\"/>\n<path fill=\"#ffd45e\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"2\" d=\"M 422,58 l3,7 7,1 -5,5 1,7 -6,-4 -6,4 1,-7 -5,-5 7,-1 z\"/>"
+    },
+    {
+      "id": "head_acorn",
+      "slot": "head",
+      "name": "どんぐり",
+      "rarity": "N",
+      "svg": "<path fill=\"#c98a4b\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" d=\"M 392,80 C 392,106 420,106 420,80 Z\"/>\n<path fill=\"#8a5a33\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" d=\"M 388,80 C 388,62 424,62 424,80 Z\"/>\n<circle fill=\"#5c3a22\" stroke=\"none\" cx=\"396\" cy=\"73\" r=\"2.5\"/><circle fill=\"#5c3a22\" stroke=\"none\" cx=\"406\" cy=\"71\" r=\"2.5\"/><circle fill=\"#5c3a22\" stroke=\"none\" cx=\"416\" cy=\"73\" r=\"2.5\"/>\n<path fill=\"none\" stroke=\"#5c3a22\" stroke-width=\"3\" stroke-linecap=\"round\" d=\"M 406,62 L 406,52\"/>"
+    },
+    {
+      "id": "head_shark_fin",
+      "slot": "head",
+      "name": "サメのヒレ",
+      "rarity": "R",
+      "svg": "<path fill=\"#8aa0b0\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" d=\"M 382,106 C 396,72 420,54 438,50 C 432,76 420,98 414,106 Z\"/>\n<path fill=\"#6f8492\" stroke=\"none\" d=\"M 413,102 C 418,84 424,68 430,58 C 422,78 417,94 413,102 Z\"/>"
+    },
+    {
+      "id": "face_bandaid",
+      "slot": "face",
+      "name": "ばんそうこう",
+      "rarity": "N",
+      "svg": "<g transform=\"rotate(-24 434 150)\">\n<rect fill=\"#f2d6a8\" stroke=\"#2b2118\" stroke-width=\"3\" x=\"416\" y=\"141\" width=\"36\" height=\"18\" rx=\"5\"/>\n<rect fill=\"#e6c48c\" stroke=\"none\" x=\"428\" y=\"144\" width=\"12\" height=\"12\" rx=\"2\"/>\n<g fill=\"#c9a86a\"><circle cx=\"431\" cy=\"147\" r=\"1.3\"/><circle cx=\"437\" cy=\"147\" r=\"1.3\"/><circle cx=\"431\" cy=\"153\" r=\"1.3\"/><circle cx=\"437\" cy=\"153\" r=\"1.3\"/></g>\n</g>"
+    },
+    {
+      "id": "face_tongue",
+      "slot": "face",
+      "name": "ベロ",
+      "rarity": "N",
+      "svg": "<path fill=\"#ff8fa8\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" d=\"M 391,163 C 389,187 421,187 419,163 Z\"/>\n<path fill=\"none\" stroke=\"#e06682\" stroke-width=\"3\" stroke-linecap=\"round\" d=\"M 405,166 L 405,181\"/>"
+    },
+    {
+      "id": "face_pacifier",
+      "slot": "face",
+      "name": "おしゃぶり",
+      "rarity": "N",
+      "svg": "<circle fill=\"#bfe6ff\" stroke=\"#2b2118\" stroke-width=\"4\" cx=\"405\" cy=\"169\" r=\"15\"/>\n<circle fill=\"#ffd45e\" stroke=\"#2b2118\" stroke-width=\"4\" cx=\"405\" cy=\"169\" r=\"7\"/>\n<ellipse fill=\"#ff9ec4\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"405\" cy=\"154\" rx=\"8\" ry=\"6\"/>"
+    },
+    {
+      "id": "face_flower_paint",
+      "slot": "face",
+      "name": "はなのペイント",
+      "rarity": "R",
+      "svg": "<g transform=\"translate(436,148)\">\n<circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"0\" cy=\"-8\" r=\"5\"/>\n<circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"8\" cy=\"-2\" r=\"5\"/>\n<circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"5\" cy=\"8\" r=\"5\"/>\n<circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"-5\" cy=\"8\" r=\"5\"/>\n<circle fill=\"#ff9ec4\" stroke=\"none\" cx=\"-8\" cy=\"-2\" r=\"5\"/>\n<circle fill=\"#ffd45e\" stroke=\"none\" cx=\"0\" cy=\"0\" r=\"4\"/>\n</g>"
+    },
+    {
+      "id": "face_lightning_paint",
+      "slot": "face",
+      "name": "いなずまペイント",
+      "rarity": "R",
+      "svg": "<path fill=\"#ffd45e\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"2.5\" d=\"M 390,120 L 380,140 L 389,140 L 382,160 L 402,134 L 392,134 L 398,120 Z\"/>"
+    },
+    {
+      "id": "face_third_eye",
+      "slot": "face",
+      "name": "だいさんのめ",
+      "rarity": "SR",
+      "svg": "<ellipse fill=\"#ffffff\" stroke=\"#2b2118\" stroke-width=\"4\" cx=\"418\" cy=\"112\" rx=\"16\" ry=\"10\"/>\n<circle fill=\"#7a5fb0\" stroke=\"#2b2118\" stroke-width=\"2\" cx=\"418\" cy=\"112\" r=\"6\"/>\n<circle fill=\"#2b2118\" stroke=\"none\" cx=\"418\" cy=\"112\" r=\"3\"/>\n<circle fill=\"#ffffff\" stroke=\"none\" cx=\"420\" cy=\"110\" r=\"1.5\"/>\n<path fill=\"none\" stroke=\"#e0b23c\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M 418,99 L 418,100 M 401,104 L 397,101 M 435,104 L 439,101\"/>"
+    },
+    {
+      "id": "face_gem",
+      "slot": "face",
+      "name": "ひたいジュエル",
+      "rarity": "R",
+      "svg": "<path fill=\"#e05a7a\" stroke=\"#2b2118\" stroke-width=\"3\" stroke-linejoin=\"round\" stroke-linecap=\"round\" d=\"M 418,100 C 409,111 409,123 418,126 C 427,123 427,111 418,100 Z\"/>\n<path fill=\"none\" stroke=\"#ffb3cc\" stroke-width=\"2\" stroke-linecap=\"round\" d=\"M 415,108 C 413,113 414,119 418,122\"/>"
+    },
+    {
+      "id": "back_shield",
+      "slot": "back",
+      "name": "たて",
+      "rarity": "N",
+      "svg": "<path fill=\"#6f8fc9\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 214,196 L 292,196 L 292,250 C 292,286 253,304 253,304 C 253,304 214,286 214,250 Z\"/>\n<path fill=\"none\" stroke=\"#e8e2d4\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M 253,208 L 253,292 M 222,240 L 284,240\"/>\n<circle fill=\"#e0b23c\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"253\" cy=\"240\" r=\"10\"/>"
+    },
+    {
+      "id": "back_surfboard",
+      "slot": "back",
+      "name": "サーフボード",
+      "rarity": "N",
+      "svg": "<g transform=\"rotate(-32 214 232)\">\n<rect fill=\"#37c0d0\" stroke=\"#2b2118\" stroke-width=\"6\" x=\"150\" y=\"213\" width=\"150\" height=\"38\" rx=\"19\"/>\n<path fill=\"none\" stroke=\"#ffe066\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M 160,232 L 290,232\"/>\n<circle fill=\"#ffffff\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"180\" cy=\"232\" r=\"9\"/>\n</g>"
+    },
+    {
+      "id": "back_quiver",
+      "slot": "back",
+      "name": "やづつ",
+      "rarity": "R",
+      "svg": "<rect fill=\"#8a5a33\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" x=\"234\" y=\"196\" width=\"36\" height=\"112\" rx=\"13\"/>\n<rect fill=\"#6b4426\" stroke=\"none\" x=\"240\" y=\"202\" width=\"24\" height=\"8\"/>\n<g stroke-width=\"4\" stroke-linecap=\"round\">\n<line x1=\"247\" y1=\"200\" x2=\"241\" y2=\"150\" stroke=\"#c94f3d\"/>\n<line x1=\"258\" y1=\"200\" x2=\"258\" y2=\"145\" stroke=\"#4a86c9\"/>\n<line x1=\"269\" y1=\"200\" x2=\"275\" y2=\"152\" stroke=\"#e0b23c\"/>\n</g>\n<g stroke=\"#2b2118\" stroke-width=\"2\" stroke-linejoin=\"round\">\n<path fill=\"#c94f3d\" d=\"M 241,150 l -6,9 l 12,0 z\"/>\n<path fill=\"#4a86c9\" d=\"M 258,145 l -6,9 l 12,0 z\"/>\n<path fill=\"#e0b23c\" d=\"M 275,152 l -6,9 l 12,0 z\"/>\n</g>"
+    },
+    {
+      "id": "back_treasure",
+      "slot": "back",
+      "name": "たからばこ",
+      "rarity": "R",
+      "svg": "<rect fill=\"#8a5a33\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" x=\"180\" y=\"240\" width=\"120\" height=\"62\" rx=\"8\"/>\n<path fill=\"#a86b3a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 180,240 C 180,208 300,208 300,240 Z\"/>\n<path fill=\"none\" stroke=\"#6b4426\" stroke-width=\"4\" d=\"M 180,240 H 300\"/>\n<rect fill=\"#e0b23c\" stroke=\"#2b2118\" stroke-width=\"4\" x=\"228\" y=\"228\" width=\"24\" height=\"30\" rx=\"4\"/>\n<circle fill=\"#8f6a20\" stroke=\"none\" cx=\"240\" cy=\"245\" r=\"4\"/>\n<g fill=\"#ffe066\" stroke=\"#2b2118\" stroke-width=\"2\"><circle cx=\"196\" cy=\"240\" r=\"6\"/><circle cx=\"284\" cy=\"240\" r=\"6\"/></g>"
+    },
+    {
+      "id": "back_flower_bloom",
+      "slot": "back",
+      "name": "せなかのおおりん",
+      "rarity": "R",
+      "svg": "<g transform=\"translate(238,236)\" stroke=\"#2b2118\" stroke-width=\"3\" stroke-linejoin=\"round\">\n<g fill=\"#ffcf4d\">\n<ellipse cx=\"0\" cy=\"-42\" rx=\"12\" ry=\"22\"/>\n<ellipse cx=\"30\" cy=\"-30\" rx=\"12\" ry=\"22\" transform=\"rotate(45 30 -30)\"/>\n<ellipse cx=\"42\" cy=\"0\" rx=\"22\" ry=\"12\"/>\n<ellipse cx=\"30\" cy=\"30\" rx=\"12\" ry=\"22\" transform=\"rotate(-45 30 30)\"/>\n<ellipse cx=\"0\" cy=\"42\" rx=\"12\" ry=\"22\"/>\n<ellipse cx=\"-30\" cy=\"30\" rx=\"12\" ry=\"22\" transform=\"rotate(45 -30 30)\"/>\n<ellipse cx=\"-42\" cy=\"0\" rx=\"22\" ry=\"12\"/>\n<ellipse cx=\"-30\" cy=\"-30\" rx=\"12\" ry=\"22\" transform=\"rotate(-45 -30 -30)\"/>\n</g>\n<circle fill=\"#8a5a33\" cx=\"0\" cy=\"0\" r=\"20\"/>\n<g fill=\"#5c3a22\" stroke=\"none\"><circle cx=\"-6\" cy=\"-6\" r=\"2.5\"/><circle cx=\"6\" cy=\"-6\" r=\"2.5\"/><circle cx=\"0\" cy=\"5\" r=\"2.5\"/></g>\n</g>"
+    },
+    {
+      "id": "back_beetle_wings",
+      "slot": "back",
+      "name": "かぶとのはね",
+      "rarity": "SR",
+      "svg": "<g stroke=\"#2b2118\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n<path fill=\"#2f8f6a\" d=\"M 238,200 C 196,178 146,184 122,220 C 148,252 198,262 238,244 Z\"/>\n<path fill=\"#2f8f6a\" d=\"M 244,200 C 286,178 318,196 320,232 C 300,258 268,258 244,244 Z\"/>\n<path fill=\"#57b487\" stroke=\"none\" d=\"M 232,208 C 200,194 164,196 142,220 C 168,236 202,242 232,232 Z\"/>\n<path fill=\"#57b487\" stroke=\"none\" d=\"M 250,208 C 280,196 304,206 306,230 C 288,244 266,244 250,232 Z\"/>\n<line x1=\"241\" y1=\"196\" x2=\"241\" y2=\"248\"/>\n</g>"
+    },
+    {
+      "id": "tail_pom",
+      "slot": "tail",
+      "name": "ポンポン",
+      "rarity": "N",
+      "svg": "<g transform=\"translate(88,308)\">\n<g stroke=\"#ff6fa8\" stroke-width=\"7\" stroke-linecap=\"round\">\n<line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"-34\"/><line x1=\"0\" y1=\"0\" x2=\"24\" y2=\"-24\"/><line x1=\"0\" y1=\"0\" x2=\"34\" y2=\"0\"/><line x1=\"0\" y1=\"0\" x2=\"24\" y2=\"24\"/><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"34\"/><line x1=\"0\" y1=\"0\" x2=\"-24\" y2=\"24\"/><line x1=\"0\" y1=\"0\" x2=\"-34\" y2=\"0\"/><line x1=\"0\" y1=\"0\" x2=\"-24\" y2=\"-24\"/>\n<line x1=\"0\" y1=\"0\" x2=\"13\" y2=\"-32\"/><line x1=\"0\" y1=\"0\" x2=\"32\" y2=\"-13\"/><line x1=\"0\" y1=\"0\" x2=\"32\" y2=\"13\"/><line x1=\"0\" y1=\"0\" x2=\"13\" y2=\"32\"/><line x1=\"0\" y1=\"0\" x2=\"-13\" y2=\"32\"/><line x1=\"0\" y1=\"0\" x2=\"-32\" y2=\"13\"/><line x1=\"0\" y1=\"0\" x2=\"-32\" y2=\"-13\"/><line x1=\"0\" y1=\"0\" x2=\"-13\" y2=\"-32\"/>\n</g>\n<circle fill=\"#ff8fbf\" stroke=\"#2b2118\" stroke-width=\"3\" r=\"14\"/>\n</g>"
+    },
+    {
+      "id": "tail_shell",
+      "slot": "tail",
+      "name": "かい",
+      "rarity": "N",
+      "svg": "<g transform=\"translate(88,322)\">\n<path fill=\"#ffd0b0\" stroke=\"#2b2118\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" d=\"M 0,26 C -40,26 -46,-20 -20,-30 C -8,-34 8,-34 20,-30 C 46,-20 40,26 0,26 Z\"/>\n<path fill=\"none\" stroke=\"#e0916a\" stroke-width=\"3\" stroke-linecap=\"round\" d=\"M 0,24 L 0,-30 M 0,24 L -16,-26 M 0,24 L 16,-26 M 0,24 L -30,-14 M 0,24 L 30,-14\"/>\n<circle fill=\"#fff0e4\" stroke=\"#2b2118\" stroke-width=\"3\" cx=\"0\" cy=\"24\" r=\"7\"/>\n</g>"
+    },
+    {
+      "id": "tail_cloud",
+      "slot": "tail",
+      "name": "くも",
+      "rarity": "N",
+      "svg": "<path fill=\"#eaf4ff\" stroke=\"#2b2118\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" d=\"M 52,332 C 40,332 40,314 54,314 C 52,296 78,292 86,306 C 96,294 118,304 114,322 C 126,322 126,338 112,338 Z\"/>\n<circle fill=\"#cfe6ff\" stroke=\"none\" cx=\"66\" cy=\"348\" r=\"4\"/><circle fill=\"#cfe6ff\" stroke=\"none\" cx=\"88\" cy=\"354\" r=\"3\"/>"
+    },
+    {
+      "id": "tail_maple",
+      "slot": "tail",
+      "name": "もみじのしっぽ",
+      "rarity": "R",
+      "svg": "<path fill=\"#d84a2f\" stroke=\"#2b2118\" stroke-width=\"4\" stroke-linejoin=\"round\" stroke-linecap=\"round\" d=\"M 96,284 L 104,298 L 118,294 L 110,306 L 122,312 L 108,316 L 111,328 L 96,320 L 81,328 L 84,316 L 70,312 L 82,306 L 74,294 L 88,298 Z\"/>\n<path fill=\"#e0a92e\" stroke=\"#2b2118\" stroke-width=\"3\" stroke-linejoin=\"round\" stroke-linecap=\"round\" d=\"M 72,354 L 78,364 L 88,361 L 82,370 L 91,374 L 81,377 L 83,386 L 72,380 L 61,386 L 63,377 L 53,374 L 62,370 L 56,361 L 66,364 Z\"/>"
+    },
+    {
+      "id": "tail_lantern",
+      "slot": "tail",
+      "name": "ちょうちん",
+      "rarity": "R",
+      "svg": "<path fill=\"none\" stroke=\"#6b4426\" stroke-width=\"4\" stroke-linecap=\"round\" d=\"M 112,266 L 96,286\"/>\n<ellipse fill=\"#d8483a\" stroke=\"#2b2118\" stroke-width=\"5\" cx=\"90\" cy=\"322\" rx=\"30\" ry=\"36\"/>\n<path fill=\"none\" stroke=\"#8f2b1f\" stroke-width=\"3\" d=\"M 62,310 C 90,318 118,310 118,310 M 60,322 H 120 M 62,334 C 90,326 118,334 118,334\"/>\n<rect fill=\"#e0b23c\" stroke=\"#2b2118\" stroke-width=\"3\" x=\"80\" y=\"282\" width=\"20\" height=\"8\"/>\n<rect fill=\"#e0b23c\" stroke=\"#2b2118\" stroke-width=\"3\" x=\"82\" y=\"356\" width=\"16\" height=\"8\"/>\n<path fill=\"none\" stroke=\"#ffd45e\" stroke-width=\"4\" stroke-linecap=\"round\" d=\"M 90,364 L 90,380\"/>"
+    },
+    {
+      "id": "tail_gem",
+      "slot": "tail",
+      "name": "ほうせきのしっぽ",
+      "rarity": "R",
+      "svg": "<g transform=\"translate(88,320)\">\n<path fill=\"#7ec8ff\" stroke=\"#2b2118\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" d=\"M -20,-14 L 20,-14 L 34,0 L 0,36 L -34,0 Z\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"3\" stroke-linejoin=\"round\" d=\"M -20,-14 L -12,0 L 12,0 L 20,-14 M -34,0 L -12,0 L 0,36 L 12,0 L 34,0 M -12,0 L 0,-14 L 12,0\"/>\n<path fill=\"#ffffff\" stroke=\"none\" opacity=\"0.6\" d=\"M -8,-10 L 4,-10 L -2,-2 Z\"/>\n</g>"
+    },
+    {
+      "id": "tail_comet",
+      "slot": "tail",
+      "name": "すいせい",
+      "rarity": "SR",
+      "svg": "<path fill=\"#ffe9a8\" stroke=\"#2b2118\" stroke-width=\"4\" stroke-linejoin=\"round\" stroke-linecap=\"round\" d=\"M 118,266 C 96,278 74,300 52,338 C 60,344 70,346 78,344 C 100,320 116,296 124,276 C 126,270 122,264 118,266 Z\"/>\n<circle fill=\"#ffd45e\" stroke=\"#2b2118\" stroke-width=\"4\" cx=\"60\" cy=\"336\" r=\"16\"/>\n<circle fill=\"#fff3c4\" stroke=\"none\" cx=\"55\" cy=\"331\" r=\"5\"/>\n<g fill=\"#ffb3d2\" stroke=\"none\"><circle cx=\"96\" cy=\"292\" r=\"3\"/><circle cx=\"82\" cy=\"312\" r=\"2.5\"/><circle cx=\"110\" cy=\"280\" r=\"2.5\"/></g>"
     }
   ]
 }

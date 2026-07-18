@@ -34,9 +34,9 @@ const GLYPH_VARS = { ['--body']: '#e8e2d6', ['--mane']: '#8a6b4a', ['--hoof']: '
 // A small standalone illustration of a decoration (改修：部品を絵で選ぶ). Renders the
 // deco's own SVG cropped to its slot region; --body/--mane let body-matched parts
 // (ねこみみ等) show in a neutral colour.
-function DecoGlyph({ slot, svg }: { slot: DecoSlot; svg: string }) {
+function DecoGlyph({ slot, svg, className }: { slot: DecoSlot; svg: string; className?: string }) {
   return (
-    <svg className={styles.decoGlyph} viewBox={DECO_VIEWBOX[slot]} style={GLYPH_VARS} aria-hidden>
+    <svg className={className ?? styles.decoGlyph} viewBox={DECO_VIEWBOX[slot]} style={GLYPH_VARS} aria-hidden>
       <g dangerouslySetInnerHTML={{ __html: svg }} />
     </svg>
   );
@@ -105,6 +105,12 @@ export default function Create() {
     rebalancing ? { ...rebalancing.stats } : { ...PRESETS[0].stats },
   );
   const [confirming, setConfirming] = useState(false);
+
+  // Each colour/deco group collapses behind a ▼ header so you don't scroll the
+  // whole picker every time (改修：色/パーツごとに▼でまとめる). Closed by default;
+  // the header shows the current selection so you can tell at a glance.
+  const [openSlots, setOpenSlots] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setOpenSlots((p) => ({ ...p, [k]: !p[k] }));
 
   const allocMode = !editing; // creating a new horse, or rebalancing an existing one
   const remaining = STAT_ALLOC_TOTAL - statSum(stats);
@@ -181,65 +187,113 @@ export default function Create() {
       {/* Look (colors / decorations / name) — hidden while rebalancing stats */}
       {!rebalancing && (
         <>
-          {COLOR_SLOTS.map((slot) => (
-            <section key={slot} className={styles.section}>
-              <h2 className={styles.sectionTitle}>{COLOR_LABEL[slot]}</h2>
-              <div className={styles.swatchRow}>
-                {colorsBySlot[slot].map((c) => {
-                  const has = (owned[c.id] ?? 0) > 0;
-                  const selected = colors[slot] === c.id;
-                  return (
-                    <button
-                      key={c.id}
-                      className={`${styles.swatch} ${selected ? styles.selected : ''} ${
-                        has ? '' : styles.lockedSwatch
-                      }`}
-                      style={{ background: c.swatch ?? c.value }}
-                      disabled={!has}
-                      onClick={() => setColors((p) => ({ ...p, [slot]: c.id }))}
-                      aria-label={c.name}
-                      title={has ? c.name : '未所持'}
-                    >
-                      {!has && <span className={styles.lock}><Icon name="lock" size={13} /></span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-
-          {DECO_SLOTS.map((slot) => (
-            <section key={slot} className={styles.section}>
-              <h2 className={styles.sectionTitle}>{DECO_LABEL[slot]}</h2>
-              <div className={styles.decoRow}>
+          {COLOR_SLOTS.map((slot) => {
+            const isOpen = openSlots[slot] ?? false;
+            const sel = colorsBySlot[slot].find((c) => c.id === colors[slot]);
+            return (
+              <section key={slot} className={styles.section}>
                 <button
-                  className={`${styles.decoChip} ${styles.decoNone} ${!decos[slot] ? styles.selected : ''}`}
-                  onClick={() => setDecos((p) => ({ ...p, [slot]: undefined }))}
-                  title="なし"
+                  type="button"
+                  className={styles.sectionHead}
+                  onClick={() => toggle(slot)}
+                  aria-expanded={isOpen}
                 >
-                  なし
+                  <h2 className={styles.sectionTitle}>{COLOR_LABEL[slot]}</h2>
+                  <span className={styles.sectionPreview}>
+                    {sel && (
+                      <span
+                        className={styles.previewSwatch}
+                        style={{ background: sel.swatch ?? sel.value }}
+                      />
+                    )}
+                    <span className={`${styles.caret} ${isOpen ? styles.caretOpen : ''}`}>▼</span>
+                  </span>
                 </button>
-                {decosBySlot[slot].map((d) => {
-                  const has = (owned[d.id] ?? 0) > 0;
-                  const selected = decos[slot] === d.id;
-                  // Unowned decorations are a secret (改修：未所持はシークレット): hide the
-                  // art behind a "？" tile so owned (illustrated) vs not is obvious.
-                  return (
-                    <button
-                      key={d.id}
-                      className={`${styles.decoChip} ${selected ? styles.selected : ''} ${has ? '' : styles.secretChip}`}
-                      disabled={!has}
-                      onClick={() => setDecos((p) => ({ ...p, [slot]: d.id }))}
-                      title={has ? d.name : 'シークレット（未所持）'}
-                      aria-label={has ? d.name : 'シークレット'}
-                    >
-                      {has ? <DecoGlyph slot={slot} svg={d.svg} /> : <span className={styles.secretMark}>？</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+                {isOpen && (
+                  <div className={styles.sectionBody}>
+                    <div className={styles.swatchRow}>
+                      {colorsBySlot[slot].map((c) => {
+                        const has = (owned[c.id] ?? 0) > 0;
+                        const selected = colors[slot] === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            className={`${styles.swatch} ${selected ? styles.selected : ''} ${
+                              has ? '' : styles.lockedSwatch
+                            }`}
+                            style={{ background: c.swatch ?? c.value }}
+                            disabled={!has}
+                            onClick={() => setColors((p) => ({ ...p, [slot]: c.id }))}
+                            aria-label={c.name}
+                            title={has ? c.name : '未所持'}
+                          >
+                            {!has && <span className={styles.lock}><Icon name="lock" size={13} /></span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </section>
+            );
+          })}
+
+          {DECO_SLOTS.map((slot) => {
+            const isOpen = openSlots[slot] ?? false;
+            const selDeco = decos[slot] ? decosBySlot[slot].find((d) => d.id === decos[slot]) : undefined;
+            const selOwned = selDeco && (owned[selDeco.id] ?? 0) > 0;
+            return (
+              <section key={slot} className={styles.section}>
+                <button
+                  type="button"
+                  className={styles.sectionHead}
+                  onClick={() => toggle(slot)}
+                  aria-expanded={isOpen}
+                >
+                  <h2 className={styles.sectionTitle}>{DECO_LABEL[slot]}</h2>
+                  <span className={styles.sectionPreview}>
+                    {selDeco && selOwned ? (
+                      <DecoGlyph slot={slot} svg={selDeco.svg} className={styles.previewGlyph} />
+                    ) : (
+                      <span>なし</span>
+                    )}
+                    <span className={`${styles.caret} ${isOpen ? styles.caretOpen : ''}`}>▼</span>
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className={styles.sectionBody}>
+                    <div className={styles.decoRow}>
+                      <button
+                        className={`${styles.decoChip} ${styles.decoNone} ${!decos[slot] ? styles.selected : ''}`}
+                        onClick={() => setDecos((p) => ({ ...p, [slot]: undefined }))}
+                        title="なし"
+                      >
+                        なし
+                      </button>
+                      {decosBySlot[slot].map((d) => {
+                        const has = (owned[d.id] ?? 0) > 0;
+                        const selected = decos[slot] === d.id;
+                        // Unowned decorations are a secret (改修：未所持はシークレット): hide the
+                        // art behind a "？" tile so owned (illustrated) vs not is obvious.
+                        return (
+                          <button
+                            key={d.id}
+                            className={`${styles.decoChip} ${selected ? styles.selected : ''} ${has ? '' : styles.secretChip}`}
+                            disabled={!has}
+                            onClick={() => setDecos((p) => ({ ...p, [slot]: d.id }))}
+                            title={has ? d.name : 'シークレット（未所持）'}
+                            aria-label={has ? d.name : 'シークレット'}
+                          >
+                            {has ? <DecoGlyph slot={slot} svg={d.svg} /> : <span className={styles.secretMark}>？</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </section>
+            );
+          })}
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>なまえ</h2>
