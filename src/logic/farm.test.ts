@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { horseFarmRate, farmRatePerHour, farmAccrued, retireValue } from './farm';
+import { horseFarmRate, farmRatePerHour, farmAccrued, retireValue, retireValueOf } from './farm';
 import { FARM_CAP_HOURS, FARM_BASE_PER_HORSE, FARM_PER_STAT, FARM_PER_TROPHY, RETIRE_BASE } from '../data/coins';
 import type { Horse, Trophy } from '../types';
 
@@ -45,5 +45,15 @@ describe('retire value (farm-safe)', () => {
     expect(retireValue(40, 0, 5)).toBeGreaterThan(retireValue(40, 0, 0)); // badges
     // a maxed, trophied horse is worth several times a fresh one
     expect(retireValue(48, 3, 4)).toBeGreaterThan(retireValue(40, 0, 0) * 3);
+  });
+
+  it('a free (0→1) horse retires without the base — closes make-free→retire loop', () => {
+    const fresh = H('a', 40);
+    const free = { ...H('b', 40), free: true };
+    expect(retireValueOf(fresh, [], [])).toBe(RETIRE_BASE); // paid horse → full base
+    expect(retireValueOf(free, [], [])).toBe(0); // free fresh horse → nothing (no farm)
+    // but a free horse you invested in still pays out its investment
+    const freeTrophied = { ...H('c', 48), free: true };
+    expect(retireValueOf(freeTrophied, [T('c'), T('c')], [])).toBeGreaterThan(0);
   });
 });

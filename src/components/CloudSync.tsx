@@ -35,6 +35,7 @@ function snapshot(): SaveData {
     raceRecords: s.raceRecords,
     gpUnlocked: s.gpUnlocked,
     freeRebalance: s.freeRebalance,
+    freeRename: s.freeRename,
     coins: s.coins,
     bets: s.bets,
     maxHorses: s.maxHorses,

@@ -47,11 +47,13 @@ export function retireValue(total: number, trophyCount: number, badgeCount: numb
   );
 }
 
-/** Horse を直接受け取る便利版（UI/ストアから）。 */
+/** Horse を直接受け取る便利版（UI/ストアから）。無料で作った馬(free)はベース分を
+ *  付けない（無料作成→引退の荒稼ぎ loop を封じる）。 */
 export function retireValueOf(horse: Horse, trophies: Trophy[], badges: Badge[]): number {
-  return retireValue(
+  const v = retireValue(
     statTotal(horse.stats),
     trophies.filter((t) => t.horseId === horse.id).length,
     badges.filter((b) => b.horseId === horse.id).length,
   );
+  return horse.free ? Math.max(0, v - RETIRE_BASE) : v;
 }

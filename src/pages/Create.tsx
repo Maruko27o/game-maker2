@@ -77,9 +77,10 @@ export default function Create() {
 
   const editing = editId ? horses.find((h) => h.id === editId) ?? null : null;
   const rebalancing = rebalanceId ? horses.find((h) => h.id === rebalanceId) ?? null : null;
-  const isNew = !editing && !rebalancing; // brand-new horse (costs CREATE_COST)
+  const isNew = !editing && !rebalancing; // brand-new horse
   const atCap = isNew && horses.length >= maxHorses;
-  const poor = isNew && coins < CREATE_COST; // can't afford to create
+  const createCost = horses.length === 0 ? 0 : CREATE_COST; // 一体目(0→1)は無料
+  const poor = isNew && createCost > 0 && coins < createCost; // can't afford to create
 
   // Whether the player owns at least one color in every color slot.
   const canBuild = COLOR_SLOTS.every((s) => colorsBySlot[s].some((c) => (owned[c.id] ?? 0) > 0));
@@ -137,8 +138,8 @@ export default function Create() {
     } else if (editing) {
       updateHorse(editing.id, { name: finalName, colors, decos });
     } else {
-      if (!spendCoins(CREATE_COST)) return; // 作成は有料（farm loop 防止）
-      addHorse({ name: finalName, colors, decos }, stats);
+      if (createCost > 0 && !spendCoins(createCost)) return; // 有料作成（一体目のみ無料）
+      addHorse({ name: finalName, colors, decos }, stats, createCost === 0); // free horse → 引退ベース無し
     }
     navigate('/stable');
   }
@@ -316,7 +317,9 @@ export default function Create() {
                 ? `のこり ${remaining} ポイント`
                 : poor
                   ? 'コインが足りません'
-                  : `このウマにする（${CREATE_COST}）`}
+                  : createCost === 0
+                    ? 'このウマにする（無料）'
+                    : `このウマにする（${CREATE_COST}）`}
         </button>
       </div>
 
@@ -334,7 +337,11 @@ export default function Create() {
               ))}
             </div>
             <p className={styles.confirmMsg} style={{ textAlign: 'center', margin: '0 0 12px' }}>
-              作成に <CoinIcon size={15} /> <strong>{CREATE_COST.toLocaleString()}</strong> コインかかります
+              {createCost === 0 ? (
+                <>一体目のウマは <strong>無料</strong> でつくれます！</>
+              ) : (
+                <>作成に <CoinIcon size={15} /> <strong>{CREATE_COST.toLocaleString()}</strong> コインかかります</>
+              )}
             </p>
             <div className={styles.confirmActions}>
               <button className="btn neutral" onClick={() => setConfirming(false)}>
