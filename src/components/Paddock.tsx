@@ -66,6 +66,31 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
     setSel([]);
   }
 
+  // おまかせ: pick a random market + horse number(s) at the current stake, keeping
+  // only bets at 9000倍 or below. Retries until a low-enough combo is found, then
+  // falls back to the favourite's 単勝 (always low odds).
+  const OMAKASE_MAX_ODDS = 9000;
+  function omakase() {
+    if (coins < amount || full) return;
+    const idxs = Array.from({ length: entrants.length }, (_, i) => i);
+    for (let tries = 0; tries < 120; tries++) {
+      const k = BET_KINDS[Math.floor(Math.random() * BET_KINDS.length)];
+      const shuffled = idxs.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      const picks = shuffled.slice(0, k.pick);
+      const odds = oddsFor(k.kind, picks, p);
+      if (odds > 0 && odds <= OMAKASE_MAX_ODDS) {
+        onAdd({ kind: k.kind, sel: picks, amount, odds });
+        return;
+      }
+    }
+    const fav = rows[0].idx; // popularity-sorted; the favourite's 単勝 is always low
+    onAdd({ kind: 'win', sel: [fav], amount, odds: oddsFor('win', [fav], p) });
+  }
+
   return (
     <div className={styles.paddock}>
       <div className={styles.head}>
@@ -98,8 +123,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
               <div className={`${styles.row} ${on ? styles.on : ''}`} onClick={() => toggle(r.idx)}>
                 <span className={styles.pop}>{r.pop}人気</span>
                 <div className={styles.horse}>
-                  <HorseView horse={looks[e.horseId]} size={32} />
-                  {moods && <span className={styles.moodBadge}><MoodFace level={moods[r.idx]} size={17} title={false} /></span>}
+                  <HorseView horse={looks[e.horseId]} size={44} />
                 </div>
                 <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
                 <button
@@ -142,6 +166,11 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
           );
         })}
       </ul>
+
+      {/* おまかせ: random low-odds bet at the current stake */}
+      <button className={styles.omakase} disabled={coins < amount || full} onClick={omakase}>
+        🎲 おまかせ（{amount}コインで1点・9000倍以下）
+      </button>
 
       {/* stake + add */}
       <div className={styles.stakeRow}>

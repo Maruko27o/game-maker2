@@ -68,7 +68,7 @@
 }
 .row {
   display: grid;
-  grid-template-columns: auto 34px 1fr auto auto 30px;
+  grid-template-columns: auto 46px 1fr auto auto 30px;
   align-items: center;
   gap: 7px;
   padding: 4px 7px;
@@ -303,16 +303,32 @@
   justify-content: center;
 }
 
-/* mood face badge on the portrait + chip in the expanded panel */
+/* horse portrait + mood chip in the expanded panel */
 .horse {
   position: relative;
+  display: grid;
+  place-items: center;
 }
-.moodBadge {
-  position: absolute;
-  right: -6px;
-  bottom: -5px;
-  line-height: 0;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+/* おまかせ: random low-odds bet button */
+.omakase {
+  width: 100%;
+  margin: 4px 0 8px;
+  padding: 9px;
+  border: 3px solid var(--border-dark);
+  border-radius: 12px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 3px 0 rgba(120, 84, 10, 0.3);
+}
+.omakase:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 rgba(120, 84, 10, 0.3);
+}
+.omakase:disabled {
+  opacity: 0.45;
+  box-shadow: none;
 }
 .chipRow {
   display: flex;
