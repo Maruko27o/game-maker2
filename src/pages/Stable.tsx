@@ -5,6 +5,7 @@ import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
 import { RENAME_COST, SLOT_EXPAND_COST, SLOT_EXPAND_TO } from '../data/coins';
+import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf } from '../logic/farm';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Trophy, Badge, TrainingItem, StatKey } from '../types';
 import { BADGES } from '../data/badges';
@@ -96,13 +97,15 @@ export default function Stable() {
   const badges = useStore((s) => s.badges);
   const items = useStore((s) => s.items);
   const renameHorse = useStore((s) => s.renameHorse);
-  const removeHorse = useStore((s) => s.removeHorse);
   const trainHorse = useStore((s) => s.trainHorse);
   const freeRebalance = useStore((s) => s.freeRebalance);
   const maxHorses = useStore((s) => s.maxHorses);
   const coins = useStore((s) => s.coins);
   const spendCoins = useStore((s) => s.spendCoins);
   const expandSlots = useStore((s) => s.expandSlots);
+  const farmClaimedAt = useStore((s) => s.farmClaimedAt);
+  const claimFarm = useStore((s) => s.claimFarm);
+  const retireHorse = useStore((s) => s.retireHorse);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [view, setView] = useState<View>('detail');
@@ -125,6 +128,21 @@ export default function Stable() {
   const statItemCount = items.filter((i) => i.kind === 'stat').length;
   const anyItemCount = items.filter((i) => i.kind === 'any').length;
 
+  // 牧場の放置収入：1秒ごとに表示を更新（回収でアンカーがリセットされる）。
+  const [nowTs, setNowTs] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const farmRate = useMemo(() => farmRatePerHour(horses, trophies), [horses, trophies]);
+  const farmAmt = farmAccrued(farmClaimedAt, nowTs, farmRate);
+  const farmToFull = farmMsToFull(farmClaimedAt, nowTs);
+  const farmFullMsg =
+    farmToFull <= 0
+      ? '満タン！回収しよう'
+      : `あと${Math.floor(farmToFull / 3600000)}時間${Math.floor((farmToFull % 3600000) / 60000)}分で満タン`;
+  const retireVal = selected ? retireValueOf(selected, trophies, badges) : 0;
+
   return (
     <div className={styles.page}>
       <header className={styles.head}>
@@ -133,6 +151,22 @@ export default function Stable() {
           {horses.length}/{maxHorses}
         </span>
       </header>
+
+      {horses.length > 0 && (
+        <div className={styles.farmCard}>
+          <div className={styles.farmHead}>
+            <span className={styles.farmTitle}><Icon name="leaf" size={17} /> 牧場のしゅうにゅう</span>
+            <span className={styles.farmRate}>{Math.round(farmRate).toLocaleString()} ／時</span>
+          </div>
+          <div className={styles.farmBody}>
+            <span className={styles.farmAmt}><CoinIcon size={22} /> {farmAmt.toLocaleString()}</span>
+            <button className={styles.farmClaim} disabled={farmAmt < 1} onClick={() => claimFarm()}>
+              回収する
+            </button>
+          </div>
+          <div className={styles.farmNote}>{farmFullMsg} ・ ウマを育てる・集めると増えるよ</div>
+        </div>
+      )}
 
       {maxHorses < SLOT_EXPAND_TO && horses.length >= maxHorses && (
         <button
@@ -237,8 +271,9 @@ export default function Stable() {
                 {confirmDelete ? (
                   <div className={styles.confirm}>
                     <p className={styles.confirmText}>
-                      「{selected.name}」を消しますか？<br />
-                      <strong>消すと戻せません。</strong>
+                      「{selected.name}」を引退させますか？<br />
+                      <span className={styles.retireGain}><CoinIcon size={16} /> {retireVal.toLocaleString()} コイン</span> を受け取ります。<br />
+                      <strong>引退すると戻せません。</strong>
                     </p>
                     <div className={styles.row}>
                       <button className="btn neutral" onClick={() => setConfirmDelete(false)}>
@@ -247,11 +282,11 @@ export default function Stable() {
                       <button
                         className="btn secondary"
                         onClick={() => {
-                          removeHorse(selected.id);
+                          retireHorse(selected.id);
                           close();
                         }}
                       >
-                        けす
+                        引退する
                       </button>
                     </div>
                   </div>
@@ -276,7 +311,7 @@ export default function Stable() {
                     </div>
                     <div className={styles.actions}>
                       <button className="btn secondary" onClick={() => setConfirmDelete(true)}>
-                        けす
+                        <Icon name="leaf" size={14} /> 引退（<CoinIcon size={13} /> {retireVal.toLocaleString()}）
                       </button>
                       <button className="btn neutral" onClick={close}>
                         とじる

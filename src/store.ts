@@ -41,6 +41,7 @@ import { cyclesOf, newlyBanked } from './logic/tasks';
 import { styleFor } from './logic/runStyle';
 import { runTournament, playerSnapshot } from './logic/arena';
 import { periodId, ARENA_ENTRY_FEE, ARENA_MODE, ARENA_CATCHUP_MAX, ARENA_RESULTS_CAP } from './data/arena';
+import { farmRatePerHour, farmAccrued, retireValueOf } from './logic/farm';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 10;
@@ -178,6 +179,7 @@ function freshSave(): SaveData {
     displayTrophies: [],
     raceSession: null,
     arena: freshArena(),
+    farmClaimedAt: Date.now(),
     savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
 }
@@ -291,6 +293,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         ...normProfile(d),
         raceSession: normRaceSession(d.raceSession),
         arena: normArena(d.arena),
+        farmClaimedAt: typeof d.farmClaimedAt === 'number' ? d.farmClaimedAt : Date.now(),
         savedAt,
       },
       migrated: false,
@@ -444,6 +447,12 @@ type Store = SaveData & {
   /** Adopt an entry the cloud DB says we made (no fee) — reconciles an app-kill
    *  that lost the local entry, so the player can't enter the same period twice. */
   arenaAdoptPending: (entry: ArenaEntry) => void;
+  // 牧場（放置収入・引退）.
+  farmClaimedAt: number;
+  /** Collect the accrued idle income and reset the anchor. Returns coins granted. */
+  claimFarm: () => number;
+  /** Retire a horse for coins (and free its stable slot). Returns coins granted. */
+  retireHorse: (id: string) => number;
   resetAll: () => void;
 };
 
@@ -477,6 +486,7 @@ export const useStore = create<Store>((set, get) => {
       displayTrophies: next.displayTrophies,
       raceSession: next.raceSession ?? null,
       arena: next.arena ?? freshArena(),
+      farmClaimedAt: next.farmClaimedAt ?? Date.now(),
       savedAt,
     };
     persist(data);
@@ -487,6 +497,7 @@ export const useStore = create<Store>((set, get) => {
     ...initial,
     raceSession: initial.raceSession ?? null,
     arena: initial.arena ?? freshArena(),
+    farmClaimedAt: initial.farmClaimedAt ?? Date.now(),
     migrated,
     clearMigrated: () => set({ migrated: false }),
 
@@ -525,6 +536,7 @@ export const useStore = create<Store>((set, get) => {
         avatarHorseId: s.avatarHorseId,
         displayTrophies: s.displayTrophies,
         arena: s.arena,
+        farmClaimedAt: s.farmClaimedAt,
         savedAt: s.savedAt,
       };
       return JSON.stringify(data);
@@ -898,6 +910,30 @@ export const useStore = create<Store>((set, get) => {
       const st = get().arena ?? freshArena();
       if (st.pending?.period === entry.period || (st.lastPeriod ?? -1) >= entry.period) return;
       commit({ arena: { ...st, pending: entry, lastPeriod: Math.max(st.lastPeriod ?? -1, entry.period) } });
+    },
+
+    claimFarm: () => {
+      const s = get();
+      const rate = farmRatePerHour(s.horses, s.trophies);
+      const got = farmAccrued(s.farmClaimedAt ?? Date.now(), Date.now(), rate);
+      if (got <= 0) return 0; // nothing yet — keep the anchor so fractions aren't lost
+      commit({ coins: s.coins + got, farmClaimedAt: Date.now() });
+      return got;
+    },
+
+    retireHorse: (id) => {
+      const s = get();
+      const horse = s.horses.find((h) => h.id === id);
+      if (!horse) return 0;
+      const value = retireValueOf(horse, s.trophies, s.badges);
+      commit({
+        coins: s.coins + value,
+        horses: s.horses.filter((h) => h.id !== id),
+        trophies: s.trophies.filter((t) => t.horseId !== id),
+        badges: s.badges.filter((b) => b.horseId !== id),
+        avatarHorseId: s.avatarHorseId === id ? null : s.avatarHorseId,
+      });
+      return value;
     },
 
     resetAll: () => commit({ ...freshSave() }),
