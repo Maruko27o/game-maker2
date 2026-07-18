@@ -271,12 +271,12 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds'): Promise<
 // All best-effort: with cloud off / the SQL not applied, entering is a no-op and
 // the pool is empty, so the tournament simply fills with COM (logic/arena.ts).
 
-/** Register the signed-in player's entry for `day` (YYYY-MM-DD). Best-effort. */
-export async function enterArena(day: string, snap: ArenaHorseSnapshot): Promise<void> {
+/** Register the signed-in player's entry for a 開催「部」(period id). Best-effort. */
+export async function enterArena(period: number, snap: ArenaHorseSnapshot): Promise<void> {
   if (!supabase) return;
   try {
     await supabase.rpc('enter_arena', {
-      p_day: day,
+      p_period: period,
       p_name: snap.name,
       p_look: { colors: snap.colors, decos: snap.decos },
       p_stats: snap.stats,
@@ -287,38 +287,62 @@ export async function enterArena(day: string, snap: ArenaHorseSnapshot): Promise
   }
 }
 
-/** Read other players' entries for `day` as opponent snapshots. Empty on any
+function rowToSnapshot(r: Record<string, unknown>, horseId: string, isPlayer: boolean): ArenaHorseSnapshot | null {
+  const look = (r.look ?? {}) as { colors?: ArenaHorseSnapshot['colors']; decos?: ArenaHorseSnapshot['decos'] };
+  const snap: ArenaHorseSnapshot = {
+    horseId,
+    name: typeof r.horse_name === 'string' && r.horse_name ? r.horse_name : 'ライバル',
+    colors: look.colors as ArenaHorseSnapshot['colors'],
+    decos: look.decos ?? {},
+    stats: r.stats as ArenaHorseSnapshot['stats'],
+    style: r.style as ArenaHorseSnapshot['style'],
+    isPlayer,
+    isCom: false,
+    playerNo: typeof r.player_no === 'number' ? r.player_no : null,
+  };
+  return snap.colors && snap.stats && snap.style ? snap : null;
+}
+
+/** Read other players' entries for a period as opponent snapshots. Empty on any
  *  failure. Excludes the signed-in player's own row. */
-export async function loadArenaPool(day: string, limit = 60): Promise<ArenaHorseSnapshot[]> {
+export async function loadArenaPool(period: number, limit = 60): Promise<ArenaHorseSnapshot[]> {
   if (!supabase) return [];
   try {
     const uid = useAuth.getState().user?.id;
     let q = supabase
       .from('arena_entries')
       .select('user_id, player_no, horse_name, look, stats, style')
-      .eq('race_day', day)
+      .eq('period', period)
       .limit(limit);
     if (uid) q = q.neq('user_id', uid);
     const { data, error } = await q;
     if (error || !data) return [];
     return (data as Record<string, unknown>[])
-      .map((r, i) => {
-        const look = (r.look ?? {}) as { colors?: ArenaHorseSnapshot['colors']; decos?: ArenaHorseSnapshot['decos'] };
-        return {
-          horseId: `pool_${i}`,
-          name: typeof r.horse_name === 'string' && r.horse_name ? r.horse_name : 'ライバル',
-          colors: look.colors,
-          decos: look.decos ?? {},
-          stats: r.stats as ArenaHorseSnapshot['stats'],
-          style: r.style as ArenaHorseSnapshot['style'],
-          isPlayer: false,
-          isCom: false,
-          playerNo: typeof r.player_no === 'number' ? r.player_no : null,
-        } as ArenaHorseSnapshot;
-      })
-      .filter((s) => s.colors && s.stats && s.style);
+      .map((r, i) => rowToSnapshot(r, `pool_${i}`, false))
+      .filter((s): s is ArenaHorseSnapshot => s != null);
   } catch {
     return [];
+  }
+}
+
+/** Whether the signed-in player has an entry row for `period` (authority for the
+ *  "already entered" state, so an app-kill can't reset it). Returns the stored
+ *  snapshot, or null when there's no row / cloud is off / offline. */
+export async function loadMyArenaEntry(period: number): Promise<ArenaHorseSnapshot | null> {
+  if (!supabase) return null;
+  try {
+    const uid = useAuth.getState().user?.id;
+    if (!uid) return null;
+    const { data, error } = await supabase
+      .from('arena_entries')
+      .select('player_no, horse_name, look, stats, style')
+      .eq('period', period)
+      .eq('user_id', uid)
+      .maybeSingle();
+    if (error || !data) return null;
+    return rowToSnapshot(data as Record<string, unknown>, 'me', true);
+  } catch {
+    return null;
   }
 }
 

@@ -16,6 +16,7 @@ import type {
   ArenaState,
   ArenaEntry,
   ArenaResult,
+  ArenaHorseSnapshot,
 } from './types';
 import { allParts } from './data/parts';
 import { COURSES } from './data/courses';
@@ -37,6 +38,9 @@ import {
   GRASS_TASK_REWARD,
 } from './data/coins';
 import { cyclesOf, newlyBanked } from './logic/tasks';
+import { styleFor } from './logic/runStyle';
+import { runTournament, playerSnapshot } from './logic/arena';
+import { periodId, ARENA_ENTRY_FEE, ARENA_MODE, ARENA_CATCHUP_MAX, ARENA_RESULTS_CAP } from './data/arena';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 10;
@@ -209,22 +213,28 @@ function normRaceSession(v: unknown): RaceSession | null {
   return null;
 }
 
-// 対戦（デイリー勝ち抜きトーナメント）の保存状態。壊れていれば空に戻す。
+// 対戦（勝ち抜きトーナメント）の保存状態。壊れていれば空に戻す。旧shape（entry/result）
+// は互換性を捨てて空リセット（結果は溜め直し・エントリーは無効）。
 function freshArena(): ArenaState {
-  return { entry: null, result: null };
+  return { auto: null, pending: null, lastPeriod: null, results: [] };
 }
 function normArena(v: unknown): ArenaState {
   if (!v || typeof v !== 'object') return freshArena();
   const a = v as Record<string, unknown>;
-  const entry =
-    a.entry && typeof a.entry === 'object' && typeof (a.entry as { seed?: unknown }).seed === 'number'
-      ? (a.entry as ArenaState['entry'])
+  if (!Array.isArray(a.results)) return freshArena(); // old/absent shape → reset
+  const auto =
+    a.auto && typeof a.auto === 'object' && typeof (a.auto as { horseId?: unknown }).horseId === 'string'
+      ? (a.auto as ArenaState['auto'])
       : null;
-  const result =
-    a.result && typeof a.result === 'object' && Array.isArray((a.result as { rounds?: unknown }).rounds)
-      ? (a.result as ArenaState['result'])
+  const pending =
+    a.pending && typeof a.pending === 'object' && typeof (a.pending as { period?: unknown }).period === 'number'
+      ? (a.pending as ArenaState['pending'])
       : null;
-  return { entry, result };
+  const lastPeriod = typeof a.lastPeriod === 'number' ? a.lastPeriod : null;
+  const results = (a.results as unknown[]).filter(
+    (r): r is ArenaResult => !!r && typeof r === 'object' && Array.isArray((r as { rounds?: unknown }).rounds),
+  );
+  return { auto, pending, lastPeriod, results };
 }
 
 // Migrate any stored payload up to v4, preserving collection/horses.
@@ -420,12 +430,20 @@ type Store = SaveData & {
   raceSession: RaceSession | null;
   setRaceSession: (s: RaceSession | null) => void;
   patchRaceSession: (patch: Partial<RaceSession>) => void;
-  // 対戦（デイリー勝ち抜きトーナメント）.
+  // 対戦（勝ち抜きトーナメント・1日2回開催）.
   arena: ArenaState | null;
-  /** Register today's entry (fee already spent by the caller). */
-  arenaEnter: (entry: ArenaEntry) => void;
-  /** Reveal a settled tournament: credit its prize once, store it, clear the entry. */
-  arenaSettle: (result: ArenaResult) => void;
+  /** Manually enter the current period (spends the fee). Returns false if not allowed. */
+  arenaEnterManual: (entry: ArenaEntry) => boolean;
+  /** Enable/disable standing (auto) entry with a chosen horse (資金がある限り毎回参加). */
+  arenaSetAuto: (horseId: string | null) => void;
+  /** Advance the arena to period `cur`: resolve closed entries, run auto catch-up,
+   *  award prizes, and append results. `pool` seeds opponents (best-effort). */
+  arenaSync: (cur: number, pool: ArenaHorseSnapshot[]) => void;
+  /** Mark a result (by period) as watched — clears its NEW badge. */
+  arenaMarkSeen: (period: number) => void;
+  /** Adopt an entry the cloud DB says we made (no fee) — reconciles an app-kill
+   *  that lost the local entry, so the player can't enter the same period twice. */
+  arenaAdoptPending: (entry: ArenaEntry) => void;
   resetAll: () => void;
 };
 
@@ -802,20 +820,84 @@ export const useStore = create<Store>((set, get) => {
       commit({ raceSession: { ...cur, ...patch } as RaceSession });
     },
 
-    arenaEnter: (entry) => {
-      const cur = get().arena ?? freshArena();
-      commit({ arena: { entry, result: cur.result } });
-    },
-    arenaSettle: (result) => {
-      const cur = get().arena ?? freshArena();
-      // Credit the prize exactly once: skip if this result was already awarded, or
-      // the stored result for the same day is already settled (reload / re-watch).
-      const already = result.awarded || (cur.result?.day === result.day && cur.result.awarded);
-      const payout = already ? 0 : result.payout;
+    arenaEnterManual: (entry) => {
+      if (get().coins < ARENA_ENTRY_FEE) return false;
+      const st = get().arena ?? freshArena();
+      if (st.pending && st.pending.period >= entry.period) return false; // already entered
+      if (st.lastPeriod != null && st.lastPeriod >= entry.period) return false;
       commit({
-        coins: Math.max(0, get().coins + payout),
-        arena: { entry: null, result: { ...result, awarded: true } },
+        coins: get().coins - ARENA_ENTRY_FEE,
+        arena: { ...st, pending: entry, lastPeriod: entry.period },
       });
+      return true;
+    },
+
+    arenaSetAuto: (horseId) => {
+      const st = get().arena ?? freshArena();
+      // Enabling starts from the current period (no retroactive back-entries):
+      // bump lastPeriod to cur-1 so arenaSync then enters the current period.
+      const cur = periodId();
+      const lastPeriod = horseId ? Math.max(st.lastPeriod ?? cur - 1, cur - 1) : st.lastPeriod;
+      commit({ arena: { ...st, auto: horseId ? { horseId } : null, lastPeriod } });
+    },
+
+    arenaSync: (cur, pool) => {
+      const st = get().arena ?? freshArena();
+      let coins = get().coins;
+      let pending = st.pending;
+      let lastPeriod = st.lastPeriod;
+      let auto = st.auto;
+      const results = st.results.slice();
+      const horses = get().horses;
+
+      const resolve = (entry: ArenaEntry) => {
+        const r = runTournament(entry.snapshot, entry.seed, pool, ARENA_MODE, entry.period);
+        coins += r.payout;
+        results.unshift({ ...r, awarded: true, seen: false });
+      };
+
+      // 1) Resolve the pending entry once its period has closed.
+      if (pending && pending.period < cur) {
+        resolve(pending);
+        pending = null;
+      }
+
+      // 2) Standing (auto) entry catch-up: enter each period since last, while funded.
+      if (auto) {
+        const horse = horses.find((h) => h.id === auto!.horseId);
+        if (!horse) {
+          auto = null; // entered horse is gone → turn auto off
+        } else {
+          const start = Math.max((lastPeriod ?? cur - 1) + 1, cur - ARENA_CATCHUP_MAX + 1);
+          for (let p = start; p <= cur; p++) {
+            if (lastPeriod != null && p <= lastPeriod) continue;
+            if (pending && p === pending.period) continue; // already entered manually
+            if (coins < ARENA_ENTRY_FEE) break;
+            coins -= ARENA_ENTRY_FEE;
+            const snap = playerSnapshot(
+              horse.id, horse.name, horse.colors, horse.decos, horse.stats, styleFor(horse.id, horse.stats), null,
+            );
+            const entry: ArenaEntry = { period: p, seed: (Math.random() * 2 ** 31) >>> 0, horseId: horse.id, snapshot: snap };
+            lastPeriod = p;
+            if (p < cur) resolve(entry);
+            else pending = entry;
+          }
+        }
+      }
+
+      commit({ coins: Math.max(0, coins), arena: { auto, pending, lastPeriod, results: results.slice(0, ARENA_RESULTS_CAP) } });
+    },
+
+    arenaMarkSeen: (period) => {
+      const st = get().arena ?? freshArena();
+      const results = st.results.map((r) => (r.period === period ? { ...r, seen: true } : r));
+      commit({ arena: { ...st, results } });
+    },
+
+    arenaAdoptPending: (entry) => {
+      const st = get().arena ?? freshArena();
+      if (st.pending?.period === entry.period || (st.lastPeriod ?? -1) >= entry.period) return;
+      commit({ arena: { ...st, pending: entry, lastPeriod: Math.max(st.lastPeriod ?? -1, entry.period) } });
     },
 
     resetAll: () => commit({ ...freshSave() }),
