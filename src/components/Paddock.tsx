@@ -8,6 +8,7 @@ import { statTotal } from '../logic/stats';
 import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
 import HorseView from './HorseView';
+import Icon from './Icon';
 import StatRadar from './StatRadar';
 import MoodFace from './MoodFace';
 import CoinIcon from './CoinIcon';
@@ -167,9 +168,9 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
         })}
       </ul>
 
-      {/* おまかせ: random low-odds bet at the current stake */}
+      {/* おまかせ: random bet at the current stake (odds cap is internal — not shown) */}
       <button className={styles.omakase} disabled={coins < amount || full} onClick={omakase}>
-        🎲 おまかせ（{amount}コインで1点・9000倍以下）
+        <Icon name="dice" size={18} /> おまかせ（{amount}コインで1点）
       </button>
 
       {/* stake + add */}

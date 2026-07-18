@@ -321,6 +321,10 @@
   font-weight: 800;
   font-size: 14px;
   box-shadow: 0 3px 0 rgba(120, 84, 10, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
 }
 .omakase:active {
   transform: translateY(1px);
