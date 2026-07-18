@@ -544,6 +544,9 @@ export default function Race() {
   if (screen === 'result' && setup && result) {
     const order = result.order.map((idx, place) => ({ idx, rank: place + 1, time: result.finishTimes[idx] }));
     const playerRank = reward?.rank ?? result.ranks[0];
+    const staked = bets.reduce((s, b) => s + b.amount, 0);
+    const betPayout = bets.reduce((s, b) => s + settle(b, result.order), 0);
+    const betNet = betPayout - staked;
     return (
       <div className={styles.page}>
         <div className={styles.resultCard}>
@@ -558,11 +561,22 @@ export default function Race() {
               ))}
             </div>
           )}
-          {reward && (
-            <div className={`${styles.coinReward} ${reduced ? '' : styles.coinPop}`}>
-              <span className={styles.coinGot}><CoinIcon size={22} /> 賞金 ＋{reward.earned}</span>
-            </div>
-          )}
+          {/* 賞金＋馬券収支をコンパクトに（ぱっと確認）*/}
+          <div className={`${styles.resultSummary} ${reduced ? '' : styles.coinPop}`}>
+            {reward && <span className={styles.coinGot}><CoinIcon size={20} /> 賞金 ＋{reward.earned}</span>}
+            {bets.length > 0 && (
+              <span className={`${styles.betNet} ${betNet >= 0 ? styles.betPlus : styles.betMinus}`}>
+                馬券 {betNet >= 0 ? '＋' : '−'}{Math.abs(betNet).toLocaleString()}
+              </span>
+            )}
+          </div>
+          {/* スクロール不要ですぐ次の動作へ */}
+          <div className={styles.resultActions}>
+            <button className="btn" onClick={() => (pickMode && setup ? begin(setup.course) : begin())}>もう一回</button>
+            <button className="btn neutral" onClick={() => { setRaceSession(null); setScreen('menu'); }}>モードせんたくへ</button>
+          </div>
+          <button className={styles.exitLink} onClick={() => { setRaceSession(null); setScreen('setup'); }}>ウマ・時間をかえる</button>
+          {/* くわしい払戻・着順は下に */}
           <BetResult entrants={setup.entrants} gate={result.gate} order={result.order} bets={bets} course={setup.course} probs={odds ?? undefined} />
           <ol className={styles.ranking}>
             {order.map(({ idx, rank, time }) => {
@@ -578,11 +592,6 @@ export default function Race() {
               );
             })}
           </ol>
-          <div className={styles.raceActions}>
-            <button className="btn neutral" onClick={() => { setRaceSession(null); setScreen('setup'); }}>ウマ・時間をかえる</button>
-            <button className="btn" onClick={() => (pickMode && setup ? begin(setup.course) : begin())}>もう一回</button>
-          </div>
-          <button className={styles.exitLink} onClick={() => { setRaceSession(null); setScreen('menu'); }}>モードせんたくへ</button>
         </div>
         {cutin.length > 0 && <BadgeCutin badges={cutin} onDone={() => setCutin([])} />}
       </div>
