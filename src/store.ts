@@ -169,6 +169,7 @@ function freshSave(): SaveData {
     raceRecords: [],
     gpUnlocked: { g2: false, g1: false },
     freeRebalance: false,
+    freeRename: true,
     coins: 0,
     bets: [],
     maxHorses: MAX_HORSES,
@@ -285,6 +286,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         raceRecords,
         gpUnlocked: normGp(d.gpUnlocked),
         freeRebalance: !!d.freeRebalance,
+        freeRename: typeof d.freeRename === 'boolean' ? d.freeRename : true,
         coins,
         bets,
         maxHorses,
@@ -320,6 +322,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       raceRecords,
       gpUnlocked: normGp(d.gpUnlocked),
       freeRebalance: isPreV4 ? horses.length > 0 : !!d.freeRebalance,
+      freeRename: typeof d.freeRename === 'boolean' ? d.freeRename : true,
       coins,
       bets,
       maxHorses,
@@ -375,9 +378,12 @@ type Store = SaveData & {
   /** Replace the save from an exported JSON string. Returns success. */
   importSave: (json: string) => boolean;
   doSpawn: (rng?: () => number) => SpawnResult;
-  addHorse: (h: Omit<Horse, 'id' | 'createdAt' | 'stats'>, stats: Stats) => Horse | null;
+  addHorse: (h: Omit<Horse, 'id' | 'createdAt' | 'stats' | 'free'>, stats: Stats, free?: boolean) => Horse | null;
   updateHorse: (id: string, patch: Partial<Pick<Horse, 'name' | 'colors' | 'decos'>>) => void;
   renameHorse: (id: string, name: string) => void;
+  freeRename: boolean;
+  /** Consume the one free rename (初回改名は無料). */
+  consumeFreeRename: () => void;
   removeHorse: (id: string) => void;
   /** One-time free stat re-allocation after the v4 migration. Returns success. */
   rebalanceHorse: (id: string, stats: Stats) => boolean;
@@ -477,6 +483,7 @@ export const useStore = create<Store>((set, get) => {
       raceRecords: next.raceRecords,
       gpUnlocked: next.gpUnlocked,
       freeRebalance: next.freeRebalance,
+      freeRename: next.freeRename ?? true,
       coins: next.coins,
       bets: next.bets,
       maxHorses: next.maxHorses,
@@ -499,6 +506,7 @@ export const useStore = create<Store>((set, get) => {
     raceSession: initial.raceSession ?? null,
     arena: initial.arena ?? freshArena(),
     farmClaimedAt: initial.farmClaimedAt ?? Date.now(),
+    freeRename: initial.freeRename ?? true,
     migrated,
     clearMigrated: () => set({ migrated: false }),
 
@@ -528,6 +536,7 @@ export const useStore = create<Store>((set, get) => {
         raceRecords: s.raceRecords,
         gpUnlocked: s.gpUnlocked,
         freeRebalance: s.freeRebalance,
+        freeRename: s.freeRename,
         coins: s.coins,
         bets: s.bets,
         maxHorses: s.maxHorses,
@@ -582,10 +591,10 @@ export const useStore = create<Store>((set, get) => {
       return { parts, energyLeft: spent.energy };
     },
 
-    addHorse: (h, stats) => {
+    addHorse: (h, stats, free) => {
       if (get().horses.length >= get().maxHorses) return null;
       const id = newId();
-      const horse: Horse = { ...h, id, stats, createdAt: Date.now() };
+      const horse: Horse = { ...h, id, stats, createdAt: Date.now(), ...(free ? { free: true } : {}) };
       commit({ horses: [...get().horses, horse] });
       return horse;
     },
@@ -596,6 +605,10 @@ export const useStore = create<Store>((set, get) => {
 
     renameHorse: (id, name) => {
       commit({ horses: get().horses.map((h) => (h.id === id ? { ...h, name } : h)) });
+    },
+
+    consumeFreeRename: () => {
+      if (get().freeRename) commit({ freeRename: false });
     },
 
     removeHorse: (id) => {

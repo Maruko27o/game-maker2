@@ -97,6 +97,8 @@ export default function Stable() {
   const badges = useStore((s) => s.badges);
   const items = useStore((s) => s.items);
   const renameHorse = useStore((s) => s.renameHorse);
+  const freeRename = useStore((s) => s.freeRename);
+  const consumeFreeRename = useStore((s) => s.consumeFreeRename);
   const trainHorse = useStore((s) => s.trainHorse);
   const freeRebalance = useStore((s) => s.freeRebalance);
   const maxHorses = useStore((s) => s.maxHorses);
@@ -221,13 +223,18 @@ export default function Stable() {
                   {draftName.trim() && draftName !== selected.name && (
                     <button
                       className={styles.renameBtn}
-                      disabled={coins < RENAME_COST}
+                      disabled={!freeRename && coins < RENAME_COST}
                       onClick={() => {
-                        if (spendCoins(RENAME_COST)) renameHorse(selected.id, draftName.trim());
+                        if (freeRename) {
+                          renameHorse(selected.id, draftName.trim());
+                          consumeFreeRename();
+                        } else if (spendCoins(RENAME_COST)) {
+                          renameHorse(selected.id, draftName.trim());
+                        }
                       }}
-                      title={coins < RENAME_COST ? 'コインが足りません' : ''}
+                      title={!freeRename && coins < RENAME_COST ? 'コインが足りません' : ''}
                     >
-                      <CoinIcon size={15} /> 改名（{RENAME_COST}）
+                      {freeRename ? '改名（無料）' : <><CoinIcon size={15} /> 改名（{RENAME_COST}）</>}
                     </button>
                   )}
                 </div>

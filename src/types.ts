@@ -59,6 +59,7 @@ export type Horse = {
   decos: Partial<Record<DecoSlot, string>>; // parts.json deco part ids; unequipped = key absent
   stats: Stats;
   createdAt: number;
+  free?: boolean; // 一体目(0→1)を無料で作った馬。引退時にベース分は付かない（make→retire farm防止）
 };
 
 // The minimum a Horse needs to be *drawn*. Real Horse is assignable to this, and
@@ -246,6 +247,7 @@ export type SaveData = {
   raceRecords: RaceRecord[];
   gpUnlocked: { g2: boolean; g1: boolean }; // grand-prix grade unlocks
   freeRebalance: boolean; // one free stat re-allocation after the v4 migration (RACE_V3 §3.6)
+  freeRename?: boolean; // 初回の改名は無料（1回だけ）。既定 true、使うと false
   coins: number; // soft currency (RACE_V4 §4)
   bets: BetRecord[]; // recent settled bets (capped)
   maxHorses: number; // stable slot cap (10, expandable to 15)
