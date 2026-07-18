@@ -256,5 +256,6 @@ export type SaveData = {
   displayTrophies: number[]; // profile: trophy ranks (1|2|3) shown on the shelf (max 5)
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads
   arena?: ArenaState | null; // 対戦: pending entry + last revealed tournament
+  farmClaimedAt?: number; // 牧場の放置収入を最後に回収した時刻（ms）
   savedAt: number; // ms of the last change — used for cloud last-write-wins sync
 };

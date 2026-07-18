@@ -96,3 +96,36 @@ describe('arena store: standing (auto) entry', () => {
     void horse;
   });
 });
+
+describe('farm store: idle income + retire', () => {
+  it('claimFarm credits accrued coins once and resets the anchor', () => {
+    useStore.getState().resetAll();
+    useStore.getState().addHorse(
+      { name: 'まき', colors: { body: 'body_bay', mane: 'mane_black', hoof: 'hoof_dark' }, decos: {} },
+      { spd: 8, sta: 8, pwr: 8, jmp: 8, gut: 8, wit: 8 },
+    );
+    // rewind the claim anchor 3 hours → some income should be waiting
+    useStore.setState({ farmClaimedAt: Date.now() - 3 * 3600 * 1000 });
+    const before = useStore.getState().coins;
+    const got = useStore.getState().claimFarm();
+    expect(got).toBeGreaterThan(0);
+    expect(useStore.getState().coins).toBe(before + got);
+    // claiming again immediately yields ~0 (anchor reset)
+    expect(useStore.getState().claimFarm()).toBe(0);
+  });
+
+  it('retireHorse pays coins, removes the horse and frees the slot', () => {
+    useStore.getState().resetAll();
+    const h = useStore.getState().addHorse(
+      { name: 'いんたい', colors: { body: 'body_bay', mane: 'mane_black', hoof: 'hoof_dark' }, decos: {} },
+      { spd: 8, sta: 8, pwr: 8, jmp: 8, gut: 8, wit: 8 },
+    )!;
+    const before = useStore.getState().coins;
+    const before_n = useStore.getState().horses.length;
+    const got = useStore.getState().retireHorse(h.id);
+    expect(got).toBeGreaterThan(0);
+    expect(useStore.getState().coins).toBe(before + got);
+    expect(useStore.getState().horses.length).toBe(before_n - 1);
+    expect(useStore.getState().horses.find((x) => x.id === h.id)).toBeUndefined();
+  });
+});

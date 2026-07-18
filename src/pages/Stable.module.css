@@ -434,3 +434,69 @@
   cursor: pointer;
 }
 .renameBtn:disabled { opacity: 0.5; cursor: default; }
+
+/* 牧場の放置収入（idle income） */
+.farmCard {
+  background: linear-gradient(180deg, #f6e6bd, var(--panel-inner));
+  border: 3px solid var(--gold);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.farmHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.farmTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.farmRate {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--grass-dark);
+}
+.farmBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.farmAmt {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.farmClaim {
+  border: 3px solid var(--border-dark);
+  border-radius: 12px;
+  background: var(--grass-dark);
+  color: #fff;
+  font-weight: 900;
+  font-size: 15px;
+  padding: 9px 18px;
+  box-shadow: 0 3px 0 var(--border-dark);
+}
+.farmClaim:active { transform: translateY(1px); box-shadow: 0 2px 0 var(--border-dark); }
+.farmClaim:disabled { opacity: 0.45; box-shadow: none; }
+.farmNote {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 8px;
+}
+.retireGain {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 900;
+  color: var(--red);
+}
