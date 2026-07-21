@@ -52,32 +52,85 @@
   list-style: none;
   margin: 0;
   padding: 0 2px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  /* 2頭×4列。横一列に縦8頭並べるより高さが半分になり、名前も入る（改修）。 */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
   /* Cap the field so the stake row and 出走 button always stay on one screen —
      the list scrolls internally instead of pushing the controls off the bottom. */
   max-height: 48vh;
   overflow-y: auto;
   overscroll-behavior: contain;
+  align-content: start;
 }
 .item {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+}
+/* 能力パネルを開いた馬だけ2列ぶち抜きにして、グリッドが崩れないようにする。 */
+.expanded {
+  grid-column: 1 / -1;
 }
 .row {
   display: grid;
-  grid-template-columns: auto 46px 1fr auto auto 30px;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 7px;
-  padding: 4px 7px;
+  gap: 8px;
+  padding: 6px 8px;
+  position: relative;
   background: var(--panel-inner);
   border: 2px solid var(--border);
   border-radius: 12px;
   cursor: pointer;
   user-select: none;
   transition: background 0.12s, box-shadow 0.12s;
+}
+.horseWrap {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+/* ゲート番号（馬番）＝ゼッケン風の小さなバッジ。どのウマかひと目で分かる。 */
+.gate {
+  position: absolute;
+  top: -5px;
+  left: -6px;
+  z-index: 2;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--paper);
+  border: 2px solid var(--paper);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  font-variant-numeric: tabular-nums;
+}
+.meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.nameRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.oddsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .me .row {
   background: #fff7e6;
@@ -90,13 +143,15 @@
   box-shadow: 0 0 0 3px #f4c534 inset, 0 2px 0 rgba(120, 84, 10, 0.25);
 }
 .info {
+  margin-left: auto;
+  flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   border: 2px solid var(--border-dark);
   background: var(--panel);
   border-radius: 8px;
-  padding: 2px 6px;
+  padding: 2px 5px 2px 3px;
   font-weight: 800;
   font-size: 11px;
   color: var(--ink-soft);
@@ -106,17 +161,11 @@
   display: block;
   flex: 0 0 auto;
 }
-.infoTxt {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-  align-items: flex-start;
-}
 .infoTotal {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--ink-soft);
-  opacity: 0.85;
+  white-space: nowrap;
 }
 .infoOn {
   background: var(--blue);
@@ -177,11 +226,15 @@
   color: var(--ink);
 }
 .pop {
-  font-size: 11px;
+  flex: none;
+  font-size: 10px;
   font-weight: 800;
   color: var(--ink-soft);
 }
 .name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
   font-weight: 800;
   color: var(--ink);
   overflow: hidden;
@@ -189,20 +242,24 @@
   text-overflow: ellipsis;
 }
 .win {
+  flex: none;
   font-weight: 900;
   color: #c33f39;
-  font-size: 15px;
-  text-align: right;
-  min-width: 54px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+/* selection mark — top-right corner of the card, out of the content flow. */
 .mark {
-  width: 28px;
-  height: 28px;
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 900;
 }
 .markOn {

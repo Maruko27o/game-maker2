@@ -5,7 +5,9 @@ import type { Horse, Trophy, Badge } from '../types';
 import {
   FARM_BASE_PER_HORSE,
   FARM_PER_STAT,
-  FARM_PER_TROPHY,
+  FARM_TROPHY_RATE,
+  FARM_BADGE_RATE,
+  FARM_PER_HORSE_CAP,
   FARM_CAP_HOURS,
   RETIRE_BASE,
   RETIRE_PER_TRAINED,
@@ -13,17 +15,34 @@ import {
   RETIRE_PER_BADGE,
 } from '../data/coins';
 
-/** 1頭あたりの時給（coins/時）。総合力＋トロフィー数で決まる。 */
-export function horseFarmRate(total: number, trophyCount: number): number {
-  return FARM_BASE_PER_HORSE + total * FARM_PER_STAT + trophyCount * FARM_PER_TROPHY;
+/** その馬のトロフィーが生む時給（金50/銀20/銅10 × 個数）。 */
+export function trophyFarmRate(trophies: Trophy[]): number {
+  return trophies.reduce((sum, t) => sum + (FARM_TROPHY_RATE[t.rank] ?? 0), 0);
 }
 
-/** ステーブル全体の時給（coins/時）。 */
-export function farmRatePerHour(horses: Horse[], trophies: Trophy[]): number {
-  return horses.reduce(
-    (sum, h) => sum + horseFarmRate(statTotal(h.stats), trophies.filter((t) => t.horseId === h.id).length),
-    0,
+/** その馬のバッジが生む時給（金3/銀2/銅1 × 個数。順位バッジのみ加算）。 */
+export function badgeFarmRate(badges: Badge[]): number {
+  return badges.reduce((sum, b) => sum + (FARM_BADGE_RATE[b.id] ?? 0), 0);
+}
+
+/** 1頭あたりの時給（coins/時）。基礎＋総合力＋トロフィー＋バッジ。上限は毎時1000。 */
+export function horseFarmRate(total: number, trophies: Trophy[], badges: Badge[]): number {
+  const raw = FARM_BASE_PER_HORSE + total * FARM_PER_STAT + trophyFarmRate(trophies) + badgeFarmRate(badges);
+  return Math.min(FARM_PER_HORSE_CAP, raw);
+}
+
+/** Horse を直接受け取る便利版（UI用）。 */
+export function horseFarmRateOf(horse: Horse, trophies: Trophy[], badges: Badge[]): number {
+  return horseFarmRate(
+    statTotal(horse.stats),
+    trophies.filter((t) => t.horseId === horse.id),
+    badges.filter((b) => b.horseId === horse.id),
   );
+}
+
+/** ステーブル全体の時給（coins/時）。各馬の上限適用後を合算する。 */
+export function farmRatePerHour(horses: Horse[], trophies: Trophy[], badges: Badge[]): number {
+  return horses.reduce((sum, h) => sum + horseFarmRateOf(h, trophies, badges), 0);
 }
 
 /** lastClaim〜now に貯まった放置収入（FARM_CAP_HOURS で頭打ち）。 */

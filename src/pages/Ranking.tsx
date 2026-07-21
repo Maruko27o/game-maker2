@@ -103,7 +103,7 @@ export default function Ranking() {
         </div>
       ) : (
         <ol className={styles.list}>
-          {shown.map((r, i) => {
+          {shown.slice(0, 5).map((r, i) => {
             const me = r.userId === user.id;
             const place = i + 1;
             const look: HorseLook = me
@@ -131,6 +131,13 @@ export default function Ranking() {
               </li>
             );
           })}
+          {shown.length > 5 && (
+            <li className={styles.more} aria-hidden="true">
+              <span className={styles.moreDots}><i></i><i></i><i></i></span>
+              <span className={styles.moreGhost}></span>
+              <span className={styles.moreGhost}></span>
+            </li>
+          )}
         </ol>
       )}
 

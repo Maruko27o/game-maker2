@@ -45,8 +45,13 @@ export const GRASS_TASK_REWARD = 1000; // coins banked per grass cycle
 // （毎日開く動機＋放置しすぎても無限には増えない）。
 export const FARM_BASE_PER_HORSE = 30; // 1頭あたりの基礎 coins/時（作りたて総合40で計50/時）
 export const FARM_PER_STAT = 0.5; // 総合力1につき coins/時
-export const FARM_PER_TROPHY = 12; // トロフィー1個につき coins/時
 export const FARM_CAP_HOURS = 12; // これ以上の放置は加算されない
+
+// トロフィー／バッジが時給を上乗せする（個数分だけ増える）。金トロフィー2個なら+100/時。
+// ランク別レート：トロフィー 金50/銀20/銅10、バッジ 金3/銀2/銅1（順位バッジのみ）。
+export const FARM_TROPHY_RATE: Record<1 | 2 | 3, number> = { 1: 50, 2: 20, 3: 10 };
+export const FARM_BADGE_RATE: Record<string, number> = { badge_1st: 3, badge_2nd: 2, badge_3rd: 1 };
+export const FARM_PER_HORSE_CAP = 1000; // 1頭あたりの時給上限（coins/時）
 
 // ---- ウマ作成コスト（farm loop 防止）---------------------------------------
 // 作成を有料化して「無料で作って引退で稼ぐ」荒稼ぎを封じる（作成1000＞引退ベース500）。
