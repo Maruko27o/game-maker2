@@ -20,7 +20,7 @@ import { submitBestOdds } from '../cloud';
 import { ENABLE_RANKING } from '../config';
 import Paddock from '../components/Paddock';
 import BetResult from '../components/BetResult';
-import { GP_QUALIFY_COINS, GP_DAILY_LIMIT, MAX_BETS_GP, gpFinalCoins } from '../data/coins';
+import { GP_DAILY_LIMIT, MAX_BETS_GP, gpFinalCoins } from '../data/coins';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import type { Horse, HorseLook, Trophy, TrainingItem, GpRaceReward } from '../types';
 import { RUN_STYLE_LABEL, STAT_LABEL } from '../types';
@@ -171,15 +171,16 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       reward = { trophy: null, items: [], rank: 0, qualified: false, coins: 0 };
     } else {
       const rank = finalRes.ranks[playerIdx];
-      const trophy = makeTrophy(player.id, rank, st.course.id, mode, 'gp');
+      // トロフィーもコインも G1 のみ（G2/G3 は育成アイテムと解放のみ）。
+      const trophy = st.grade === 'g1' ? makeTrophy(player.id, rank, st.course.id, mode, 'gp') : null;
       const items = rollItems(mulberry32((st.seed ^ rank ^ 0xabc) >>> 0), gpItemCount(st.grade, rank, mode));
       if (trophy) addTrophies([trophy]);
       if (items.length) grantItems(items);
       recordRace(st.course.id, mode, rank, finalRes.finishTimes[playerIdx]);
       if (st.grade === 'g3' && rank <= 3) unlockGp({ g2: true });
       if (st.grade === 'g2' && rank === 1) unlockGp({ g1: true });
-      const coinReward = GP_QUALIFY_COINS + gpFinalCoins(rank);
-      addCoins(coinReward);
+      const coinReward = st.grade === 'g1' ? gpFinalCoins(rank) : 0;
+      if (coinReward > 0) addCoins(coinReward);
       bufferSubmission(buildSubmission(finalists, st.course.id, mode, st.seed ^ 0x5f, finalRes, finalists[playerIdx].horseId, finalLaps(mode)));
       reward = { trophy, items, rank, qualified: true, coins: coinReward };
     }
@@ -250,22 +251,42 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       <div className={styles.page}>
         <h1 className={styles.title}>グランプリ</h1>
         <p className={styles.lead}>18頭・予選3組 → 上位＋敗者復活で本戦8頭。時間: {mode}秒</p>
-        <p className={styles.lead}>
-          本日ののこり: <b>{gpLeft}</b> / {GP_DAILY_LIMIT} 回（予選＋本戦で1回・毎日リセット）
-        </p>
-        {gpLeft <= 0 && (
-          <p className={styles.lead}>本日のグランプリは上限に達しました。また明日挑戦してね。</p>
-        )}
-        {rows.map(({ g, locked, cond }) => (
-          <button key={g} className={`${styles.modeCard} ${locked || gpLeft <= 0 ? styles.modeLocked : ''}`} disabled={locked || gpLeft <= 0} onClick={() => !locked && gpLeft > 0 && startGrade(g)}>
-            <span className={styles.modeEmoji}><Icon name={g === 'g1' ? 'crown' : 'medal'} size={30} /></span>
-            <span className={styles.modeText}>
-              <span className={styles.modeName}>{GP_GRADES[g].name} グランプリ</span>
-              <span className={styles.modeDesc}>敵の強さ {GP_GRADES[g].band[0]}〜{GP_GRADES[g].band[1]}／{locked ? cond : `1着で育成アイテム${GP_GRADES[g].win1Items}個`}</span>
-            </span>
-            {locked ? <span className={styles.soon}><Icon name="lock" size={16} /></span> : <span className={styles.modeGo}>▶</span>}
-          </button>
-        ))}
+        {rows.map(({ g, locked, cond }) => {
+          const isG1 = g === 'g1';
+          const capped = isG1 && gpLeft <= 0;
+          const disabled = locked || capped;
+          return (
+            <button
+              key={g}
+              className={`${styles.modeCard} ${isG1 ? gp.g1Card : ''} ${disabled ? styles.modeLocked : ''}`}
+              disabled={disabled}
+              onClick={() => !disabled && startGrade(g)}
+            >
+              <span className={styles.modeEmoji}><Icon name={isG1 ? 'crown' : 'medal'} size={30} /></span>
+              <span className={styles.modeText}>
+                <span className={styles.modeName}>{GP_GRADES[g].name} グランプリ</span>
+                <span className={styles.modeDesc}>敵の強さ {GP_GRADES[g].band[0]}〜{GP_GRADES[g].band[1]}</span>
+                {locked ? (
+                  <span className={styles.modeDesc}>{cond}</span>
+                ) : (
+                  <span className={gp.rewards}>
+                    <span className={gp.chip}><Icon name="gift" size={12} /> 育成×{GP_GRADES[g].win1Items}</span>
+                    {isG1 ? (
+                      <>
+                        <span className={`${gp.chip} ${gp.chipGold}`}><Icon name="trophy" size={12} /> トロフィー</span>
+                        <span className={`${gp.chip} ${gp.chipGold}`}><CoinIcon size={12} /> 最大10,000</span>
+                        <span className={`${gp.chip} ${capped ? gp.chipEmpty : gp.chipLimit}`}>本日 {gpLeft}/{GP_DAILY_LIMIT}</span>
+                      </>
+                    ) : (
+                      <span className={`${gp.chip} ${gp.chipFree}`}>何回でも</span>
+                    )}
+                  </span>
+                )}
+              </span>
+              {locked ? <span className={styles.soon}><Icon name="lock" size={16} /></span> : <span className={styles.modeGo}>▶</span>}
+            </button>
+          );
+        })}
         <button className={styles.exitLink} onClick={onExit}>もどる</button>
       </div>
     );
@@ -318,7 +339,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           onAdd={(b) => { if (heatBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) setHeatBets((prev) => [...prev, b]); }}
           onRemove={(i) => { addCoins(heatBets[i].amount); setHeatBets((prev) => prev.filter((_, k) => k !== i)); }}
           onStart={() => {
-            if (!startGpAttempt()) { onExit(); return; }
+            if (!startGpAttempt(state.grade)) { onExit(); return; }
             // The daily attempt is now spent — persist a resumable session from here on.
             setRaceSession({
               kind: 'gp', screen: 'heat', grade: state.grade, seed: state.seed, mode,

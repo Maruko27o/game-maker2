@@ -417,7 +417,7 @@ type Store = SaveData & {
   buyOkawari: () => boolean;
   /** Begin a grand-prix attempt, consuming one of the day's plays (max
    *  GP_DAILY_LIMIT). Returns false when the daily limit is reached. */
-  startGpAttempt: () => boolean;
+  startGpAttempt: (grade: 'g1' | 'g2' | 'g3') => boolean;
   /** Expand the stable 10→15 for 3000 coins (once). Returns true on success. */
   expandSlots: () => boolean;
   // Coin-earning tasks (改修：タスク).
@@ -757,9 +757,9 @@ export const useStore = create<Store>((set, get) => {
       return true;
     },
 
-    startGpAttempt: () => {
-      // Grand-prix is limited to GP_DAILY_LIMIT attempts per day (qualifier +
-      // final together count as one). Returns false when the day's limit is hit.
+    startGpAttempt: (grade) => {
+      // 1日の回数制限は G1 のみ（G2/G3 は無制限）。予選＋本戦で1回。
+      if (grade !== 'g1') return true;
       const s = get();
       const today = dayKey();
       const daily = s.daily.day === today ? s.daily : freshDaily();
