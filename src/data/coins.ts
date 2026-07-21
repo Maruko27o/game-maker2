@@ -14,11 +14,11 @@ export function coinTier(amount: number): CoinTier {
 export function normalRaceCoins(rank: number): number {
   return rank === 1 ? 100 : rank === 2 ? 50 : rank === 3 ? 30 : 10;
 }
+// コインが貰えるのは G1 のみ（G2/G3 は育成アイテムのみ）。G1 本戦の賞金。
 export function gpFinalCoins(rank: number): number {
-  return rank === 1 ? 1000 : rank === 2 ? 500 : rank === 3 ? 300 : 0;
+  return rank === 1 ? 10000 : rank === 2 ? 5000 : rank === 3 ? 2000 : 0;
 }
-export const GP_QUALIFY_COINS = 200; // clearing a heat into the final
-export const GP_DAILY_LIMIT = 3; // grand-prix attempts per day (qualifier+final = 1)
+export const GP_DAILY_LIMIT = 3; // 1日の挑戦回数。G1 のみに適用（G2/G3 は無制限）
 export const BADGE_COINS = 100; // per achievement badge earned
 export const GRASS_DAILY_BONUS = 20; // grass first-visit bonus…
 export const GRASS_DAILY_BONUS_MAX = 2; // …up to this many times a day

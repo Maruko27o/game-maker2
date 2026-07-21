@@ -167,3 +167,55 @@
   padding: 6px 10px;
   margin: 2px 0;
 }
+
+/* Grade-select reward chips (改修：G1のみコイン/トロフィー、G2/G3は無制限) ------- */
+.rewards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  background: var(--panel);
+  border: 2px solid var(--border);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.chip svg { display: block; flex: none; }
+/* G1 の特別報酬（金） */
+.chipGold {
+  color: #7a5510;
+  background: #fbeec2;
+  border-color: #d9b24a;
+}
+/* G2/G3 = 何回でも（無制限） */
+.chipFree {
+  color: #2b6d55;
+  background: #dff0e6;
+  border-color: #7cbfa0;
+}
+/* G1 = 本日ののこり回数 */
+.chipLimit {
+  color: #2b4a6b;
+  background: #e2ecf6;
+  border-color: #8fb0d0;
+}
+.chipEmpty {
+  color: #b23a2e;
+  background: #f7dcd8;
+  border-color: #d98a80;
+}
+/* G1 カードを一段だけ格上げして見せる（可愛いまま特別感） */
+.g1Card {
+  border-color: #d9b24a;
+  background: linear-gradient(180deg, #fff8e6, var(--panel-inner));
+  box-shadow: 0 4px 0 #d9b24a;
+}
