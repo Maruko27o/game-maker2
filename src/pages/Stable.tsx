@@ -158,10 +158,10 @@ export default function Stable() {
         <div className={styles.farmCard}>
           <div className={styles.farmHead}>
             <span className={styles.farmTitle}>
-              <Icon name="leaf" size={17} /> 牧場のしゅうにゅう
+              <Icon name="leaf" size={17} /> 牧場の収入
               <button
                 className={styles.farmInfoBtn}
-                aria-label="しゅうにゅうの内訳"
+                aria-label="収入の内訳"
                 aria-expanded={farmInfo}
                 onClick={() => setFarmInfo((v) => !v)}
               >
@@ -172,7 +172,7 @@ export default function Stable() {
           </div>
           {farmInfo && (
             <div className={styles.farmInfoPop} role="note">
-              <div className={styles.farmInfoTitle}>じどうしゅうにゅう（1頭ごと・毎時）</div>
+              <div className={styles.farmInfoTitle}>自動収入（1頭ごと・毎時）</div>
               <ul className={styles.farmInfoList}>
                 <li><TrophyIcon rank={1} size={20} /><span>トロフィー金</span><b>+50</b></li>
                 <li><TrophyIcon rank={2} size={20} /><span>トロフィー銀</span><b>+20</b></li>
@@ -181,7 +181,7 @@ export default function Stable() {
                 <li><BadgeIcon id="badge_2nd" size={20} /><span>バッジ銀</span><b>+2</b></li>
                 <li><BadgeIcon id="badge_3rd" size={20} /><span>バッジ銅</span><b>+1</b></li>
               </ul>
-              <div className={styles.farmInfoFoot}>個数分ふえる（金トロフィー2個で+100）／1頭の上限は毎時 1,000</div>
+              <div className={styles.farmInfoFoot}>1頭の上限は 1,000コイン／毎時</div>
             </div>
           )}
           <div className={styles.farmBody}>
