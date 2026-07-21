@@ -287,7 +287,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
             </button>
           );
         })}
-        <button className={styles.exitLink} onClick={onExit}>もどる</button>
+        <button className={styles.exitLink} onClick={onExit}>戻る</button>
       </div>
     );
   }
@@ -350,7 +350,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           }}
         />
         <button className={styles.exitLink} onClick={() => { heatBets.forEach((b) => addCoins(b.amount)); setHeatBets([]); setScreen('card'); }}>
-          もどる（賭けを取り消す）
+          戻る（賭けを取り消す）
         </button>
       </div>
     );
@@ -441,7 +441,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           onStart={() => { patchRaceSession({ screen: 'final', anchorMs: Date.now() }); setScreen('final'); }}
         />
         <button className={styles.exitLink} onClick={() => { finalBets.forEach((b) => addCoins(b.amount)); setFinalBets([]); patchRaceSession({ screen: 'qualify', finalBets: [] }); setScreen('qualify'); }}>
-          もどる（賭けを取り消す）
+          戻る（賭けを取り消す）
         </button>
       </div>
     );

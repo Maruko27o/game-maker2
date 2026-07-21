@@ -18,7 +18,7 @@ import {
 import HorseView from '../components/HorseView';
 import styles from './Create.module.css';
 
-const COLOR_LABEL: Record<ColorSlot, string> = { body: 'からだ', mane: 'たてがみ', hoof: 'ひづめ' };
+const COLOR_LABEL: Record<ColorSlot, string> = { body: '体', mane: 'たてがみ', hoof: 'ひづめ' };
 const DECO_LABEL: Record<DecoSlot, string> = { head: '頭', face: '顔', back: '背中', tail: 'しっぽ' };
 
 // Where each slot's decorations live on the horse — so the picker can show the part
@@ -138,7 +138,7 @@ export default function Create() {
   }
 
   function commitSave() {
-    const finalName = name.trim() || 'なまえのないウマ';
+    const finalName = name.trim() || '名前のないウマ';
     if (rebalancing) {
       rebalanceHorse(rebalancing.id, stats);
     } else if (editing) {
@@ -156,7 +156,7 @@ export default function Create() {
     else commitSave();
   }
 
-  const title = rebalancing ? 'ステータスふりなおし' : editing ? 'ウマをなおす' : 'ウマをつくる';
+  const title = rebalancing ? 'ステータス振り直し' : editing ? 'ウマを直す' : 'ウマを作る';
 
   return (
     <div className={styles.page}>
@@ -177,7 +177,7 @@ export default function Create() {
       )}
       {!rebalancing && !canBuild && (
         <p className={styles.warn}>
-          からだ・たてがみ・ひづめの色を、それぞれ1つ以上あつめると作れます。草むらでパーツをあつめよう！
+          体・たてがみ・ひづめの色を、それぞれ1つ以上集めると作れます。草むらでパーツを集めよう！
         </p>
       )}
       {atCap && (
@@ -296,12 +296,12 @@ export default function Create() {
           })}
 
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>なまえ</h2>
+            <h2 className={styles.sectionTitle}>名前</h2>
             <input
               className={styles.nameInput}
               value={name}
               maxLength={12}
-              placeholder="なまえをつけよう"
+              placeholder="名前をつけよう"
               onChange={(e) => setName(e.target.value)}
             />
           </section>
@@ -314,7 +314,7 @@ export default function Create() {
           <div className={styles.allocHead}>
             <h2 className={styles.sectionTitle}>ステータス</h2>
             <span className={`${styles.allocRemain} ${remaining === 0 ? styles.allocDone : ''}`}>
-              のこり {remaining}
+              残り {remaining}
             </span>
           </div>
 
@@ -360,15 +360,15 @@ export default function Create() {
 
       <div className={styles.actions}>
         <button className="btn neutral" onClick={() => navigate(-1)}>
-          もどる
+          戻る
         </button>
         <button className="btn" onClick={onSaveClick} disabled={!canSave}>
           {rebalancing
             ? '振り直す'
             : editing
-              ? 'ほぞんする'
+              ? '保存する'
               : remaining !== 0
-                ? `のこり ${remaining} ポイント`
+                ? `残り ${remaining} ポイント`
                 : poor
                   ? 'コインが足りません'
                   : createCost === 0
@@ -392,7 +392,7 @@ export default function Create() {
             </div>
             <p className={styles.confirmMsg} style={{ textAlign: 'center', margin: '0 0 12px' }}>
               {createCost === 0 ? (
-                <>一体目のウマは <strong>無料</strong> でつくれます！</>
+                <>一体目のウマは <strong>無料</strong> で作れます！</>
               ) : (
                 <>作成に <CoinIcon size={15} /> <strong>{CREATE_COST.toLocaleString()}</strong> コインかかります</>
               )}
@@ -402,7 +402,7 @@ export default function Create() {
                 やめる
               </button>
               <button className="btn" onClick={commitSave}>
-                けってい
+                決定
               </button>
             </div>
           </div>

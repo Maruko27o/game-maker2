@@ -49,7 +49,7 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
           </div>
         )}
 
-        <button className={styles.closeLink} onClick={onClose}>とじる</button>
+        <button className={styles.closeLink} onClick={onClose}>閉じる</button>
       </div>
     </div>
   );

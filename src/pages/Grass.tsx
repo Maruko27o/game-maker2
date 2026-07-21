@@ -118,7 +118,7 @@ export default function Grass() {
           </span>
         </div>
         <div className={styles.stat}>
-          <span className={styles.statLabel}>{stock >= ENERGY_CAP ? 'まんタン' : 'つぎのチャージ'}</span>
+          <span className={styles.statLabel}>{stock >= ENERGY_CAP ? '満タン' : '次のチャージ'}</span>
           <span className={styles.statValue}>{stock >= ENERGY_CAP ? '✓' : countdown}</span>
         </div>
       </header>
@@ -129,7 +129,7 @@ export default function Grass() {
         }`}
         onClick={onTap}
         disabled={!available || phase !== 'ready'}
-        aria-label={available ? '草むらをタップしてウマをさがす' : '次のチャージまで待つ'}
+        aria-label={available ? '草むらをタップしてウマを探す' : '次のチャージまで待つ'}
       >
         <GrassScene />
         <div className={styles.grassRow} aria-hidden>
@@ -150,13 +150,13 @@ export default function Grass() {
               <>
                 <div className={styles.tapEmoji}><Icon name="leaf" size={40} /></div>
                 <p>草むらをタップ！</p>
-                <p className={styles.hintSub}>ストック {stock}こ</p>
+                <p className={styles.hintSub}>ストック {stock}個</p>
               </>
             ) : (
               <>
-                <p className={styles.waitTitle}>草がしずかだ…</p>
-                <p className={styles.waitSub}>つぎのチャージまで {countdown}</p>
-                <p className={styles.waitNote}>1時間に1こ・最大{ENERGY_CAP}こまでたまる</p>
+                <p className={styles.waitTitle}>草が静かだ…</p>
+                <p className={styles.waitSub}>次のチャージまで {countdown}</p>
+                <p className={styles.waitNote}>1時間に1個・最大{ENERGY_CAP}個までたまる</p>
               </>
             )}
           </div>
@@ -185,7 +185,7 @@ export default function Grass() {
 
       {phase === 'reveal' && (
         <div className={styles.reward}>
-          <h2 className={styles.rewardTitle}>{reward.length}こ ゲット！</h2>
+          <h2 className={styles.rewardTitle}>{reward.length}個 ゲット！</h2>
           <div className={styles.cards}>
             {reward.map((p, i) => (
               <div
@@ -207,7 +207,7 @@ export default function Grass() {
             ))}
           </div>
           <button className="btn" onClick={close}>
-            {stock > 0 ? `つづける（あと${stock}こ）` : 'つづける'}
+            {stock > 0 ? `続ける（あと${stock}個）` : '続ける'}
           </button>
         </div>
       )}
