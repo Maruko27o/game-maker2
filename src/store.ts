@@ -928,7 +928,7 @@ export const useStore = create<Store>((set, get) => {
 
     claimFarm: () => {
       const s = get();
-      const rate = farmRatePerHour(s.horses, s.trophies);
+      const rate = farmRatePerHour(s.horses, s.trophies, s.badges);
       const got = farmAccrued(s.farmClaimedAt ?? Date.now(), Date.now(), rate);
       if (got <= 0) return 0; // nothing yet — keep the anchor so fractions aren't lost
       commit({ coins: s.coins + got, farmClaimedAt: Date.now() });

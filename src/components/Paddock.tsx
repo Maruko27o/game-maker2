@@ -112,30 +112,38 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
         {spec.pick > 1 && `（${spec.pick}頭えらぶ）`}
       </p>
 
-      {/* field: tap to select */}
+      {/* field: tap a card to select. 2頭×4列のコンパクトなグリッド（ゲート番号・名前も表示） */}
       <ul className={styles.list}>
         {rows.map((r) => {
           const e = entrants[r.idx];
           const order = sel.indexOf(r.idx); // -1 if unselected
           const on = order >= 0;
           const open = openStats === r.idx;
+          const gate = r.idx + 1; // ゲート番号（馬番）
           return (
-            <li key={r.idx} className={`${styles.item} ${e.isPlayer ? styles.me : ''}`}>
+            <li key={r.idx} className={`${styles.item} ${e.isPlayer ? styles.me : ''} ${open ? styles.expanded : ''}`}>
               <div className={`${styles.row} ${on ? styles.on : ''}`} onClick={() => toggle(r.idx)}>
-                <span className={styles.pop}>{r.pop}人気</span>
-                <div className={styles.horse}>
-                  <HorseView horse={looks[e.horseId]} size={44} />
+                <div className={styles.horseWrap}>
+                  <span className={styles.gate} aria-label={`ゲート${gate}番`}>{gate}</span>
+                  <HorseView horse={looks[e.horseId]} size={42} />
                 </div>
-                <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
-                <button
-                  className={`${styles.info} ${open ? styles.infoOn : ''}`}
-                  aria-label="能力を見る"
-                  onClick={(ev) => { ev.stopPropagation(); setOpenStats(open ? null : r.idx); }}
-                >
-                  <StatRadar stats={e.stats} size={22} bare />
-                  <span className={styles.infoTxt}>能力<span className={styles.infoTotal}>総合 {statTotal(e.stats)}</span></span>
-                </button>
-                <span className={styles.win}>{r.odds.toFixed(1)}倍</span>
+                <div className={styles.meta}>
+                  <div className={styles.nameRow}>
+                    <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
+                    <span className={styles.pop}>{r.pop}人気</span>
+                  </div>
+                  <div className={styles.oddsRow}>
+                    <span className={styles.win}>{r.odds.toFixed(1)}倍</span>
+                    <button
+                      className={`${styles.info} ${open ? styles.infoOn : ''}`}
+                      aria-label={`能力を見る（総合${statTotal(e.stats)}）`}
+                      onClick={(ev) => { ev.stopPropagation(); setOpenStats(open ? null : r.idx); }}
+                    >
+                      <StatRadar stats={e.stats} size={16} bare />
+                      <span className={styles.infoTotal}>{statTotal(e.stats)}</span>
+                    </button>
+                  </div>
+                </div>
                 <span className={`${styles.mark} ${on ? styles.markOn : ''}`}>
                   {on ? (spec.ordered ? order + 1 : '✓') : ''}
                 </span>

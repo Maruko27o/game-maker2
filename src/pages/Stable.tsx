@@ -135,7 +135,8 @@ export default function Stable() {
     const t = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  const farmRate = useMemo(() => farmRatePerHour(horses, trophies), [horses, trophies]);
+  const farmRate = useMemo(() => farmRatePerHour(horses, trophies, badges), [horses, trophies, badges]);
+  const [farmInfo, setFarmInfo] = useState(false); // しゅうにゅうの内訳ポップオーバー
   const farmAmt = farmAccrued(farmClaimedAt, nowTs, farmRate);
   const farmToFull = farmMsToFull(farmClaimedAt, nowTs);
   const farmFullMsg =
@@ -156,16 +157,40 @@ export default function Stable() {
       {horses.length > 0 && (
         <div className={styles.farmCard}>
           <div className={styles.farmHead}>
-            <span className={styles.farmTitle}><Icon name="leaf" size={17} /> 牧場のしゅうにゅう</span>
+            <span className={styles.farmTitle}>
+              <Icon name="leaf" size={17} /> 牧場のしゅうにゅう
+              <button
+                className={styles.farmInfoBtn}
+                aria-label="しゅうにゅうの内訳"
+                aria-expanded={farmInfo}
+                onClick={() => setFarmInfo((v) => !v)}
+              >
+                i
+              </button>
+            </span>
             <span className={styles.farmRate}>{Math.round(farmRate).toLocaleString()} ／時</span>
           </div>
+          {farmInfo && (
+            <div className={styles.farmInfoPop} role="note">
+              <div className={styles.farmInfoTitle}>じどうしゅうにゅう（1頭ごと・毎時）</div>
+              <ul className={styles.farmInfoList}>
+                <li><TrophyIcon rank={1} size={20} /><span>トロフィー金</span><b>+50</b></li>
+                <li><TrophyIcon rank={2} size={20} /><span>トロフィー銀</span><b>+20</b></li>
+                <li><TrophyIcon rank={3} size={20} /><span>トロフィー銅</span><b>+10</b></li>
+                <li><BadgeIcon id="badge_1st" size={20} /><span>バッジ金</span><b>+3</b></li>
+                <li><BadgeIcon id="badge_2nd" size={20} /><span>バッジ銀</span><b>+2</b></li>
+                <li><BadgeIcon id="badge_3rd" size={20} /><span>バッジ銅</span><b>+1</b></li>
+              </ul>
+              <div className={styles.farmInfoFoot}>個数分ふえる（金トロフィー2個で+100）／1頭の上限は毎時 1,000</div>
+            </div>
+          )}
           <div className={styles.farmBody}>
             <span className={styles.farmAmt}><CoinIcon size={22} /> {farmAmt.toLocaleString()}</span>
             <button className={styles.farmClaim} disabled={farmAmt < 1} onClick={() => claimFarm()}>
               回収する
             </button>
           </div>
-          <div className={styles.farmNote}>{farmFullMsg} ・ ウマを育てる・集めると増えるよ</div>
+          <div className={styles.farmNote}>{farmFullMsg} ・ トロフィー・バッジが多いほど増えるよ</div>
         </div>
       )}
 

@@ -45,6 +45,41 @@
   border-color: var(--blue);
   background: #eef4ff;
 }
+/* 6位以下は非表示。文字を使わず、点(⋮)＋薄れていくゴースト行で「まだ続く」を示す。 */
+.more {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  padding: 4px 12px 2px;
+}
+.moreDots {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 1px;
+}
+.moreDots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  opacity: 0.6;
+}
+.moreGhost {
+  width: 82%;
+  height: 14px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 2px solid var(--border);
+}
+.moreGhost:last-child {
+  width: 64%;
+  height: 11px;
+  opacity: 0.45;
+}
 .place {
   width: 28px;
   height: 28px;
