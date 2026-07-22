@@ -9,6 +9,7 @@ import Create from './pages/Create';
 import Collection from './pages/Collection';
 import Race from './pages/Race';
 import Ranking from './pages/Ranking';
+import Hall from './pages/Hall';
 
 // HashRouter keeps deep links working on GitHub Pages (no server rewrites).
 createRoot(document.getElementById('root')!).render(
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="collection" element={<Collection />} />
           <Route path="race" element={<Race />} />
           <Route path="ranking" element={<Ranking />} />
+          <Route path="hall" element={<Hall />} />
         </Route>
       </Routes>
     </HashRouter>

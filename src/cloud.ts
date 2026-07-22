@@ -282,6 +282,28 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
   }
 }
 
+/** Past months (period 'YYYY-MM') that have at least one score, newest first —
+ *  the months eligible for the 殿堂. Empty if the period column isn't applied yet. */
+export async function loadHallPeriods(before: string, limit = 12): Promise<string[]> {
+  if (!supabase) return [];
+  try {
+    const res = await supabase
+      .from('bet_scores')
+      .select('period')
+      .lt('period', before)
+      .order('period', { ascending: false });
+    if (res.error || !res.data) return [];
+    const seen: string[] = [];
+    for (const r of res.data as { period: string }[]) {
+      if (r.period && !seen.includes(r.period)) seen.push(r.period);
+      if (seen.length >= limit) break;
+    }
+    return seen;
+  } catch {
+    return [];
+  }
+}
+
 // ---- 対戦（デイリー勝ち抜きトーナメント）------------------------------------
 // Cross-user arena. Players register one horse per day into a shared pool; the
 // next day their tournament draws opponents from everyone who entered that day.
