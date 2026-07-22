@@ -98,13 +98,14 @@ export default function AvatarFrame({
           return <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 2.4 : 1.5} fill={c.gem} stroke={c.ringLo} strokeWidth="0.6" />;
         })}
 
-        {/* top cartouche: 左右対称の種別マークで年月を挟む（案C） */}
+        {/* top cartouche: 左右対称の種別マークで年月を挟む（案C）。数字はそのまま、
+            飾り帯だけコンパクトにし、横マークとの間隔も詰める。 */}
         <g>
-          <path d="M14 15 Q14 7 22 7 L78 7 Q86 7 86 15 L86 19 Q86 25 78 25 L22 25 Q14 25 14 19 Z" fill={`url(#b-${uid})`} stroke={c.ringLo} strokeWidth="1.4" />
-          <path d="M10 16 l6 -4 0 8 z M90 16 l-6 -4 0 8 z" fill={c.ringLo} />
-          <MetricMark metric={metric} cx={24} cy={15.5} r={4.4} ink={c.ink} coinFill={c.bandHi} />
-          <MetricMark metric={metric} cx={76} cy={15.5} r={4.4} ink={c.ink} coinFill={c.bandHi} />
-          <text x="50" y="19.3" textAnchor="middle" fontSize="10" fontWeight="900" fill={c.ink} fontFamily="Georgia, 'Hiragino Mincho ProN', serif" style={{ letterSpacing: '0.4px' }}>{periodDot(period)}</text>
+          <path d="M20 15 Q20 9 26 9 L74 9 Q80 9 80 15 L80 15.5 Q80 21 74 21 L26 21 Q20 21 20 15 Z" fill={`url(#b-${uid})`} stroke={c.ringLo} strokeWidth="1.3" />
+          <path d="M16 15 l4.5 -3 0 6 z M84 15 l-4.5 -3 0 6 z" fill={c.ringLo} />
+          <MetricMark metric={metric} cx={27} cy={15} r={3.6} ink={c.ink} coinFill={c.bandHi} />
+          <MetricMark metric={metric} cx={73} cy={15} r={3.6} ink={c.ink} coinFill={c.bandHi} />
+          <text x="50" y="18.4" textAnchor="middle" fontSize="10" fontWeight="900" fill={c.ink} fontFamily="Georgia, 'Hiragino Mincho ProN', serif" style={{ letterSpacing: '0.4px' }}>{periodDot(period)}</text>
         </g>
       </svg>
     </div>
