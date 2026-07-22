@@ -20,7 +20,6 @@ const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: 
 export default function Ranking() {
   const navigate = useNavigate();
   const user = useAuth((s) => s.user);
-  const displayName = useAuth((s) => s.displayName);
   const configured = useAuth((s) => s.configured);
   const horses = useStore((s) => s.horses);
   const avatarHorseId = useStore((s) => s.avatarHorseId);
@@ -75,6 +74,9 @@ export default function Ranking() {
       ? <><CoinIcon size={14} /> {r.bestPayout.toLocaleString()}</>
       : <>{r.bestOdds.toFixed(1)}倍</>;
   const shown = (rows ?? []).filter((r) => (tab === 'payout' ? r.bestPayout > 0 : r.bestOdds > 0));
+  // 自分の順位（4位以下でも自分のスコアを見せるため）。見つからなければ null。
+  const myIdx = user ? shown.findIndex((r) => r.userId === user.id) : -1;
+  const myRank = myIdx >= 0 ? myIdx + 1 : null;
 
   // The signed-in player's own avatar + trophies come from the local store, so
   // their own row/card always reflects their current settings immediately (even
@@ -95,6 +97,43 @@ export default function Ranking() {
   }
 
   const pad = (n: number) => String(n).padStart(2, '0');
+
+  // 1行分の描画（トップ3と「あなたの順位」で共用）。自分の行はローカルの見た目を即時反映。
+  function renderRow(r: ScoreRow, place: number) {
+    const me = r.userId === user?.id;
+    const look: HorseLook = me
+      ? myLook
+      : r.avatar
+        ? { name: '', colors: r.avatar.colors, decos: r.avatar.decos }
+        : DEFAULT_LOOK;
+    const frame: FrameAward | null = me ? myFrame : r.equippedFrame;
+    const facePx = place <= 3 ? 46 : 34;
+    return (
+      <li
+        key={r.userId}
+        className={`${styles.row} ${me ? styles.me : ''} ${place <= 3 ? `${styles.top} ${styles['top' + place]}` : ''}`}
+        onClick={() => setViewing(withLocal(r))}
+        role="button"
+        tabIndex={0}
+      >
+        <span className={`${styles.place} ${medal(place)}`}>{place}</span>
+        {frame ? (
+          <span className={styles.avatarFramed}>
+            <AvatarFrame rank={frame.rank} metric={frame.metric} period={frame.period} look={look} size={facePx} />
+          </span>
+        ) : (
+          <span className={styles.avatar}>
+            <HorseFace horse={look} size={facePx} />
+          </span>
+        )}
+        <span className={styles.name}>
+          {r.username}
+          {me && <span className={styles.youTag}>あなた</span>}
+        </span>
+        <span className={styles.odds}>{metric(r)}</span>
+      </li>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -131,59 +170,25 @@ export default function Ranking() {
           {tab === 'payout' ? '今月はまだ記録がありません。馬券を的中させて払戻を得よう！' : '今月はまだ記録がありません。レースで馬券を的中させよう！'}
         </div>
       ) : (
-        <ol className={styles.list}>
-          {shown.slice(0, 3).map((r, i) => {
-            const me = r.userId === user.id;
-            const place = i + 1;
-            const look: HorseLook = me
-              ? myLook
-              : r.avatar
-                ? { name: '', colors: r.avatar.colors, decos: r.avatar.decos }
-                : DEFAULT_LOOK;
-            // 各プレイヤーが設定中のフレームを表示。自分の行はローカルの装備を即時反映。
-            const frame: FrameAward | null = me ? myFrame : r.equippedFrame;
-            const facePx = place <= 3 ? 46 : 34;
-            return (
-              <li
-                key={r.userId}
-                className={`${styles.row} ${me ? styles.me : ''} ${place <= 3 ? `${styles.top} ${styles['top' + place]}` : ''}`}
-                onClick={() => setViewing(withLocal(r))}
-                role="button"
-                tabIndex={0}
-              >
-                <span className={`${styles.place} ${medal(place)}`}>{place}</span>
-                {frame ? (
-                  <span className={styles.avatarFramed}>
-                    <AvatarFrame rank={frame.rank} metric={frame.metric} period={frame.period} look={look} size={facePx} />
-                  </span>
-                ) : (
-                  <span className={styles.avatar}>
-                    <HorseFace horse={look} size={facePx} />
-                  </span>
-                )}
-                <span className={styles.name}>
-                  {r.username}
-                  {me && <span className={styles.youTag}>あなた</span>}
-                </span>
-                <span className={styles.odds}>{metric(r)}</span>
+        <>
+          <ol className={styles.list}>
+            {shown.slice(0, 3).map((r, i) => renderRow(r, i + 1))}
+            {shown.length > 3 && (
+              <li className={styles.more} aria-hidden="true">
+                <span className={styles.moreGhost}></span>
+                <span className={styles.moreGhost}></span>
               </li>
-            );
-          })}
-          {shown.length > 3 && (
-            <li className={styles.more} aria-hidden="true">
-              <span className={styles.moreDots}><i></i><i></i><i></i></span>
-              <span className={styles.moreGhost}></span>
-              <span className={styles.moreGhost}></span>
-            </li>
-          )}
-        </ol>
-      )}
+            )}
+          </ol>
 
-      {user && (
-        <div className={styles.self}>
-          <CoinIcon size={16} /> あなたの名前：<b>{displayName ?? '—'}</b>
-          <span className={styles.selfHint}>（左上のアイコン→プロフィールから変更できます）</span>
-        </div>
+          {/* 4位以下の自分のスコアを、トップ3の下に表示（自分がどの位置か分かるように）。 */}
+          {myRank !== null && myRank > 3 && (
+            <div className={styles.myRank}>
+              <div className={styles.myRankLabel}>あなたの順位</div>
+              <ol className={styles.list}>{renderRow(shown[myIdx], myRank)}</ol>
+            </div>
+          )}
+        </>
       )}
 
       {viewing && <RankingProfileCard row={viewing} onClose={() => setViewing(null)} />}
