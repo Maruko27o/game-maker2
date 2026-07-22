@@ -23,27 +23,14 @@
     #6f4e28 30px
   );
 }
-/* 床（板張り・下部） */
-.floor {
+/* 床の色をナビ手前〜背後まで途切れず塗る下地（幅木の下が壁色にならないように）。 */
+.floorFill {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(var(--nav-h) + 20px);
-  height: 200px;
-  background:
-    repeating-linear-gradient(90deg, rgba(111, 78, 40, 0.35) 0 2px, transparent 2px 78px),
-    linear-gradient(180deg, #c79a5f, #a97e46);
-  box-shadow: inset 0 6px 10px -6px rgba(60, 36, 12, 0.5);
-}
-.floor::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: #7a5730;
-  opacity: 0.55;
+  bottom: 0;
+  height: calc(var(--nav-h) + 70px);
+  background: linear-gradient(180deg, #b47f45, #c69256);
 }
 
 .top {
@@ -53,12 +40,13 @@
   right: 0;
   height: 130px;
 }
-.decor {
+/* 床＋幅木＋遠近の床板＋ラグ・小物（立体感を出す） */
+.floorArt {
   position: absolute;
   left: 0;
   right: 0;
   bottom: calc(var(--nav-h) + 20px);
   width: 100%;
-  height: 200px;
+  height: 250px;
   display: block;
 }

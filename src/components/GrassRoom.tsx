@@ -58,8 +58,11 @@ function FloorBooks({ x, baseY }: { x: number; baseY: number }) {
 function Rug({ cx, cy }: { cx: number; cy: number }) {
   return (
     <g transform={`translate(${cx} ${cy})`}>
+      {/* soft contact shadow so the rug sits ON the floor (not merged with the wall) */}
+      <ellipse cx="0" cy="10" rx="168" ry="44" fill="#2e2013" opacity="0.22" />
       <ellipse cx="0" cy="0" rx="158" ry="40" fill="#b56b5a" />
       <ellipse cx="0" cy="0" rx="158" ry="40" fill="none" stroke="#8f4a3d" strokeWidth="4" />
+      <ellipse cx="0" cy="-2" rx="152" ry="36" fill="none" stroke="#d99f83" strokeWidth="2" opacity="0.5" />
       <ellipse cx="0" cy="0" rx="124" ry="31" fill="none" stroke="#e8c3a0" strokeWidth="3" opacity="0.8" />
       <ellipse cx="0" cy="0" rx="88" ry="22" fill="#c98a6a" />
       <ellipse cx="0" cy="0" rx="56" ry="14" fill="none" stroke="#f0d8c0" strokeWidth="2.5" opacity="0.8" />
@@ -97,25 +100,48 @@ function HangingPlant({ x }: { x: number }) {
 }
 
 export default function GrassRoom() {
+  // 遠近感のある床板（消失点へ収束する目地）。壁と床を明確に分ける。
+  const VP = { x: 200, y: -170 };
+  const seams = [-40, 20, 80, 140, 200, 260, 320, 380, 440].map((bx) => {
+    const f = (250 - 18) / (250 - VP.y); // y=18(幅木下) までの補間係数
+    const tx = bx + (VP.x - bx) * f;
+    return `M${bx} 250 L${tx} 18`;
+  });
   return (
     <div className={styles.room} aria-hidden>
       <div className={styles.wall} />
-      <div className={styles.floor} />
+      <div className={styles.floorFill} />
       {/* ceiling: hanging plants at the corners */}
       <svg className={styles.top} viewBox="0 0 400 130" preserveAspectRatio="xMidYMin slice">
         <HangingPlant x={34} />
         <HangingPlant x={366} />
       </svg>
-      {/* floor scene */}
-      <svg className={styles.decor} viewBox="0 0 400 200" preserveAspectRatio="xMidYMax meet">
+      {/* floor: skirting + ambient occlusion + perspective boards + decor */}
+      <svg className={styles.floorArt} viewBox="0 0 400 250" preserveAspectRatio="xMidYMax slice">
         <defs>
           <linearGradient id="gr-pot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d98a58" /><stop offset="1" stopColor="#b96a38" /></linearGradient>
+          <linearGradient id="gr-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a06e38" /><stop offset="0.5" stopColor="#b47f45" /><stop offset="1" stopColor="#c69256" /></linearGradient>
+          <linearGradient id="gr-ao" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgba(50,30,10,0.5)" /><stop offset="1" stopColor="rgba(50,30,10,0)" /></linearGradient>
+          <linearGradient id="gr-skirt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a5763e" /><stop offset="0.35" stopColor="#7f572e" /><stop offset="1" stopColor="#6a4826" /></linearGradient>
         </defs>
-        <Rug cx={200} cy={168} />
-        <FloorPlant x={70} baseY={168} s={1} />
-        <Cat x={196} baseY={166} />
-        <FloorBooks x={252} baseY={168} />
-        <Lantern x={330} baseY={168} s={1} />
+        {/* floor plane */}
+        <rect x="0" y="16" width="400" height="234" fill="url(#gr-floor)" />
+        {/* perspective board seams */}
+        <g stroke="#8a5f30" strokeWidth="1.4" opacity="0.4">{seams.map((d, i) => <path key={i} d={d} fill="none" />)}</g>
+        {/* near-edge highlight for depth */}
+        <rect x="0" y="238" width="400" height="12" fill="#d0a066" opacity="0.35" />
+        {/* skirting board (wall/floor junction) */}
+        <rect x="0" y="2" width="400" height="16" fill="url(#gr-skirt)" />
+        <rect x="0" y="2" width="400" height="2.5" fill="#c79a5f" opacity="0.7" />
+        {/* ambient occlusion cast by the wall onto the floor */}
+        <rect x="0" y="18" width="400" height="30" fill="url(#gr-ao)" />
+
+        {/* decor on the floor (with contact shadows) */}
+        <Rug cx={200} cy={196} />
+        <FloorPlant x={64} baseY={198} s={1} />
+        <Cat x={196} baseY={196} />
+        <FloorBooks x={250} baseY={198} />
+        <Lantern x={330} baseY={198} s={1} />
       </svg>
     </div>
   );
