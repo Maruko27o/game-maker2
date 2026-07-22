@@ -4,9 +4,10 @@ import HorseFace from './HorseFace';
 
 // 殿堂＆メールで配られる「アイコンフレーム」。デザインは固定で、
 //  ・順位（1/2/3）＝金/銀/銅で色分け
-//  ・種別（オッズ/賞金）＝下の紋章で見分け（倍率＝バースト、賞金＝コイン）
-//  ・獲得した年月＝上部の飾り帯に「YYYY.M」
-// 文字は最小限（年月だけ）。毎月ランキング更新時に、その年月入りが自動生成される。
+//  ・種別（オッズ/賞金）＝上部の飾り帯に内包した小マークで見分け
+//    （倍率＝✕バースト、賞金＝コイン）。年月を左右対称のマークで挟む（案C）。
+//  ・獲得した年月＝帯の中央に「YYYY.M」
+// 文字は年月だけ＝スタイリッシュに。毎月ランキング更新時に年月入りが自動生成される。
 
 export type FrameRank = 1 | 2 | 3;
 export type FrameMetric = 'odds' | 'payout';
@@ -22,12 +23,35 @@ function periodDot(period: string): string {
   return `${y}.${Number(m)}`;
 }
 
+// 種別の小マーク（帯に内包）。倍率＝バースト＋✕、賞金＝コイン。
+function MetricMark({ metric, cx, cy, r, ink, coinFill }: { metric: FrameMetric; cx: number; cy: number; r: number; ink: string; coinFill: string }) {
+  if (metric === 'odds') {
+    const x = r * 0.42;
+    return (
+      <g>
+        {Array.from({ length: 12 }).map((_, i) => {
+          const a = (i / 12) * Math.PI * 2;
+          const r1 = (i % 2 ? 0.5 : 0.92) * r;
+          return <line key={i} x1={cx} y1={cy} x2={cx + Math.cos(a) * r1} y2={cy + Math.sin(a) * r1} stroke={ink} strokeWidth={r * 0.13} strokeLinecap="round" opacity="0.5" />;
+        })}
+        <path d={`M${cx - x} ${cy - x} L${cx + x} ${cy + x} M${cx + x} ${cy - x} L${cx - x} ${cy + x}`} stroke={ink} strokeWidth={r * 0.34} strokeLinecap="round" />
+      </g>
+    );
+  }
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={r * 0.82} fill={coinFill} stroke={ink} strokeWidth={r * 0.16} />
+      <circle cx={cx} cy={cy} r={r * 0.46} fill="none" stroke={ink} strokeWidth={r * 0.14} opacity="0.8" />
+    </g>
+  );
+}
+
 export default function AvatarFrame({
   rank,
   metric,
   period,
   look,
-  size = 108,
+  size = 104,
 }: {
   rank: FrameRank;
   metric: FrameMetric;
@@ -38,19 +62,18 @@ export default function AvatarFrame({
   const uid = useId().replace(/:/g, '');
   const c = PALETTE[rank];
   const faceSize = size * 0.6;
-  const boxH = size * 1.16;
 
   return (
-    <div style={{ position: 'relative', width: size, height: boxH, flex: 'none' }}>
+    <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
       {/* horse portrait, centred inside the ring */}
-      <div style={{ position: 'absolute', left: size * 0.2, top: size * 0.22, width: faceSize, height: faceSize, borderRadius: '50%', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', left: size * 0.2, top: size * 0.24, width: faceSize, height: faceSize, borderRadius: '50%', overflow: 'hidden' }}>
         <HorseFace horse={look} size={faceSize} />
       </div>
 
       {/* ornate frame overlay */}
-      <svg viewBox="0 0 100 116" width={size} height={boxH} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} aria-hidden>
+      <svg viewBox="0 0 100 100" width={size} height={size} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} aria-hidden>
         <defs>
-          <radialGradient id={`g-${uid}`} cx="50%" cy="38%" r="65%">
+          <radialGradient id={`g-${uid}`} cx="50%" cy="40%" r="65%">
             <stop offset="0%" stopColor={c.ringHi} />
             <stop offset="55%" stopColor={c.ring} />
             <stop offset="100%" stopColor={c.ringLo} />
@@ -62,48 +85,26 @@ export default function AvatarFrame({
         </defs>
 
         {/* soft base + double ring */}
-        <circle cx="50" cy="52" r="36" fill="none" stroke={c.ringLo} strokeOpacity="0.35" strokeWidth="8" />
-        <circle cx="50" cy="52" r="34.5" fill="none" stroke={`url(#g-${uid})`} strokeWidth="6.5" />
-        <circle cx="50" cy="52" r="31" fill="none" stroke={c.ringHi} strokeOpacity="0.8" strokeWidth="1.4" />
-        <circle cx="50" cy="52" r="38" fill="none" stroke={c.ringLo} strokeOpacity="0.5" strokeWidth="1" />
+        <circle cx="50" cy="54" r="36" fill="none" stroke={c.ringLo} strokeOpacity="0.35" strokeWidth="8" />
+        <circle cx="50" cy="54" r="34.5" fill="none" stroke={`url(#g-${uid})`} strokeWidth="6.5" />
+        <circle cx="50" cy="54" r="31" fill="none" stroke={c.ringHi} strokeOpacity="0.8" strokeWidth="1.4" />
+        <circle cx="50" cy="54" r="38" fill="none" stroke={c.ringLo} strokeOpacity="0.5" strokeWidth="1" />
 
         {/* studs around the ring */}
         {Array.from({ length: 12 }).map((_, i) => {
           const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
           const x = 50 + Math.cos(a) * 34.5;
-          const y = 52 + Math.sin(a) * 34.5;
+          const y = 54 + Math.sin(a) * 34.5;
           return <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 2.4 : 1.5} fill={c.gem} stroke={c.ringLo} strokeWidth="0.6" />;
         })}
 
-        {/* top cartouche with the year.month */}
+        {/* top cartouche: 左右対称の種別マークで年月を挟む（案C） */}
         <g>
-          <path d="M22 15 Q22 8 30 8 L70 8 Q78 8 78 15 L78 19 Q78 25 70 25 L30 25 Q22 25 22 19 Z" fill={`url(#b-${uid})`} stroke={c.ringLo} strokeWidth="1.4" />
-          <path d="M18 16 l6 -4 0 8 z M82 16 l-6 -4 0 8 z" fill={c.ringLo} />
-          <text x="50" y="20.5" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={c.ink} fontFamily="Georgia, 'Hiragino Mincho ProN', serif" style={{ letterSpacing: '0.5px' }}>{periodDot(period)}</text>
-        </g>
-
-        {/* bottom emblem: metric badge */}
-        <g transform="translate(50 100)">
-          <circle r="13" fill={`url(#g-${uid})`} stroke={c.ringLo} strokeWidth="1.6" />
-          <circle r="9.5" fill="none" stroke={c.ringHi} strokeOpacity="0.7" strokeWidth="1" />
-          {metric === 'odds' ? (
-            // 倍率フレーム：バースト＋×（大穴的中）
-            <g>
-              {Array.from({ length: 12 }).map((_, i) => {
-                const a = (i / 12) * Math.PI * 2;
-                const r1 = i % 2 ? 5.5 : 9;
-                return <line key={i} x1="0" y1="0" x2={Math.cos(a) * r1} y2={Math.sin(a) * r1} stroke={c.ink} strokeWidth="1.2" strokeLinecap="round" opacity="0.55" />;
-              })}
-              <path d="M-3.4 -3.4 L3.4 3.4 M3.4 -3.4 L-3.4 3.4" stroke={c.ink} strokeWidth="2.6" strokeLinecap="round" />
-            </g>
-          ) : (
-            // 賞金フレーム：コイン
-            <g>
-              <circle r="7.5" fill={c.bandHi} stroke={c.ink} strokeWidth="1.4" />
-              <circle r="4.6" fill="none" stroke={c.ink} strokeWidth="1.2" opacity="0.8" />
-              <circle cx="-2" cy="-2.4" r="1.4" fill="#ffffff" opacity="0.85" />
-            </g>
-          )}
+          <path d="M14 15 Q14 7 22 7 L78 7 Q86 7 86 15 L86 19 Q86 25 78 25 L22 25 Q14 25 14 19 Z" fill={`url(#b-${uid})`} stroke={c.ringLo} strokeWidth="1.4" />
+          <path d="M10 16 l6 -4 0 8 z M90 16 l-6 -4 0 8 z" fill={c.ringLo} />
+          <MetricMark metric={metric} cx={24} cy={15.5} r={4.4} ink={c.ink} coinFill={c.bandHi} />
+          <MetricMark metric={metric} cx={76} cy={15.5} r={4.4} ink={c.ink} coinFill={c.bandHi} />
+          <text x="50" y="19.3" textAnchor="middle" fontSize="10" fontWeight="900" fill={c.ink} fontFamily="Georgia, 'Hiragino Mincho ProN', serif" style={{ letterSpacing: '0.4px' }}>{periodDot(period)}</text>
         </g>
       </svg>
     </div>
