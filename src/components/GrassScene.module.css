@@ -55,13 +55,3 @@
   right: 12%;
   bottom: calc(15% - 8px);
 }
-
-/* 細いカーテン（上から両端に少しだけ） */
-.curtainL,
-.curtainR {
-  position: absolute;
-  top: 0;
-  height: 64%;
-}
-.curtainL { left: 0; }
-.curtainR { right: 0; }

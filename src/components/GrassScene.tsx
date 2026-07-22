@@ -33,33 +33,19 @@ function Books() {
   );
 }
 
-// 窓台に載せる繊細な鉢植え。
+// 窓台に載せる繊細な鉢植え（葉は土から生えて見えるように）。
 function Plant() {
   return (
     <svg className={styles.plant} width="44" height="52" viewBox="0 0 44 52">
       <g transform="translate(22 48)">
-        <path d="M0 -18 Q-14 -30 -12 -46 Q-4 -32 0 -20" fill="#5aa145" />
-        <path d="M0 -18 Q14 -30 12 -46 Q4 -32 0 -20" fill="#5aa145" />
-        <path d="M0 -20 Q-2 -38 0 -50 Q2 -38 0 -22" fill="#74c65c" />
-        <path d="M-11 -18 H11 L8.5 0 H-8.5 Z" fill="#d07a48" stroke="#9a5a30" strokeWidth="1" />
-        <ellipse cx="0" cy="-18" rx="11" ry="3" fill="#e2a56f" stroke="#9a5a30" strokeWidth="1" />
-        <ellipse cx="0" cy="-18" rx="7.5" ry="1.8" fill="#6f4326" opacity="0.5" />
-      </g>
-    </svg>
-  );
-}
-
-function Curtain({ side }: { side: 'l' | 'r' }) {
-  return (
-    <svg className={side === 'l' ? styles.curtainL : styles.curtainR} width="30" height="220" viewBox="0 0 30 220" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={`gsc-${side}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f7ecd9" /><stop offset="1" stopColor="#ead3b4" /></linearGradient>
-      </defs>
-      <g transform={side === 'r' ? 'translate(30,0) scale(-1,1)' : ''}>
-        <path d="M0 6 L22 6 C 20 64 22 104 15 118 C 22 142 20 200 22 220 L0 220 Z" fill={`url(#gsc-${side})`} />
-        <path d="M11 12 C 16 64 15 98 12 116" fill="none" stroke="#d7ad81" strokeWidth="1.4" opacity="0.5" />
-        <path d="M2 118 Q15 110 27 120" fill="none" stroke="#9c5f2c" strokeWidth="3.6" strokeLinecap="round" />
-        <path d="M27 122 l-1 11 M27 122 l1 11" stroke="#7d4a20" strokeWidth="2" strokeLinecap="round" />
+        {/* pot body + back rim + soil, then leaves rooted in the soil */}
+        <path d="M-11 -16 H11 L8.5 2 H-8.5 Z" fill="#d07a48" stroke="#9a5a30" strokeWidth="1" />
+        <ellipse cx="0" cy="-16" rx="11" ry="3" fill="#c06a38" />
+        <ellipse cx="0" cy="-16.5" rx="8.5" ry="2.2" fill="#5b3f27" />
+        <path d="M-5 -16 Q-13 -30 -11 -44 Q-3 -30 -1 -17" fill="#5aa145" />
+        <path d="M5 -16 Q13 -30 11 -44 Q3 -30 1 -17" fill="#5aa145" />
+        <path d="M-2 -16.5 Q-3 -36 0 -48 Q3 -36 2 -16.5" fill="#74c65c" />
+        <path d="M0 -16 Q-2 -32 -0.5 -46" fill="none" stroke="#4f8f3e" strokeWidth="0.6" opacity="0.5" />
       </g>
     </svg>
   );
@@ -103,9 +89,6 @@ export default function GrassScene({ d, reduced }: { d: DayNight; reduced: boole
       <div className={styles.sill} />
       <Books />
       <Plant />
-      {/* 細いカーテン（両端・上から） */}
-      <Curtain side="l" />
-      <Curtain side="r" />
     </div>
   );
 }

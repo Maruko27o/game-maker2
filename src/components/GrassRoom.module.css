@@ -1,6 +1,11 @@
 .room {
   position: absolute;
-  inset: 0;
+  /* 全画面をログハウスに：上のアイコン帯の裏、左右の余白まで木の壁で埋める
+     （main の padding 68px 14px を打ち消して全面へ）。 */
+  top: -68px;
+  left: -14px;
+  right: -14px;
+  bottom: calc(-1 * (var(--nav-h) + 20px));
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
@@ -23,7 +28,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(var(--nav-h) + 20px);
   height: 200px;
   background:
     repeating-linear-gradient(90deg, rgba(111, 78, 40, 0.35) 0 2px, transparent 2px 78px),
@@ -43,7 +48,7 @@
 
 .top {
   position: absolute;
-  top: 0;
+  top: 68px; /* ページ上端（アイコン帯の下）から吊るす */
   left: 0;
   right: 0;
   height: 130px;
@@ -52,7 +57,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(var(--nav-h) + 20px);
   width: 100%;
   height: 200px;
   display: block;

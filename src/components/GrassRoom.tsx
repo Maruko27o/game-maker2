@@ -4,24 +4,26 @@ import styles from './GrassRoom.module.css';
 // ラグ・観葉植物・眠る猫・積んだ本＋ランタンを配置。純装飾（pointer-events:none）。
 // 窓（フレーム）は Grass 側のカード、外の眺めは GrassScene が担当する。
 
-// 観葉植物：葉は鉢の内側（縁のすぐ内）から生え、最後に鉢を上描きして接合部を隠す。
+// 観葉植物：鉢→縁→土 の順に描き、葉は土の面から生やす（＝土に植わって見える）。
 function FloorPlant({ x, baseY, s = 1 }: { x: number; baseY: number; s?: number }) {
   return (
     <g transform={`translate(${x} ${baseY}) scale(${s})`}>
       <ellipse cx="0" cy="2" rx="26" ry="7" fill="#3a2c1c" opacity="0.18" />
-      {/* leaves rise from the rim centre so they visibly connect to the pot */}
-      <g>
-        <path d="M0 -30 Q-26 -70 -18 -128 Q-6 -74 0 -30 Z" fill="#4f9a37" />
-        <path d="M0 -30 Q26 -68 18 -130 Q6 -76 0 -30 Z" fill="#57a83f" />
-        <path d="M0 -32 Q-14 -84 -4 -140 Q4 -86 0 -34 Z" fill="#68b64f" />
-        <path d="M0 -32 Q14 -82 4 -138 Q-4 -84 0 -34 Z" fill="#5fae46" />
-        <path d="M0 -34 Q-1 -96 0 -150 Q1 -96 0 -36 Z" fill="#74c65c" />
-      </g>
-      {/* pot drawn last so its rim hides the leaf bases (clean join) */}
+      {/* pot body + rim + soil surface */}
       <path d="M-24 -30 H24 L18 20 H-18 Z" fill="url(#gr-pot)" stroke="#9a5a30" strokeWidth="1.6" />
-      <ellipse cx="0" cy="-30" rx="24" ry="6" fill="#e2a56f" stroke="#9a5a30" strokeWidth="1.6" />
-      <ellipse cx="0" cy="-30" rx="18" ry="3.6" fill="#6f4326" opacity="0.5" />
-      <path d="M-15 -22 Q-18 -4 -12 14" fill="none" stroke="#f0c79a" strokeWidth="2.2" opacity="0.6" />
+      <path d="M-15 -22 Q-18 -4 -12 14" fill="none" stroke="#f0c79a" strokeWidth="2.2" opacity="0.55" />
+      <ellipse cx="0" cy="-30" rx="24" ry="6" fill="#c9814a" />
+      <ellipse cx="0" cy="-31" rx="19" ry="4.2" fill="#5b3f27" />
+      {/* leaves rooted in the soil (bases sit on the soil surface) */}
+      <g>
+        <path d="M-8 -30 Q-28 -66 -18 -126 Q-8 -72 -2 -31 Z" fill="#4f9a37" />
+        <path d="M8 -30 Q28 -64 18 -128 Q8 -74 2 -31 Z" fill="#57a83f" />
+        <path d="M-4 -31 Q-16 -84 -5 -140 Q1 -86 -1 -32 Z" fill="#68b64f" />
+        <path d="M4 -31 Q16 -82 5 -138 Q-1 -84 1 -32 Z" fill="#5fae46" />
+        <path d="M0 -31 Q-2 -96 0 -150 Q2 -96 0 -32 Z" fill="#74c65c" />
+      </g>
+      {/* thin front lip so leaves read as coming out from behind the rim front */}
+      <path d="M-24 -30 Q0 -24 24 -30" fill="none" stroke="#b5713f" strokeWidth="2" opacity="0.7" />
     </g>
   );
 }
