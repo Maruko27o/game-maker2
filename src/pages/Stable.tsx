@@ -76,7 +76,7 @@ function BadgeRack({ badges }: { badges: Badge[] }) {
   }, [badges]);
 
   if (badges.length === 0) {
-    return <div className={styles.rackEmpty}>まだバッジがありません（ふだんのレースで入賞）</div>;
+    return <div className={styles.rackEmpty}>まだバッジがありません（普段のレースで入賞）</div>;
   }
   return (
     <div className={styles.badgeRack}>
@@ -198,9 +198,9 @@ export default function Stable() {
         <div className={styles.empty}>
           <div className={styles.emptyEmoji}><Icon name="horse" size={56} /></div>
           <p>まだウマがいません。</p>
-          <p className={styles.emptySub}>草むらでパーツをあつめて、ウマをつくろう！</p>
+          <p className={styles.emptySub}>草むらでパーツを集めて、ウマを作ろう！</p>
           <button className="btn" onClick={() => navigate('/create')}>
-            ウマをつくる
+            ウマを作る
           </button>
         </div>
       ) : (
@@ -223,7 +223,7 @@ export default function Stable() {
           {horses.length < maxHorses && (
             <button className={styles.add} onClick={() => navigate('/create')}>
               <span className={styles.plus}>＋</span>
-              <span>つくる</span>
+              <span>作る</span>
             </button>
           )}
         </div>
@@ -243,7 +243,7 @@ export default function Stable() {
                     value={draftName}
                     maxLength={12}
                     onChange={(e) => setDraftName(e.target.value)}
-                    aria-label="なまえ"
+                    aria-label="名前"
                   />
                   {draftName.trim() && draftName !== selected.name && (
                     <button
@@ -323,10 +323,10 @@ export default function Stable() {
                     )}
                     <div className={styles.actions}>
                       <button className="btn" onClick={() => setView('train')}>
-                        そだてる
+                        育てる
                       </button>
                       <button className="btn neutral" onClick={() => navigate(`/create?edit=${selected.id}`)}>
-                        なおす
+                        直す
                       </button>
                     </div>
                     <div className={styles.actions}>
@@ -334,7 +334,7 @@ export default function Stable() {
                         <Icon name="leaf" size={14} /> 引退（<CoinIcon size={13} /> {retireVal.toLocaleString()}）
                       </button>
                       <button className="btn neutral" onClick={close}>
-                        とじる
+                        閉じる
                       </button>
                     </div>
                   </>
@@ -343,7 +343,7 @@ export default function Stable() {
             ) : (
               // --- Training view ---
               <>
-                <h2 className={styles.trainTitle}>そだてる</h2>
+                <h2 className={styles.trainTitle}>育てる</h2>
                 <div className={styles.trainHorse}>
                   <HorseView horse={selected} size={120} shadow />
                 </div>
@@ -383,7 +383,7 @@ export default function Stable() {
                   {total >= STAT_TOTAL_CAP && '（これ以上つよくできません）'}
                 </div>
                 <button className="btn neutral" onClick={() => setView('detail')}>
-                  もどる
+                  戻る
                 </button>
               </>
             )}

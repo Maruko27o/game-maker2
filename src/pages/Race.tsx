@@ -149,7 +149,7 @@ function Roulette({ course, player, reduced, onDone }: { course: Course; player:
               路面: {surfaceLabel(shown.surface)} ／ {shown.desc}
             </div>
             <div className={styles.rouletteApt}>{aptitude(player.stats, shown)}</div>
-            <div className={styles.rouletteTap}>タップですすむ</div>
+            <div className={styles.rouletteTap}>タップで進む</div>
           </>
         )}
       </div>
@@ -354,11 +354,11 @@ export default function Race() {
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>レース</h1>
-        <p className={styles.lead}>コースはランダム。あつめたウマを走らせよう！</p>
+        <p className={styles.lead}>コースはランダム。集めたウマを走らせよう！</p>
         <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(false); setMode(60); setScreen('setup'); }}>
           <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
           <span className={styles.modeText}>
-            <span className={styles.modeName}>ひとりでレース</span>
+            <span className={styles.modeName}>一人でレース</span>
             <span className={styles.modeDesc}>8頭立て・2周・馬券あり・3位以内でメダル</span>
           </span>
           <span className={styles.modeGo}>▶</span>
@@ -366,7 +366,7 @@ export default function Race() {
         <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(true); setMode(60); setScreen('setup'); }}>
           <span className={styles.modeEmoji}><Icon name="flag" size={30} /></span>
           <span className={styles.modeText}>
-            <span className={styles.modeName}>コースをえらぶ</span>
+            <span className={styles.modeName}>コースを選ぶ</span>
             <span className={styles.modeDesc}>好きなコースで練習（馬券なし）</span>
           </span>
           <span className={styles.modeGo}>▶</span>
@@ -382,7 +382,7 @@ export default function Race() {
         <button className={styles.modeCard} onClick={() => setScreen('arena')}>
           <span className={styles.modeEmoji}><Icon name="swords" size={30} /></span>
           <span className={styles.modeText}>
-            <span className={styles.modeName}>たいせん</span>
+            <span className={styles.modeName}>対戦</span>
             <span className={styles.modeDesc}>毎日の勝ち抜きトーナメント・優勝で1万コイン</span>
           </span>
           <span className={styles.modeGo}>▶</span>
@@ -395,16 +395,16 @@ export default function Race() {
   if (screen === 'setup') {
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>{grade === 'gp' ? 'グランプリ' : 'ひとりでレース'}</h1>
+        <h1 className={styles.title}>{grade === 'gp' ? 'グランプリ' : '一人でレース'}</h1>
         {horses.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyEmoji}><Icon name="horse" size={56} /></div>
             <p>走らせるウマがいません。</p>
-            <button className="btn" onClick={() => navigate('/create')}>ウマをつくる</button>
+            <button className="btn" onClick={() => navigate('/create')}>ウマを作る</button>
           </div>
         ) : (
           <>
-            <h2 className={styles.h2}>ウマをえらぶ</h2>
+            <h2 className={styles.h2}>ウマを選ぶ</h2>
             <div className={styles.pickRow}>
               {horses.map((h) => (
                 <button key={h.id} className={`${styles.pickCard} ${horseId === h.id ? styles.pickSel : ''}`} onClick={() => setHorseId(h.id)}>
@@ -429,13 +429,13 @@ export default function Race() {
               <p className={styles.h2}>2周のコースで走ります</p>
             )}
             <div className={styles.setupActions}>
-              <button className="btn neutral" onClick={() => setScreen('menu')}>もどる</button>
+              <button className="btn neutral" onClick={() => setScreen('menu')}>戻る</button>
               <button
                 className="btn"
                 onClick={() => (grade === 'gp' ? setScreen('gp') : pickMode ? setScreen('course') : begin())}
                 disabled={!player}
               >
-                {player ? 'スタート' : 'ウマをえらんでね'}
+                {player ? 'スタート' : 'ウマを選んでね'}
               </button>
             </div>
           </>
@@ -448,7 +448,7 @@ export default function Race() {
   if (screen === 'course') {
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>コースをえらぶ</h1>
+        <h1 className={styles.title}>コースを選ぶ</h1>
         <p className={styles.lead}>好きなコースで走ろう（馬券なし・{mode}秒）。</p>
         {COURSES.map((c) => (
           <button key={c.id} className={styles.modeCard} onClick={() => begin(c)}>
@@ -460,7 +460,7 @@ export default function Race() {
             <span className={styles.modeGo}>▶</span>
           </button>
         ))}
-        <button className={styles.exitLink} onClick={() => setScreen('setup')}>もどる</button>
+        <button className={styles.exitLink} onClick={() => setScreen('setup')}>戻る</button>
       </div>
     );
   }
@@ -550,7 +550,7 @@ export default function Race() {
     return (
       <div className={styles.page}>
         <div className={styles.resultCard}>
-          <h2 className={styles.resultTitle}>{playerRank === 1 ? (<><Icon name="medal" size={22} /> ゆうしょう！</>) : `${playerRank}位`}</h2>
+          <h2 className={styles.resultTitle}>{playerRank === 1 ? (<><Icon name="medal" size={22} /> 優勝！</>) : `${playerRank}位`}</h2>
           {reward && reward.awarded.length > 0 && (
             <div className={styles.badgeReward}>
               {reward.awarded.map((b, i) => (
@@ -575,7 +575,7 @@ export default function Race() {
             <button className="btn" onClick={() => (pickMode && setup ? begin(setup.course) : begin())}>もう一回</button>
             <button className="btn neutral" onClick={() => { setRaceSession(null); setScreen('menu'); }}>モードせんたくへ</button>
           </div>
-          <button className={styles.exitLink} onClick={() => { setRaceSession(null); setScreen('setup'); }}>ウマ・時間をかえる</button>
+          <button className={styles.exitLink} onClick={() => { setRaceSession(null); setScreen('setup'); }}>ウマ・時間を変える</button>
           {/* くわしい払戻・着順は下に */}
           <BetResult entrants={setup.entrants} gate={result.gate} order={result.order} bets={bets} course={setup.course} probs={odds ?? undefined} />
           <ol className={styles.ranking}>

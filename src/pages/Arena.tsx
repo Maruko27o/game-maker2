@@ -230,7 +230,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
         ))}
         <div className={a.poolNote}>足りない分はCOMが自動で参加しているよ</div>
         <div className={styles.setupActions}>
-          <button className="btn neutral" onClick={() => { setView(null); setScreen('home'); }}>とじる</button>
+          <button className="btn neutral" onClick={() => { setView(null); setScreen('home'); }}>閉じる</button>
           <button className="btn" onClick={() => { setRound(0); setScreen('playing'); }}>もう一度見る</button>
         </div>
       </div>
@@ -241,7 +241,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
   const pt = selected ? statTotal(selected.stats) : 0;
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>たいせん</h1>
+      <h1 className={styles.title}>対戦</h1>
       <p className={styles.lead}>1日2回開催（0時・12時）・勝ち抜きトーナメント！</p>
 
       {/* current period + countdown */}
@@ -280,7 +280,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
         {horses.length === 0 ? (
           <div className={a.empty}>
             <p>エントリーできるウマがいません。</p>
-            <button className="btn" onClick={() => navigate('/create')}>ウマをつくる</button>
+            <button className="btn" onClick={() => navigate('/create')}>ウマを作る</button>
           </div>
         ) : st.auto ? (
           <div className={a.autoOn}>
@@ -354,7 +354,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
         <div className={a.balanceNote}>参加費1,000／1日2回開催。予選2連戦を勝ち抜いて優勝すると大金！</div>
       </div>
 
-      <button className={styles.exitLink} onClick={onExit}>もどる</button>
+      <button className={styles.exitLink} onClick={onExit}>戻る</button>
     </div>
   );
 }

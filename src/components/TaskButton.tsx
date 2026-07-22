@@ -42,7 +42,7 @@ export default function TaskButton() {
     },
     {
       key: 'grass',
-      title: 'ウマをあつめよう',
+      title: 'ウマを集めよう',
       desc: `草むらを${GRASS_TASK_EVERY}回ひくと${GRASS_TASK_REWARD.toLocaleString()}コイン`,
       cur: grassCycle(tasks),
       every: GRASS_TASK_EVERY,
@@ -68,7 +68,7 @@ export default function TaskButton() {
             {/* Shared bank — claim all earned rewards at once */}
             <div className={styles.bank}>
               <div className={styles.bankInfo}>
-                <span className={styles.bankLabel}>たまったコイン</span>
+                <span className={styles.bankLabel}>貯まったコイン</span>
                 <span className={styles.bankVal}><CoinIcon size={18} /> {bank.toLocaleString()}</span>
               </div>
               <button className={styles.claim} disabled={bank <= 0} onClick={claim}>

@@ -320,7 +320,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           {curLap}/{totalLaps}周 {totalLaps - curLap === 0 ? '（ラスト！）' : ''}
         </span>
         <span className={styles.leadNo}>先頭 {result.gate[leaderIdx]}番</span>
-        <span className={styles.remain}>のこり {remaining}m</span>
+        <span className={styles.remain}>残り {remaining}m</span>
       </div>
       <div className={styles.stage}>
         <svg viewBox={viewBox} className={styles.svg} preserveAspectRatio="xMidYMid meet">

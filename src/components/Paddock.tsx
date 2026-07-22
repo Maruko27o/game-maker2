@@ -109,7 +109,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
       </div>
       <p className={styles.hint}>
         {spec.hint}
-        {spec.pick > 1 && `（${spec.pick}頭えらぶ）`}
+        {spec.pick > 1 && `（${spec.pick}頭選ぶ）`}
       </p>
 
       {/* field: tap a card to select. 2頭×4列のコンパクトなグリッド（ゲート番号・名前も表示） */}

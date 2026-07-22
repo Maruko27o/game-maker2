@@ -46,7 +46,7 @@ export default function Collection() {
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <h1 className={styles.title}>ずかん</h1>
+        <h1 className={styles.title}>図鑑</h1>
         <div className={styles.progress}>
           <div className={styles.bar}>
             <div className={styles.fill} style={{ width: `${pct}%` }} />

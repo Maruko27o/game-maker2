@@ -95,7 +95,7 @@ export default function BetResult({ entrants, gate, order, bets, course, probs }
         <div className={styles.slip}>
           <button className={styles.slipHead} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
             <span>あなたの馬券 <span className={styles.slipCount}>{bets.length}件</span></span>
-            <span className={styles.caret}>明細を{open ? 'とじる ▲' : 'みる ▼'}</span>
+            <span className={styles.caret}>明細を{open ? '閉じる ▲' : '見る ▼'}</span>
           </button>
           {open && slip.map(({ b, net: bn, hit }, i) => (
             <div key={i} className={`${styles.slipRow} ${hit ? styles.rowHit : styles.rowMiss}`}>

@@ -5,10 +5,10 @@
 // 計算した着順とアニメが一致する。
 import { COURSES } from '../data/courses';
 import { simulate2, type Entrant } from './raceSim2';
-import { mulberry32, statTotal } from './stats';
+import { mulberry32 } from './stats';
 import { makeCpu } from './cpu';
 import { colorById } from '../data/parts';
-import { ARENA_FIELD, ARENA_ADVANCE, ARENA_REAL_CAP, arenaPrize, periodLabel } from '../data/arena';
+import { ARENA_FIELD, ARENA_ADVANCE, ARENA_REAL_CAP, ARENA_COM_BANDS, arenaPrize, periodLabel } from '../data/arena';
 import type { ArenaHorseSnapshot, ArenaRoundResult, ArenaResult, ArenaOutcome, HorseLook } from '../types';
 
 /** entrant/look へ変換するヘルパ（simulate2・HorseView 用）。 */
@@ -23,10 +23,6 @@ export function fieldLooks(field: ArenaHorseSnapshot[]): Record<string, HorseLoo
   const out: Record<string, HorseLook> = {};
   for (const s of field) out[s.horseId] = snapToLook(s);
   return out;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
 }
 
 // Fisher–Yates using a seeded RNG (deterministic opponent draw from the pool).
@@ -58,11 +54,11 @@ export function buildRoundField(
     field.push({ ...r, horseId: `real${round}_${i}`, isPlayer: false, isCom: false });
   });
 
-  // Scaled COM fill. Band climbs steeply toward the 本線 so a championship stays a
-  // rare windfall even for a maxed horse (balance guardrail for the 10,000 prize).
-  const pt = statTotal(player.stats);
-  const bump = [0, 2, 5][round] ?? 5;
-  const band: [number, number] = [clamp(pt - 4 + bump, 30, 47), clamp(pt + 3 + bump, 34, 48)];
+  // COM fill. Absolute strength bands (independent of the player) so training pays
+  // off: a strong/maxed horse (合計48) clears the field and profits（参加費1000に対し
+  // 期待値>1）、育てていない馬（合計40前後）は勝ち越せない。ラウンドが進むほど少し強くなり、
+  // 本線・優勝は鍛えた馬でも希少に保つ。
+  const band = (ARENA_COM_BANDS[round] ?? ARENA_COM_BANDS[2]) as [number, number];
   const avoidBody = colorById[player.colors.body]?.value;
   let i = 0;
   while (field.length < ARENA_FIELD) {

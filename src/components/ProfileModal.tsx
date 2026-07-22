@@ -98,8 +98,8 @@ export default function ProfileModal({
                   className={styles.nameInput}
                   value={nameDraft}
                   maxLength={32}
-                  placeholder="なまえ"
-                  aria-label="なまえ（ランキング名）"
+                  placeholder="名前"
+                  aria-label="名前（ランキング名）"
                   onChange={(e) => setNameDraft(e.target.value)}
                 />
                 <button className={styles.saveBtn} onClick={saveName} disabled={nameBusy || !nameDraft.trim() || nameDraft.trim() === displayName}>
@@ -161,7 +161,7 @@ export default function ProfileModal({
           {tab === 'profile' ? null : <AccountPanel />}
         </div>
 
-        <button className={styles.closeLink} onClick={onClose}>とじる</button>
+        <button className={styles.closeLink} onClick={onClose}>閉じる</button>
       </div>
 
       {/* Icon editor (opened by tapping the avatar) */}

@@ -65,8 +65,10 @@ describe('arena store: standing (auto) entry', () => {
     const st = useStore.getState().arena!;
     expect(st.results.length).toBeGreaterThanOrEqual(3); // 溜まっていく
     expect(st.pending?.period).toBe(cur + 3);
-    // fees were charged for the newly entered periods
-    expect(useStore.getState().coins).toBeLessThan(coinsAfterFirst);
+    // 3 new periods entered (cur+1..cur+3 → 3 fees); resolved prizes credited back.
+    // 強い馬は賞金で黒字になり得るので「必ず減る」とは限らない（対戦バランス調整後）。
+    const prizeSum = st.results.reduce((s, r) => s + r.payout, 0);
+    expect(useStore.getState().coins).toBe(coinsAfterFirst - 3 * ARENA_ENTRY_FEE + prizeSum);
     // idempotent: same cur again does nothing
     const coinsNow = useStore.getState().coins;
     const nResults = st.results.length;

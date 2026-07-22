@@ -110,7 +110,7 @@ export default function SyncConflictModal() {
                 はい、これでOK
               </button>
               <button className="btn neutral" disabled={busy} onClick={() => setPending(null)}>
-                もどる
+                戻る
               </button>
             </div>
           </div>
