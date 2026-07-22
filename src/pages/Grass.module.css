@@ -181,9 +181,30 @@
   color: var(--ink-soft);
 }
 
+/* 夜は文字を明るく（暗い空でも読みやすく） */
+.nightText,
+.nightText p {
+  color: #f4ecd8 !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55) !important;
+}
+.nightText .tapEmoji {
+  color: #cfe6a0 !important;
+}
+
 .wild {
   z-index: 1;
   margin-bottom: 24px;
+}
+/* 出てきた馬を照らす暖色の光だまり（夕・夜） */
+.wildLight {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  width: 260px;
+  height: 180px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
 }
 /* Runs in from the distance (RACE_V2 §11.2): small + off to the side, gallops
    up to the front with a little bob, then settles. */

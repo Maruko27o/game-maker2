@@ -1,0 +1,96 @@
+.wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sky {
+  position: absolute;
+  inset: 0;
+}
+.stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.twinkle {
+  animation: twinkle 3.2s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* 太陽・月 */
+.sun {
+  position: absolute;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  box-shadow: 0 0 46px 14px rgba(255, 205, 110, 0.55);
+  will-change: left, top, opacity;
+}
+.moon {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 38% 34%, #ffffff, #e8ecf5 58%, #c9d2e6);
+  box-shadow: 0 0 26px 8px rgba(220, 230, 255, 0.4);
+}
+
+/* 流れ星（流星群） */
+.meteors { position: absolute; inset: 0; }
+.meteor {
+  position: absolute;
+  width: 120px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+  transform: rotate(24deg);
+  opacity: 0;
+  animation: meteor 9s linear infinite;
+}
+@keyframes meteor {
+  0% { opacity: 0; transform: translate(0, 0) rotate(24deg) scaleX(0.2); }
+  2% { opacity: 1; }
+  8% { opacity: 0.9; }
+  13% { opacity: 0; transform: translate(-180px, 80px) rotate(24deg) scaleX(1); }
+  100% { opacity: 0; }
+}
+
+/* 流れる雲 */
+.clouds { position: absolute; inset: 0; }
+.cloudA, .cloudB, .cloudAStatic, .cloudBStatic { position: absolute; }
+.cloudA { left: 6%; animation: driftA 30s ease-in-out infinite; }
+.cloudB { left: 62%; animation: driftB 38s ease-in-out infinite; }
+.cloudAStatic { left: 8%; }
+.cloudBStatic { left: 60%; }
+@keyframes driftA { 0%,100% { transform: translateX(0); } 50% { transform: translateX(26px); } }
+@keyframes driftB { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-22px); } }
+
+/* 小鳥（コンテナ幅を横切る。left を % でアニメし、サイズに依らず端から端へ） */
+.birds { position: absolute; inset: 0; }
+.bird {
+  position: absolute;
+  left: -12%;
+  animation-name: fly;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.birdStatic { position: absolute; left: 22%; }
+.flap { animation: flap 0.5s ease-in-out infinite; transform-origin: center; }
+@keyframes fly {
+  0% { left: -12%; }
+  100% { left: 112%; }
+}
+@keyframes flap {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twinkle, .meteor, .bird, .flap, .cloudA, .cloudB { animation: none; }
+}

@@ -9,20 +9,31 @@
   cursor: pointer;
   user-select: none;
 }
-.sky {
+/* 丘（2層パララックスで奥行き）。色トーンは JS 側で夜に落とす。 */
+.hills {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #bfe3f2 0%, #d9eec6 62%, #cfe6a8 100%);
+  pointer-events: none;
 }
-.hill {
+.hillBack {
   position: absolute;
-  left: -10%;
-  right: -10%;
+  left: -12%;
+  right: -12%;
   bottom: 0;
-  height: 46%;
-  background: radial-gradient(120% 90% at 50% 100%, #9fd06a 0%, #8bc25a 60%, #7bb04a 100%);
-  border-top-left-radius: 60% 40%;
-  border-top-right-radius: 60% 40%;
+  height: 42%;
+  background: radial-gradient(130% 90% at 50% 100%, #a6d86b 0%, #8ec756 60%, #7bb04a 100%);
+  border-top-left-radius: 60% 44%;
+  border-top-right-radius: 55% 40%;
+}
+.hillFront {
+  position: absolute;
+  left: -16%;
+  right: -8%;
+  bottom: 0;
+  height: 30%;
+  background: radial-gradient(130% 90% at 50% 100%, #8ecb52 0%, #6fae3c 100%);
+  border-top-left-radius: 60% 50%;
+  border-top-right-radius: 62% 46%;
 }
 
 .logo {
@@ -51,9 +62,28 @@
   justify-content: center;
   gap: -6px;
 }
+/* 夕・夜に馬を照らす暖色の光だまり（背後）。 */
+.lightPool {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -8%;
+  height: 160px;
+  pointer-events: none;
+  z-index: 0;
+}
 .grazer {
+  position: relative;
   margin: 0 -10px;
-  filter: drop-shadow(0 6px 4px rgba(43, 33, 24, 0.15));
+}
+/* 昼夜で向き・濃さの変わる接地影（JS からサイズ/位置/濃度を渡す）。 */
+.hShadow {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  height: 16px;
+  border-radius: 50%;
+  z-index: -1;
 }
 .graze {
   animation: graze 4s ease-in-out infinite;
