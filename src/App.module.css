@@ -45,6 +45,9 @@
      touches them. */
   padding: 68px 14px calc(var(--nav-h) + 20px);
   overflow-x: hidden;
+  /* 全画面共通の「うっすら木目の壁」下地（草むらと同じ木のぬくもり／低コントラスト）。 */
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(180deg, rgba(120, 85, 45, 0.05) 0 1px, transparent 1px 34px);
 }
 
 .nav {

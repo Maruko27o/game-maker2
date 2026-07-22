@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 130">
+  <g opacity="0.3">
+    <g fill="none" stroke="#c8a24a" stroke-width="3"><path d="M172 130 Q124 100 128 44"/><path d="M188 130 Q236 100 232 44"/></g>
+    <g fill="#c8a24a">
+      <ellipse cx="172" cy="134" rx="6" ry="3" transform="rotate(50 172 134)"/><ellipse cx="163" cy="120" rx="6" ry="3" transform="rotate(44 163 120)"/><ellipse cx="150" cy="106" rx="6" ry="3" transform="rotate(38 150 106)"/><ellipse cx="140" cy="90" rx="6" ry="3" transform="rotate(32 140 90)"/><ellipse cx="132" cy="72" rx="6" ry="3" transform="rotate(26 132 72)"/><ellipse cx="128" cy="54" rx="6" ry="3" transform="rotate(20 128 54)"/>
+      <ellipse cx="188" cy="134" rx="6" ry="3" transform="rotate(-50 188 134)"/><ellipse cx="197" cy="120" rx="6" ry="3" transform="rotate(-44 197 120)"/><ellipse cx="210" cy="106" rx="6" ry="3" transform="rotate(-38 210 106)"/><ellipse cx="220" cy="90" rx="6" ry="3" transform="rotate(-32 220 90)"/><ellipse cx="228" cy="72" rx="6" ry="3" transform="rotate(-26 228 72)"/><ellipse cx="232" cy="54" rx="6" ry="3" transform="rotate(-20 232 54)"/>
+    </g>
+  </g>
+</svg>
