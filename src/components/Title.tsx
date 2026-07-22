@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
 import { useAuth, formatPlayerId } from '../cloud';
 import { colorsBySlot } from '../data/parts';
@@ -6,11 +6,11 @@ import type { HorseLook } from '../types';
 import HorseView from './HorseView';
 import Icon from './Icon';
 import SkyLayers from './SkyLayers';
-import { sampleDayNight, lightPool, horseGlowFilter } from '../logic/daynight';
+import { sampleDayNight, clockPhase, lightPool, horseGlowFilter } from '../logic/daynight';
 import { usePrefersReducedMotion } from '../hooks';
 import styles from './Title.module.css';
 
-const TITLE_CYCLE_MS = 54_000; // タイトルは約54秒で昼→夕→夜→朝を一周（開くたびに演出が見られる）。
+const DAY_CYCLE_MS = 3_600_000; // 草むらと同じく1時間で昼→夕→夜→朝を一周（ゆっくり）。
 
 function randomLook(seed: number): HorseLook {
   const pick = <T,>(a: T[], n: number) => a[Math.floor(Math.abs(n)) % a.length];
@@ -44,19 +44,15 @@ export default function Title({ onStart }: { onStart: () => void }) {
   const setWantAccount = useAuth((s) => s.setWantAccount);
   const reduced = usePrefersReducedMotion();
 
-  // Day-night phase: a slow auto loop (random start so each open differs). Reduced
-  // motion freezes it at daytime.
-  const startRef = useRef(Math.random());
-  const [phase, setPhase] = useState(startRef.current);
+  // Day-night phase: tied to the wall clock so it cycles slowly over 1 hour (same
+  // as the meadow). Reduced motion freezes it at daytime.
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (reduced) return;
-    const t0 = performance.now();
-    const id = setInterval(() => {
-      setPhase((startRef.current + (performance.now() - t0) / TITLE_CYCLE_MS) % 1);
-    }, 100);
+    const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [reduced]);
-  const d = sampleDayNight(reduced ? 0 : phase);
+  const d = sampleDayNight(reduced ? 0 : clockPhase(now, DAY_CYCLE_MS));
 
   // Prefer the player's own horses (nice to see them here), else random ones.
   const cast = useMemo<HorseLook[]>(() => {
