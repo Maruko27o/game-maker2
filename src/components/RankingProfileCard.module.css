@@ -28,6 +28,13 @@
   place-items: center;
   overflow: hidden;
 }
+/* フレーム装備時は額縁そのものを見せる（枠・背景・クリップを外す）。 */
+.avatarBoxFramed {
+  border: none;
+  background: transparent;
+  padding: 0;
+  overflow: visible;
+}
 .name {
   font-size: 20px;
   font-weight: 900;

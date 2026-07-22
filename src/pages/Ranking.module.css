@@ -209,6 +209,19 @@
   height: 100% !important;
   display: block;
 }
+/* Framed avatar: the 額縁 IS the icon, so no round clip/border — the ornate
+   frame (its top 銘板) must show whole. Self-sized by <AvatarFrame size>. */
+.avatarFramed {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+}
+.top .avatarFramed {
+  width: 46px;
+  height: 46px;
+}
 .odds {
   font-weight: 900;
   color: #c33f39;

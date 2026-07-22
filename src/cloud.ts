@@ -140,7 +140,8 @@ export async function saveDisplayName(name: string): Promise<string | null> {
 // The horse look shown next to a ranking row (avatar). Stored as jsonb.
 export type AvatarLook = { colors: HorseLook['colors']; decos: HorseLook['decos'] };
 
-/** Submit a winning bet's odds (+ current avatar & displayed trophies); server keeps each account's best. */
+/** Submit a winning bet's odds (+ current avatar, displayed trophies & equipped
+ *  frame); server keeps each account's best. */
 export async function submitBetScore(
   odds: number,
   courseId: string,
@@ -148,13 +149,15 @@ export async function submitBetScore(
   avatar: AvatarLook | null,
   trophies: number[] | null,
   payout = 0,
+  frame: FrameAward | null = null,
 ): Promise<void> {
   if (!supabase) return;
   const base = { p_odds: odds, p_course: courseId, p_username: username };
   try {
     // Try newest signature first, then progressively older ones so the score
     // still records even if only an earlier version of the SQL is applied.
-    let { error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies, p_payout: payout });
+    let { error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies, p_payout: payout, p_frame: frame });
+    if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies, p_payout: payout }));
     if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies }));
     if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar }));
     if (error) await supabase.rpc('submit_bet_score', base);
@@ -175,7 +178,7 @@ export async function submitBestOdds(odds: number, courseId: string, payout = 0)
   const st = useStore.getState();
   const av = st.avatarHorseId ? st.horses.find((h) => h.id === st.avatarHorseId) : st.horses[0];
   const avatar = av ? { colors: av.colors, decos: av.decos } : null;
-  await submitBetScore(odds, courseId, name, avatar, st.displayTrophies ?? null, payout);
+  await submitBetScore(odds, courseId, name, avatar, st.displayTrophies ?? null, payout, st.equippedFrame ?? null);
 }
 
 /** Update just the ranking avatar for the signed-in account (no-op if no row yet). */
@@ -198,6 +201,17 @@ export async function setRankingTrophies(trophies: number[] | null): Promise<voi
   }
 }
 
+/** Update just the equipped icon-frame for the signed-in account so it shows on
+ *  every player's ranking row (no-op if no row this month / column not applied). */
+export async function setRankingFrame(frame: FrameAward | null): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.rpc('set_bet_frame', { p_frame: frame });
+  } catch {
+    /* DB not set up / offline — non-fatal */
+  }
+}
+
 export type ScoreRow = {
   userId: string;
   username: string;
@@ -206,6 +220,7 @@ export type ScoreRow = {
   courseId: string | null;
   avatar: AvatarLook | null;
   displayTrophies: number[];
+  equippedFrame: FrameAward | null;
 };
 
 /** Read the signed-in player's own ranking row (best odds/payout), to backfill
@@ -248,8 +263,10 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
   };
   try {
     // Monthly (period-filtered) first; fall back to all-time if the period column
-    // isn't applied yet, then to fewer columns for older schemas.
+    // isn't applied yet, then to fewer columns for older schemas. The equipped_frame
+    // column is newest, so it leads and drops off first when not yet applied.
     const attempts: [string, boolean][] = [
+      ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies, equipped_frame', true],
       ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies', true],
       ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies', false],
       ['user_id, username, best_odds, course_id, avatar, display_trophies', false],
@@ -268,6 +285,7 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
         course_id: string | null;
         avatar?: AvatarLook | null;
         display_trophies?: number[] | null;
+        equipped_frame?: unknown;
       }[]
     ).map((r) => ({
       userId: r.user_id,
@@ -277,10 +295,23 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
       courseId: r.course_id,
       avatar: r.avatar ?? null,
       displayTrophies: Array.isArray(r.display_trophies) ? r.display_trophies : [],
+      equippedFrame: normFrameAward(r.equipped_frame),
     }));
   } catch {
     return [];
   }
+}
+
+/** Validate a jsonb equipped_frame from the DB into a FrameAward (or null). */
+function normFrameAward(v: unknown): FrameAward | null {
+  if (!v || typeof v !== 'object') return null;
+  const o = v as Record<string, unknown>;
+  const rank = Number(o.rank);
+  const metric = o.metric;
+  if (typeof o.period !== 'string') return null;
+  if (rank !== 1 && rank !== 2 && rank !== 3) return null;
+  if (metric !== 'odds' && metric !== 'payout') return null;
+  return { period: o.period, rank: rank as FrameRank, metric };
 }
 
 /** Past months (period 'YYYY-MM') that have at least one score, newest first —
