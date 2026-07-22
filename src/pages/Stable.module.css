@@ -146,6 +146,13 @@
 .cardTrophy {
   color: var(--gold);
 }
+/* 稼ぐ力（毎時の自動収入）。コイン色でぱっと分かるように。 */
+.cardEarn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #b3852a;
+}
 
 .styleChip {
   background: var(--blue);

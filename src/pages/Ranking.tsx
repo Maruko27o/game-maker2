@@ -5,6 +5,7 @@ import { useStore } from '../store';
 import type { HorseLook, FrameAward } from '../types';
 import HorseFace from '../components/HorseFace';
 import AvatarFrame from '../components/AvatarFrame';
+import TrophyMark from '../components/TrophyMark';
 import RankingProfileCard from '../components/RankingProfileCard';
 import CoinIcon from '../components/CoinIcon';
 import { monthKey, monthLabel, msToNextMonth, splitCountdown } from '../logic/period';
@@ -105,7 +106,7 @@ export default function Ranking() {
         </span>
       </div>
       <button className={styles.hallLink} onClick={() => navigate('/hall')}>
-        <span className={styles.hallCrest}>🏆</span>
+        <span className={styles.hallCrest}><TrophyMark size={26} /></span>
         <span className={styles.hallText}>殿堂<small>歴代トップ3を見る</small></span>
         <span className={styles.hallGo}>›</span>
       </button>
@@ -131,7 +132,7 @@ export default function Ranking() {
         </div>
       ) : (
         <ol className={styles.list}>
-          {shown.slice(0, 5).map((r, i) => {
+          {shown.slice(0, 3).map((r, i) => {
             const me = r.userId === user.id;
             const place = i + 1;
             const look: HorseLook = me
@@ -168,7 +169,7 @@ export default function Ranking() {
               </li>
             );
           })}
-          {shown.length > 5 && (
+          {shown.length > 3 && (
             <li className={styles.more} aria-hidden="true">
               <span className={styles.moreDots}><i></i><i></i><i></i></span>
               <span className={styles.moreGhost}></span>

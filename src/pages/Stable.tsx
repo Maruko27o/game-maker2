@@ -5,7 +5,7 @@ import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
 import { RENAME_COST } from '../data/coins';
-import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf } from '../logic/farm';
+import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRateOf } from '../logic/farm';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Trophy, Badge, TrainingItem, StatKey } from '../types';
 import { BADGES } from '../data/badges';
@@ -214,7 +214,7 @@ export default function Stable() {
                 </div>
                 <div className={styles.cardName}>{h.name}</div>
                 <div className={styles.cardMeta}>
-                  <span>合計 {statTotal(h.stats)}</span>
+                  <span className={styles.cardEarn}><CoinIcon size={13} /> {Math.round(horseFarmRateOf(h, trophies, badges)).toLocaleString()}／時</span>
                   {tc > 0 && <span className={styles.cardTrophy}><Icon name="trophy" size={13} />{tc}</span>}
                 </div>
               </button>

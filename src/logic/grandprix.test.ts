@@ -89,10 +89,16 @@ describe('grand prix structure', () => {
 
   it('reward counts scale with grade, placing, and 60s bonus', () => {
     expect(gpItemCount('g3', 1, 30)).toBe(2);
-    expect(gpItemCount('g1', 1, 30)).toBe(4);
-    expect(gpItemCount('g1', 1, 60)).toBe(6); // ×1.5 floored
+    expect(gpItemCount('g2', 1, 30)).toBe(3);
+    expect(gpItemCount('g2', 1, 60)).toBe(4); // ×1.5 floored
     expect(gpItemCount('g3', 2, 30)).toBe(1);
     expect(gpItemCount('g3', 4, 30)).toBe(0); // out of the money
+  });
+
+  it('G1 gives no training items (trophy + coins only)', () => {
+    expect(gpItemCount('g1', 1, 30)).toBe(0);
+    expect(gpItemCount('g1', 1, 60)).toBe(0);
+    expect(gpItemCount('g1', 2, 30)).toBe(0);
   });
 
   it('heats are shorter than the final', () => {

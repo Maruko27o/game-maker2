@@ -270,7 +270,6 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
                   <span className={styles.modeDesc}>{cond}</span>
                 ) : (
                   <span className={gp.rewards}>
-                    <span className={gp.chip}><Icon name="gift" size={12} /> 育成×{GP_GRADES[g].win1Items}</span>
                     {isG1 ? (
                       <>
                         <span className={`${gp.chip} ${gp.chipGold}`}><Icon name="trophy" size={12} /> トロフィー</span>
@@ -278,7 +277,10 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
                         <span className={`${gp.chip} ${capped ? gp.chipEmpty : gp.chipLimit}`}>本日 {gpLeft}/{GP_DAILY_LIMIT}</span>
                       </>
                     ) : (
-                      <span className={`${gp.chip} ${gp.chipFree}`}>何回でも</span>
+                      <>
+                        <span className={gp.chip}><Icon name="gift" size={12} /> 育成×{GP_GRADES[g].win1Items}</span>
+                        <span className={`${gp.chip} ${gp.chipFree}`}>何回でも</span>
+                      </>
                     )}
                   </span>
                 )}
