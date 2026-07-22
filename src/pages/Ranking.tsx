@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, loadLeaderboard, type ScoreRow, type RankBy } from '../cloud';
 import { useStore } from '../store';
-import type { HorseLook } from '../types';
+import type { HorseLook, FrameAward } from '../types';
 import HorseFace from '../components/HorseFace';
+import AvatarFrame from '../components/AvatarFrame';
 import RankingProfileCard from '../components/RankingProfileCard';
 import CoinIcon from '../components/CoinIcon';
 import { monthKey, monthLabel, msToNextMonth, splitCountdown } from '../logic/period';
@@ -23,6 +24,7 @@ export default function Ranking() {
   const horses = useStore((s) => s.horses);
   const avatarHorseId = useStore((s) => s.avatarHorseId);
   const displayTrophies = useStore((s) => s.displayTrophies);
+  const myFrame = useStore((s) => s.equippedFrame ?? null);
   const [rows, setRows] = useState<ScoreRow[] | null>(null);
   const [viewing, setViewing] = useState<ScoreRow | null>(null); // profile card being shown
   // Remember the chosen tab across reloads (pull-to-refresh reloads the page), so
@@ -137,6 +139,9 @@ export default function Ranking() {
               : r.avatar
                 ? { name: '', colors: r.avatar.colors, decos: r.avatar.decos }
                 : DEFAULT_LOOK;
+            // 各プレイヤーが設定中のフレームを表示。自分の行はローカルの装備を即時反映。
+            const frame: FrameAward | null = me ? myFrame : r.equippedFrame;
+            const facePx = place <= 3 ? 46 : 34;
             return (
               <li
                 key={r.userId}
@@ -146,9 +151,15 @@ export default function Ranking() {
                 tabIndex={0}
               >
                 <span className={`${styles.place} ${medal(place)}`}>{place}</span>
-                <span className={styles.avatar}>
-                  <HorseFace horse={look} size={place <= 3 ? 46 : 34} />
-                </span>
+                {frame ? (
+                  <span className={styles.avatarFramed}>
+                    <AvatarFrame rank={frame.rank} metric={frame.metric} period={frame.period} look={look} size={facePx} />
+                  </span>
+                ) : (
+                  <span className={styles.avatar}>
+                    <HorseFace horse={look} size={facePx} />
+                  </span>
+                )}
                 <span className={styles.name}>
                   {r.username}
                   {me && <span className={styles.youTag}>あなた</span>}

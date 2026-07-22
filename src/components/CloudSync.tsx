@@ -16,6 +16,7 @@ import {
   saveDisplayName,
   loadMyBetScore,
   loadMyFrameAwards,
+  setRankingFrame,
 } from '../cloud';
 import { reconcile } from '../logic/cloudReconcile';
 import { randomUsername } from '../logic/username';
@@ -133,6 +134,9 @@ export default function CloudSync() {
       // 殿堂フレームの配布：過去月で上位3位に入っていたら受信箱へ（重複は無視）。
       const awards = await loadMyFrameAwards(user.id);
       if (awards.length && !cancelled) useStore.getState().receiveFrames(awards);
+
+      // 装備中フレームを当月のランキング行へ同期（他プレイヤーにも表示されるように）。
+      if (!cancelled) void setRankingFrame(useStore.getState().equippedFrame ?? null);
 
       // Ranking username (改修④): load it; if the account has none yet, assign a
       // friendly default and save it. Best-effort — no-ops without the DB.

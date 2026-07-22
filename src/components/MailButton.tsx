@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../store';
+import { setRankingFrame } from '../cloud';
 import { monthLabel } from '../logic/period';
 import type { FrameAward, HorseLook, MailItem } from '../types';
 import Icon from './Icon';
@@ -33,6 +34,13 @@ export default function MailButton() {
   function openMail(m: MailItem) {
     if (!m.read) markMailRead(m.id);
     setDetail(m);
+  }
+
+  // Equip/unequip locally *and* mirror it to the player's ranking row so everyone
+  // sees the frame on their line (best-effort; no-op when signed out / offline).
+  function equip(frame: FrameAward | null) {
+    equipFrame(frame);
+    void setRankingFrame(frame);
   }
 
   return (
@@ -95,9 +103,9 @@ export default function MailButton() {
                 <div className={styles.detailTitle}>{frameTitle(detail.frame)}</div>
                 <div className={styles.detailActions}>
                   {sameFrame(equippedFrame, detail.frame) ? (
-                    <button className="btn neutral" onClick={() => equipFrame(null)}>はずす</button>
+                    <button className="btn neutral" onClick={() => equip(null)}>はずす</button>
                   ) : (
-                    <button className="btn" onClick={() => equipFrame(detail.frame!)}>アイコンにつける</button>
+                    <button className="btn" onClick={() => equip(detail.frame!)}>アイコンにつける</button>
                   )}
                   <button className="btn neutral" onClick={() => setDetail(null)}>とじる</button>
                 </div>
