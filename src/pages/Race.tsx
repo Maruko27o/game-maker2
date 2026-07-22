@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { submitBestOdds } from '../cloud';
@@ -17,6 +17,7 @@ import BadgeIcon from '../components/BadgeIcon';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import RaceTrack2 from '../components/RaceTrack2';
+import CourseScene, { SceneDefs, courseTheme, THEME_LABEL } from '../components/CourseScene';
 import GrandPrix from './GrandPrix';
 import Arena from './Arena';
 import { settle, type Bet } from '../logic/betting';
@@ -47,16 +48,6 @@ function BadgeCutin({ badges, onDone }: { badges: Badge[]; onDone: () => void })
       </div>
     </div>
   );
-}
-
-function aptitude(stats: Stats, c: Course): string {
-  const base = STAT_KEYS.reduce((n, k) => n + stats[k], 0);
-  const w = STAT_KEYS.reduce((n, k) => n + stats[k] * c.weights[k], 0);
-  const ratio = w / Math.max(1, base);
-  if (ratio > 1.06) return 'この子にピッタリの得意コース！';
-  if (ratio > 1.0) return 'まずまず走れそう。';
-  if (ratio > 0.95) return '標準的なコース。';
-  return 'ちょっと苦手なコースかも…';
 }
 
 function rankColor(rank: number, total: number): { bg: string; bd: string; fg: string } {
@@ -110,55 +101,109 @@ function raceDoneAt(anchorMs: number, durationS: number, reduced: boolean): numb
   return anchorMs + cdMs + ((durationS + linger) / speed) * 1000;
 }
 
-// ---- Course reveal roulette (RACE_V2 §10) -------------------------------------
-function Roulette({ course, player, reduced, onDone }: { course: Course; player: Horse; reduced: boolean; onDone: () => void }) {
-  const [spinning, setSpinning] = useState(!reduced);
-  const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    if (reduced) {
-      const t = setTimeout(onDone, 400);
-      return () => clearTimeout(t);
-    }
-    let i = 0;
-    let delay = 60;
-    let timer: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      i++;
-      setIdx(i % COURSES.length);
-      delay *= 1.12;
-      if (delay < 320) timer = setTimeout(tick, delay);
-      else {
-        setIdx(COURSES.indexOf(course));
-        setSpinning(false);
-        timer = setTimeout(onDone, 1600);
-      }
-    };
-    timer = setTimeout(tick, delay);
-    return () => clearTimeout(timer);
-  }, [course, reduced, onDone]);
+function surfaceLabel(s: string): string {
+  return { turf: '芝', dirt: 'ダート', sand: '砂', steeple: '障害', circuit: 'ナイター', trail: '山道' }[s] ?? s;
+}
 
-  const shown = spinning ? COURSES[idx] : course;
+// うまとコースの相性を ◎/○/△ に色分けして返す。
+function aptitudeInfo(stats: Stats, c: Course): { mark: string; text: string; tone: 'good' | 'ok' | 'bad' } {
+  const base = STAT_KEYS.reduce((n, k) => n + stats[k], 0);
+  const w = STAT_KEYS.reduce((n, k) => n + stats[k] * c.weights[k], 0);
+  const r = w / Math.max(1, base);
+  if (r > 1.05) return { mark: '◎', text: 'この子にピッタリの得意コース！', tone: 'good' };
+  if (r > 0.99) return { mark: '○', text: 'まずまず走れそう', tone: 'ok' };
+  if (r > 0.95) return { mark: '○', text: '標準的なコース', tone: 'ok' };
+  return { mark: '△', text: 'ちょっと苦手なコースかも…', tone: 'bad' };
+}
+
+// 路面別の一枚絵タイル（抽選リール／結果で共用）。
+function CourseTile({ course }: { course: Course }) {
   return (
-    <div className={styles.rouletteWrap} onClick={!spinning ? onDone : undefined}>
-      <div className={`${styles.rouletteCard} ${!spinning ? styles.rouletteStop : ''}`}>
-        <div className={styles.rouletteEmoji} style={{ background: shown.ground }} aria-hidden />
-        <div className={styles.rouletteName}>{shown.name}</div>
-        {!spinning && (
-          <>
-            <div className={styles.rouletteInfo}>
-              路面: {surfaceLabel(shown.surface)} ／ {shown.desc}
-            </div>
-            <div className={styles.rouletteApt}>{aptitude(player.stats, shown)}</div>
-            <div className={styles.rouletteTap}>タップで進む</div>
-          </>
-        )}
+    <div className={styles.tile}>
+      <div className={styles.tileArt}>
+        <svg className={styles.tileSvg} viewBox="0 0 220 140" preserveAspectRatio="xMidYMid slice" aria-hidden>
+          <CourseScene theme={courseTheme(course)} />
+        </svg>
+        <span className={styles.tileBadge}>{THEME_LABEL[courseTheme(course)]}</span>
       </div>
+      <div className={styles.tileName}>{course.name}</div>
     </div>
   );
 }
 
-function surfaceLabel(s: string): string {
-  return { turf: '芝', dirt: 'ダート', sand: '砂', steeple: '障害', circuit: 'ナイター', trail: '芝' }[s] ?? s;
+// ---- Course reveal roulette (RACE_V2 §10) — スロット風リール ------------------
+const TILE_W = 176; // px（タイル幅）
+const TILE_GAP = 10;
+const STEP = TILE_W + TILE_GAP;
+const REEL_LOOPS = 6; // 6周ぶんのタイルを流す
+const SPIN_MS = 3200; // 決まるまで（<5秒）
+
+function Roulette({ course, player, reduced, onDone }: { course: Course; player: Horse; reduced: boolean; onDone: () => void }) {
+  const winRef = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(0);
+  const [go, setGo] = useState(false);
+  const [stopped, setStopped] = useState(reduced);
+
+  const chosenIdx = COURSES.indexOf(course);
+  const reel = useMemo(
+    () => Array.from({ length: REEL_LOOPS * COURSES.length }, (_, i) => COURSES[i % COURSES.length]),
+    [],
+  );
+  const startIdx = chosenIdx; // 最初の周
+  const finalIdx = (REEL_LOOPS - 1) * COURSES.length + chosenIdx; // 最後の周（当たり）
+  const offsetOf = (idx: number) => w / 2 - (idx * STEP + TILE_W / 2);
+
+  useLayoutEffect(() => {
+    setW(winRef.current?.clientWidth ?? 320);
+  }, []);
+  useEffect(() => {
+    if (reduced || w === 0) return;
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setGo(true)));
+    return () => cancelAnimationFrame(id);
+  }, [reduced, w]);
+
+  const apt = aptitudeInfo(player.stats, course);
+  const tx = reduced ? offsetOf(finalIdx) : go ? offsetOf(finalIdx) : offsetOf(startIdx);
+
+  return (
+    <div className={styles.rouletteWrap} onClick={stopped ? onDone : undefined}>
+      <SceneDefs />
+      <div className={styles.slotTitle}>{stopped ? '本日のコース' : 'コース抽選中…'}</div>
+
+      <div className={`${styles.slotWindow} ${stopped ? styles.slotWindowStop : ''}`} ref={winRef}>
+        <div className={styles.pointer} aria-hidden>▼</div>
+        <div
+          className={styles.reel}
+          style={{ transform: `translateX(${tx}px)`, transition: go && !reduced ? `transform ${SPIN_MS}ms cubic-bezier(0.09, 0.62, 0.16, 1)` : 'none' }}
+          onTransitionEnd={() => setStopped(true)}
+        >
+          {reel.map((c, i) => (
+            <div className={styles.reelCell} key={i} style={{ width: TILE_W }}>
+              <CourseTile course={c} />
+            </div>
+          ))}
+        </div>
+        <div className={styles.fadeL} aria-hidden />
+        <div className={styles.fadeR} aria-hidden />
+        {stopped && (
+          <div className={styles.centerFrame} aria-hidden>
+            {['✨', '✨', '✨', '✨'].map((s, i) => <span key={i} className={styles[`spark${i}` as 'spark0']}>{s}</span>)}
+          </div>
+        )}
+      </div>
+
+      {stopped && (
+        <div className={`${styles.result} ${reduced ? '' : styles.resultIn}`}>
+          <div className={styles.resultChips}>
+            <span className={styles.chipSurface}>{THEME_LABEL[courseTheme(course)]}コース</span>
+            <span className={`${styles.chipApt} ${styles[`apt_${apt.tone}` as 'apt_good']}`}>{apt.text} {apt.mark}</span>
+          </div>
+          <div className={styles.resultDesc}>{course.desc}</div>
+          <button className={styles.resultBtn} onClick={onDone}>タップで進む ▶</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ---- main ---------------------------------------------------------------------
