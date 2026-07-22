@@ -19,13 +19,17 @@ export type DayNight = {
 type KF = DayNight & { p: number };
 
 // 1周のキーフレーム（真昼→夕→夜→夜明け→真昼）。
+// 重要：太陽と月は同時に見えない。太陽は日没で完全に沈み(sunOp→0)、その後に月が昇る
+// (moonOp>0 は sunOp==0 のときだけ)。夜明け前に月が沈んでから太陽が昇る。
 const KEYS: KF[] = [
-  { p: 0.0,  sky: { day: 1, sunset: 0, night: 0 },       sunX: 76, sunY: 15, sunScale: 1.0, sunOp: 1, moonX: 20, moonY: 20, moonOp: 0,   starOp: 0,   lightStrength: 0,    lightWarm: 0,   shadowDx: 0,   shadowAlpha: 0.22, shadowBlur: 6,  titleGlow: 0,   nightMix: 0 },
-  { p: 0.18, sky: { day: 0.15, sunset: 0.85, night: 0 }, sunX: 68, sunY: 56, sunScale: 1.25, sunOp: 1, moonX: 18, moonY: 16, moonOp: 0.4, starOp: 0.25, lightStrength: 0.5,  lightWarm: 0,   shadowDx: 34,  shadowAlpha: 0.30, shadowBlur: 8,  titleGlow: 0.28, nightMix: 0.05 },
-  { p: 0.30, sky: { day: 0, sunset: 0.5, night: 0.5 },   sunX: 62, sunY: 74, sunScale: 1.2, sunOp: 0.35, moonX: 34, moonY: 14, moonOp: 0.7, starOp: 0.6, lightStrength: 0.5,  lightWarm: 0.4, shadowDx: 18,  shadowAlpha: 0.34, shadowBlur: 9,  titleGlow: 0.5,  nightMix: 0.5 },
-  { p: 0.50, sky: { day: 0, sunset: 0, night: 1 },       sunX: 50, sunY: 112, sunScale: 1.0, sunOp: 0, moonX: 72, moonY: 15, moonOp: 1,   starOp: 1,   lightStrength: 0.72, lightWarm: 1,   shadowDx: 0,   shadowAlpha: 0.45, shadowBlur: 10, titleGlow: 1,    nightMix: 1 },
-  { p: 0.72, sky: { day: 0, sunset: 0.35, night: 0.65 }, sunX: 30, sunY: 104, sunScale: 1.0, sunOp: 0, moonX: 80, moonY: 20, moonOp: 0.55, starOp: 0.6, lightStrength: 0.45, lightWarm: 0.6, shadowDx: -16, shadowAlpha: 0.36, shadowBlur: 9,  titleGlow: 0.6,  nightMix: 0.65 },
-  { p: 0.85, sky: { day: 0.2, sunset: 0.8, night: 0 },   sunX: 28, sunY: 58, sunScale: 1.1, sunOp: 1, moonX: 84, moonY: 22, moonOp: 0.2, starOp: 0.2, lightStrength: 0.45, lightWarm: 0,   shadowDx: -30, shadowAlpha: 0.30, shadowBlur: 8,  titleGlow: 0.2,  nightMix: 0.05 },
+  { p: 0.00, sky: { day: 1, sunset: 0, night: 0 },       sunX: 76, sunY: 15,  sunScale: 1.0,  sunOp: 1, moonX: 66, moonY: 20, moonOp: 0,   starOp: 0,   lightStrength: 0,    lightWarm: 0,   shadowDx: 0,   shadowAlpha: 0.22, shadowBlur: 6,  titleGlow: 0,    nightMix: 0 },
+  { p: 0.15, sky: { day: 0.25, sunset: 0.75, night: 0 }, sunX: 68, sunY: 52,  sunScale: 1.2,  sunOp: 1, moonX: 66, moonY: 20, moonOp: 0,   starOp: 0,   lightStrength: 0.45, lightWarm: 0,   shadowDx: 30,  shadowAlpha: 0.30, shadowBlur: 8,  titleGlow: 0.28, nightMix: 0.05 },
+  { p: 0.24, sky: { day: 0, sunset: 0.8, night: 0.2 },   sunX: 60, sunY: 84,  sunScale: 1.15, sunOp: 0, moonX: 66, moonY: 20, moonOp: 0,   starOp: 0.3, lightStrength: 0.5,  lightWarm: 0.3, shadowDx: 16,  shadowAlpha: 0.34, shadowBlur: 9,  titleGlow: 0.5,  nightMix: 0.4 },
+  { p: 0.36, sky: { day: 0, sunset: 0.2, night: 0.8 },   sunX: 55, sunY: 112, sunScale: 1.0,  sunOp: 0, moonX: 66, moonY: 22, moonOp: 0.5, starOp: 0.7, lightStrength: 0.6,  lightWarm: 0.7, shadowDx: 6,   shadowAlpha: 0.40, shadowBlur: 9,  titleGlow: 0.75, nightMix: 0.85 },
+  { p: 0.50, sky: { day: 0, sunset: 0, night: 1 },       sunX: 50, sunY: 120, sunScale: 1.0,  sunOp: 0, moonX: 72, moonY: 15, moonOp: 1,   starOp: 1,   lightStrength: 0.72, lightWarm: 1,   shadowDx: 0,   shadowAlpha: 0.45, shadowBlur: 10, titleGlow: 1,    nightMix: 1 },
+  { p: 0.64, sky: { day: 0, sunset: 0.15, night: 0.85 }, sunX: 45, sunY: 120, sunScale: 1.0,  sunOp: 0, moonX: 80, moonY: 24, moonOp: 0.5, starOp: 0.7, lightStrength: 0.55, lightWarm: 0.8, shadowDx: -8,  shadowAlpha: 0.40, shadowBlur: 9,  titleGlow: 0.75, nightMix: 0.85 },
+  { p: 0.74, sky: { day: 0, sunset: 0.7, night: 0.3 },   sunX: 34, sunY: 90,  sunScale: 1.0,  sunOp: 0, moonX: 88, moonY: 40, moonOp: 0,   starOp: 0.3, lightStrength: 0.45, lightWarm: 0.4, shadowDx: -14, shadowAlpha: 0.34, shadowBlur: 8,  titleGlow: 0.45, nightMix: 0.4 },
+  { p: 0.86, sky: { day: 0.2, sunset: 0.8, night: 0 },   sunX: 28, sunY: 54,  sunScale: 1.1,  sunOp: 1, moonX: 88, moonY: 40, moonOp: 0,   starOp: 0.05, lightStrength: 0.45, lightWarm: 0,  shadowDx: -28, shadowAlpha: 0.30, shadowBlur: 8,  titleGlow: 0.2,  nightMix: 0.05 },
 ];
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
