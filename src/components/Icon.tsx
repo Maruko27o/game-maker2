@@ -44,7 +44,14 @@ const P: Record<IconName, JSX.Element> = {
   refresh: <path d="M12 5a7 7 0 016.7 5H16l3.5 4 3.5-4h-2.2A9 9 0 003 12h2a7 7 0 017-7zm0 14a7 7 0 01-6.7-5H8L4.5 10 1 14h2.2A9 9 0 0021 12h-2a7 7 0 01-7 7z" fillRule="evenodd" />,
   bolt: <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" />,
   skip: <path d="M4 5l8 7-8 7V5zm9 0l7 7-7 7V5z" />,
-  medal: <path d="M8 2h8l-2 6H10L8 2zm4 6a7 7 0 100 14 7 7 0 000-14zm0 3l1.5 3 3.3.3-2.5 2.2.8 3.2L12 21l-2.9 1.9.8-3.2-2.5-2.2 3.3-.3L12 11z" fillRule="evenodd" />,
+  // メダル：リボン＋輪郭のリング＋中央に星（星は“穴”ではなく塗りで乗せる）。
+  medal: (
+    <g>
+      <path d="M8.5 2h2.2l1.3 4.2L13.3 2h2.2l-2 6.2a6.4 6.4 0 11-3 0L8.5 2z" opacity="0.55" />
+      <circle cx="12" cy="15" r="6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 11.2l1.15 2.33 2.57.37-1.86 1.81.44 2.56L12 17.64l-2.3 1.21.44-2.56-1.86-1.81 2.57-.37L12 11.2z" />
+    </g>
+  ),
   crown: <path d="M3 8l3.5 3L12 5l5.5 6L21 8l-1.5 10h-15L3 8zm2 12h14v2H5v-2z" fillRule="evenodd" />,
   clipboard: <path d="M9 3h6v2h3v16H6V5h3V3zm0 4h6V5H9v2zm-1 4h8v-2H8v2zm0 4h8v-2H8v2zm0 4h5v-2H8v2z" fillRule="evenodd" />,
   mail: <path d="M3 5h18v14H3V5zm2 2v.4l7 4.6 7-4.6V7H5zm14 2.9l-7 4.6-7-4.6V17h14V9.9z" fillRule="evenodd" />,

@@ -103,8 +103,10 @@ export function computeOdds(entrants: Entrant[], course: Course): { odds: number
   return probs.map((p, i) => ({ odds: Math.min(99, Math.max(1.1, (1 / p) * 0.8)), pop: pop[i] }));
 }
 
-/** Item drops for a grand-prix final placing (RACE_V2 §12.2; 60s ×1.5 floored). */
+/** Item drops for a grand-prix final placing (RACE_V2 §12.2; 60s ×1.5 floored).
+ *  G1 は育成素材を配らない（トロフィー＋コインのみ・改修）。育成は G2/G3 の役割。 */
 export function gpItemCount(grade: GpGrade, rank: number, mode: 30 | 60): number {
+  if (grade === 'g1') return 0;
   let base = 0;
   if (rank === 1) base = GP_GRADES[grade].win1Items;
   else if (rank === 2 || rank === 3) base = 1;

@@ -5,6 +5,7 @@ import { monthKey, monthLabel } from '../logic/period';
 import type { HorseLook } from '../types';
 import AvatarFrame, { type FrameRank, type FrameMetric } from '../components/AvatarFrame';
 import CoinIcon from '../components/CoinIcon';
+import TrophyMark from '../components/TrophyMark';
 import styles from './Hall.module.css';
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
@@ -116,7 +117,7 @@ export default function Hall() {
           {/* 殿堂入り（過去月） */}
           {enshrined.length === 0 ? (
             <div className={styles.emptyHall}>
-              <div className={styles.crest}>🏆</div>
+              <div className={styles.crest}><TrophyMark size={52} /></div>
               <p>まだ殿堂入りはいません。</p>
               <p className={styles.emptyHallSub}>今月の上位3名が、来月ここに永久に飾られます。</p>
             </div>
