@@ -1,0 +1,173 @@
+/* 殿堂（Hall of Fame）— ゴージャスな金×深紫のギャラリー。
+   ここは意図的にダーク＆ゴールドの世界観で統一（ライト/ダーク切替はしない）。 */
+.hall {
+  /* full-bleed: .main の padding(68px/14px/nav) を打ち消して全面に敷く */
+  margin: -68px -14px calc(-1 * (var(--nav-h) + 20px));
+  padding: 74px 16px calc(var(--nav-h) + 28px);
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  color: #f3ead0;
+  font-family: 'Hiragino Sans', system-ui, sans-serif;
+  background:
+    radial-gradient(120% 60% at 50% -6%, #4a2f6b 0%, #2a1a44 40%, #150e28 100%),
+    linear-gradient(180deg, #150e28, #0c0818);
+}
+/* きらめきの装飾レイヤ */
+.bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(2px 2px at 20% 18%, rgba(255, 240, 190, 0.7), transparent 60%),
+    radial-gradient(1.5px 1.5px at 76% 12%, rgba(255, 240, 190, 0.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 62% 30%, rgba(255, 240, 190, 0.5), transparent 60%),
+    radial-gradient(2px 2px at 34% 42%, rgba(255, 240, 190, 0.4), transparent 60%),
+    radial-gradient(1.5px 1.5px at 88% 46%, rgba(255, 240, 190, 0.45), transparent 60%);
+  opacity: 0.8;
+}
+.hall > * { position: relative; z-index: 1; }
+
+.head { text-align: center; margin-bottom: 18px; }
+.back {
+  position: absolute;
+  left: 0;
+  top: -2px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1.5px solid rgba(232, 199, 102, 0.55);
+  color: #f0dfa6;
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.title {
+  font-family: Georgia, 'Hiragino Mincho ProN', serif;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  padding-left: 0.28em;
+  margin: 6px 0 4px;
+  background: linear-gradient(180deg, #fff3c6 0%, #e8c766 45%, #b3852a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.sub { margin: 0; font-size: 12px; letter-spacing: 0.16em; color: #c9b998; }
+
+.note { text-align: center; color: #c9b998; padding: 40px 0; font-weight: 700; }
+
+.monthCard {
+  margin: 0 auto 18px;
+  max-width: 460px;
+  background: linear-gradient(180deg, rgba(58, 40, 86, 0.55), rgba(24, 16, 42, 0.6));
+  border: 1.5px solid rgba(232, 199, 102, 0.45);
+  border-radius: 18px;
+  padding: 14px 12px 18px;
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 240, 190, 0.06);
+}
+.enshrined { border-color: rgba(232, 199, 102, 0.7); }
+
+.monthHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(232, 199, 102, 0.25);
+}
+.monthName {
+  font-family: Georgia, 'Hiragino Mincho ProN', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #f2dd9c;
+  letter-spacing: 0.04em;
+}
+.nomTag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #1a1030;
+  background: linear-gradient(180deg, #ffe9a8, #e8c766);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.enshrinedTag {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #fff3c6;
+  border: 1px solid rgba(232, 199, 102, 0.7);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.metricLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #d9c79a;
+  margin: 14px 0 2px;
+  letter-spacing: 0.04em;
+}
+.dotOdds, .dotPayout { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.dotOdds { background: #e06a5a; box-shadow: 0 0 6px rgba(224, 106, 90, 0.7); }
+.dotPayout { background: #e8c766; box-shadow: 0 0 6px rgba(232, 199, 102, 0.7); }
+
+.podium {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  align-items: end;
+  gap: 6px;
+  padding: 6px 2px 2px;
+}
+.slot { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.slotFirst { transform: translateY(-8px); }
+
+.winName {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #f3ead0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.winRec { font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.recOdds { color: #ff9c8c; }
+.recPayout { display: inline-flex; align-items: center; gap: 3px; color: #ffe08a; }
+
+/* empty podium slot */
+.empty {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  opacity: 0.5;
+}
+.emptyRing {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px dashed rgba(232, 199, 102, 0.4);
+}
+.emptyRank {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: rgba(232, 199, 102, 0.55);
+}
+
+.emptyHall {
+  text-align: center;
+  padding: 30px 16px 20px;
+  color: #d9c79a;
+}
+.emptyHall p { margin: 4px 0; font-weight: 700; }
+.crest { font-size: 46px; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5)); margin-bottom: 6px; }
+.emptyHallSub { font-size: 12px; color: #b6a884; }

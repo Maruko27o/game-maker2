@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth, loadLeaderboard, type ScoreRow, type RankBy } from '../cloud';
 import { useStore } from '../store';
 import type { HorseLook } from '../types';
@@ -15,6 +16,7 @@ const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: 
 // odds, with the player's chosen horse as their icon. Degrades gracefully:
 // signed-out players are nudged to log in; if the DB isn't set up the list is empty.
 export default function Ranking() {
+  const navigate = useNavigate();
   const user = useAuth((s) => s.user);
   const displayName = useAuth((s) => s.displayName);
   const configured = useAuth((s) => s.configured);
@@ -100,6 +102,11 @@ export default function Ranking() {
           更新まで <b>{cd.days}日 {pad(cd.h)}:{pad(cd.m)}:{pad(cd.s)}</b>
         </span>
       </div>
+      <button className={styles.hallLink} onClick={() => navigate('/hall')}>
+        <span className={styles.hallCrest}>🏆</span>
+        <span className={styles.hallText}>殿堂<small>歴代トップ3を見る</small></span>
+        <span className={styles.hallGo}>›</span>
+      </button>
       <div className={styles.tabs}>
         <button className={`${styles.tab} ${tab === 'odds' ? styles.tabOn : ''}`} onClick={() => selectTab('odds')}>最大オッズ</button>
         <button className={`${styles.tab} ${tab === 'payout' ? styles.tabOn : ''}`} onClick={() => selectTab('payout')}>最大獲得賞金</button>
