@@ -137,13 +137,6 @@ export default function Grass() {
         aria-label={available ? '草むらをタップしてウマを探す' : '次のチャージまで待つ'}
       >
         <GrassScene d={dn} reduced={reduced} />
-        <div className={styles.grassRow} aria-hidden>
-          {Array.from({ length: 7 }).map((_, i) => (
-            <span key={i} className={styles.blade} style={{ animationDelay: `${i * 0.06}s` }}>
-              <Icon name="leaf" size={20} />
-            </span>
-          ))}
-        </div>
 
         {phase === 'reveal' && wild ? (
           <>
@@ -152,23 +145,14 @@ export default function Grass() {
               <HorseView horse={wild} size={200} shadow />
             </div>
           </>
-        ) : (
+        ) : available ? (
+          // ストック有り：タップを促す（外を眺める窓の中央に軽く重ねる）。
           <div className={`${styles.hint} ${isDark ? styles.nightText : ''}`}>
-            {available ? (
-              <>
-                <div className={styles.tapEmoji}><Icon name="leaf" size={40} /></div>
-                <p>草むらをタップ！</p>
-                <p className={styles.hintSub}>ストック {stock}個</p>
-              </>
-            ) : (
-              <>
-                <p className={styles.waitTitle}>草が静かだ…</p>
-                <p className={styles.waitSub}>次のチャージまで {countdown}</p>
-                <p className={styles.waitNote}>1時間に1個・最大{ENERGY_CAP}個までたまる</p>
-              </>
-            )}
+            <div className={styles.tapEmoji}><Icon name="leaf" size={40} /></div>
+            <p>草むらをタップ！</p>
+            <p className={styles.hintSub}>ストック {stock}個</p>
           </div>
-        )}
+        ) : null}
       </button>
 
       <div className={styles.footRow}>
