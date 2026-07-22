@@ -1,6 +1,9 @@
 .page {
   max-width: 480px;
   margin: 0 auto;
+  min-height: 100%;
+  /* 画面下端の控えめワンポイント（月桂樹）。内容の裏＝背景。 */
+  background: url('../assets/accent-rank.svg') no-repeat center bottom / 100% auto;
 }
 .title {
   font-size: 24px;

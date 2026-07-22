@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 150">
+  <g opacity="0.92">
+    <rect x="-4" y="132" width="368" height="10" fill="#a9814e"/>
+    <rect x="-4" y="130" width="368" height="3" fill="#c79a5f"/>
+    <g stroke="#6f5636" stroke-width="1">
+      <rect x="6" y="92" width="15" height="40" rx="2" fill="#c98a6a"/><rect x="23" y="86" width="14" height="46" rx="2" fill="#8fae8a"/><rect x="39" y="96" width="15" height="36" rx="2" fill="#7f96b8"/><rect x="56" y="88" width="13" height="44" rx="2" fill="#d8c07a"/><rect x="71" y="98" width="16" height="34" rx="2" fill="#b58ac0"/>
+      <rect x="120" y="90" width="15" height="42" rx="2" fill="#c98a6a"/><rect x="137" y="96" width="14" height="36" rx="2" fill="#7f96b8"/><rect x="153" y="86" width="15" height="46" rx="2" fill="#d8c07a"/><rect x="170" y="94" width="14" height="38" rx="2" fill="#8fae8a"/>
+      <rect x="300" y="90" width="15" height="42" rx="2" fill="#8fae8a"/><rect x="317" y="86" width="14" height="46" rx="2" fill="#c98a6a"/><rect x="333" y="96" width="15" height="36" rx="2" fill="#d8c07a"/>
+    </g>
+    <g stroke="#6f5636" stroke-width="1" transform="translate(196 108)">
+      <rect x="0" y="16" width="56" height="9" rx="2" fill="#7f96b8"/><rect x="4" y="8" width="48" height="8" rx="2" fill="#c98a6a" transform="rotate(-2 28 12)"/><rect x="-2" y="0" width="52" height="8" rx="2" fill="#8fae8a" transform="rotate(2 26 4)"/>
+    </g>
+    <g transform="translate(262 96)">
+      <path d="M0 4 q18 -8 36 0 v28 q-18 -6 -36 0 z" fill="#f3ead2" stroke="#c9b98f" stroke-width="1.4"/><path d="M18 3 v29" stroke="#c9b98f" stroke-width="1.4"/><path d="M4 12 h11 M4 18 h11 M21 12 h11 M21 18 h11" stroke="#c9b98f" stroke-width="1"/>
+    </g>
+    <g transform="translate(100 112)">
+      <path d="M0 -2 Q-9 -12 -8 -24 Q-2 -16 0 -6" fill="#5aa145"/><path d="M0 -2 Q9 -12 8 -24 Q2 -16 0 -6" fill="#63b24b"/><path d="M0 -4 Q-1 -20 0 -30 Q1 -20 0 -6" fill="#74c65c"/><path d="M-8 -2 H8 L6 14 H-6 Z" fill="#d07a48" stroke="#9a5a30" stroke-width="1.2"/><ellipse cx="0" cy="-2" rx="8" ry="2.4" fill="#e2a56f" stroke="#9a5a30" stroke-width="1.2"/>
+    </g>
+  </g>
+</svg>

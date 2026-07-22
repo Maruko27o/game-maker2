@@ -2,6 +2,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 100%;
+  /* 画面下端の控えめワンポイント（本棚）。内容の裏＝背景。 */
+  background: url('../assets/accent-book.svg') no-repeat center bottom / 100% auto;
 }
 .head {
   display: flex;
