@@ -5,6 +5,7 @@ import type { HorseLook } from '../types';
 import HorseFace from '../components/HorseFace';
 import RankingProfileCard from '../components/RankingProfileCard';
 import CoinIcon from '../components/CoinIcon';
+import { monthKey, monthLabel, msToNextMonth, splitCountdown } from '../logic/period';
 import styles from './Ranking.module.css';
 
 // Unset avatar → the plain starter horse (base colours).
@@ -40,10 +41,20 @@ export default function Ranking() {
     }
   }
 
+  // 今月の対象月（JST）。毎月1日0:00で自動的に新しい月へ切り替わる。
+  const period = monthKey();
+  // 1秒ごとに更新まで残り時間を再計算（赤いカウントダウン用）。
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const cd = splitCountdown(msToNextMonth(now));
+
   useEffect(() => {
     let live = true;
     setRows(null);
-    const load = () => loadLeaderboard(50, tab).then((r) => live && setRows(r));
+    const load = () => loadLeaderboard(50, tab, period).then((r) => live && setRows(r));
     load();
     // Re-fetch when the tab regains focus, so changes made elsewhere show up.
     const onFocus = () => load();
@@ -78,9 +89,17 @@ export default function Ranking() {
     return place === 1 ? styles.gold : place === 2 ? styles.silver : place === 3 ? styles.bronze : '';
   }
 
+  const pad = (n: number) => String(n).padStart(2, '0');
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>ランキング</h1>
+      <div className={styles.monthBar}>
+        <span className={styles.monthName}>{monthLabel(period)}</span>
+        <span className={styles.countdown}>
+          更新まで <b>{cd.days}日 {pad(cd.h)}:{pad(cd.m)}:{pad(cd.s)}</b>
+        </span>
+      </div>
       <div className={styles.tabs}>
         <button className={`${styles.tab} ${tab === 'odds' ? styles.tabOn : ''}`} onClick={() => selectTab('odds')}>最大オッズ</button>
         <button className={`${styles.tab} ${tab === 'payout' ? styles.tabOn : ''}`} onClick={() => selectTab('payout')}>最大獲得賞金</button>
@@ -99,7 +118,7 @@ export default function Ranking() {
         <div className={styles.note}>読み込み中…</div>
       ) : shown.length === 0 ? (
         <div className={styles.note}>
-          {tab === 'payout' ? 'まだ記録がありません。馬券を的中させて払戻を得よう！' : 'まだ記録がありません。レースで馬券を的中させよう！'}
+          {tab === 'payout' ? '今月はまだ記録がありません。馬券を的中させて払戻を得よう！' : '今月はまだ記録がありません。レースで馬券を的中させよう！'}
         </div>
       ) : (
         <ol className={styles.list}>
