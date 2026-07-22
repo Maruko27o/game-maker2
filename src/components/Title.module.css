@@ -8,6 +8,7 @@
   align-items: center;
   cursor: pointer;
   user-select: none;
+  background: #bfe1ef; /* オーバーレイなので不透明ベースを持たせ、裏の画面を透けさせない */
 }
 /* 丘（2層パララックスで奥行き）。色トーンは JS 側で夜に落とす。 */
 .hills {

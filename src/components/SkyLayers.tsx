@@ -64,12 +64,17 @@ export default function SkyLayers({
   birds?: boolean;
   shootingStars?: boolean;
 }) {
-  const sum = d.sky.day + d.sky.sunset + d.sky.night || 1;
+  // 空は「昼を不透明ベースにして、夕・夜をその上で合成」する（ペインターズ合成）。
+  // これにより遷移中でも合成アルファが常に1＝背景が透けない。色味は wd:ws:wn の
+  // 加重ブレンドと一致する（sunsetOp = ws/(wd+ws), nightOp = wn）。
+  const total = d.sky.day + d.sky.sunset + d.sky.night || 1;
+  const wd = d.sky.day / total, ws = d.sky.sunset / total, wn = d.sky.night / total;
+  const sunsetOp = wd + ws > 0 ? ws / (wd + ws) : 0;
   return (
     <div className={styles.wrap} aria-hidden>
-      <div className={styles.sky} style={{ background: SKY_DAY, opacity: d.sky.day / sum }} />
-      <div className={styles.sky} style={{ background: SKY_SUNSET, opacity: d.sky.sunset / sum }} />
-      <div className={styles.sky} style={{ background: SKY_NIGHT, opacity: d.sky.night / sum }} />
+      <div className={styles.sky} style={{ background: SKY_DAY, opacity: 1 }} />
+      <div className={styles.sky} style={{ background: SKY_SUNSET, opacity: sunsetOp }} />
+      <div className={styles.sky} style={{ background: SKY_NIGHT, opacity: wn }} />
 
       {/* 星 */}
       <svg className={styles.stars} style={{ opacity: d.starOp }} viewBox="0 0 100 100" preserveAspectRatio="none">

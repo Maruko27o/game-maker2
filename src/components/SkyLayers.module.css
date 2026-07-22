@@ -3,6 +3,7 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  background: #bfe1ef; /* 念のための不透明ベース（昼レイヤで完全に覆われる） */
 }
 .sky {
   position: absolute;
