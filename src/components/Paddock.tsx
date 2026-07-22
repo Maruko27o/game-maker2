@@ -67,29 +67,30 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
     setSel([]);
   }
 
-  // おまかせ: pick a random market + horse number(s) at the current stake, keeping
-  // only bets at 9000倍 or below. Retries until a low-enough combo is found, then
-  // falls back to the favourite's 単勝 (always low odds).
+  // おまかせ: keep the currently-selected market (単勝/馬連/…) and pick the horse
+  // number(s) for us at the current stake, keeping only bets at 9000倍 or below.
+  // Retries until a low-enough combo is found, then falls back to the most-favoured
+  // horses for that same market (always the lowest odds — never switches the type).
   const OMAKASE_MAX_ODDS = 9000;
   function omakase() {
     if (coins < amount || full) return;
     const idxs = Array.from({ length: entrants.length }, (_, i) => i);
     for (let tries = 0; tries < 120; tries++) {
-      const k = BET_KINDS[Math.floor(Math.random() * BET_KINDS.length)];
       const shuffled = idxs.slice();
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
-      const picks = shuffled.slice(0, k.pick);
-      const odds = oddsFor(k.kind, picks, p);
+      const picks = shuffled.slice(0, spec.pick);
+      const odds = oddsFor(kind, picks, p);
       if (odds > 0 && odds <= OMAKASE_MAX_ODDS) {
-        onAdd({ kind: k.kind, sel: picks, amount, odds });
+        onAdd({ kind, sel: picks, amount, odds });
         return;
       }
     }
-    const fav = rows[0].idx; // popularity-sorted; the favourite's 単勝 is always low
-    onAdd({ kind: 'win', sel: [fav], amount, odds: oddsFor('win', [fav], p) });
+    // fallback: the most-favoured horses give the lowest odds for this market
+    const favPicks = rows.slice(0, spec.pick).map((r) => r.idx);
+    onAdd({ kind, sel: favPicks, amount, odds: oddsFor(kind, favPicks, p) });
   }
 
   return (
@@ -176,9 +177,11 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
         })}
       </ul>
 
-      {/* おまかせ: random bet at the current stake (odds cap is internal — not shown) */}
+      {/* おまかせ: auto-pick horses for the SELECTED market at the current stake
+          (odds cap is internal — not shown). The market name is on the button so
+          it's clear which 馬券 will be bought. */}
       <button className={styles.omakase} disabled={coins < amount || full} onClick={omakase}>
-        <Icon name="dice" size={18} /> おまかせ（{amount}コインで1点）
+        <Icon name="dice" size={18} /> {KIND_LABEL[kind]}をおまかせ（{amount}コインで1点）
       </button>
 
       {/* stake + add */}
