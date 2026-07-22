@@ -2,8 +2,6 @@
   max-width: 480px;
   margin: 0 auto;
   min-height: 100%;
-  /* 画面下端の控えめワンポイント（月桂樹）。内容の裏＝背景。 */
-  background: url('../assets/accent-rank.svg') no-repeat center bottom / 100% auto;
 }
 .title {
   font-size: 24px;
@@ -117,14 +115,34 @@
 /* 4位以下は非表示。3位の下に薄れていくゴースト行（四角）で「まだ続く」を示す。 */
 .more {
   list-style: none;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   margin-top: 2px;
   padding: 4px 12px 2px;
+  /* 月桂樹つきトロフィーの装飾を四角の裏に敷けるだけの高さを確保。 */
+  min-height: 150px;
+}
+/* 4位以下の四角の「後ろ」に月桂樹トロフィーを表示（装飾・タップ透過）。
+   四角はトロフィーの脚元あたりを横切り、カップ本体は四角の上にのぞく。 */
+.more::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 140px;
+  background: url('../assets/accent-rank.svg') no-repeat center / contain;
+  z-index: 0;
+  pointer-events: none;
 }
 .moreGhost {
+  position: relative;
+  z-index: 1;
   width: 82%;
   height: 14px;
   border-radius: 10px;
