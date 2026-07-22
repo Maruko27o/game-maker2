@@ -1,0 +1,59 @@
+.room {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+/* 丸太を積んだ壁（各段：上が明るく下が暗い＝丸太のシェーディング、境目に溝） */
+.wall {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    180deg,
+    #dcb680 0px,
+    #cba674 6px,
+    #b58f57 24px,
+    #9c7940 29px,
+    #6f4e28 30px
+  );
+}
+/* 床（板張り・下部） */
+.floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 200px;
+  background:
+    repeating-linear-gradient(90deg, rgba(111, 78, 40, 0.35) 0 2px, transparent 2px 78px),
+    linear-gradient(180deg, #c79a5f, #a97e46);
+  box-shadow: inset 0 6px 10px -6px rgba(60, 36, 12, 0.5);
+}
+.floor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #7a5730;
+  opacity: 0.55;
+}
+
+.top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+}
+.decor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 200px;
+  display: block;
+}
