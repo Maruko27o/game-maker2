@@ -6,6 +6,7 @@ import { GRASS_OKAWARI_COST } from '../data/coins';
 import type { HorseLook, DecoSlot } from '../types';
 import HorseView from '../components/HorseView';
 import GrassScene from '../components/GrassScene';
+import GrassRoom from '../components/GrassRoom';
 import { sampleDayNight, clockPhase, lightPool, horseGlowFilter } from '../logic/daynight';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
@@ -108,6 +109,7 @@ export default function Grass() {
 
   return (
     <div className={styles.page}>
+      <GrassRoom />
       <header className={styles.header}>
         <div className={styles.stat}>
           <span className={styles.statLabel}>ストック</span>
