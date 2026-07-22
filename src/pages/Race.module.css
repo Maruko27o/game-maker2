@@ -139,35 +139,14 @@
   color: var(--ink-soft);
 }
 
-/* Course roulette (§10) */
+/* Course roulette (§10) — スロット風リール */
 .rouletteWrap {
   min-height: 60vh;
-  display: grid;
-  place-items: center;
-}
-.rouletteCard {
-  background: var(--panel-inner);
-  border: 4px solid var(--border-dark);
-  border-radius: 20px;
-  padding: 24px 18px;
-  text-align: center;
-  min-width: 260px;
-  box-shadow: 0 6px 0 var(--border);
-}
-.rouletteStop {
-  animation: rpop 0.5s cubic-bezier(0.2, 1.4, 0.5, 1);
-}
-@keyframes rpop {
-  0% { transform: scale(0.6); }
-  60% { transform: scale(1.12); }
-  100% { transform: scale(1); }
-}
-.rouletteEmoji {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 4px solid var(--border-dark);
-  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
 }
 .courseDot {
   display: inline-block;
@@ -177,35 +156,168 @@
   border: 2px solid var(--border-dark);
   vertical-align: -2px;
 }
-.rouletteName {
-  font-size: 24px;
+.slotTitle {
   font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: #b3852a;
+}
+
+.slotWindow {
+  position: relative;
+  width: min(92vw, 360px);
+  padding: 16px 0;
+  overflow: hidden;
+  background: var(--panel-inner);
+  border: 5px solid var(--border-dark);
+  border-radius: 20px;
+  box-shadow: 0 6px 0 var(--border), inset 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.slotWindowStop { cursor: pointer; }
+.pointer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  font-size: 22px;
+  line-height: 1;
+  color: #d0483f;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+.reel {
+  display: flex;
+  gap: 10px;
+  will-change: transform;
+}
+.reelCell {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.tile {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 3px solid var(--border-dark);
+  background: #fff;
+  box-shadow: 0 4px 0 rgba(80, 50, 20, 0.22);
+}
+.tileArt {
+  position: relative;
+  aspect-ratio: 220 / 134;
+}
+.tileSvg { width: 100%; height: 100%; display: block; }
+.tileBadge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  background: rgba(40, 28, 14, 0.6);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.tileName {
+  padding: 6px 6px 7px;
+  text-align: center;
+  font-weight: 900;
+  font-size: 14px;
   color: var(--ink);
-  margin-top: 4px;
 }
-.rouletteInfo {
-  margin-top: 10px;
-  font-weight: 700;
-  color: var(--ink-soft);
-  font-size: 13px;
+
+.fadeL, .fadeR {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 52px;
+  z-index: 2;
+  pointer-events: none;
 }
-.rouletteApt {
-  margin-top: 10px;
+.fadeL { left: 0; background: linear-gradient(90deg, var(--panel-inner), transparent); }
+.fadeR { right: 0; background: linear-gradient(270deg, var(--panel-inner), transparent); }
+
+.centerFrame {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 176px;
+  border-radius: 16px;
+  box-shadow: 0 0 0 3px #ffd257, 0 0 22px 4px rgba(255, 205, 80, 0.6);
+  z-index: 3;
+  pointer-events: none;
+}
+.spark0, .spark1, .spark2, .spark3 {
+  position: absolute;
+  font-size: 16px;
+  animation: sparkle 1.1s ease-in-out infinite;
+}
+.spark0 { top: -10px; left: -8px; animation-delay: 0s; }
+.spark1 { top: -8px; right: -8px; animation-delay: 0.25s; }
+.spark2 { bottom: -10px; right: -6px; animation-delay: 0.5s; }
+.spark3 { bottom: -8px; left: -6px; animation-delay: 0.75s; }
+@keyframes sparkle {
+  0%, 100% { transform: scale(0.7); opacity: 0.4; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.result {
+  width: min(92vw, 360px);
+  text-align: center;
+}
+.resultIn { animation: resultIn 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+@keyframes resultIn {
+  0% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.resultChips {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.chipSurface {
+  background: #eef4ff;
+  border: 2px solid #b9c9e6;
+  color: #3f5a8a;
+  border-radius: 999px;
+  padding: 4px 12px;
   font-weight: 800;
-  color: var(--ink);
-  background: var(--paper);
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 13px;
+  font-size: 12px;
 }
-.rouletteTap {
-  margin-top: 12px;
+.chipApt {
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-weight: 800;
+  font-size: 12px;
+  border: 2px solid;
+}
+.apt_good { background: #e9f7e2; border-color: #a8d69a; color: #3f7d3a; }
+.apt_ok { background: #eef4ff; border-color: #b9c9e6; color: #3f5a8a; }
+.apt_bad { background: #fbeee0; border-color: #e6c08a; color: #a86a2f; }
+.resultDesc {
   font-size: 12px;
   font-weight: 700;
   color: var(--ink-soft);
-  text-decoration: underline;
+  margin-bottom: 10px;
 }
+.resultBtn {
+  background: #f0c33c;
+  border: 3px solid #8a6410;
+  border-radius: 999px;
+  padding: 9px 24px;
+  font-weight: 900;
+  font-size: 15px;
+  color: #4a3410;
+  box-shadow: 0 3px 0 #8a6410;
+  cursor: pointer;
+}
+.resultBtn:active { transform: translateY(2px); box-shadow: 0 1px 0 #8a6410; }
 .courseList {
   display: flex;
   flex-direction: column;
