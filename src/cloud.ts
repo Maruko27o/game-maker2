@@ -214,11 +214,18 @@ export async function loadMyBetScore(): Promise<{ bestOdds: number; bestPayout: 
   const uid = useAuth.getState().user?.id;
   if (!uid) return null;
   try {
-    let res = await supabase.from('bet_scores').select('best_odds, best_payout').eq('user_id', uid).maybeSingle();
-    if (res.error) res = await supabase.from('bet_scores').select('best_odds').eq('user_id', uid).maybeSingle();
+    // Sum across all monthly rows (post-migration a user has one row per month);
+    // pre-migration there is a single row — both reduce to the lifetime best.
+    let res = await supabase.from('bet_scores').select('best_odds, best_payout').eq('user_id', uid);
+    if (res.error) res = (await supabase.from('bet_scores').select('best_odds').eq('user_id', uid)) as typeof res;
     if (res.error || !res.data) return null;
-    const d = res.data as { best_odds?: number | null; best_payout?: number | null };
-    return { bestOdds: Number(d.best_odds ?? 0), bestPayout: Number(d.best_payout ?? 0) };
+    let bestOdds = 0;
+    let bestPayout = 0;
+    for (const d of res.data as { best_odds?: number | null; best_payout?: number | null }[]) {
+      bestOdds = Math.max(bestOdds, Number(d.best_odds ?? 0));
+      bestPayout = Math.max(bestPayout, Number(d.best_payout ?? 0));
+    }
+    return { bestOdds, bestPayout };
   } catch {
     return null;
   }
@@ -226,20 +233,30 @@ export async function loadMyBetScore(): Promise<{ bestOdds: number; bestPayout: 
 
 export type RankBy = 'odds' | 'payout';
 
-/** Top scores (one row per user), ordered by best hit odds or biggest payout.
- *  Empty on any failure. Degrades if the best_payout column isn't applied yet. */
-export async function loadLeaderboard(limit = 50, by: RankBy = 'odds'): Promise<ScoreRow[]> {
+/** Top scores for a month (one row per user), ordered by best hit odds or biggest
+ *  payout. Pass `period` ('YYYY-MM') to scope to that month; omit for all-time.
+ *  Empty on any failure. Degrades if the period/best_payout columns aren't applied
+ *  yet (falls back to the unfiltered all-time list). */
+export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: string): Promise<ScoreRow[]> {
   if (!supabase) return [];
   const sortCol = by === 'payout' ? 'best_payout' : 'best_odds';
-  const query = (cols: string) =>
-    supabase!.from('bet_scores').select(cols).order(sortCol, { ascending: false }).limit(limit);
+  const query = (cols: string, withPeriod: boolean) => {
+    let q = supabase!.from('bet_scores').select(cols);
+    if (withPeriod && period) q = q.eq('period', period);
+    return q.order(sortCol, { ascending: false }).limit(limit);
+  };
   try {
-    // Try the full column set, then progressively fewer, so one missing column
-    // (e.g. best_payout not applied yet) doesn't wipe the whole list.
-    let res = await query('user_id, username, best_odds, best_payout, course_id, avatar, display_trophies');
-    if (res.error) res = await query('user_id, username, best_odds, course_id, avatar, display_trophies');
-    if (res.error) res = await query('user_id, username, best_odds, course_id, avatar');
-    if (res.error) res = await query('user_id, username, best_odds, course_id');
+    // Monthly (period-filtered) first; fall back to all-time if the period column
+    // isn't applied yet, then to fewer columns for older schemas.
+    const attempts: [string, boolean][] = [
+      ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies', true],
+      ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies', false],
+      ['user_id, username, best_odds, course_id, avatar, display_trophies', false],
+      ['user_id, username, best_odds, course_id, avatar', false],
+      ['user_id, username, best_odds, course_id', false],
+    ];
+    let res = await query(attempts[0][0], attempts[0][1]);
+    for (let i = 1; i < attempts.length && res.error; i++) res = await query(attempts[i][0], attempts[i][1]);
     if (res.error || !res.data) return [];
     return (
       res.data as unknown as {
