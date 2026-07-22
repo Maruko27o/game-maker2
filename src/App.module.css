@@ -45,9 +45,16 @@
      touches them. */
   padding: 68px 14px calc(var(--nav-h) + 20px);
   overflow-x: hidden;
-  /* 全画面共通の「うっすら木目の壁」下地（草むらと同じ木のぬくもり／低コントラスト）。 */
-  background-color: var(--paper);
-  background-image: repeating-linear-gradient(180deg, rgba(120, 85, 45, 0.05) 0 1px, transparent 1px 34px);
+  /* 全画面共通の「積み丸太の壁」下地（草むらのログハウスと同じ木目）。 */
+  background-color: #cba674;
+  background-image: repeating-linear-gradient(
+    180deg,
+    #dcb680 0px,
+    #cba674 7px,
+    #b58f57 25px,
+    #9c7940 30px,
+    #714f28 32px
+  );
 }
 
 .nav {

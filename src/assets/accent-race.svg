@@ -1,8 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 130">
-  <defs><pattern id="c" width="40" height="18" patternUnits="userSpaceOnUse">
-    <rect width="40" height="18" fill="#efe3c6"/>
-    <rect width="20" height="9" fill="#c7b184"/><rect x="20" y="9" width="20" height="9" fill="#c7b184"/>
-  </pattern></defs>
-  <path d="M0 84 Q120 66 240 80 T360 76 V130 H0 Z" fill="#cfe0a6" opacity="0.55"/>
-  <rect x="0" y="92" width="360" height="18" fill="url(#c)" opacity="0.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 150">
+  <defs>
+    <linearGradient id="t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9dc6a"/><stop offset="1" stop-color="#77bd44"/></linearGradient>
+    <pattern id="chk" width="24" height="20" patternUnits="userSpaceOnUse"><rect width="24" height="20" fill="#f4ecd6"/><rect width="12" height="10" fill="#5c5648"/><rect x="12" y="10" width="12" height="10" fill="#5c5648"/></pattern>
+  </defs>
+  <g opacity="0.9">
+    <path d="M0 78 Q120 64 240 76 T360 72 V150 H0 Z" fill="url(#t)"/>
+    <path d="M0 78 Q120 64 240 76 T360 72" fill="none" stroke="#c2ea94" stroke-width="2" opacity="0.7"/>
+    <rect x="0" y="92" width="360" height="20" fill="url(#chk)" opacity="0.85"/>
+    <g fill="#f4ecd6" stroke="#c2b48c" stroke-width="1">
+      <rect x="18" y="74" width="5" height="22" rx="2"/><rect x="10" y="76" width="21" height="4" rx="2"/>
+      <rect x="330" y="74" width="5" height="22" rx="2"/><rect x="322" y="76" width="21" height="4" rx="2"/>
+    </g>
+    <g transform="translate(300 40)"><rect x="0" y="0" width="4" height="72" rx="2" fill="#8a6a3a"/><path d="M4 2 q26 6 46 -2 q-6 12 0 24 q-26 8 -46 2 z" fill="url(#chk)" stroke="#5c5648" stroke-width="1"/></g>
+    <g transform="translate(96 58)" fill="#5a4636">
+      <path d="M2 14 q-8 -2 -10 -12 q6 4 12 2 l6 -10 q4 -6 12 -6 l14 0 q6 0 8 6 l6 4 q6 2 6 8 l-4 0 l-4 -6 l-6 20 l-6 0 l4 -14 l-14 0 l-6 14 l-6 0 l4 -14 z"/>
+      <path d="M40 -8 q6 -4 12 -2 q-4 4 -10 6 z"/>
+    </g>
+  </g>
 </svg>
