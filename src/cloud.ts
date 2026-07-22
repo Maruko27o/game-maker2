@@ -2,7 +2,8 @@
 // "local only" when the project isn't configured (see supabaseConfig.ts).
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import type { SaveData, HorseLook, ArenaHorseSnapshot } from './types';
+import type { SaveData, HorseLook, ArenaHorseSnapshot, FrameAward, FrameRank } from './types';
+import { monthKey } from './logic/period';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from './supabaseConfig';
 import { migrate, useStore } from './store';
 
@@ -299,6 +300,28 @@ export async function loadHallPeriods(before: string, limit = 12): Promise<strin
       if (seen.length >= limit) break;
     }
     return seen;
+  } catch {
+    return [];
+  }
+}
+
+/** 過去月で自分が上位3位に入っていたら、その年月・順位・種別のフレームを列挙する。
+ *  殿堂と同じ月次リーダーボードから判定。best-effort（未接続・未適用なら空）。 */
+export async function loadMyFrameAwards(userId: string): Promise<FrameAward[]> {
+  if (!supabase) return [];
+  try {
+    const past = await loadHallPeriods(monthKey(), 12);
+    const awards: FrameAward[] = [];
+    for (const period of past) {
+      for (const metric of ['odds', 'payout'] as const) {
+        const top3 = await loadLeaderboard(3, metric, period);
+        const idx = top3.findIndex(
+          (r) => r.userId === userId && (metric === 'odds' ? r.bestOdds > 0 : r.bestPayout > 0),
+        );
+        if (idx >= 0) awards.push({ period, rank: (idx + 1) as FrameRank, metric });
+      }
+    }
+    return awards;
   } catch {
     return [];
   }

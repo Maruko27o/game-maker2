@@ -17,6 +17,8 @@ import type {
   ArenaEntry,
   ArenaResult,
   ArenaHorseSnapshot,
+  MailItem,
+  FrameAward,
 } from './types';
 import { allParts } from './data/parts';
 import { COURSES } from './data/courses';
@@ -178,6 +180,8 @@ function freshSave(): SaveData {
     stats: freshStats(),
     avatarHorseId: null,
     displayTrophies: [],
+    mailbox: [],
+    equippedFrame: null,
     raceSession: null,
     arena: freshArena(),
     farmClaimedAt: Date.now(),
@@ -186,15 +190,30 @@ function freshSave(): SaveData {
 }
 
 // Profile prefs (icon horse + trophy shelf) — default sensibly for older saves.
+function normFrame(v: unknown): FrameAward | null {
+  if (!v || typeof v !== 'object') return null;
+  const f = v as Record<string, unknown>;
+  const rank = f.rank === 1 || f.rank === 2 || f.rank === 3 ? f.rank : null;
+  const metric = f.metric === 'odds' || f.metric === 'payout' ? f.metric : null;
+  if (typeof f.period !== 'string' || rank === null || metric === null) return null;
+  return { period: f.period, rank, metric };
+}
 function normProfile(d: Record<string, unknown>): {
   avatarHorseId: string | null;
   displayTrophies: number[];
+  mailbox: MailItem[];
+  equippedFrame: FrameAward | null;
 } {
   const avatarHorseId = typeof d.avatarHorseId === 'string' ? d.avatarHorseId : null;
   const displayTrophies = Array.isArray(d.displayTrophies)
     ? (d.displayTrophies as unknown[]).filter((n): n is number => n === 1 || n === 2 || n === 3).slice(0, 5)
     : [];
-  return { avatarHorseId, displayTrophies };
+  const mailbox = Array.isArray(d.mailbox)
+    ? (d.mailbox as unknown[]).filter(
+        (m): m is MailItem => !!m && typeof m === 'object' && typeof (m as MailItem).id === 'string',
+      )
+    : [];
+  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame) };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -436,6 +455,13 @@ type Store = SaveData & {
   // Profile (avatar horse + trophy shelf).
   setAvatarHorse: (id: string | null) => void;
   setDisplayTrophies: (ranks: number[]) => void;
+  // メールボックス＆アイコンフレーム（殿堂の上位3名へ毎月配布）。
+  /** 受信箱にフレームを配布（同一 period+種別は重複させない）。 */
+  receiveFrames: (awards: FrameAward[]) => void;
+  markMailRead: (id: string) => void;
+  markAllMailRead: () => void;
+  /** アイコンに装備するフレーム（null で外す）。 */
+  equipFrame: (frame: FrameAward | null) => void;
   // In-progress race, kept in the save so it resumes across reloads (改修：レース継続).
   raceSession: RaceSession | null;
   setRaceSession: (s: RaceSession | null) => void;
@@ -492,6 +518,8 @@ export const useStore = create<Store>((set, get) => {
       stats: next.stats,
       avatarHorseId: next.avatarHorseId,
       displayTrophies: next.displayTrophies,
+      mailbox: next.mailbox ?? [],
+      equippedFrame: next.equippedFrame ?? null,
       raceSession: next.raceSession ?? null,
       arena: next.arena ?? freshArena(),
       farmClaimedAt: next.farmClaimedAt ?? Date.now(),
@@ -545,6 +573,8 @@ export const useStore = create<Store>((set, get) => {
         stats: s.stats,
         avatarHorseId: s.avatarHorseId,
         displayTrophies: s.displayTrophies,
+        mailbox: s.mailbox,
+        equippedFrame: s.equippedFrame,
         arena: s.arena,
         farmClaimedAt: s.farmClaimedAt,
         savedAt: s.savedAt,
@@ -837,6 +867,29 @@ export const useStore = create<Store>((set, get) => {
       commit({
         displayTrophies: ranks.filter((n) => n === 1 || n === 2 || n === 3).slice(0, 5),
       }),
+
+    receiveFrames: (awards) => {
+      const s = get();
+      const box = s.mailbox ?? [];
+      const have = new Set(box.map((m) => m.id));
+      const add: MailItem[] = [];
+      for (const a of awards) {
+        const id = `frame-${a.period}-${a.metric}`;
+        if (have.has(id)) continue;
+        have.add(id);
+        add.push({ id, at: Date.now(), read: false, kind: 'frame', frame: a });
+      }
+      if (add.length) commit({ mailbox: [...add, ...box] });
+    },
+    markMailRead: (id) => {
+      const box = get().mailbox ?? [];
+      commit({ mailbox: box.map((m) => (m.id === id ? { ...m, read: true } : m)) });
+    },
+    markAllMailRead: () => {
+      const box = get().mailbox ?? [];
+      if (box.some((m) => !m.read)) commit({ mailbox: box.map((m) => ({ ...m, read: true })) });
+    },
+    equipFrame: (frame) => commit({ equippedFrame: frame }),
 
     setRaceSession: (s) => commit({ raceSession: s }),
     patchRaceSession: (patch) => {

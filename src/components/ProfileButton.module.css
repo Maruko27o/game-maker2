@@ -14,6 +14,13 @@
   display: grid;
   place-items: center;
 }
+/* フレーム装備中は丸縁を外し、額縁そのものをアイコンにする（銘板が切れないよう overflow 解放） */
+.framed {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
 @media (max-width: 520px) {
   .fab {
     left: 12px;
