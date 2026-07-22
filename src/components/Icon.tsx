@@ -5,7 +5,7 @@ export type IconName =
   | 'leaf' | 'horse' | 'palette' | 'book' | 'flag' | 'trophy'
   | 'star' | 'account' | 'cloud' | 'gear' | 'lock' | 'gift'
   | 'refresh' | 'bolt' | 'skip' | 'medal' | 'crown' | 'clipboard' | 'sparkle' | 'swords'
-  | 'dice' | 'eye' | 'eyeOff';
+  | 'dice' | 'eye' | 'eyeOff' | 'mail';
 
 const P: Record<IconName, JSX.Element> = {
   // 草むら
@@ -47,6 +47,7 @@ const P: Record<IconName, JSX.Element> = {
   medal: <path d="M8 2h8l-2 6H10L8 2zm4 6a7 7 0 100 14 7 7 0 000-14zm0 3l1.5 3 3.3.3-2.5 2.2.8 3.2L12 21l-2.9 1.9.8-3.2-2.5-2.2 3.3-.3L12 11z" fillRule="evenodd" />,
   crown: <path d="M3 8l3.5 3L12 5l5.5 6L21 8l-1.5 10h-15L3 8zm2 12h14v2H5v-2z" fillRule="evenodd" />,
   clipboard: <path d="M9 3h6v2h3v16H6V5h3V3zm0 4h6V5H9v2zm-1 4h8v-2H8v2zm0 4h8v-2H8v2zm0 4h5v-2H8v2z" fillRule="evenodd" />,
+  mail: <path d="M3 5h18v14H3V5zm2 2v.4l7 4.6 7-4.6V7H5zm14 2.9l-7 4.6-7-4.6V17h14V9.9z" fillRule="evenodd" />,
   sparkle: <path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6zm7 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />,
   swords: <path d="M3 3l6 2 8 8 1 4-4-1-8-8L3 3zm18 0l-2 6-3-1 4-5h1zM5 19l4-4 1 1-4 4-1-1zm12-4l4 4-1 1-4-4 1-1z" fillRule="evenodd" />,
   // サイコロ（5の目・目は穴として抜く）

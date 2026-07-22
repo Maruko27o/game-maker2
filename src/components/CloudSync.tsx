@@ -15,6 +15,7 @@ import {
   loadDisplayName,
   saveDisplayName,
   loadMyBetScore,
+  loadMyFrameAwards,
 } from '../cloud';
 import { reconcile } from '../logic/cloudReconcile';
 import { randomUsername } from '../logic/username';
@@ -44,6 +45,8 @@ function snapshot(): SaveData {
     stats: s.stats,
     avatarHorseId: s.avatarHorseId,
     displayTrophies: s.displayTrophies,
+    mailbox: s.mailbox ?? [],
+    equippedFrame: s.equippedFrame ?? null,
     raceSession: s.raceSession ?? null,
     arena: s.arena ?? null,
     farmClaimedAt: s.farmClaimedAt, // 牧場の放置収入アンカー（クラウドでも保持しオフライン加算を保つ）
@@ -126,6 +129,10 @@ export default function CloudSync() {
       // player's past 最大オッズ / 最大獲得賞金 show up (raise-only merge).
       const my = await loadMyBetScore();
       if (my && !cancelled) useStore.getState().foldStats({ maxOdds: my.bestOdds, maxPayout: my.bestPayout });
+
+      // 殿堂フレームの配布：過去月で上位3位に入っていたら受信箱へ（重複は無視）。
+      const awards = await loadMyFrameAwards(user.id);
+      if (awards.length && !cancelled) useStore.getState().receiveFrames(awards);
 
       // Ranking username (改修④): load it; if the account has none yet, assign a
       // friendly default and save it. Best-effort — no-ops without the DB.

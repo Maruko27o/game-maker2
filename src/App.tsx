@@ -5,6 +5,7 @@ import CloudSync from './components/CloudSync';
 import SyncConflictModal from './components/SyncConflictModal';
 import ProfileButton from './components/ProfileButton';
 import TaskButton from './components/TaskButton';
+import MailButton from './components/MailButton';
 import UpdateGate from './components/UpdateGate';
 import CoinBalance from './components/CoinBalance';
 import Title from './components/Title';
@@ -46,6 +47,7 @@ export default function App() {
       {showTitle && <Title onStart={dismissTitle} />}
       <ProfileButton />
       <TaskButton />
+      <MailButton />
       <CoinBalance />
       {migrated && (
         <div className={styles.notice} role="status">

@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { useAuth } from '../cloud';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
+import AvatarFrame from './AvatarFrame';
 import ProfileModal from './ProfileModal';
 import styles from './ProfileButton.module.css';
 
@@ -12,6 +13,7 @@ const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: 
 export default function ProfileButton() {
   const horses = useStore((s) => s.horses);
   const avatarHorseId = useStore((s) => s.avatarHorseId);
+  const equippedFrame = useStore((s) => s.equippedFrame ?? null);
 
   const wantAccount = useAuth((s) => s.wantAccount);
   const setWantAccount = useAuth((s) => s.setWantAccount);
@@ -36,11 +38,15 @@ export default function ProfileButton() {
   return (
     <>
       <button
-        className={styles.fab}
+        className={`${styles.fab} ${equippedFrame ? styles.framed : ''}`}
         onClick={() => { setTab('profile'); setOpen(true); }}
         aria-label="プロフィール"
       >
-        <HorseFace horse={avatar} size={40} />
+        {equippedFrame ? (
+          <AvatarFrame rank={equippedFrame.rank} metric={equippedFrame.metric} period={equippedFrame.period} look={avatar} size={46} />
+        ) : (
+          <HorseFace horse={avatar} size={40} />
+        )}
       </button>
       {open && <ProfileModal onClose={() => setOpen(false)} initialTab={tab} />}
     </>

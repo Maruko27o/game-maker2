@@ -234,6 +234,22 @@ export type ArenaState = {
   results: ArenaResult[]; // resolved tournaments, newest first (capped)
 };
 
+// アイコンフレーム（殿堂の上位3名に毎月配布）。獲得年月＋順位＋種別で一意。
+export type FrameMetric = 'odds' | 'payout';
+export type FrameRank = 1 | 2 | 3;
+export type FrameAward = { period: string; rank: FrameRank; metric: FrameMetric };
+
+// メールボックスの1通。フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
+export type MailItem = {
+  id: string; // 重複防止の安定ID（例 'frame-2026-06-odds'）
+  at: number; // 受信時刻(ms)
+  read: boolean;
+  kind: 'frame' | 'notice';
+  frame?: FrameAward; // kind==='frame'
+  title?: string; // kind==='notice'（将来用）
+  body?: string;
+};
+
 export type SaveData = {
   version: 6;
   owned: Record<string, number>; // part id -> count obtained (>=1 means owned)
@@ -256,6 +272,8 @@ export type SaveData = {
   stats: PlayerStats; // lifetime profile stats (改修：プロフィール実績)
   avatarHorseId: string | null; // profile: which owned horse is the player's icon
   displayTrophies: number[]; // profile: trophy ranks (1|2|3) shown on the shelf (max 5)
+  mailbox?: MailItem[]; // 受信箱（フレーム配布・補填など）
+  equippedFrame?: FrameAward | null; // アイコンに装備中のフレーム
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads
   arena?: ArenaState | null; // 対戦: pending entry + last revealed tournament
   farmClaimedAt?: number; // 牧場の放置収入を最後に回収した時刻（ms）
