@@ -6,6 +6,7 @@ import { GRASS_OKAWARI_COST } from '../data/coins';
 import type { HorseLook, DecoSlot } from '../types';
 import HorseView from '../components/HorseView';
 import GrassScene from '../components/GrassScene';
+import { sampleDayNight, clockPhase, lightPool, horseGlowFilter } from '../logic/daynight';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import PartThumb from '../components/PartThumb';
@@ -77,6 +78,10 @@ export default function Grass() {
   const countdown = useMemo(() => fmt(msUntilNextEnergy(state, now)), [energy, energyUpdatedAt, now]);
   const available = stock > 0;
 
+  // 昼夜サイクル（草むらは実時計で1時間かけて一周。reduced は昼で固定）。
+  const dn = sampleDayNight(reduced ? 0 : clockPhase(now, 3_600_000));
+  const isDark = dn.nightMix > 0.5;
+
   function onTap() {
     if (phase !== 'ready' || !available) return;
     setPhase('searching');
@@ -131,7 +136,7 @@ export default function Grass() {
         disabled={!available || phase !== 'ready'}
         aria-label={available ? '草むらをタップしてウマを探す' : '次のチャージまで待つ'}
       >
-        <GrassScene />
+        <GrassScene d={dn} reduced={reduced} />
         <div className={styles.grassRow} aria-hidden>
           {Array.from({ length: 7 }).map((_, i) => (
             <span key={i} className={styles.blade} style={{ animationDelay: `${i * 0.06}s` }}>
@@ -141,11 +146,14 @@ export default function Grass() {
         </div>
 
         {phase === 'reveal' && wild ? (
-          <div className={`${styles.wild} ${reduced ? '' : styles.runIn}`}>
-            <HorseView horse={wild} size={200} shadow />
-          </div>
+          <>
+            {dn.lightStrength > 0.05 && <div className={styles.wildLight} style={{ background: lightPool(dn) }} aria-hidden />}
+            <div className={`${styles.wild} ${reduced ? '' : styles.runIn}`} style={{ filter: horseGlowFilter(dn) }}>
+              <HorseView horse={wild} size={200} shadow />
+            </div>
+          </>
         ) : (
-          <div className={styles.hint}>
+          <div className={`${styles.hint} ${isDark ? styles.nightText : ''}`}>
             {available ? (
               <>
                 <div className={styles.tapEmoji}><Icon name="leaf" size={40} /></div>
