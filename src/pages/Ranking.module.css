@@ -65,7 +65,7 @@
   flex-direction: column;
   align-items: flex-start;
   line-height: 1.15;
-  font-family: Georgia, 'Hiragino Mincho ProN', serif;
+  font-family: inherit; /* 殿堂ページの見出しと同じ字体（丸ゴシック）に揃える */
   font-size: 17px;
   font-weight: 800;
   color: #f2dd9c;
@@ -111,7 +111,7 @@
   border-color: var(--blue);
   background: #eef4ff;
 }
-/* 6位以下は非表示。文字を使わず、点(⋮)＋薄れていくゴースト行で「まだ続く」を示す。 */
+/* 4位以下は非表示。3位の下に薄れていくゴースト行（四角）で「まだ続く」を示す。 */
 .more {
   list-style: none;
   display: flex;
@@ -120,19 +120,6 @@
   gap: 5px;
   margin-top: 2px;
   padding: 4px 12px 2px;
-}
-.moreDots {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin-bottom: 1px;
-}
-.moreDots i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--ink-soft);
-  opacity: 0.6;
 }
 .moreGhost {
   width: 82%;
@@ -228,23 +215,15 @@
   font-size: 17px;
   white-space: nowrap;
 }
-.self {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-wrap: wrap;
+/* 「あなたの順位」（4位以下のとき、トップ3の下に自分の行を出す）。 */
+.myRank {
   margin-top: 14px;
-  padding: 10px 12px;
-  background: var(--panel-inner);
-  border: 2px dashed var(--border);
-  border-radius: 12px;
-  font-weight: 700;
-  color: var(--ink);
 }
-.selfHint {
-  font-size: 11px;
-  font-weight: 600;
+.myRankLabel {
+  font-size: 12px;
+  font-weight: 800;
   color: var(--ink-soft);
+  margin: 0 0 6px 2px;
 }
 
 /* ranking tabs (最大オッズ / 最大獲得賞金) */
