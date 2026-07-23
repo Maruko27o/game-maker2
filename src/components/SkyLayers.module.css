@@ -50,15 +50,17 @@
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
-  transform: rotate(24deg);
+  /* 明るい先端は左端。落下方向（左下＝translate(-180,80)）と先端の向きを一致
+     させるため、先端が左下を指すよう -24deg 傾ける（尾は右上へたなびく）。 */
+  transform: rotate(-24deg);
   opacity: 0;
   animation: meteor 9s linear infinite;
 }
 @keyframes meteor {
-  0% { opacity: 0; transform: translate(0, 0) rotate(24deg) scaleX(0.2); }
+  0% { opacity: 0; transform: translate(0, 0) rotate(-24deg) scaleX(0.2); }
   2% { opacity: 1; }
   8% { opacity: 0.9; }
-  13% { opacity: 0; transform: translate(-180px, 80px) rotate(24deg) scaleX(1); }
+  13% { opacity: 0; transform: translate(-180px, 80px) rotate(-24deg) scaleX(1); }
   100% { opacity: 0; }
 }
 
