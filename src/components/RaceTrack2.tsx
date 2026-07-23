@@ -426,6 +426,17 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         {remaining <= track.straight / 2 && phaseEff === 'run' && !done && (
           <div className={styles.callout}>最後の直線！</div>
         )}
+        {/* Skip — always shown during the run as a fixed pill on the track (easy to
+            reach), disabled until the half-way point, then it lights up & unlocks. */}
+        {skippable && phaseEff === 'run' && !done && (
+          <button
+            className={styles.skip}
+            disabled={travelled / result.distanceS < 0.5}
+            onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}
+          >
+            スキップ <Icon name="skip" size={14} />
+          </button>
+        )}
       </div>
       {/* Running order (horses) sits on top, fixed. */}
       <RankPanel
@@ -459,12 +470,6 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           </div>
         );
       })()}
-      {/* Skip unlocks only in the second half of the race (RACE_V4 §2 request). */}
-      {skippable && phaseEff === 'run' && !done && travelled / result.distanceS >= 0.5 && (
-        <button className={styles.skip} onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}>
-          スキップ <Icon name="skip" size={14} />
-        </button>
-      )}
     </div>
   );
 }
