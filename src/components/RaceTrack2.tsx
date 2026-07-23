@@ -326,14 +326,29 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         <svg viewBox={viewBox} className={styles.svg} preserveAspectRatio="xMidYMid meet">
           <HorseDefs />
           {scenery}
-          {/* cheering crowd — bobs harder down the final stretch and at the finish */}
+          {/* cheering crowd — little spectators that bob (and raise their arms
+              on the final stretch / at the finish) instead of plain dots */}
           {(() => {
             const hype = done ? 1 : travelled / result.distanceS > 0.85 ? 0.7 : 0.28;
             const amp = reduced ? 0 : 1.4 * hype;
             const t = elapsed.current * 7;
-            return crowdDots.map((d, i) => (
-              <circle key={i} cx={d.x} cy={d.y - Math.abs(Math.sin(t + d.ph)) * amp} r={1.7} fill={d.fill} />
-            ));
+            const skins = ['#f0c19a', '#e8b088', '#d69a72', '#f2cbaa'];
+            const wave = hype > 0.5;
+            return crowdDots.map((d, i) => {
+              const bob = Math.abs(Math.sin(t + d.ph)) * amp;
+              return (
+                <g key={i} transform={`translate(${d.x} ${d.y - bob})`}>
+                  {wave && !reduced && (
+                    <g stroke={d.fill} strokeWidth={0.5} strokeLinecap="round">
+                      <line x1={-0.95} y1={-0.4} x2={-1.7} y2={-2.1 - bob * 0.5} />
+                      <line x1={0.95} y1={-0.4} x2={1.7} y2={-2.1 - bob * 0.5} />
+                    </g>
+                  )}
+                  <path d="M -1.15 0.7 Q -1.15 -0.9 0 -0.9 Q 1.15 -0.9 1.15 0.7 Z" fill={d.fill} />
+                  <circle cx={0} cy={-1.7} r={0.88} fill={skins[(Math.abs(Math.round(d.x)) + i) % skins.length]} />
+                </g>
+              );
+            });
           })()}
           {/* turf vision — a decorative jumbotron on the grandstand. The live
               leader is shown in the HUD ("先頭 N番") so there's no giant number
