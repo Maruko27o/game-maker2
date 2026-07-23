@@ -8,11 +8,18 @@
   font-weight: 900;
   color: var(--ink);
   margin-bottom: 4px;
+  /* 木目の上でも沈まないよう淡いハローで持ち上げる。 */
+  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.85), 0 1px 6px rgba(255, 248, 235, 0.55);
 }
 .lead {
+  display: inline-block;
   font-size: 13px;
   color: var(--ink-soft);
   margin-bottom: 14px;
+  /* 木目の上で読みやすいよう、文字を淡い和紙色のプレートに載せる。 */
+  background: rgba(255, 249, 238, 0.82);
+  border-radius: 9px;
+  padding: 3px 11px;
 }
 /* 対象月＋更新までのカウントダウン（毎月1日0:00 JST で更新・赤字） */
 .monthBar {
@@ -115,34 +122,14 @@
 /* 4位以下は非表示。3位の下に薄れていくゴースト行（四角）で「まだ続く」を示す。 */
 .more {
   list-style: none;
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 5px;
   margin-top: 2px;
   padding: 4px 12px 2px;
-  /* 月桂樹つきトロフィーの装飾を四角の裏に敷けるだけの高さを確保。 */
-  min-height: 150px;
-}
-/* 4位以下の四角の「後ろ」に月桂樹トロフィーを表示（装飾・タップ透過）。
-   四角はトロフィーの脚元あたりを横切り、カップ本体は四角の上にのぞく。 */
-.more::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 44%;
-  transform: translate(-50%, -50%);
-  width: 300px;
-  height: 140px;
-  background: url('../assets/accent-rank.svg') no-repeat center / contain;
-  z-index: 0;
-  pointer-events: none;
 }
 .moreGhost {
-  position: relative;
-  z-index: 1;
   width: 82%;
   height: 14px;
   border-radius: 10px;
@@ -241,10 +228,14 @@
   margin-top: 14px;
 }
 .myRankLabel {
+  display: inline-block;
   font-size: 12px;
   font-weight: 800;
   color: var(--ink-soft);
   margin: 0 0 6px 2px;
+  background: rgba(255, 249, 238, 0.82);
+  border-radius: 8px;
+  padding: 2px 10px;
 }
 
 /* ranking tabs (最大オッズ / 最大獲得賞金) */
