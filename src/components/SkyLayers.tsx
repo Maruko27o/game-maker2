@@ -5,13 +5,32 @@ import styles from './SkyLayers.module.css';
 // 昼夜サイクルの空。3レイヤの空をクロスフェードし、太陽・月・星・流れ星・鳥を重ねる。
 // 親要素は position:relative / overflow:hidden 前提。純装飾（pointer-events:none）。
 
-// 星の座標は固定（レイアウト揺れ防止）。上空 55% までにばらまく。
-const STARS = Array.from({ length: 46 }, (_, i) => ({
-  x: (i * 61.803) % 100,
-  y: (i * 37.94) % 55,
-  r: i % 6 === 0 ? 1.5 : 1,
-  d: (i % 5) * 0.6, // twinkle delay
-}));
+// 星の座標は固定（レイアウト揺れ防止）だが、規則的な並び（格子・斜め縞）にならない
+// よう擬似乱数で散らす。本物の夜空に寄せて、暗く小さな星を多数・明るく大きな星を
+// 少数にする（等級分布）。上空 55% までにばらまく。
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const STARS = (() => {
+  const rnd = mulberry32(20260724);
+  return Array.from({ length: 60 }, () => {
+    const m = rnd(); // 等級（明るさ）：小さく暗い星が多数、明るい大きな星は少数
+    const r = m < 0.72 ? 0.9 + rnd() * 0.5 : m < 0.93 ? 1.6 + rnd() * 0.6 : 2.5 + rnd() * 0.8;
+    return {
+      x: rnd() * 100,
+      y: Math.pow(rnd(), 1.25) * 55, // 上空ほどやや密（地平線付近は少なめ）
+      r,
+      o: 0.5 + rnd() * 0.5, // 個体差の明るさ（奥行き感）
+      d: rnd() * 3, // またたきの位相
+    };
+  });
+})();
 
 // 太陽の色は高度で変化（高い＝黄色、地平線＝オレンジ）。
 function sunBg(sunY: number): string {
@@ -79,7 +98,7 @@ export default function SkyLayers({
       {/* 星 */}
       <svg className={styles.stars} style={{ opacity: d.starOp }} viewBox="0 0 100 100" preserveAspectRatio="none">
         {STARS.map((s, i) => (
-          <circle key={i} cx={s.x} cy={s.y} r={s.r * 0.35} fill="#fff" className={reduced ? '' : styles.twinkle} style={{ animationDelay: `${s.d}s` }} />
+          <circle key={i} cx={s.x} cy={s.y} r={s.r * 0.35} fill="#fff" fillOpacity={s.o} className={reduced ? '' : styles.twinkle} style={{ animationDelay: `${s.d}s` }} />
         ))}
       </svg>
 
