@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { pickCount, pickOne, drawParts, spawn, COUNT_TABLE, RARITY_WEIGHT, type Poolable } from './gacha';
 import type { Rarity } from '../types';
+import { allParts, slotOf } from '../data/parts';
 
 // Deterministic RNG that cycles through a fixed sequence.
 function seq(values: number[]): () => number {
@@ -106,6 +107,31 @@ describe('spawn', () => {
       expect(got.length).toBeLessThanOrEqual(4);
       expect(new Set(got).size).toBe(got.length);
       for (const id of got) expect(ids.has(id)).toBe(true);
+    }
+  });
+});
+
+describe('slot-unique draws (草むら: 同じ部位を重複入手しない)', () => {
+  it('drawParts never repeats a key when keyed by slot, and is capped by distinct keys', () => {
+    const p: Poolable[] = [];
+    for (let i = 0; i < 20; i++) p.push({ id: `body${i}`, rarity: 'N' });
+    for (let i = 0; i < 20; i++) p.push({ id: `tail${i}`, rarity: 'R' });
+    const keyOf = (e: Poolable) => e.id.replace(/\d+$/, ''); // 'body' | 'tail'
+    const rng = mulberry32(9);
+    for (let t = 0; t < 3000; t++) {
+      const got = drawParts(rng, p, 4, keyOf);
+      const keys = got.map((id) => id.replace(/\d+$/, ''));
+      expect(new Set(keys).size).toBe(keys.length); // no repeated slot
+      expect(got.length).toBeLessThanOrEqual(2); // only 2 distinct slots exist
+    }
+  });
+
+  it('a 草むら spawn from allParts never repeats a 部位', () => {
+    const rng = mulberry32(123);
+    for (let t = 0; t < 4000; t++) {
+      const got = spawn(rng, allParts, (e) => slotOf(e.id));
+      const slots = got.map((id) => slotOf(id));
+      expect(new Set(slots).size).toBe(slots.length);
     }
   });
 });

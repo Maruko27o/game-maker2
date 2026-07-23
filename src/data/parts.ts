@@ -57,3 +57,14 @@ export function partName(id: string): string {
 export function partRarity(id: string): Rarity {
   return colorById[id]?.rarity ?? decoById[id]?.rarity ?? 'N';
 }
+
+/** The equip 部位（slot）a part occupies — a color slot (body/mane/hoof) or a
+ *  deco slot (head/face/back/tail). A single grass draw keeps to one part per
+ *  slot so the wild horse that appears wears exactly the parts you receive. */
+export function slotOf(id: string): string {
+  const cs = colorSlotById[id];
+  if (cs) return `color:${cs}`;
+  const d = decoById[id];
+  if (d) return `deco:${d.slot}`;
+  return id;
+}

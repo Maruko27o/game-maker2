@@ -41,26 +41,36 @@ export function pickOne<T extends Poolable>(rng: RNG, pool: T[]): T {
 }
 
 /**
- * Draw `count` distinct parts from the pool. Re-rolls on a repeat within the
- * same draw (CLAUDE.md §5.3). Returns the drawn part ids in draw order.
+ * Draw `count` parts from the pool, distinct by `keyOf` (defaults to the part
+ * id). Re-rolls on a repeat key within the same draw (CLAUDE.md §5.3). Passing a
+ * slot key makes a single draw hold at most one part per 部位. Returns the drawn
+ * part ids in draw order.
  */
-export function drawParts<T extends Poolable>(rng: RNG, pool: T[], count: number): string[] {
-  const n = Math.min(count, pool.length);
+export function drawParts<T extends Poolable>(
+  rng: RNG,
+  pool: T[],
+  count: number,
+  keyOf: (e: T) => string = (e) => e.id,
+): string[] {
+  // The number of distinct keys caps the draw (e.g. one part per slot).
+  const distinctKeys = new Set(pool.map(keyOf)).size;
+  const n = Math.min(count, distinctKeys);
   const picked: string[] = [];
-  const seen = new Set<string>();
+  const seenKeys = new Set<string>();
   // Bounded reroll: with a 48-part pool and count<=4 this terminates quickly.
   let guard = 0;
   while (picked.length < n && guard < 10000) {
     guard++;
     const e = pickOne(rng, pool);
-    if (seen.has(e.id)) continue;
-    seen.add(e.id);
+    const k = keyOf(e);
+    if (seenKeys.has(k)) continue;
+    seenKeys.add(k);
     picked.push(e.id);
   }
   return picked;
 }
 
-/** Full spawn: decide the count, then draw that many distinct parts. */
-export function spawn<T extends Poolable>(rng: RNG, pool: T[]): string[] {
-  return drawParts(rng, pool, pickCount(rng));
+/** Full spawn: decide the count, then draw that many parts distinct by `keyOf`. */
+export function spawn<T extends Poolable>(rng: RNG, pool: T[], keyOf?: (e: T) => string): string[] {
+  return drawParts(rng, pool, pickCount(rng), keyOf);
 }

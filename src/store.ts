@@ -20,7 +20,7 @@ import type {
   MailItem,
   FrameAward,
 } from './types';
-import { allParts } from './data/parts';
+import { allParts, slotOf } from './data/parts';
 import { COURSES } from './data/courses';
 import { spawn as gachaSpawn } from './logic/gacha';
 import { ENERGY_CAP, spendEnergy } from './logic/energy';
@@ -600,7 +600,10 @@ export const useStore = create<Store>((set, get) => {
       const spent = spendEnergy({ energy: get().energy, energyUpdatedAt: get().energyUpdatedAt }, now);
       if (!spent) return null;
 
-      const ids = gachaSpawn(rng, allParts);
+      // 1回の草むらでは同じ部位（body/mane/hoof の色・head/face/back/tail の飾り）を
+      // 重複させない。→ 飛び出してくるウマは受け取ったパーツを漏れなく身に着けた姿になり、
+      // 「着けていないのに入手できる」違和感を解消する。
+      const ids = gachaSpawn(rng, allParts, (e) => slotOf(e.id));
       const owned = { ...get().owned };
       const parts: SpawnedPart[] = ids.map((id) => {
         const isNew = !owned[id];
