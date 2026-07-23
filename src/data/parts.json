@@ -725,7 +725,7 @@
       "name": "ゴーグル",
       "slot": "face",
       "rarity": "R",
-      "svg": "<path fill=\"none\" stroke=\"#5c3620\" stroke-width=\"10\" stroke-linecap=\"round\" d=\"M 360,110 L 476,126\"/>\n<circle fill=\"#8fd6e8\" stroke=\"#5c3620\" stroke-width=\"6\" cx=\"404\" cy=\"122\" r=\"17\"/>\n<circle fill=\"#8fd6e8\" stroke=\"#5c3620\" stroke-width=\"6\" cx=\"452\" cy=\"132\" r=\"15\"/>\n<path fill=\"#ffffff\" stroke=\"none\" opacity=\"0.5\" d=\"M 397,114 l8,0 -8,10 -4,0 z\"/>"
+      "svg": "<path fill=\"none\" stroke=\"#5c3620\" stroke-width=\"11\" stroke-linecap=\"round\" d=\"M 386,116 L 356,108\"/>\n<path fill=\"none\" stroke=\"#5c3620\" stroke-width=\"7\" stroke-linecap=\"round\" d=\"M 421,128 L 442,138\"/>\n<circle fill=\"#8fd6e8\" stroke=\"#5c3620\" stroke-width=\"6\" cx=\"404\" cy=\"122\" r=\"19\"/>\n<path fill=\"#ffffff\" stroke=\"none\" opacity=\"0.5\" d=\"M 396,113 l8,0 -8,11 -4,0 z\"/>"
     },
     {
       "id": "face_visor",
@@ -858,7 +858,7 @@
       "name": "メガネ",
       "slot": "face",
       "rarity": "N",
-      "svg": "<circle fill=\"#cfeaf5\" stroke=\"#2b2118\" stroke-width=\"5\" cx=\"404\" cy=\"122\" r=\"19\"/>\n<circle fill=\"#cfeaf5\" stroke=\"#2b2118\" stroke-width=\"5\" cx=\"452\" cy=\"132\" r=\"16\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"6\" d=\"M 423,126 L 436,129 M 386,118 L 366,112\"/>\n<path fill=\"#ffffff\" stroke=\"none\" opacity=\"0.6\" d=\"M 396,113 l8,0 -8,11 -4,0 z\"/>\n<path fill=\"#ffffff\" stroke=\"none\" opacity=\"0.6\" d=\"M 446,124 l6,0 -6,9 -3,0 z\"/>"
+      "svg": "<circle fill=\"#cfeaf5\" stroke=\"#2b2118\" stroke-width=\"5\" cx=\"404\" cy=\"122\" r=\"19\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"6\" stroke-linecap=\"round\" d=\"M 387,116 L 366,110\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M 421,128 L 438,140\"/>\n<path fill=\"#ffffff\" stroke=\"none\" opacity=\"0.6\" d=\"M 396,113 l8,0 -8,11 -4,0 z\"/>"
     },
     {
       "id": "face_eyepatch",
@@ -1040,7 +1040,7 @@
       "slot": "face",
       "name": "サングラス",
       "rarity": "N",
-      "svg": "<rect fill=\"#2b2620\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" x=\"386\" y=\"112\" width=\"30\" height=\"22\" rx=\"9\"/>\n<rect fill=\"#2b2620\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" x=\"420\" y=\"120\" width=\"26\" height=\"20\" rx=\"9\"/>\n<path fill=\"none\" stroke=\"#2b2620\" stroke-width=\"5\" d=\"M 416,120 L 422,124 M 386,116 L 366,110\"/>\n<path fill=\"#5a6470\" stroke=\"none\" d=\"M 391,116 l 9,0 -8,10 -4,0 z\"/>"
+      "svg": "<rect fill=\"#2b2620\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"4\" x=\"385\" y=\"111\" width=\"35\" height=\"25\" rx=\"10\"/>\n<path fill=\"none\" stroke=\"#2b2620\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M 386,115 L 366,109\"/>\n<path fill=\"none\" stroke=\"#2b2620\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M 420,124 L 438,138\"/>\n<path fill=\"#5a6470\" stroke=\"none\" d=\"M 391,116 l 9,0 -8,10 -4,0 z\"/>"
     },
     {
       "id": "face_monocle",
@@ -1054,7 +1054,7 @@
       "slot": "face",
       "name": "ほっぺ",
       "rarity": "N",
-      "svg": "<ellipse fill=\"#ff9eb0\" stroke=\"none\" opacity=\"0.72\" cx=\"392\" cy=\"140\" rx=\"12\" ry=\"8\"/>\n<ellipse fill=\"#ff9eb0\" stroke=\"none\" opacity=\"0.72\" cx=\"440\" cy=\"150\" rx=\"10\" ry=\"7\"/>"
+      "svg": "<ellipse fill=\"#ff9eb0\" stroke=\"none\" opacity=\"0.72\" cx=\"408\" cy=\"147\" rx=\"13\" ry=\"9\"/>"
     },
     {
       "id": "face_mustache",
@@ -1068,7 +1068,7 @@
       "slot": "face",
       "name": "ハートのほっぺ",
       "rarity": "N",
-      "svg": "<path fill=\"#ff6a8a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"2\" d=\"M 390,136 C 386,130 378,132 378,138 C 378,144 390,150 390,150 C 390,150 402,144 402,138 C 402,132 394,130 390,136 Z\"/>\n<path fill=\"#ff6a8a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"2\" d=\"M 442,148 C 438,143 431,145 431,150 C 431,155 442,160 442,160 C 442,160 453,155 453,150 C 453,145 446,143 442,148 Z\"/>"
+      "svg": "<path fill=\"#ff6a8a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"2\" transform=\"translate(407,145)\" d=\"M 0,-4 C -4,-10 -12,-8 -12,-2 C -12,4 0,10 0,10 C 0,10 12,4 12,-2 C 12,-8 4,-10 0,-4 Z\"/>"
     },
     {
       "id": "face_snorkel",
@@ -1299,7 +1299,7 @@
       "slot": "face",
       "name": "ぐるぐるメガネ",
       "rarity": "R",
-      "svg": "<circle fill=\"#f6f2ea\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" cx=\"404\" cy=\"122\" r=\"18\"/>\n<circle fill=\"#f6f2ea\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" cx=\"452\" cy=\"132\" r=\"15\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"3\" d=\"M 404,122 m 0,-9 a 9,9 0 1 1 -6,3 a 5,5 0 1 0 4,-2\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"3\" d=\"M 452,132 m 0,-8 a 8,8 0 1 1 -5,3 a 4,4 0 1 0 3,-2\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"5\" d=\"M 423,126 L 436,129 M 386,118 L 366,112\"/>"
+      "svg": "<circle fill=\"#f6f2ea\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"5\" cx=\"404\" cy=\"122\" r=\"19\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"3\" d=\"M 404,122 m 0,-10 a 10,10 0 1 1 -7,3 a 5,5 0 1 0 4,-2\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M 387,116 L 366,110\"/>\n<path fill=\"none\" stroke=\"#2b2118\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M 421,128 L 438,140\"/>"
     },
     {
       "id": "back_butterfly_wings",
