@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useStore } from './store';
 import CloudSync from './components/CloudSync';
 import SyncConflictModal from './components/SyncConflictModal';
@@ -20,9 +20,22 @@ const NAV: { to: string; label: string; icon: IconName; end?: boolean }[] = [
   { to: '/ranking', label: 'ランキング', icon: 'trophy' },
 ];
 
+// Which screen's fixed background accent to show. The accent lives on <main>
+// (the scroll container) so it — like the wood wall — stays put while the page
+// content scrolls. 草むら is intentionally left plain (its room art covers it).
+function screenOf(pathname: string): string {
+  if (pathname.startsWith('/stable')) return 'stable';
+  if (pathname.startsWith('/collection')) return 'collection';
+  if (pathname.startsWith('/race')) return 'race';
+  if (pathname.startsWith('/ranking')) return 'ranking';
+  if (pathname.startsWith('/hall')) return 'ranking';
+  return 'grass';
+}
+
 export default function App() {
   const migrated = useStore((s) => s.migrated);
   const clearMigrated = useStore((s) => s.clearMigrated);
+  const screen = screenOf(useLocation().pathname);
   // Show the title once per session (a calm entry point, ACCOUNT.md §3).
   const [showTitle, setShowTitle] = useState(() => {
     try {
@@ -57,7 +70,7 @@ export default function App() {
           </button>
         </div>
       )}
-      <main className={styles.main}>
+      <main className={styles.main} data-screen={screen}>
         <Outlet />
       </main>
       <nav className={styles.nav} aria-label="メインメニュー">

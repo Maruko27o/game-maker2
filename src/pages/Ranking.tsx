@@ -155,7 +155,7 @@ export default function Ranking() {
       </div>
       <p className={styles.lead}>
         {tab === 'payout'
-          ? '1レースの馬券でいちばん多く払戻を得たプレイヤーは誰だ！'
+          ? '1番多く払戻を得たプレイヤーは誰だ！'
           : 'どんな馬券でも、いちばん高い的中オッズで競争！'}
       </p>
 

@@ -3,22 +3,28 @@
   flex-direction: column;
   gap: 14px;
   min-height: 100%;
-  /* 画面下端の控えめワンポイント（チェッカー旗＋芝）。内容の裏＝背景。 */
-  background: url('../assets/accent-race.svg') no-repeat center bottom / 100% auto;
 }
 .title {
   font-size: 22px;
   color: var(--ink);
+  /* 木目の上でも沈まないよう淡いハローで持ち上げる。 */
+  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.85), 0 1px 6px rgba(255, 248, 235, 0.55);
 }
 .lead {
+  align-self: flex-start;
   margin: -6px 0 0;
   color: var(--ink-soft);
   font-weight: 700;
+  /* 木目の上で読みやすいよう、文字を淡い和紙色のプレートに載せる。 */
+  background: rgba(255, 249, 238, 0.82);
+  border-radius: 9px;
+  padding: 3px 11px;
 }
 .h2 {
   font-size: 15px;
   color: var(--ink);
   margin: 2px 0 -4px;
+  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.85), 0 1px 5px rgba(255, 248, 235, 0.5);
 }
 
 /* Mode menu --------------------------------------------------------------- */
@@ -163,7 +169,11 @@
   font-weight: 900;
   font-size: 15px;
   letter-spacing: 0.12em;
-  color: #b3852a;
+  color: #96631a;
+  /* 木目の上で読みやすいよう和紙色のプレートに載せる。 */
+  background: rgba(255, 249, 238, 0.85);
+  border-radius: 999px;
+  padding: 4px 14px;
 }
 
 .slotWindow {
@@ -304,10 +314,15 @@
 .apt_ok { background: #eef4ff; border-color: #b9c9e6; color: #3f5a8a; }
 .apt_bad { background: #fbeee0; border-color: #e6c08a; color: #a86a2f; }
 .resultDesc {
+  display: inline-block;
   font-size: 12px;
   font-weight: 700;
   color: var(--ink-soft);
   margin-bottom: 10px;
+  /* 木目の上で読みやすいよう和紙色のプレートに載せる。 */
+  background: rgba(255, 249, 238, 0.82);
+  border-radius: 9px;
+  padding: 3px 11px;
 }
 .resultBtn {
   background: #f0c33c;

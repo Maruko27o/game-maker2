@@ -3,8 +3,6 @@
   flex-direction: column;
   gap: 16px;
   min-height: 100%;
-  /* 画面下端の控えめワンポイント（本棚）。内容の裏＝背景。 */
-  background: url('../assets/accent-book.svg') no-repeat center bottom / 100% auto;
 }
 .head {
   display: flex;
@@ -14,6 +12,8 @@
 .title {
   font-size: 24px;
   color: var(--ink);
+  /* 木目の上でも沈まないよう淡いハローで持ち上げる。 */
+  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.85), 0 1px 6px rgba(255, 248, 235, 0.55);
 }
 .progress {
   display: flex;
@@ -37,6 +37,7 @@
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.85), 0 1px 5px rgba(255, 248, 235, 0.5);
 }
 
 .tabs {
