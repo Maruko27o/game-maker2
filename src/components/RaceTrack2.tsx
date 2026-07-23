@@ -8,7 +8,6 @@ import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
 import { buildScenery } from './trackScenery';
 import { betTier, type Bet, type BetKind } from '../logic/betting';
-import Icon from './Icon';
 import styles from './RaceTrack2.module.css';
 
 const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
@@ -434,7 +433,10 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
             disabled={travelled / result.distanceS < 0.5}
             onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}
           >
-            スキップ <Icon name="skip" size={14} />
+            スキップ
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M6 5l7 7-7 7M13 5l7 7-7 7" />
+            </svg>
           </button>
         )}
       </div>
