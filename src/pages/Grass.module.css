@@ -166,21 +166,6 @@
   font-size: 18px;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
 }
-.tapEmoji {
-  font-size: 40px;
-  color: #4e9e38;
-  filter: drop-shadow(0 2px 1px rgba(34, 74, 24, 0.25));
-  animation: poke 1.1s ease-in-out infinite;
-}
-@keyframes poke {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(6px);
-  }
-}
 .waitTitle {
   font-size: 20px !important;
 }
@@ -199,9 +184,6 @@
 .nightText p {
   color: #f4ecd8 !important;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55) !important;
-}
-.nightText .tapEmoji {
-  color: #cfe6a0 !important;
 }
 
 .wild {

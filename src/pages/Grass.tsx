@@ -150,7 +150,6 @@ export default function Grass() {
         ) : available ? (
           // ストック有り：タップを促す（外を眺める窓の中央に軽く重ねる）。
           <div className={`${styles.hint} ${isDark ? styles.nightText : ''}`}>
-            <div className={styles.tapEmoji}><Icon name="leaf" size={40} /></div>
             <p>草むらをタップ！</p>
             <p className={styles.hintSub}>ストック {stock}個</p>
           </div>
