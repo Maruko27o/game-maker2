@@ -6,8 +6,56 @@
 // outlines, two-tone mowing stripes.
 import { toWorld, lapLength, goalS, type Track } from '../logic/track';
 import type { Course } from '../data/courses';
+import styles from './RaceTrack2.module.css';
 
 export type VB = { x: number; y: number; w: number; h: number };
+
+// --- little illustrated props (meter-space) ---------------------------------
+
+// A single flower: green stem + 5 rounded petals + yellow center. Sways from base.
+function Flower({ x, y, col, delay, cls }: { x: number; y: number; col: string; delay: number; cls: string }) {
+  const hy = y - 1.7; // flower head sits above the base
+  const R = 0.7;
+  return (
+    <g className={cls} style={{ animationDelay: `${delay}s` }}>
+      <line x1={x} y1={y} x2={x} y2={hy + 0.2} stroke="#4f8f43" strokeWidth={0.34} strokeLinecap="round" />
+      <ellipse cx={x - 0.5} cy={y - 0.9} rx={0.55} ry={0.28} fill="#5aa049" transform={`rotate(-32 ${x - 0.5} ${y - 0.9})`} />
+      {[0, 1, 2, 3, 4].map((k) => {
+        const a = (k / 5) * Math.PI * 2 - Math.PI / 2;
+        const px = x + Math.cos(a) * R, py = hy + Math.sin(a) * R;
+        return <ellipse key={k} cx={px} cy={py} rx={0.52} ry={0.34} fill={col} transform={`rotate(${(a * 180) / Math.PI + 90} ${px} ${py})`} />;
+      })}
+      <circle cx={x} cy={hy} r={0.44} fill="#f8e24c" />
+      <circle cx={x - 0.12} cy={hy - 0.12} r={0.18} fill="#fff" opacity={0.6} />
+    </g>
+  );
+}
+
+// A tuft of grass: a few tapered blades fanning up. Sways from its base.
+function Tuft({ x, y, s, delay }: { x: number; y: number; s: number; delay: number }) {
+  const bl = (dx: number, dy: number, c: string) => (
+    <path d={`M ${x} ${y} Q ${x + dx * 0.4} ${y - dy * 0.7} ${x + dx} ${y - dy}`} fill="none" stroke={c} strokeWidth={0.28 * s} strokeLinecap="round" />
+  );
+  return (
+    <g className={styles.tuft} style={{ animationDelay: `${delay}s` }}>
+      {bl(-0.7 * s, 1.4 * s, '#5aa049')}
+      {bl(0, 1.8 * s, '#67b356')}
+      {bl(0.7 * s, 1.4 * s, '#5aa049')}
+    </g>
+  );
+}
+
+// Reeds/cattails at the water's edge: slim blades + a brown cattail head.
+function Reed({ x, y, delay }: { x: number; y: number; delay: number }) {
+  return (
+    <g className={styles.swayB} style={{ animationDelay: `${delay}s` }}>
+      <line x1={x - 0.5} y1={y} x2={x - 0.9} y2={y - 2.6} stroke="#4f8f43" strokeWidth={0.26} strokeLinecap="round" />
+      <line x1={x + 0.5} y1={y} x2={x + 0.7} y2={y - 2.2} stroke="#5aa049" strokeWidth={0.26} strokeLinecap="round" />
+      <line x1={x} y1={y} x2={x} y2={y - 3.4} stroke="#4f8f43" strokeWidth={0.3} strokeLinecap="round" />
+      <rect x={x - 0.28} y={y - 3.9} width={0.56} height={1.1} rx={0.28} fill="#9c6a3c" />
+    </g>
+  );
+}
 
 // Surface palettes: two tones for the mowing stripes.
 const SURFACE: Record<string, [string, string]> = {
@@ -85,24 +133,57 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
     );
   }
 
-  // --- infield decorations (pond + flowerbeds), centred in the oval hole ---
+  // --- infield decorations (pond + flowerbeds + grass tufts), centred in the hole ---
   const cx = 0, cy = 0; // oval centre (meter origin)
   const pondRx = track.straight * 0.28 + 6;
+  const pondRy = track.radius * 0.34;
+  const fpal = ['#e97ba0', '#f2c14e', '#d98be0', '#f28a6a', '#8bd0e0'];
+  // flowerbeds: a soil mound with a little cluster of drawn flowers that sway.
   const flowers = [];
-  const fpal = ['#e79ab0', '#f2c14e', '#d98be0', '#8bd0e0'];
   for (let i = 0; i < 5; i++) {
     const ang = (i / 5) * Math.PI * 2 + 0.4;
     const fx = Math.cos(ang) * (track.straight * 0.36 + 10);
     const fy = Math.sin(ang) * (track.radius * 0.42);
+    const cluster = [
+      { dx: -2.6, dy: 0.4, c: fpal[i % 5] },
+      { dx: 0, dy: -0.2, c: fpal[(i + 1) % 5] },
+      { dx: 2.6, dy: 0.5, c: fpal[(i + 3) % 5] },
+    ];
     flowers.push(
       <g key={'fl' + i}>
-        <ellipse cx={fx} cy={fy} rx={5.5} ry={2.6} fill="#6ea84e" />
-        {[0, 1, 2, 3].map((j) => (
-          <circle key={j} cx={fx - 3 + j * 2} cy={fy - 0.4 + (j % 2) * 0.8} r={0.9} fill={fpal[(i + j) % fpal.length]} />
+        <ellipse cx={fx} cy={fy + 0.5} rx={5.6} ry={2.4} fill="#5f9a44" />
+        <ellipse cx={fx} cy={fy + 0.1} rx={5.6} ry={2.0} fill="#6eb356" />
+        {cluster.map((f, j) => (
+          <Flower key={j} x={fx + f.dx} y={fy + f.dy} col={f.c} delay={(i * 3 + j * 2) * 0.31} cls={j % 2 ? styles.swayB : styles.sway} />
         ))}
       </g>,
     );
   }
+  // grass tufts scattered on the infield (ring between pond and inner fence).
+  const tufts = [];
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2 + 0.7;
+    const rr = 0.62 + (i % 3) * 0.08;
+    const tx = Math.cos(a) * (track.straight * 0.5 + 4) * rr;
+    const ty = Math.sin(a) * track.radius * 0.66 * rr;
+    // keep tufts off the pond
+    if (Math.abs(tx) < pondRx * 0.9 && Math.abs(ty) < pondRy * 0.9) continue;
+    tufts.push(<Tuft key={'tf' + i} x={tx} y={ty} s={0.9 + (i % 3) * 0.18} delay={(i % 7) * 0.4} />);
+  }
+  // reeds + lily pads at / on the pond.
+  const reeds = [
+    <Reed key="rd0" x={-pondRx * 0.72} y={-pondRy * 0.2} delay={0} />,
+    <Reed key="rd1" x={-pondRx * 0.5} y={pondRy * 0.55} delay={0.7} />,
+    <Reed key="rd2" x={pondRx * 0.66} y={pondRy * 0.3} delay={1.3} />,
+    <Reed key="rd3" x={pondRx * 0.34} y={-pondRy * 0.55} delay={1.9} />,
+  ];
+  const lilypad = (lx: number, ly: number, r: number, flower: boolean, key: string) => (
+    <g key={key}>
+      <ellipse cx={lx} cy={ly} rx={r} ry={r * 0.5} fill="#57a04a" />
+      <path d={`M ${lx} ${ly} L ${lx + r * 0.9} ${ly - r * 0.25} L ${lx + r * 0.9} ${ly + r * 0.25} Z`} fill="url(#pond)" />
+      {flower && <circle cx={lx - r * 0.2} cy={ly - r * 0.12} r={r * 0.22} fill="#f7d0e0" />}
+    </g>
+  );
 
   // --- distant mountains + tree line along the horizon (no outline) ---
   const mtn = (mx: number, w: number, h: number) =>
@@ -148,10 +229,27 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
       <path d={edgePath(track, -halfW - 1.1)} fill="none" stroke="#dfe4ea" strokeWidth={0.5} opacity={0.8} />
       <g>{innerPosts}</g>
 
-      {/* infield: grass hole, pond (with a sparkle), flowerbeds */}
+      {/* infield: grass hole + tufts, detailed pond (rim, ripples, lily pads,
+          reeds, shimmering reflection), flowerbeds */}
       <path d={edgePath(track, -halfW - 1.4)} fill={isCircuit ? '#3f4a3c' : '#8fc25c'} stroke="none" />
-      <ellipse cx={cx} cy={cy} rx={pondRx} ry={track.radius * 0.34} fill="url(#pond)" />
-      <ellipse cx={cx - pondRx * 0.3} cy={-track.radius * 0.1} rx={pondRx * 0.28} ry={1.6} fill="#ffffff" opacity={0.45} />
+      {/* soft mown patches for a bit of grass variation */}
+      <g fill={isCircuit ? '#48543f' : '#83b752'} opacity={0.5}>
+        <ellipse cx={-pondRx * 0.9} cy={pondRy * 0.9} rx={pondRx * 0.5} ry={pondRy * 0.5} />
+        <ellipse cx={pondRx * 1.0} cy={-pondRy * 0.7} rx={pondRx * 0.45} ry={pondRy * 0.55} />
+      </g>
+      <g>{tufts}</g>
+      {/* pond body + shadow rim */}
+      <ellipse cx={cx} cy={cy} rx={pondRx} ry={pondRy} fill={isCircuit ? '#3b4a63' : '#5aa0b0'} opacity={0.5} />
+      <ellipse cx={cx} cy={cy - 0.4} rx={pondRx - 0.5} ry={pondRy - 0.6} fill="url(#pond)" />
+      {/* ripples */}
+      <ellipse className={styles.ripple} style={{ animationDelay: '0s' }} cx={-pondRx * 0.25} cy={pondRy * 0.1} rx={pondRx * 0.4} ry={pondRy * 0.4} fill="none" stroke="#ffffff" strokeWidth={0.28} />
+      <ellipse className={styles.ripple} style={{ animationDelay: '2.3s' }} cx={pondRx * 0.35} cy={-pondRy * 0.2} rx={pondRx * 0.3} ry={pondRy * 0.3} fill="none" stroke="#ffffff" strokeWidth={0.24} />
+      {/* shimmering reflection streaks */}
+      <ellipse className={styles.shimmer} cx={cx - pondRx * 0.3} cy={-pondRy * 0.35} rx={pondRx * 0.32} ry={1.4} fill="#ffffff" />
+      <ellipse className={styles.shimmer} style={{ animationDelay: '1.4s' }} cx={cx + pondRx * 0.25} cy={pondRy * 0.28} rx={pondRx * 0.2} ry={1.0} fill="#ffffff" />
+      {lilypad(-pondRx * 0.4, pondRy * 0.35, 1.8, true, 'lp0')}
+      {lilypad(pondRx * 0.45, -pondRy * 0.1, 1.4, false, 'lp1')}
+      <g>{reeds}</g>
       <g>{flowers}</g>
 
       {/* furlong poles */}

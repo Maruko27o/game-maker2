@@ -76,6 +76,21 @@
   color: var(--ink-soft);
 }
 
+/* --- 競馬場の細部アニメ（花・葦・草の揺れ、水面のきらめき・波紋）。
+      reduced-motion では停止。SVG 要素に付与するので transform-box: fill-box。 --- */
+.sway { transform-box: fill-box; transform-origin: 50% 100%; animation: rt-sway 2.8s ease-in-out infinite; }
+.swayB { transform-box: fill-box; transform-origin: 50% 100%; animation: rt-sway 3.7s ease-in-out infinite; }
+.tuft { transform-box: fill-box; transform-origin: 50% 100%; animation: rt-sway 4.4s ease-in-out infinite; }
+@keyframes rt-sway { 0%, 100% { transform: rotate(-3.6deg); } 50% { transform: rotate(3.6deg); } }
+.shimmer { animation: rt-shimmer 3s ease-in-out infinite; }
+@keyframes rt-shimmer { 0%, 100% { opacity: 0.22; } 50% { opacity: 0.6; } }
+.ripple { transform-box: fill-box; transform-origin: center; opacity: 0; animation: rt-ripple 4.6s ease-out infinite; }
+@keyframes rt-ripple { 0% { transform: scale(0.3); opacity: 0.5; } 70% { opacity: 0.12; } 100% { transform: scale(1.45); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sway, .swayB, .tuft, .shimmer { animation: none; }
+  .ripple { animation: none; opacity: 0; }
+}
+
 /* bet slip strip during the race (改修①②) */
 .betStrip {
   display: flex;
