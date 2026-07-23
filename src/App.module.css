@@ -62,14 +62,24 @@
 /* 画面別ワンポイント（木目の手前・内容の裏）。accent はコンテンツボックス基準で
    下端＝ナビの上に置き、木目は要素いっぱいに敷く。背景なのでスクロールしても
    固定され、内容の可読性も損なわない（草むらは付けない）。 */
-.main[data-screen='race'],
-.main[data-screen='stable'],
+/* 図鑑（本棚）・ランキング（トロフィー）は中央の一枚絵なので、余白を残して
+   コンテンツボックス基準で下端＝ナビの上に置く。 */
 .main[data-screen='collection'],
 .main[data-screen='ranking'] {
   background-repeat: no-repeat, repeat;
   background-position: center bottom, center top;
   background-size: 100% auto, auto;
   background-origin: content-box, border-box;
+}
+
+/* レース（芝＋旗）・マイウマ（柵＋牧場）は横長の風景なので、左右の余白まで
+   はみ出して画面いっぱい（端から端まで）に表示。縦位置はナビの上に合わせる。 */
+.main[data-screen='race'],
+.main[data-screen='stable'] {
+  background-repeat: no-repeat, repeat;
+  background-position: center bottom calc(var(--nav-h) + 20px), center top;
+  background-size: 100% auto, auto;
+  background-origin: border-box, border-box;
 }
 .main[data-screen='race'] {
   background-image: url('./assets/accent-race.svg'),
