@@ -399,7 +399,7 @@ export default function Race() {
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>レース</h1>
-        <p className={styles.lead}>コースはランダム。育てたウマを走らせよう！</p>
+        <p className={styles.lead}>育てたウマを走らせよう！</p>
         <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(false); setMode(60); setScreen('setup'); }}>
           <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
           <span className={styles.modeText}>
