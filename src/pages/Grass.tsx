@@ -177,31 +177,35 @@ export default function Grass() {
       )}
 
       {phase === 'reveal' && (
-        <div className={styles.reward}>
-          <h2 className={styles.rewardTitle}>{reward.length}個 ゲット！</h2>
-          <div className={styles.cards}>
-            {reward.map((p, i) => (
-              <div
-                key={p.id}
-                className={styles.card}
-                style={{ animationDelay: reduced ? '0s' : `${i * 0.12}s` }}
-              >
-                <div className={styles.cardThumb}>
-                  <PartThumb id={p.id} size={84} />
+        // 1画面に収まる中央モーダル。1タップの最大は4個なので4枚まで横並び。
+        <div className={styles.rewardOverlay} onClick={close}>
+          <div className={styles.reward} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.rewardClose} onClick={close} aria-label="閉じる">✕</button>
+            <h2 className={styles.rewardTitle}>{reward.length}個 ゲット！</h2>
+            <div className={styles.cards}>
+              {reward.slice(0, 4).map((p, i) => (
+                <div
+                  key={p.id}
+                  className={styles.card}
+                  style={{ animationDelay: reduced ? '0s' : `${i * 0.12}s` }}
+                >
+                  <div className={styles.cardThumb}>
+                    <PartThumb id={p.id} size={84} />
+                  </div>
+                  <div className={styles.cardName}>{partName(p.id)}</div>
+                  <div className={styles.cardMeta}>
+                    <span className={`rarity rarity-${partRarity(p.id)}`}>{partRarity(p.id)}</span>
+                    <span className={p.isNew ? styles.tagNew : styles.tagDup}>
+                      {p.isNew ? 'NEW' : 'かぶり'}
+                    </span>
+                  </div>
                 </div>
-                <div className={styles.cardName}>{partName(p.id)}</div>
-                <div className={styles.cardMeta}>
-                  <span className={`rarity rarity-${partRarity(p.id)}`}>{partRarity(p.id)}</span>
-                  <span className={p.isNew ? styles.tagNew : styles.tagDup}>
-                    {p.isNew ? 'NEW' : 'かぶり'}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <button className="btn" onClick={close}>
+              {stock > 0 ? `続ける（あと${stock}個）` : '続ける'}
+            </button>
           </div>
-          <button className="btn" onClick={close}>
-            {stock > 0 ? `続ける（あと${stock}個）` : '続ける'}
-          </button>
         </div>
       )}
     </div>
