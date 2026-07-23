@@ -57,6 +57,7 @@ export default function Grass() {
   const [phase, setPhase] = useState<Phase>('ready');
   const [reward, setReward] = useState<SpawnedPart[]>([]);
   const [wild, setWild] = useState<HorseLook | null>(null);
+  const [revealed, setRevealed] = useState(false); // 登場演出が終わってから確認欄を出す
   const [bonus, setBonus] = useState(0); // grass first-of-day coin bonus toast
 
   useEffect(() => {
@@ -85,6 +86,7 @@ export default function Grass() {
 
   function onTap() {
     if (phase !== 'ready' || !available) return;
+    setRevealed(false);
     setPhase('searching');
     const run = () => {
       const res = doSpawn();
@@ -95,6 +97,8 @@ export default function Grass() {
       setReward(res.parts);
       setWild(makeWildHorse(res.parts));
       setPhase('reveal');
+      // reduced motion では登場演出（runIn）が無いので、すぐ確認欄を出す。
+      if (reduced) setRevealed(true);
     };
     if (reduced) run();
     else setTimeout(run, 700);
@@ -104,6 +108,7 @@ export default function Grass() {
     setPhase('ready');
     setReward([]);
     setWild(null);
+    setRevealed(false);
     setNow(Date.now());
   }
 
@@ -143,7 +148,14 @@ export default function Grass() {
         {phase === 'reveal' && wild ? (
           <>
             {dn.lightStrength > 0.05 && <div className={styles.wildLight} style={{ background: lightPool(dn) }} aria-hidden />}
-            <div className={`${styles.wild} ${reduced ? '' : styles.runIn}`} style={{ filter: horseGlowFilter(dn) }}>
+            <div
+              className={`${styles.wild} ${reduced ? '' : styles.runIn}`}
+              style={{ filter: horseGlowFilter(dn) }}
+              onAnimationEnd={(e) => {
+                // 登場演出（runIn）が終わったら確認欄を出す。子要素のアニメは無視。
+                if (e.currentTarget === e.target) setRevealed(true);
+              }}
+            >
               <HorseView horse={wild} size={200} shadow />
             </div>
           </>
@@ -176,35 +188,34 @@ export default function Grass() {
         </div>
       )}
 
-      {phase === 'reveal' && (
-        // 1画面に収まる中央モーダル。1タップの最大は4個なので4枚まで横並び。
-        <div className={styles.rewardOverlay} onClick={close}>
-          <div className={styles.reward} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.rewardClose} onClick={close} aria-label="閉じる">✕</button>
-            <h2 className={styles.rewardTitle}>{reward.length}個 ゲット！</h2>
-            <div className={styles.cards}>
-              {reward.slice(0, 4).map((p, i) => (
-                <div
-                  key={p.id}
-                  className={styles.card}
-                  style={{ animationDelay: reduced ? '0s' : `${i * 0.12}s` }}
-                >
-                  <div className={styles.cardThumb}>
-                    <PartThumb id={p.id} size={84} />
-                  </div>
-                  <div className={styles.cardName}>{partName(p.id)}</div>
-                  <div className={styles.cardMeta}>
-                    <span className={`rarity rarity-${partRarity(p.id)}`}>{partRarity(p.id)}</span>
-                    <span className={p.isNew ? styles.tagNew : styles.tagDup}>
-                      {p.isNew ? 'NEW' : 'かぶり'}
-                    </span>
-                  </div>
+      {phase === 'reveal' && revealed && (
+        // 馬の登場演出を見終えてから、下の方に小さめの「確認欄」として表示。
+        // 画面下のタブには重ねない（ナビの上に固定）。1タップ最大4個なので4枚まで。
+        <div className={styles.reward} role="status">
+          <button className={styles.rewardClose} onClick={close} aria-label="閉じる">✕</button>
+          <div className={styles.rewardTitle}>
+            {reward.length}個 ゲット！
+            {stock > 0 && <span className={styles.rewardSub}>あと{stock}個</span>}
+          </div>
+          <div className={styles.cards}>
+            {reward.slice(0, 4).map((p, i) => (
+              <div
+                key={p.id}
+                className={styles.card}
+                style={{ animationDelay: reduced ? '0s' : `${i * 0.1}s` }}
+              >
+                <div className={styles.cardThumb}>
+                  <PartThumb id={p.id} size={84} />
                 </div>
-              ))}
-            </div>
-            <button className="btn" onClick={close}>
-              {stock > 0 ? `続ける（あと${stock}個）` : '続ける'}
-            </button>
+                <div className={styles.cardName}>{partName(p.id)}</div>
+                <div className={styles.cardMeta}>
+                  <span className={`rarity rarity-${partRarity(p.id)}`}>{partRarity(p.id)}</span>
+                  <span className={p.isNew ? styles.tagNew : styles.tagDup}>
+                    {p.isNew ? 'NEW' : 'かぶり'}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
