@@ -185,6 +185,43 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
     </g>
   );
 
+  // --- real-racecourse infield: mown rings (lawn texture) + a hedge just inside
+  //     the rail + scattered shrubs, so the ring between the fence and the pond
+  //     isn't bare. ---
+  const mowRings = isCircuit
+    ? []
+    : [
+        { rx: track.straight * 0.62 + 8, ry: track.radius * 0.8, c: '#84b953' },
+        { rx: track.straight * 0.46 + 6, ry: track.radius * 0.6, c: '#8dc25c' },
+        { rx: track.straight * 0.3 + 4, ry: track.radius * 0.42, c: '#84b953' },
+      ].map((m, i) => <ellipse key={'mr' + i} cx={cx} cy={cy} rx={m.rx} ry={m.ry} fill={m.c} />);
+  // hedge ring hugging the inner rail (thick green band + scalloped bumps)
+  const hedgeD = edgePath(track, -halfW - 2.2);
+  const hedgeBumps = [];
+  const nBump = Math.max(10, Math.round(lap / 6));
+  for (let i = 0; i < nBump; i++) {
+    const p = toWorld(track, (i / nBump) * lap, -halfW - 2.2);
+    hedgeBumps.push(<circle key={'hb' + i} cx={p.x} cy={p.y} r={1.15} fill={i % 2 ? '#4f9243' : '#58a24a'} />);
+  }
+  // rounded shrubs dotted around the infield ring (kept off the pond)
+  const bush = (bx: number, by: number, s: number, key: string) => (
+    <g key={key}>
+      <ellipse cx={bx} cy={by + 1.5 * s} rx={3.4 * s} ry={1.0 * s} fill="#000" opacity={0.1} />
+      <circle cx={bx - 1.8 * s} cy={by} r={2.0 * s} fill="#4f9243" />
+      <circle cx={bx + 1.8 * s} cy={by} r={2.0 * s} fill="#4f9243" />
+      <circle cx={bx} cy={by - 1.2 * s} r={2.4 * s} fill="#59a44b" />
+      <circle cx={bx - 0.5 * s} cy={by - 1.9 * s} r={1.0 * s} fill="#6cba5a" />
+    </g>
+  );
+  const bushes = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + 0.25;
+    const bx = Math.cos(a) * (track.straight * 0.52 + 6);
+    const by = Math.sin(a) * (track.radius * 0.62);
+    if (Math.abs(bx) < pondRx * 1.05 && Math.abs(by) < pondRy * 1.05) continue;
+    bushes.push(bush(bx, by, 0.85 + (i % 3) * 0.16, 'bs' + i));
+  }
+
   // --- distant mountains + tree line along the horizon (no outline) ---
   const mtn = (mx: number, w: number, h: number) =>
     `M ${mx - w} ${horizon} Q ${mx - w * 0.4} ${horizon - h} ${mx} ${horizon - h * 0.82} Q ${mx + w * 0.5} ${horizon - h} ${mx + w} ${horizon} Z`;
@@ -229,14 +266,21 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
       <path d={edgePath(track, -halfW - 1.1)} fill="none" stroke="#dfe4ea" strokeWidth={0.5} opacity={0.8} />
       <g>{innerPosts}</g>
 
-      {/* infield: grass hole + tufts, detailed pond (rim, ripples, lily pads,
-          reeds, shimmering reflection), flowerbeds */}
+      {/* infield: grass hole + mown rings + hedge ring + shrubs + tufts, detailed
+          pond (rim, ripples, lily pads, reeds, shimmering reflection), flowerbeds */}
       <path d={edgePath(track, -halfW - 1.4)} fill={isCircuit ? '#3f4a3c' : '#8fc25c'} stroke="none" />
-      {/* soft mown patches for a bit of grass variation */}
-      <g fill={isCircuit ? '#48543f' : '#83b752'} opacity={0.5}>
-        <ellipse cx={-pondRx * 0.9} cy={pondRy * 0.9} rx={pondRx * 0.5} ry={pondRy * 0.5} />
-        <ellipse cx={pondRx * 1.0} cy={-pondRy * 0.7} rx={pondRx * 0.45} ry={pondRy * 0.55} />
-      </g>
+      {/* concentric mown rings (lawn texture) */}
+      <g opacity={isCircuit ? 0 : 0.55}>{mowRings}</g>
+      {/* hedge hugging the inner rail so the fence-to-pond ring isn't bare */}
+      {!isCircuit && (
+        <>
+          <path d={hedgeD} fill="none" stroke="#3f7d38" strokeWidth={2.6} strokeLinejoin="round" />
+          <g>{hedgeBumps}</g>
+          <path d={hedgeD} fill="none" stroke="#5aa049" strokeWidth={0.9} opacity={0.8} />
+        </>
+      )}
+      {/* shrubs dotted around the infield */}
+      {!isCircuit && <g>{bushes}</g>}
       <g>{tufts}</g>
       {/* pond body + shadow rim */}
       <ellipse cx={cx} cy={cy} rx={pondRx} ry={pondRy} fill={isCircuit ? '#3b4a63' : '#5aa0b0'} opacity={0.5} />

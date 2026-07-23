@@ -166,21 +166,43 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
     );
   }, [track, course, vb.x, vb.y, vb.w, vb.h, stands]);
 
-  // Spectator seats (positions are static; they bob per-frame in the render).
-  const crowdDots = useMemo(() => {
-    const dots: { x: number; y: number; fill: string; ph: number }[] = [];
-    const palette = ['#d98b8b', '#8bb7d9', '#e0c27a', '#a6d98b', '#c79bd9'];
-    for (let r = 0; r < 3; r++) {
-      for (let x = b.minX; x < b.maxX; x += 5) {
-        dots.push({
-          x: x + (r % 2) * 2.5,
-          y: b.minY - stands + 4 + r * 5,
-          fill: palette[(Math.abs(x) + r) % palette.length],
-          ph: (Math.abs(x) * 7 + r * 3) % 100,
-        });
+  // Spectators — a *densely packed* grandstand. Rows interlock (half-step offset)
+  // so there are no gaps; colours/sizes vary; each person bobs on its own desynced
+  // CSS clock (no more everyone-in-unison). Static & memoised so the density costs
+  // nothing per animation frame (unlike the old per-frame dots).
+  const crowd = useMemo(() => {
+    const palette = ['#e08a8a', '#7fb0dd', '#e6c06a', '#9ad088', '#c79bd9', '#e79ab0', '#7dcbc0', '#f0a86a', '#a6a6e0', '#d98b8b'];
+    const skins = ['#f0c19a', '#e8b088', '#d69a72', '#f2cbaa'];
+    const people = [];
+    let idx = 0;
+    for (let r = 0; r < 4; r++) {
+      const off = (r % 2) * 1.4; // interlock alternate rows → no gaps
+      const y = b.minY - stands + 2.5 + r * 3.0;
+      for (let x = b.minX + 1; x < b.maxX; x += 2.8) {
+        const jx = (((idx * 37) % 7) / 7) * 0.8 - 0.4;
+        const s = 0.86 + (idx % 3) * 0.09;
+        const fill = palette[(idx * 5 + r) % palette.length];
+        const skin = skins[(idx * 3 + r) % skins.length];
+        const delay = (((idx * 13) % 100) / 100) * 1.8;
+        const dur = 1.3 + (((idx * 7) % 10) / 10) * 1.0;
+        people.push(
+          <g key={idx} transform={`translate(${(x + off + jx).toFixed(2)} ${y.toFixed(2)})`}>
+            <g className={styles.person} style={{ animationDelay: `${delay.toFixed(2)}s`, animationDuration: `${dur.toFixed(2)}s` }}>
+              {idx % 4 === 0 && (
+                <g className={styles.wave} stroke={fill} strokeWidth={0.5 * s} strokeLinecap="round">
+                  <line x1={-0.9 * s} y1={-0.3} x2={-1.5 * s} y2={-2.2 * s} />
+                  <line x1={0.9 * s} y1={-0.3} x2={1.5 * s} y2={-2.2 * s} />
+                </g>
+              )}
+              <path d={`M ${-1.15 * s} ${0.7 * s} Q ${-1.15 * s} ${-0.9 * s} 0 ${-0.9 * s} Q ${1.15 * s} ${-0.9 * s} ${1.15 * s} ${0.7 * s} Z`} fill={fill} />
+              <circle cx={0} cy={-1.6 * s} r={0.78 * s} fill={skin} />
+            </g>
+          </g>,
+        );
+        idx++;
       }
     }
-    return dots;
+    return people;
   }, [b.minX, b.maxX, b.minY, stands]);
 
   // Full starting gate (§9): one numbered stall per entrant, straddling the
@@ -326,30 +348,9 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         <svg viewBox={viewBox} className={styles.svg} preserveAspectRatio="xMidYMid meet">
           <HorseDefs />
           {scenery}
-          {/* cheering crowd — little spectators that bob (and raise their arms
-              on the final stretch / at the finish) instead of plain dots */}
-          {(() => {
-            const hype = done ? 1 : travelled / result.distanceS > 0.85 ? 0.7 : 0.28;
-            const amp = reduced ? 0 : 1.4 * hype;
-            const t = elapsed.current * 7;
-            const skins = ['#f0c19a', '#e8b088', '#d69a72', '#f2cbaa'];
-            const wave = hype > 0.5;
-            return crowdDots.map((d, i) => {
-              const bob = Math.abs(Math.sin(t + d.ph)) * amp;
-              return (
-                <g key={i} transform={`translate(${d.x} ${d.y - bob})`}>
-                  {wave && !reduced && (
-                    <g stroke={d.fill} strokeWidth={0.5} strokeLinecap="round">
-                      <line x1={-0.95} y1={-0.4} x2={-1.7} y2={-2.1 - bob * 0.5} />
-                      <line x1={0.95} y1={-0.4} x2={1.7} y2={-2.1 - bob * 0.5} />
-                    </g>
-                  )}
-                  <path d="M -1.15 0.7 Q -1.15 -0.9 0 -0.9 Q 1.15 -0.9 1.15 0.7 Z" fill={d.fill} />
-                  <circle cx={0} cy={-1.7} r={0.88} fill={skins[(Math.abs(Math.round(d.x)) + i) % skins.length]} />
-                </g>
-              );
-            });
-          })()}
+          {/* densely-packed grandstand crowd (static + CSS-animated). Near the
+              finish the whole stand cheers harder (faster bob) via a parent class. */}
+          <g className={done || travelled / result.distanceS > 0.85 ? styles.crowdHype : undefined}>{crowd}</g>
           {/* turf vision — a decorative jumbotron on the grandstand. The live
               leader is shown in the HUD ("先頭 N番") so there's no giant number
               floating on the course (which read as clutter). */}
