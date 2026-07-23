@@ -434,7 +434,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
             onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}
           >
             スキップ
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M6 5l7 7-7 7M13 5l7 7-7 7" />
             </svg>
           </button>
