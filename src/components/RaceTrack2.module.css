@@ -66,14 +66,47 @@
   font-size: 14px;
   white-space: nowrap;
 }
+/* Skip — a fixed pill on the track (bottom-right corner), always in reach without
+   scrolling. Disabled/greyed for the first half, then lights up when it unlocks. */
 .skip {
-  align-self: flex-end;
-  background: var(--panel-inner);
-  border: 3px solid var(--border);
-  border-radius: 10px;
-  padding: 6px 14px;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 5px 11px;
   font-weight: 800;
-  color: var(--ink-soft);
+  font-size: 12px;
+  color: #fff;
+  background: linear-gradient(180deg, #3b7dd8, #2b5ea8);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.32);
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+.skip:not(:disabled) {
+  animation: skipReady 0.34s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes skipReady {
+  0% { transform: scale(0.86); }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.skip:not(:disabled):active { transform: translateY(1px); }
+/* 前半は非活性（押せない・くすんだ見た目）。 */
+.skip:disabled {
+  cursor: default;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(60, 50, 38, 0.5);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skip:not(:disabled) { animation: none; }
 }
 
 /* --- 競馬場の細部アニメ（花・葦・草の揺れ、水面のきらめき・波紋）。

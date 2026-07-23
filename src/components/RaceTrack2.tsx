@@ -8,7 +8,6 @@ import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
 import { buildScenery } from './trackScenery';
 import { betTier, type Bet, type BetKind } from '../logic/betting';
-import Icon from './Icon';
 import styles from './RaceTrack2.module.css';
 
 const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
@@ -426,6 +425,20 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         {remaining <= track.straight / 2 && phaseEff === 'run' && !done && (
           <div className={styles.callout}>最後の直線！</div>
         )}
+        {/* Skip — always shown during the run as a fixed pill on the track (easy to
+            reach), disabled until the half-way point, then it lights up & unlocks. */}
+        {skippable && phaseEff === 'run' && !done && (
+          <button
+            className={styles.skip}
+            disabled={travelled / result.distanceS < 0.5}
+            onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}
+          >
+            スキップ
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M6 5l7 7-7 7M13 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
       </div>
       {/* Running order (horses) sits on top, fixed. */}
       <RankPanel
@@ -459,12 +472,6 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           </div>
         );
       })()}
-      {/* Skip unlocks only in the second half of the race (RACE_V4 §2 request). */}
-      {skippable && phaseEff === 'run' && !done && travelled / result.distanceS >= 0.5 && (
-        <button className={styles.skip} onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}>
-          スキップ <Icon name="skip" size={14} />
-        </button>
-      )}
     </div>
   );
 }
