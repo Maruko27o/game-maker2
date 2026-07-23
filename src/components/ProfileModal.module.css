@@ -8,39 +8,48 @@
   overflow-y: auto;
   z-index: 60;
 }
+/* P1-A「木札スタイル（ハニーウッド）」: 木の板のカード。 */
 .modal {
   width: 100%;
   max-width: 380px;
   margin: auto 0;
-  background: var(--paper);
-  border: 4px solid var(--border-dark);
+  color: #3a2b18;
+  background-color: #c69a63;
+  background-image:
+    repeating-linear-gradient(180deg, rgba(255, 250, 240, 0.06) 0 2px, transparent 2px 56px),
+    repeating-linear-gradient(180deg, transparent 0 54px, rgba(90, 60, 28, 0.32) 54px 56px);
+  border: 5px solid #7c5a30;
   border-radius: 20px;
+  box-shadow: inset 0 2px 0 rgba(255, 250, 240, 0.2), 0 14px 34px rgba(0, 0, 0, 0.4);
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
-/* header ------------------------------------------------------------------- */
+/* header：アイコンを中央上に、名札・トロフィー棚を下に縦積み ------------------ */
 .head {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
   align-items: center;
+  gap: 12px;
 }
+/* 金の額縁アイコン（金の外枠＋濃い内枠＋生成りのマット） */
 .avatarBtn {
   position: relative;
   flex: none;
-  border: 4px solid var(--border-dark);
+  border: 5px solid #e6b422;
   border-radius: 16px;
-  background: var(--panel-inner);
-  padding: 4px;
+  background: #f3ecd8;
+  box-shadow: inset 0 0 0 4px #8a6636, 0 3px 0 rgba(90, 60, 28, 0.35);
+  padding: 8px;
   display: grid;
   place-items: center;
   overflow: visible;
   cursor: pointer;
 }
 .avatarBtn > :first-child {
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
 }
 .avatarEdit {
@@ -60,38 +69,50 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .headInfo {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
 }
+/* 彫り込みの名札（ゲスト表示） */
 .headName {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 900;
-  color: var(--ink);
+  color: #5a4326;
+  text-align: center;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  background: #f6ecd6;
+  border: 3px solid #8a6636;
+  border-radius: 10px;
+  padding: 6px 20px;
+  box-shadow: inset 0 1px 3px rgba(90, 60, 28, 0.25);
 }
-/* header trophy shelf — a single button that opens the trophy editor */
+/* トロフィー棚：木のレッジの上に並べる */
 .shelfBtn {
   position: relative;
   display: flex;
-  gap: 4px;
+  gap: 5px;
   width: 100%;
-  padding: 0;
+  padding: 8px 8px 10px;
   border: none;
-  background: transparent;
+  border-radius: 10px;
+  background: #6b4a28;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 3px 0 rgba(60, 40, 18, 0.5);
   cursor: pointer;
 }
 .shelfSlot {
   flex: 1;
   aspect-ratio: 1;
   min-width: 0;
-  border: 2px solid var(--border);
+  border: 2px solid #8a6636;
   border-radius: 8px;
-  background: var(--panel-2);
+  background: #e7d3a8;
+  box-shadow: inset 0 1px 2px rgba(90, 60, 28, 0.3);
   display: grid;
   place-items: center;
   padding: 2px;
@@ -113,32 +134,38 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* lifetime stats ----------------------------------------------------------- */
+/* lifetime stats — 木札のサインボード --------------------------------------- */
 .statGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 .statCell {
-  background: var(--panel);
-  border: 3px solid var(--border);
-  border-radius: 12px;
+  background: #f6ecd6;
+  border: 2px solid #8a6636;
+  border-radius: 10px;
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  box-shadow: 0 2px 0 rgba(90, 60, 28, 0.25);
 }
 .statWide {
   grid-column: 1 / -1;
+  background: #4a3410;
+  border-color: #2e2008;
 }
 .statLabel {
   font-size: 11px;
-  font-weight: 700;
-  color: var(--ink-soft);
+  font-weight: 800;
+  color: #8a6636;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.statWide .statLabel {
+  color: #f2d24a;
 }
 .statValue {
   display: inline-flex;
@@ -146,13 +173,16 @@
   gap: 4px;
   font-size: 18px;
   font-weight: 900;
-  color: var(--ink);
+  color: #3a2b18;
   font-variant-numeric: tabular-nums;
+}
+.statWide .statValue {
+  color: #fff;
 }
 .statValue small {
   font-size: 11px;
   font-weight: 800;
-  color: var(--ink-soft);
+  color: #8a6636;
   margin-left: 1px;
 }
 
@@ -183,24 +213,26 @@
   color: #fff;
 }
 
-/* tabs --------------------------------------------------------------------- */
+/* tabs — 木の縁のボタン ----------------------------------------------------- */
 .tabs {
   display: flex;
   gap: 8px;
 }
 .tab {
   flex: 1;
-  background: var(--panel-inner);
-  border: 3px solid var(--border);
+  background: #f6ecd6;
+  border: 2px solid #8a6636;
   border-radius: 10px;
-  padding: 9px;
-  font-weight: 800;
-  color: var(--ink-soft);
+  padding: 10px;
+  font-weight: 900;
+  color: #5a4326;
+  box-shadow: 0 3px 0 rgba(90, 60, 28, 0.3);
 }
 .tabOn {
   background: var(--blue);
   border-color: var(--blue-dark);
   color: #fff;
+  box-shadow: 0 3px 0 var(--blue-dark);
 }
 
 .body {
@@ -209,14 +241,14 @@
   gap: 12px;
 }
 .section {
-  background: var(--panel);
-  border: 3px solid var(--border);
+  background: #f6ecd6;
+  border: 2px solid #8a6636;
   border-radius: 14px;
   padding: 10px 12px;
 }
 .secTitle {
   font-size: 14px;
-  color: var(--ink);
+  color: #3a2b18;
   margin: 0 0 8px;
 }
 .hint {
@@ -227,34 +259,39 @@
   color: var(--ink-soft);
 }
 
-/* ranking name ------------------------------------------------------------- */
+/* ranking name — 彫り込みの名札風インプット --------------------------------- */
 .nameRow {
   display: flex;
   gap: 8px;
+  width: 100%;
 }
 .nameInput {
   flex: 1;
   min-width: 0;
-  border: 3px solid var(--border);
+  border: 3px solid #8a6636;
   border-radius: 10px;
-  padding: 9px 12px;
-  font-size: 16px;
-  font-weight: 700;
+  padding: 9px 14px;
+  font-size: 17px;
+  font-weight: 800;
   font-family: inherit;
-  background: var(--panel-inner);
-  color: var(--ink);
+  text-align: center;
+  background: #f6ecd6;
+  color: #5a4326;
+  box-shadow: inset 0 1px 3px rgba(90, 60, 28, 0.25);
 }
 .saveBtn {
   flex: none;
   padding: 9px 16px;
   border-radius: 10px;
-  border: 3px solid var(--border-dark);
+  border: 3px solid #8a6636;
   background: var(--gold);
   font-weight: 800;
   color: #2b2118;
+  box-shadow: 0 3px 0 rgba(90, 60, 28, 0.3);
 }
 .saveBtn:disabled {
   opacity: 0.45;
+  box-shadow: none;
 }
 
 /* horse picker ------------------------------------------------------------- */
@@ -307,7 +344,7 @@
   align-self: center;
   background: none;
   border: none;
-  color: var(--ink-soft);
+  color: #5a4326;
   font-weight: 800;
   text-decoration: underline;
   padding: 4px;
