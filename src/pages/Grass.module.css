@@ -5,11 +5,11 @@
   flex-direction: column;
   gap: 14px;
 }
-/* 部屋（GrassRoom）は最背面。中身は前面へ。 */
+/* 部屋（GrassRoom）は最背面。中身は前面へ。
+   （.reward は position:fixed の確認欄なのでこの並び指定からは外す。） */
 .page > header,
 .page > .footRow,
-.page > .bonusToast,
-.page > .reward {
+.page > .bonusToast {
   position: relative;
   z-index: 1;
 }
@@ -228,80 +228,83 @@
   }
 }
 
-/* ゲット結果は1画面に収まる中央モーダルで表示（ナビ・FABより前面）。 */
-.rewardOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgba(24, 16, 8, 0.5);
-  animation: rewardFade 0.2s ease both;
-}
-@keyframes rewardFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+/* ゲット結果は「確認欄」として画面下（ナビの上）に小さめに固定表示。馬の登場が
+   主役なので中央は覆わず、下のタブにも重ねない。 */
 .reward {
-  position: relative;
-  width: min(94vw, 460px);
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 10px);
+  z-index: 25;
+  width: min(92vw, 440px);
   background: var(--panel);
-  border: 4px solid var(--border-dark);
-  border-radius: 20px;
-  padding: 18px 14px 16px;
+  border: 3px solid var(--border-dark);
+  border-radius: 16px;
+  padding: 9px 12px 11px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+  gap: 7px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+  animation: rewardUp 0.28s cubic-bezier(0.2, 1.1, 0.4, 1) both;
+}
+@keyframes rewardUp {
+  from { opacity: 0; transform: translate(-50%, 14px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
 }
 /* 右上の丸に✕の閉じるボタン。 */
 .rewardClose {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
+  top: 7px;
+  right: 7px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  border: 3px solid var(--border-dark);
+  border: 2px solid var(--border-dark);
   background: var(--panel-inner);
   color: var(--ink);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 900;
   line-height: 1;
   display: grid;
   place-items: center;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
   cursor: pointer;
 }
-.rewardClose:active { transform: translateY(1px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15); }
+.rewardClose:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15); }
 .rewardTitle {
-  font-size: 22px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
   color: var(--ink);
   margin: 0;
+}
+.rewardSub {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
 }
 .cards {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
   width: 100%;
 }
 .card {
   flex: 1 1 0;
   min-width: 0;
-  max-width: 104px;
+  max-width: 74px;
   background: var(--panel-inner);
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  padding: 8px 5px;
+  border: 2px solid var(--border);
+  border-radius: 11px;
+  padding: 5px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   animation: flip 0.5s ease both;
 }
 @keyframes flip {
@@ -329,7 +332,7 @@
   display: block;
 }
 .cardName {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   text-align: center;
   color: var(--ink);
