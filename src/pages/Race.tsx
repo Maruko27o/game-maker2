@@ -399,7 +399,7 @@ export default function Race() {
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>レース</h1>
-        <p className={styles.lead}>コースはランダム。集めたウマを走らせよう！</p>
+        <p className={styles.lead}>コースはランダム。育てたウマを走らせよう！</p>
         <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(false); setMode(60); setScreen('setup'); }}>
           <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
           <span className={styles.modeText}>
@@ -428,7 +428,7 @@ export default function Race() {
           <span className={styles.modeEmoji}><Icon name="swords" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>対戦</span>
-            <span className={styles.modeDesc}>毎日の勝ち抜きトーナメント・優勝で1万コイン</span>
+            <span className={styles.modeDesc}>毎日の勝ち抜きトーナメント・優勝で1.2万コイン</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
