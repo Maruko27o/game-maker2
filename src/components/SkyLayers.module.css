@@ -66,7 +66,12 @@
 
 /* 流れる雲 */
 .clouds { position: absolute; inset: 0; }
-.cloudA, .cloudB, .cloudAStatic, .cloudBStatic { position: absolute; }
+/* overflow:visible で SVG 端の直線的な切れを防ぐ。ソフトな影で立体感（クオリティ）を出す。 */
+.cloudA, .cloudB, .cloudAStatic, .cloudBStatic {
+  position: absolute;
+  overflow: visible;
+  filter: drop-shadow(0 3px 4px rgba(90, 110, 150, 0.18));
+}
 .cloudA { left: 6%; animation: driftA 30s ease-in-out infinite; }
 .cloudB { left: 62%; animation: driftB 38s ease-in-out infinite; }
 .cloudAStatic { left: 8%; }

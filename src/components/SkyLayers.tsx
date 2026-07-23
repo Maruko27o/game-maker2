@@ -131,19 +131,47 @@ export default function SkyLayers({
 
       {/* 流れる雲（夜はフェード） */}
       <div className={styles.clouds} style={{ opacity: (1 - d.nightMix).toFixed(2) }}>
-        <svg className={reduced ? styles.cloudAStatic : styles.cloudA} width="120" height="52" viewBox="0 0 120 52" style={{ top: '14%' }}>
+        {/* もこもこの積雲。下面はやや青白い影、上面は白、頂点にハイライト。全形が
+            viewBox 内に収まるよう余白をとり（＋CSSで overflow:visible）、端で真っ直ぐ
+            切れないようにしている。 */}
+        <svg className={reduced ? styles.cloudAStatic : styles.cloudA} width="132" height="81" viewBox="0 0 150 92" style={{ top: '12%' }}>
+          <g fill="#dfe7f2">
+            <ellipse cx="26" cy="66" rx="17" ry="13" />
+            <ellipse cx="46" cy="58" rx="32" ry="23" />
+            <ellipse cx="78" cy="46" rx="32" ry="26" />
+            <ellipse cx="108" cy="56" rx="27" ry="21" />
+            <ellipse cx="64" cy="66" rx="26" ry="18" />
+            <ellipse cx="126" cy="64" rx="18" ry="13" />
+            <rect x="24" y="58" width="104" height="24" rx="12" />
+          </g>
           <g fill="#ffffff">
-            <ellipse cx="42" cy="30" rx="34" ry="20" />
-            <ellipse cx="70" cy="22" rx="26" ry="20" />
-            <ellipse cx="18" cy="26" rx="22" ry="16" />
-            <rect x="16" y="30" width="70" height="16" rx="8" />
+            <ellipse cx="28" cy="60" rx="13" ry="10" />
+            <ellipse cx="48" cy="52" rx="27" ry="19" />
+            <ellipse cx="79" cy="40" rx="29" ry="22" />
+            <ellipse cx="107" cy="50" rx="23" ry="17" />
+            <ellipse cx="65" cy="55" rx="21" ry="15" />
+            <ellipse cx="124" cy="59" rx="13" ry="9" />
+          </g>
+          <g fill="#ffffff" opacity="0.85">
+            <ellipse cx="74" cy="35" rx="13" ry="8" />
+            <ellipse cx="50" cy="47" rx="9" ry="6" />
           </g>
         </svg>
-        <svg className={reduced ? styles.cloudBStatic : styles.cloudB} width="90" height="34" viewBox="0 0 90 34" style={{ top: '30%' }}>
-          <g fill="#ffffff" opacity="0.92">
-            <ellipse cx="40" cy="20" rx="26" ry="15" />
-            <ellipse cx="62" cy="13" rx="20" ry="15" />
-            <rect x="16" y="18" width="60" height="12" rx="6" />
+        <svg className={reduced ? styles.cloudBStatic : styles.cloudB} width="100" height="59" viewBox="0 0 118 70" style={{ top: '30%' }}>
+          <g fill="#e2e9f4">
+            <ellipse cx="40" cy="44" rx="26" ry="19" />
+            <ellipse cx="66" cy="34" rx="24" ry="20" />
+            <ellipse cx="88" cy="44" rx="20" ry="15" />
+            <ellipse cx="54" cy="48" rx="19" ry="14" />
+            <rect x="22" y="44" width="76" height="18" rx="9" />
+          </g>
+          <g fill="#ffffff">
+            <ellipse cx="42" cy="40" rx="21" ry="15" />
+            <ellipse cx="66" cy="30" rx="21" ry="16" />
+            <ellipse cx="87" cy="40" rx="16" ry="12" />
+          </g>
+          <g fill="#ffffff" opacity="0.85">
+            <ellipse cx="62" cy="27" rx="10" ry="6" />
           </g>
         </svg>
       </div>
