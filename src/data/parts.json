@@ -315,6 +315,97 @@
         "name": "デニム",
         "value": "#4a6b93",
         "rarity": "N"
+      },
+      {
+        "id": "body_brown",
+        "name": "こげちゃ",
+        "value": "#6b4326",
+        "rarity": "N"
+      },
+      {
+        "id": "body_ash",
+        "name": "はいいろ",
+        "value": "#7b828b",
+        "rarity": "N"
+      },
+      {
+        "id": "body_ember",
+        "name": "ひのこ",
+        "value": "#e2542a",
+        "rarity": "R"
+      },
+      {
+        "id": "body_neon",
+        "name": "ネオン",
+        "value": "#c85be0",
+        "rarity": "SR"
+      },
+      {
+        "id": "body_rainbow",
+        "name": "にじいろ",
+        "value": "url(#gradRainbow)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(90deg,#ff5b5b,#ffb14e,#ffe066,#5bd97a,#5bc8e0,#7a5fe0,#e05be0)"
+      },
+      {
+        "id": "body_azuki",
+        "name": "あずき",
+        "value": "#6e3550",
+        "rarity": "N"
+      },
+      {
+        "id": "body_moss",
+        "name": "こけいろ",
+        "value": "#6f7d4a",
+        "rarity": "N"
+      },
+      {
+        "id": "body_wine",
+        "name": "ワイン",
+        "value": "#7a2233",
+        "rarity": "R"
+      },
+      {
+        "id": "body_dark",
+        "name": "くろひづめ",
+        "value": "#3a2c1c",
+        "rarity": "N"
+      },
+      {
+        "id": "body_stone",
+        "name": "いしいろ",
+        "value": "#6f6a63",
+        "rarity": "N"
+      },
+      {
+        "id": "body_ivory",
+        "name": "ぞうげ",
+        "value": "#e6dcc4",
+        "rarity": "N"
+      },
+      {
+        "id": "body_ice",
+        "name": "こおり",
+        "value": "#79c8ea",
+        "rarity": "R"
+      },
+      {
+        "id": "body_flame",
+        "name": "ほのお",
+        "value": "#ff8a3d",
+        "rarity": "SR"
+      },
+      {
+        "id": "body_amethyst",
+        "name": "むらさき",
+        "value": "#9a6fd0",
+        "rarity": "SR"
+      },
+      {
+        "id": "body_copper",
+        "name": "カッパー",
+        "value": "#b06a3a",
+        "rarity": "R"
       }
     ],
     "mane": [
@@ -511,6 +602,218 @@
         "name": "カーキ",
         "value": "#9a8b52",
         "rarity": "N"
+      },
+      {
+        "id": "mane_bay",
+        "name": "ブラウン",
+        "value": "#8a5a33",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_gray",
+        "name": "グレー",
+        "value": "#a9adb4",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_crimson",
+        "name": "べにいろ",
+        "value": "#8f2b22",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_violet",
+        "name": "すみれ",
+        "value": "#7a5fb0",
+        "rarity": "SR"
+      },
+      {
+        "id": "mane_wheat",
+        "name": "こむぎいろ",
+        "value": "#dcc38c",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_roan",
+        "name": "トープ",
+        "value": "#bfa093",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_liver",
+        "name": "チョコレート",
+        "value": "#5b3a2c",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_peach",
+        "name": "ピーチ",
+        "value": "#f6c6a6",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_coffee",
+        "name": "コーヒー",
+        "value": "#6f4a35",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_olive",
+        "name": "うぐいす",
+        "value": "#8a8a4e",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_slate",
+        "name": "あおねず",
+        "value": "#7d8a8c",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_forest",
+        "name": "ときわ",
+        "value": "#3f6b45",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_sunset",
+        "name": "ゆうやけ",
+        "value": "url(#gradSunset)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#ffd06b,#ff8a5b,#e0567a,#7a4fb0)"
+      },
+      {
+        "id": "mane_galaxy",
+        "name": "ぎんが",
+        "value": "url(#gradGalaxy)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#2b2e6b,#5b3fb0,#c85be0)"
+      },
+      {
+        "id": "mane_lime",
+        "name": "ライム",
+        "value": "#a6d84a",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_emerald",
+        "name": "エメラルド",
+        "value": "#16a37a",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_turquoise",
+        "name": "ターコイズ",
+        "value": "#2bbfcf",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_cobalt",
+        "name": "コバルト",
+        "value": "#2f4bb0",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_indigo",
+        "name": "インディゴ",
+        "value": "#3b3a7a",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_magenta",
+        "name": "マゼンタ",
+        "value": "#cf3f9e",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_salmon",
+        "name": "サーモン",
+        "value": "#f2907a",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_apricot",
+        "name": "アプリコット",
+        "value": "#f2b57a",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_mustard",
+        "name": "マスタード",
+        "value": "#d6a52a",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_burgundy",
+        "name": "バーガンディ",
+        "value": "#7a2233",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_maroon",
+        "name": "マルーン",
+        "value": "#8a3a2a",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_plum",
+        "name": "プラム",
+        "value": "#7b3f6e",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_lilac",
+        "name": "ライラック",
+        "value": "#c9a6e0",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_denim",
+        "name": "デニム",
+        "value": "#4a6b93",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_dark",
+        "name": "くろひづめ",
+        "value": "#3a2c1c",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_stone",
+        "name": "いしいろ",
+        "value": "#6f6a63",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_ivory",
+        "name": "ぞうげ",
+        "value": "#e6dcc4",
+        "rarity": "N"
+      },
+      {
+        "id": "mane_ice",
+        "name": "こおり",
+        "value": "#79c8ea",
+        "rarity": "R"
+      },
+      {
+        "id": "mane_flame",
+        "name": "ほのお",
+        "value": "#ff8a3d",
+        "rarity": "SR"
+      },
+      {
+        "id": "mane_amethyst",
+        "name": "むらさき",
+        "value": "#9a6fd0",
+        "rarity": "SR"
+      },
+      {
+        "id": "mane_copper",
+        "name": "カッパー",
+        "value": "#b06a3a",
+        "rarity": "R"
       }
     ],
     "hoof": [
@@ -645,6 +948,279 @@
         "id": "hoof_copper",
         "name": "カッパー",
         "value": "#b06a3a",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_chestnut",
+        "name": "チェスナット",
+        "value": "#c98a4b",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_bay",
+        "name": "ブラウン",
+        "value": "#8a5a33",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_black",
+        "name": "ダークブラウン",
+        "value": "#4a423c",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_gray",
+        "name": "グレー",
+        "value": "#a9adb4",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_crimson",
+        "name": "べにいろ",
+        "value": "#8f2b22",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_violet",
+        "name": "すみれ",
+        "value": "#7a5fb0",
+        "rarity": "SR"
+      },
+      {
+        "id": "hoof_cream",
+        "name": "ばふいろ",
+        "value": "#efe3c8",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_wheat",
+        "name": "こむぎいろ",
+        "value": "#dcc38c",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_roan",
+        "name": "トープ",
+        "value": "#bfa093",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_liver",
+        "name": "チョコレート",
+        "value": "#5b3a2c",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_peach",
+        "name": "ピーチ",
+        "value": "#f6c6a6",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_coffee",
+        "name": "コーヒー",
+        "value": "#6f4a35",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_olive",
+        "name": "うぐいす",
+        "value": "#8a8a4e",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_slate",
+        "name": "あおねず",
+        "value": "#7d8a8c",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_sky",
+        "name": "みずいろ",
+        "value": "#9cc9e8",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_lavender",
+        "name": "ふじいろ",
+        "value": "#b6a4e0",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_coral",
+        "name": "さんごいろ",
+        "value": "#f28e7a",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_teal",
+        "name": "あおみどり",
+        "value": "#2f9e93",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_forest",
+        "name": "ときわ",
+        "value": "#3f6b45",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_sunset",
+        "name": "ゆうやけ",
+        "value": "url(#gradSunset)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#ffd06b,#ff8a5b,#e0567a,#7a4fb0)"
+      },
+      {
+        "id": "hoof_galaxy",
+        "name": "ぎんが",
+        "value": "url(#gradGalaxy)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#2b2e6b,#5b3fb0,#c85be0)"
+      },
+      {
+        "id": "hoof_aurora",
+        "name": "オーロラ",
+        "value": "url(#gradAurora)",
+        "rarity": "SR",
+        "swatch": "linear-gradient(160deg,#3ad7c0,#5bd97a,#7a5fe0)"
+      },
+      {
+        "id": "hoof_orange",
+        "name": "オレンジ",
+        "value": "#ef8a2b",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_yellow",
+        "name": "イエロー",
+        "value": "#f4cf3e",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_lime",
+        "name": "ライム",
+        "value": "#a6d84a",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_emerald",
+        "name": "エメラルド",
+        "value": "#16a37a",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_turquoise",
+        "name": "ターコイズ",
+        "value": "#2bbfcf",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_cobalt",
+        "name": "コバルト",
+        "value": "#2f4bb0",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_indigo",
+        "name": "インディゴ",
+        "value": "#3b3a7a",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_purple",
+        "name": "パープル",
+        "value": "#8a49c0",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_magenta",
+        "name": "マゼンタ",
+        "value": "#cf3f9e",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_salmon",
+        "name": "サーモン",
+        "value": "#f2907a",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_apricot",
+        "name": "アプリコット",
+        "value": "#f2b57a",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_mustard",
+        "name": "マスタード",
+        "value": "#d6a52a",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_khaki",
+        "name": "カーキ",
+        "value": "#9a8b52",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_burgundy",
+        "name": "バーガンディ",
+        "value": "#7a2233",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_maroon",
+        "name": "マルーン",
+        "value": "#8a3a2a",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_plum",
+        "name": "プラム",
+        "value": "#7b3f6e",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_lilac",
+        "name": "ライラック",
+        "value": "#c9a6e0",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_denim",
+        "name": "デニム",
+        "value": "#4a6b93",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_ember",
+        "name": "ひのこ",
+        "value": "#e2542a",
+        "rarity": "R"
+      },
+      {
+        "id": "hoof_neon",
+        "name": "ネオン",
+        "value": "#c85be0",
+        "rarity": "SR"
+      },
+      {
+        "id": "hoof_azuki",
+        "name": "あずき",
+        "value": "#6e3550",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_moss",
+        "name": "こけいろ",
+        "value": "#6f7d4a",
+        "rarity": "N"
+      },
+      {
+        "id": "hoof_wine",
+        "name": "ワイン",
+        "value": "#7a2233",
         "rarity": "R"
       }
     ]
