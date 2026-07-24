@@ -977,7 +977,7 @@
       "slot": "head",
       "name": "ねこみみ",
       "rarity": "N",
-      "svg": "<path fill=\"var(--body,#e8e2d6)\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 372,80 L 366,40 L 402,66 Z\"/>\n<path fill=\"var(--body,#e8e2d6)\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 416,74 L 448,38 L 448,80 Z\"/>\n<path fill=\"#f2a6c4\" stroke=\"none\" d=\"M 376,74 L 372,50 L 392,66 Z\"/>\n<path fill=\"#f2a6c4\" stroke=\"none\" d=\"M 422,70 L 442,48 L 442,74 Z\"/>"
+      "svg": "<path fill=\"var(--body,#e8e2d6)\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 378,96 L 402,90 L 372,50 Z\"/>\n<path fill=\"var(--body,#e8e2d6)\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" d=\"M 402,90 L 426,96 L 432,50 Z\"/>\n<path fill=\"#f2a6c4\" stroke=\"none\" d=\"M 384,90 L 399,86 L 381,60 Z\"/>\n<path fill=\"#f2a6c4\" stroke=\"none\" d=\"M 420,90 L 405,86 L 423,60 Z\"/>"
     },
     {
       "id": "head_bunny_ears",
@@ -1208,21 +1208,21 @@
       "slot": "head",
       "name": "しかのツノ",
       "rarity": "R",
-      "svg": "<path fill=\"none\" stroke=\"#b0864a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"7\" d=\"M 388,86 L 376,42 M 378,54 L 358,42 M 376,42 L 364,28\"/>\n<path fill=\"none\" stroke=\"#b0864a\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"7\" d=\"M 428,84 L 444,42 M 442,52 L 462,40 M 444,42 L 458,28\"/>"
+      "svg": "<path fill=\"none\" stroke=\"#a97738\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"7\" d=\"M 392,94 L 382,46 M 385,60 L 367,48 M 382,46 L 371,32\"/>\n<path fill=\"none\" stroke=\"#a97738\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"7\" d=\"M 410,94 L 420,46 M 417,60 L 435,48 M 420,46 L 431,32\"/>"
     },
     {
       "id": "head_ram_horns",
       "slot": "head",
       "name": "ひつじのツノ",
       "rarity": "R",
-      "svg": "<path fill=\"none\" stroke=\"#e0d0b0\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"9\" d=\"M 384,88 C 358,84 354,58 372,50 C 388,44 394,58 386,66\"/>\n<path fill=\"none\" stroke=\"#e0d0b0\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"9\" d=\"M 428,86 C 454,82 458,56 440,48 C 424,42 418,56 426,64\"/>"
+      "svg": "<path fill=\"none\" stroke=\"#b7935a\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"9\" d=\"M 393,93 C 366,90 356,62 378,54 C 396,48 401,68 388,72 C 382,74 381,66 386,65\"/>\n<path fill=\"none\" stroke=\"#b7935a\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"9\" d=\"M 409,93 C 436,90 446,62 424,54 C 406,48 401,68 414,72 C 420,74 421,66 416,65\"/>"
     },
     {
       "id": "head_bear_ears",
       "slot": "head",
       "name": "くまみみ",
       "rarity": "N",
-      "svg": "<circle fill=\"var(--body,#e8e2d6)\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" cx=\"380\" cy=\"60\" r=\"20\"/>\n<circle fill=\"var(--body,#e8e2d6)\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" cx=\"436\" cy=\"58\" r=\"20\"/>\n<circle fill=\"#8a6b4a\" stroke=\"none\" cx=\"380\" cy=\"62\" r=\"9\"/>\n<circle fill=\"#8a6b4a\" stroke=\"none\" cx=\"436\" cy=\"60\" r=\"9\"/>"
+      "svg": "<circle fill=\"var(--body,#e8e2d6)\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" cx=\"382\" cy=\"73\" r=\"18\"/>\n<circle fill=\"var(--body,#e8e2d6)\" stroke=\"#2b2118\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-width=\"6\" cx=\"420\" cy=\"73\" r=\"18\"/>\n<circle fill=\"#8a6b4a\" stroke=\"none\" cx=\"382\" cy=\"76\" r=\"8\"/>\n<circle fill=\"#8a6b4a\" stroke=\"none\" cx=\"420\" cy=\"76\" r=\"8\"/>"
     },
     {
       "id": "head_devil_horns",
