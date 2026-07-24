@@ -19,7 +19,10 @@ import type {
   ArenaHorseSnapshot,
   MailItem,
   FrameAward,
+  EquipFrame,
 } from './types';
+import { STREAK_MAX } from './types';
+import { foldRace, achievedLevel } from './logic/streak';
 import { allParts, slotOf } from './data/parts';
 import { COURSES } from './data/courses';
 import { spawn as gachaSpawn } from './logic/gacha';
@@ -168,6 +171,9 @@ function freshSave(): SaveData {
     trophies: [],
     badges: [],
     winStreaks: {},
+    soloStreak: 0,
+    streakBest: 0,
+    streakClaimed: 0,
     items: [],
     raceRecords: [],
     gpUnlocked: { g2: false, g1: false },
@@ -191,9 +197,15 @@ function freshSave(): SaveData {
 }
 
 // Profile prefs (icon horse + trophy shelf) — default sensibly for older saves.
-function normFrame(v: unknown): FrameAward | null {
+function normFrame(v: unknown): EquipFrame | null {
   if (!v || typeof v !== 'object') return null;
   const f = v as Record<string, unknown>;
+  // 連勝フレーム（スペシャルタスク報酬）。
+  if (f.kind === 'streak') {
+    const level = Number(f.level);
+    if (Number.isFinite(level) && level >= 1 && level <= STREAK_MAX) return { kind: 'streak', level: Math.round(level) };
+    return null;
+  }
   const rank = f.rank === 1 || f.rank === 2 || f.rank === 3 ? f.rank : null;
   const metric = f.metric === 'odds' || f.metric === 'payout' ? f.metric : null;
   if (typeof f.period !== 'string' || rank === null || metric === null) return null;
@@ -203,7 +215,7 @@ function normProfile(d: Record<string, unknown>): {
   avatarHorseId: string | null;
   displayTrophies: number[];
   mailbox: MailItem[];
-  equippedFrame: FrameAward | null;
+  equippedFrame: EquipFrame | null;
 } {
   const avatarHorseId = typeof d.avatarHorseId === 'string' ? d.avatarHorseId : null;
   const displayTrophies = Array.isArray(d.displayTrophies)
@@ -461,8 +473,14 @@ type Store = SaveData & {
   receiveFrames: (awards: FrameAward[]) => void;
   markMailRead: (id: string) => void;
   markAllMailRead: () => void;
-  /** アイコンに装備するフレーム（null で外す）。 */
-  equipFrame: (frame: FrameAward | null) => void;
+  /** アイコンに装備するフレーム（殿堂 or 連勝、null で外す）。 */
+  equipFrame: (frame: EquipFrame | null) => void;
+  // スペシャルタスク（連勝チャレンジ）.
+  /** 1人でレース・馬券ありの結果を折り込む。win=払戻>賭け。負けで連勝リセット。
+   *  馬券なし／コース選択レースでは呼ばない（何も変えない）。 */
+  recordSoloStreak: (win: boolean) => void;
+  /** 受け取り待ちの連勝フレームを1つ受け取る。受け取った Lv を返す（無ければ0）。 */
+  claimStreakFrame: () => number;
   // In-progress race, kept in the save so it resumes across reloads (改修：レース継続).
   raceSession: RaceSession | null;
   setRaceSession: (s: RaceSession | null) => void;
@@ -506,6 +524,9 @@ export const useStore = create<Store>((set, get) => {
       trophies: next.trophies,
       badges: next.badges,
       winStreaks: next.winStreaks,
+      soloStreak: next.soloStreak ?? 0,
+      streakBest: next.streakBest ?? 0,
+      streakClaimed: next.streakClaimed ?? 0,
       items: next.items,
       raceRecords: next.raceRecords,
       gpUnlocked: next.gpUnlocked,
@@ -536,6 +557,9 @@ export const useStore = create<Store>((set, get) => {
     arena: initial.arena ?? freshArena(),
     farmClaimedAt: initial.farmClaimedAt ?? trustedNow(),
     freeRename: initial.freeRename ?? true,
+    soloStreak: initial.soloStreak ?? 0,
+    streakBest: initial.streakBest ?? 0,
+    streakClaimed: initial.streakClaimed ?? 0,
     migrated,
     clearMigrated: () => set({ migrated: false }),
 
@@ -561,6 +585,9 @@ export const useStore = create<Store>((set, get) => {
         trophies: s.trophies,
         badges: s.badges,
         winStreaks: s.winStreaks,
+        soloStreak: s.soloStreak ?? 0,
+        streakBest: s.streakBest ?? 0,
+        streakClaimed: s.streakClaimed ?? 0,
         items: s.items,
         raceRecords: s.raceRecords,
         gpUnlocked: s.gpUnlocked,
@@ -894,6 +921,22 @@ export const useStore = create<Store>((set, get) => {
       if (box.some((m) => !m.read)) commit({ mailbox: box.map((m) => ({ ...m, read: true })) });
     },
     equipFrame: (frame) => commit({ equippedFrame: frame }),
+
+    recordSoloStreak: (win) => {
+      const s = get();
+      const cur = { soloStreak: s.soloStreak ?? 0, streakBest: s.streakBest ?? 0, streakClaimed: s.streakClaimed ?? 0 };
+      const next = foldRace(cur, win);
+      commit({ soloStreak: next.soloStreak, streakBest: next.streakBest });
+    },
+
+    claimStreakFrame: () => {
+      const s = get();
+      const cur = { soloStreak: s.soloStreak ?? 0, streakBest: s.streakBest ?? 0, streakClaimed: s.streakClaimed ?? 0 };
+      const level = cur.streakClaimed + 1;
+      if (level > achievedLevel(cur) || level > STREAK_MAX) return 0; // 受け取り待ちなし
+      commit({ streakClaimed: level });
+      return level;
+    },
 
     setRaceSession: (s) => commit({ raceSession: s }),
     patchRaceSession: (patch) => {

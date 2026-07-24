@@ -2,7 +2,8 @@
 // "local only" when the project isn't configured (see supabaseConfig.ts).
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import type { SaveData, HorseLook, ArenaHorseSnapshot, FrameAward, FrameRank } from './types';
+import type { SaveData, HorseLook, ArenaHorseSnapshot, FrameAward, FrameRank, EquipFrame } from './types';
+import { STREAK_MAX } from './types';
 import { monthKey } from './logic/period';
 import { anchorServerTime } from './logic/trustedClock';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from './supabaseConfig';
@@ -170,7 +171,7 @@ export async function submitBetScore(
   avatar: AvatarLook | null,
   trophies: number[] | null,
   payout = 0,
-  frame: FrameAward | null = null,
+  frame: EquipFrame | null = null,
 ): Promise<void> {
   if (!supabase) return;
   const base = { p_odds: odds, p_course: courseId, p_username: username };
@@ -224,7 +225,7 @@ export async function setRankingTrophies(trophies: number[] | null): Promise<voi
 
 /** Update just the equipped icon-frame for the signed-in account so it shows on
  *  every player's ranking row (no-op if no row this month / column not applied). */
-export async function setRankingFrame(frame: FrameAward | null): Promise<void> {
+export async function setRankingFrame(frame: EquipFrame | null): Promise<void> {
   if (!supabase) return;
   try {
     await supabase.rpc('set_bet_frame', { p_frame: frame });
@@ -241,7 +242,7 @@ export type ScoreRow = {
   courseId: string | null;
   avatar: AvatarLook | null;
   displayTrophies: number[];
-  equippedFrame: FrameAward | null;
+  equippedFrame: EquipFrame | null;
 };
 
 /** Read the signed-in player's own ranking row (best odds/payout), to backfill
@@ -323,10 +324,16 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
   }
 }
 
-/** Validate a jsonb equipped_frame from the DB into a FrameAward (or null). */
-function normFrameAward(v: unknown): FrameAward | null {
+/** Validate a jsonb equipped_frame from the DB into an EquipFrame (or null). */
+function normFrameAward(v: unknown): EquipFrame | null {
   if (!v || typeof v !== 'object') return null;
   const o = v as Record<string, unknown>;
+  // 連勝フレーム（スペシャルタスク報酬）。
+  if (o.kind === 'streak') {
+    const level = Number(o.level);
+    if (Number.isFinite(level) && level >= 1 && level <= STREAK_MAX) return { kind: 'streak', level: Math.round(level) };
+    return null;
+  }
   const rank = Number(o.rank);
   const metric = o.metric;
   if (typeof o.period !== 'string') return null;

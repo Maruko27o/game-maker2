@@ -2,16 +2,19 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store';
 import { setRankingFrame } from '../cloud';
 import { monthLabel } from '../logic/period';
-import type { FrameAward, HorseLook, MailItem } from '../types';
+import type { EquipFrame, FrameAward, HorseLook, MailItem } from '../types';
+import { isStreakFrame } from '../types';
 import Icon from './Icon';
 import AvatarFrame from './AvatarFrame';
+import EquippedFrame from './EquippedFrame';
 import HorseFace from './HorseFace';
 import styles from './MailButton.module.css';
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 const metricLabel = (m: FrameAward['metric']) => (m === 'payout' ? '最大獲得賞金' : '最大オッズ');
 const frameTitle = (f: FrameAward) => `${monthLabel(f.period)} ${metricLabel(f.metric)} ${f.rank}位`;
-const sameFrame = (a: FrameAward | null | undefined, b: FrameAward) => !!a && a.period === b.period && a.rank === b.rank && a.metric === b.metric;
+const sameFrame = (a: EquipFrame | null | undefined, b: FrameAward) =>
+  !!a && !isStreakFrame(a) && a.period === b.period && a.rank === b.rank && a.metric === b.metric;
 
 // Top-bar mailbox (タスクの横). フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
 export default function MailButton() {
@@ -119,7 +122,7 @@ export default function MailButton() {
 }
 
 // A player icon optionally wrapped in their equipped frame — reused by ProfileButton.
-export function FramedFace({ look, size, frame }: { look: HorseLook; size: number; frame: FrameAward | null }) {
-  if (frame) return <AvatarFrame rank={frame.rank} metric={frame.metric} period={frame.period} look={look} size={size} />;
+export function FramedFace({ look, size, frame }: { look: HorseLook; size: number; frame: EquipFrame | null }) {
+  if (frame) return <EquippedFrame frame={frame} look={look} size={size} />;
   return <HorseFace horse={look} size={size} />;
 }
