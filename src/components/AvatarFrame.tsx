@@ -61,17 +61,18 @@ export default function AvatarFrame({
 }) {
   const uid = useId().replace(/:/g, '');
   const c = PALETTE[rank];
-  const faceSize = size * 0.6;
+  // 顔は箱いっぱい（＝フレーム無しと同じ大きさ）。リング/飾り帯は箱より一回り大きい
+  // SVGで顔の外側にはみ出して描く（フレームを付けても馬は小さくならない）。
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
-      {/* horse portrait, centred inside the ring */}
-      <div style={{ position: 'absolute', left: size * 0.2, top: size * 0.24, width: faceSize, height: faceSize, borderRadius: '50%', overflow: 'hidden' }}>
-        <HorseFace horse={look} size={faceSize} />
+      {/* horse portrait — fills the box, same size as the un-framed icon */}
+      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden' }}>
+        <HorseFace horse={look} size={size} />
       </div>
 
-      {/* ornate frame overlay */}
-      <svg viewBox="0 0 100 100" width={size} height={size} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} aria-hidden>
+      {/* ornate frame overlay — larger than the box, spilling around the face */}
+      <svg viewBox="0 0 100 100" style={{ position: 'absolute', left: '-16%', top: '-16%', width: '132%', height: '132%', pointerEvents: 'none', overflow: 'visible' }} aria-hidden>
         <defs>
           <radialGradient id={`g-${uid}`} cx="50%" cy="40%" r="65%">
             <stop offset="0%" stopColor={c.ringHi} />
@@ -84,23 +85,23 @@ export default function AvatarFrame({
           </linearGradient>
         </defs>
 
-        {/* soft base + double ring */}
-        <circle cx="50" cy="54" r="36" fill="none" stroke={c.ringLo} strokeOpacity="0.35" strokeWidth="8" />
-        <circle cx="50" cy="54" r="34.5" fill="none" stroke={`url(#g-${uid})`} strokeWidth="6.5" />
-        <circle cx="50" cy="54" r="31" fill="none" stroke={c.ringHi} strokeOpacity="0.8" strokeWidth="1.4" />
-        <circle cx="50" cy="54" r="38" fill="none" stroke={c.ringLo} strokeOpacity="0.5" strokeWidth="1" />
+        {/* soft base + double ring, hugging the outer rim of the face */}
+        <circle cx="50" cy="50" r="41" fill="none" stroke={c.ringLo} strokeOpacity="0.35" strokeWidth="7.5" />
+        <circle cx="50" cy="50" r="39.6" fill="none" stroke={`url(#g-${uid})`} strokeWidth="6" />
+        <circle cx="50" cy="50" r="36.9" fill="none" stroke={c.ringHi} strokeOpacity="0.8" strokeWidth="1.3" />
+        <circle cx="50" cy="50" r="43" fill="none" stroke={c.ringLo} strokeOpacity="0.5" strokeWidth="1" />
 
         {/* studs around the ring */}
         {Array.from({ length: 12 }).map((_, i) => {
           const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
-          const x = 50 + Math.cos(a) * 34.5;
-          const y = 54 + Math.sin(a) * 34.5;
+          const x = 50 + Math.cos(a) * 39.6;
+          const y = 50 + Math.sin(a) * 39.6;
           return <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 2.4 : 1.5} fill={c.gem} stroke={c.ringLo} strokeWidth="0.6" />;
         })}
 
-        {/* top cartouche: 左右対称の種別マークで年月を挟む（案C）。数字はそのまま、
-            飾り帯だけコンパクトにし、横マークとの間隔も詰める。 */}
-        <g>
+        {/* top cartouche: 左右対称の種別マークで年月を挟む（案C）。飾り帯はリング上端に
+            重なって外側へポップ。 */}
+        <g transform="translate(0 -8)">
           <path d="M20 15 Q20 9 26 9 L74 9 Q80 9 80 15 L80 15.5 Q80 21 74 21 L26 21 Q20 21 20 15 Z" fill={`url(#b-${uid})`} stroke={c.ringLo} strokeWidth="1.3" />
           <path d="M16 15 l4.5 -3 0 6 z M84 15 l-4.5 -3 0 6 z" fill={c.ringLo} />
           <MetricMark metric={metric} cx={27} cy={15} r={3.6} ink={c.ink} coinFill={c.bandHi} />

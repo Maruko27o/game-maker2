@@ -42,9 +42,12 @@ const TIERS: Record<number, Tier> = {
 };
 
 const GEM_COLORS = ['#ff5f7a', '#5aa6ff', '#43d6a0', '#ffd24a', '#b06bff', '#ff9f43'];
+// 顔は箱いっぱい（＝フレーム無しと同じ大きさ）に描き、リング/装飾はその外側に
+// はみ出す（SVGを箱より一回り大きくして overflow で外へ）。SPILL はみ出し量。
 const CX = 60;
-const CY = 58;
-const R = 33;
+const CY = 60;
+const R = 47; // 顔の縁のすぐ外にくるリング半径（viewBox 120・顔の縁≈45.5）
+const SPILL = 0.16; // 箱に対して各辺 16% はみ出す（SVGは 132% サイズ）
 
 function tierOf(level: number): Tier {
   return TIERS[Math.max(1, Math.min(10, level))];
@@ -88,16 +91,18 @@ function ShapedNumber({ n, x, y, size, fill, line, lineW, italic = true, anchor 
 export default function StreakFrame({ level, look, size = 104, variant = 'emblem' }: { level: number; look: HorseLook; size?: number; variant?: StreakVariant }) {
   const uid = useId().replace(/:/g, '');
   const t = tierOf(level);
-  const faceSize = size * 0.54;
+  const off = `${-SPILL * 100}%`;
+  const span = `${(1 + SPILL * 2) * 100}%`;
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
-      {/* 馬の顔（円形クリップ） */}
-      <div style={{ position: 'absolute', left: `${(CX / 120) * 100}%`, top: `${(CY / 120) * 100}%`, width: faceSize, height: faceSize, transform: 'translate(-50%,-50%)', borderRadius: '50%', overflow: 'hidden' }} aria-hidden>
-        <HorseFace horse={look} size={faceSize} />
+      {/* 馬の顔＝箱いっぱい（フレーム無しと同じ大きさ） */}
+      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden' }} aria-hidden>
+        <HorseFace horse={look} size={size} />
       </div>
 
-      <svg viewBox="0 0 120 120" width={size} height={size} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }} aria-hidden>
+      {/* リング/装飾は箱より一回り大きいSVGで、顔の外側にはみ出して描く */}
+      <svg viewBox="0 0 120 120" style={{ position: 'absolute', left: off, top: off, width: span, height: span, pointerEvents: 'none', overflow: 'visible' }} aria-hidden>
         <defs>
           <radialGradient id={`ring-${uid}`} cx="50%" cy="36%" r="70%">
             <stop offset="0%" stopColor={t.hi} />
@@ -242,11 +247,11 @@ function RibbonNumber({ t, level, uid }: { t: Tier; level: number; uid: string }
 // 「N WINS」を一つの塊として見せ、リングの下端にポップさせる。
 function EmblemNumber({ t, level }: { t: Tier; level: number }) {
   const two = level >= 10;
-  const numSize = 24;
+  const numSize = 22;
   const numX = two ? -5 : -3; // 数字中心（WINS 側に少し寄せて全体を中央寄せ）
-  const winsX = two ? 12 : 9;
+  const winsX = two ? 11 : 8;
   return (
-    <g transform={`translate(${CX} ${CY + R + 3})`}>
+    <g transform={`translate(${CX} ${CY + R + 5})`}>
       {/* 高Lv：数字の左右に星を添える */}
       {level >= 6 && [-1, 1].map((s) => (
         <Star key={s} x={s * (two ? 22 : 18)} y={1} r={level >= 9 ? 2.8 : 2.3} fill={t.gem} line={t.numLine} />
