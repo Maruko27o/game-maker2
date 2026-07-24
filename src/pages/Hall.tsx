@@ -119,7 +119,7 @@ export default function Hall() {
             <div className={styles.emptyHall}>
               <div className={styles.crest}><TrophyMark size={52} /></div>
               <p>まだ殿堂入りはいません。</p>
-              <p className={styles.emptyHallSub}>今月の上位3名が、来月ここに永久に飾られます。</p>
+              <p className={styles.emptyHallSub}>各月の上位3名が永久的に飾られます。</p>
             </div>
           ) : (
             enshrined.map((b) => (
