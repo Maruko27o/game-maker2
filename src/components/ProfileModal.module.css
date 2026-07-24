@@ -373,6 +373,54 @@
   outline-offset: 1px;
 }
 
+/* frame picker (アイコン設定→フレーム) ------------------------------------- */
+.frameGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 6px 2px 2px;
+}
+.framePick {
+  position: relative;
+  border: 3px solid var(--border-dark);
+  border-radius: 14px;
+  background: var(--panel-inner);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  overflow: visible; /* フレームの装飾が枠外へはみ出すため clip しない */
+  line-height: 0;
+}
+.frameFace {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.frameName {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  line-height: 1.2;
+}
+.frameTag {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2b2118;
+  color: #ffe08a;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 999px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
 /* trophy decorate ---------------------------------------------------------- */
 .trophyPick {
   display: flex;

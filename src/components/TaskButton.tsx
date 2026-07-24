@@ -8,7 +8,6 @@ import {
   currentLevel,
   progress as streakProgress,
   pendingCount as streakPending,
-  ownedLevels,
 } from '../logic/streak';
 import {
   RACE_TASK_EVERY,
@@ -96,7 +95,6 @@ export default function TaskButton() {
   // スペシャルタスクの現在 Lv（受け取り待ち or 進行中）。null = 全10連勝コンプ。
   const level = currentLevel(streak);
   const canClaim = streakClaimable(streak);
-  const owned = ownedLevels(streak);
   const equippedStreakLv = isStreakFrame(equippedFrame) ? equippedFrame.level : 0;
 
   return (
@@ -203,27 +201,7 @@ export default function TaskButton() {
                     : <>連勝は0。次のレースから積み上げよう</>}
                 </div>
 
-                {/* Owned frames gallery — tap to equip / unequip */}
-                {owned.length > 0 && (
-                  <div className={styles.spCollect}>
-                    <div className={styles.spCollectHead}>獲得した連勝フレーム（タップで装備）</div>
-                    <div className={styles.spGallery}>
-                      {owned.map((lv) => (
-                        <button
-                          key={lv}
-                          className={`${styles.spGalleryItem} ${equippedStreakLv === lv ? styles.spGalleryOn : ''}`}
-                          onClick={() => equip(equippedStreakLv === lv ? null : { kind: 'streak', level: lv })}
-                          aria-label={`${lv}連勝フレーム`}
-                        >
-                          <StreakFrame level={lv} look={look} size={72} />
-                          {equippedStreakLv === lv && <span className={styles.spEquipTag}>装備中</span>}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <p className={styles.foot}>レース開始後は他のタブに移っても結果は変わりません。</p>
+                <p className={styles.foot}>獲得したフレームは「プロフィール → アイコン設定 → フレーム」で装備できます。<br />レース開始後は他のタブに移っても結果は変わりません。</p>
               </>
             )}
           </div>
