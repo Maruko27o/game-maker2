@@ -37,11 +37,11 @@ describe('periods (1日2回開催)', () => {
     // Two periods per calendar day.
     expect(periodId(new Date(2026, 6, 20, 6, 0).getTime()) - periodId(new Date(2026, 6, 18, 6, 0).getTime())).toBe(4);
   });
-  it('labels the morning/afternoon halves distinctly', () => {
-    const am = periodId(new Date(2026, 6, 18, 8, 0).getTime());
-    const pm = periodId(new Date(2026, 6, 18, 20, 0).getTime());
-    expect(periodLabel(am)).toContain('0時');
-    expect(periodLabel(pm)).toContain('12時');
+  it('labels each half by its closing time (前半=12時締め, 後半=0時締め)', () => {
+    const am = periodId(new Date(2026, 6, 18, 8, 0).getTime()); // 0:00–12:00 → closes 12時
+    const pm = periodId(new Date(2026, 6, 18, 20, 0).getTime()); // 12:00–24:00 → closes 0時
+    expect(periodLabel(am)).toContain('12時');
+    expect(periodLabel(pm)).toContain('0時');
   });
   it('countdown to the next opening is within a 12h window', () => {
     const ms = msToNextPeriod(new Date(2026, 6, 18, 9, 0).getTime());

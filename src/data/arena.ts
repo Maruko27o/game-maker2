@@ -42,13 +42,14 @@ export function periodId(now = trustedNow()): number {
   return localDay * 2 + (d.getHours() < 12 ? 0 : 1);
 }
 
-// 部IDを表示用ラベルに（例: "7/18 12時の部"）。
+// 部IDを表示用ラベルに（例: "7/18 12時の部"）。締め切り時刻で呼ぶ：前半(0:00〜12:00)
+// は12:00締めなので「12時の部」、後半(12:00〜24:00)は0:00締めなので「0時の部」。
 export function periodLabel(period: number): string {
   const day = Math.floor(period / 2);
   const half = period % 2;
   const tzMs = new Date().getTimezoneOffset() * 60000;
   const d = new Date(day * 86400000 + tzMs); // ローカル正子を実時刻へ戻す
-  return `${d.getMonth() + 1}/${d.getDate()} ${half ? '12時' : '0時'}の部`;
+  return `${d.getMonth() + 1}/${d.getDate()} ${half ? '0時' : '12時'}の部`;
 }
 
 // 次の開催（部の切り替わり）までの残りミリ秒。
