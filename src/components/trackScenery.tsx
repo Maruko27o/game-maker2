@@ -98,10 +98,14 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
   // --- mowing stripes: alternating thick strokes on short centerline arcs ---
   const stripeLen = 13;
   const nStripes = Math.max(8, Math.round(lap / stripeLen));
+  // Overlap adjacent stripes so the pale apron underneath doesn't bleed through the
+  // seams as stray near-white "fence" lines (which read as muddy next to a dark
+  // stripe). centerline() wraps s, so a slightly out-of-range s0/s1 is fine.
+  const stripeOverlap = 0.8;
   const stripes = [];
   for (let i = 0; i < nStripes; i++) {
-    const s0 = (i / nStripes) * lap;
-    const s1 = ((i + 1) / nStripes) * lap;
+    const s0 = (i / nStripes) * lap - stripeOverlap;
+    const s1 = ((i + 1) / nStripes) * lap + stripeOverlap;
     stripes.push(
       <path key={'st' + i} d={stripePath(track, s0, s1)} fill="none" stroke={i % 2 ? c1 : c2}
         strokeWidth={track.width} strokeLinecap="butt" />,
@@ -112,8 +116,8 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
   const innerPosts = [];
   const nPosts = Math.round(lap / 9);
   for (let i = 0; i < nPosts; i++) {
-    const p = toWorld(track, (i / nPosts) * lap, -halfW);
-    innerPosts.push(<circle key={'ip' + i} cx={p.x} cy={p.y} r={0.42} fill="#eef1f4" />);
+    const p = toWorld(track, (i / nPosts) * lap, -halfW - 0.4);
+    innerPosts.push(<circle key={'ip' + i} cx={p.x} cy={p.y} r={0.42} fill="#fbfaf4" stroke="#c9cebc" strokeWidth={0.12} />);
   }
 
   // --- furlong poles: every 200 m, coloured for the final 200/400/600 m to go ---
@@ -195,12 +199,15 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
         { rx: track.straight * 0.46 + 6, ry: track.radius * 0.6, c: '#8dc25c' },
         { rx: track.straight * 0.3 + 4, ry: track.radius * 0.42, c: '#84b953' },
       ].map((m, i) => <ellipse key={'mr' + i} cx={cx} cy={cy} rx={m.rx} ry={m.ry} fill={m.c} />);
-  // hedge ring hugging the inner rail (thick green band + scalloped bumps)
-  const hedgeD = edgePath(track, -halfW - 2.2);
+  // hedge ring inside the inner rail (set back so it doesn't crowd the white rail);
+  // a thick green band + scalloped bumps, with a mown-grass verge left between it
+  // and the rail.
+  const hedgeOff = -halfW - 3.0;
+  const hedgeD = edgePath(track, hedgeOff);
   const hedgeBumps = [];
   const nBump = Math.max(10, Math.round(lap / 6));
   for (let i = 0; i < nBump; i++) {
-    const p = toWorld(track, (i / nBump) * lap, -halfW - 2.2);
+    const p = toWorld(track, (i / nBump) * lap, hedgeOff);
     hedgeBumps.push(<circle key={'hb' + i} cx={p.x} cy={p.y} r={1.15} fill={i % 2 ? '#4f9243' : '#58a24a'} />);
   }
   // rounded shrubs dotted around the infield ring (kept off the pond)
@@ -260,15 +267,13 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
       <path d={edgePath(track, 0)} fill="none" stroke="#eef0e6" strokeWidth={track.width + 3} strokeLinejoin="round" />
       <g>{stripes}</g>
 
-      {/* outer + inner fences */}
+      {/* outer fence (the inner rail is drawn last, over the infield, so it stays
+          a clean white line and isn't crowded by the green hedge). */}
       <path d={edgePath(track, halfW + 0.3)} fill="none" stroke="#f4f1e6" strokeWidth={0.7} />
-      <path d={edgePath(track, -halfW - 0.2)} fill="none" stroke="#e9edf1" strokeWidth={0.9} />
-      <path d={edgePath(track, -halfW - 1.1)} fill="none" stroke="#dfe4ea" strokeWidth={0.5} opacity={0.8} />
-      <g>{innerPosts}</g>
 
       {/* infield: grass hole + mown rings + hedge ring + shrubs + tufts, detailed
           pond (rim, ripples, lily pads, reeds, shimmering reflection), flowerbeds */}
-      <path d={edgePath(track, -halfW - 1.4)} fill={isCircuit ? '#3f4a3c' : '#8fc25c'} stroke="none" />
+      <path d={edgePath(track, -halfW - 1.3)} fill={isCircuit ? '#3f4a3c' : '#8fc25c'} stroke="none" />
       {/* concentric mown rings (lawn texture) */}
       <g opacity={isCircuit ? 0 : 0.55}>{mowRings}</g>
       {/* hedge hugging the inner rail so the fence-to-pond ring isn't bare */}
@@ -295,6 +300,12 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
       {lilypad(pondRx * 0.45, -pondRy * 0.1, 1.4, false, 'lp1')}
       <g>{reeds}</g>
       <g>{flowers}</g>
+
+      {/* inner rail — drawn last, on top of the infield/hedge, so it always reads as
+          a clean white line (a soft shadow just inside gives it a little lift). */}
+      <path d={edgePath(track, -halfW - 0.9)} fill="none" stroke="#000" strokeWidth={0.5} opacity={0.12} />
+      <path d={edgePath(track, -halfW - 0.4)} fill="none" stroke="#fbfaf4" strokeWidth={1.2} strokeLinejoin="round" />
+      <g>{innerPosts}</g>
 
       {/* furlong poles */}
       <g>{poles}</g>
