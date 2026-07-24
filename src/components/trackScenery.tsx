@@ -88,6 +88,65 @@ function stripePath(track: Track, s0: number, s1: number, steps = 8): string {
   return p;
 }
 
+/** An illustrated steeple obstacle drawn as a band across the track at arc `s`.
+ *  water = 水濠（青い水面＋波紋＋踏切板）, bamboo = 竹柵（竹の縦桟＋緑の頂部）,
+ *  hedge = 生垣ジャンプ（緑の茂み＋土台の踏切板）. Shared by RaceTrack2 (live) and
+ *  the scene-debug page so both draw the same thing. */
+export function obstacleMark(track: Track, s: number, kind: 'hedge' | 'bamboo' | 'water', key: string) {
+  const half = track.width / 2;
+  const P = (ds: number, dn: number) => toWorld(track, s + ds, dn);
+  const near = 1.5, far = 1.5; // depth (m) each side of the take-off line
+  // cross-track polyline at a given along-offset (n+1 samples spanning the width)
+  const line = (ds: number, n = 8) =>
+    Array.from({ length: n + 1 }, (_, k) => P(ds, -half + (k / n) * track.width))
+      .map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+      .join(' ');
+  const A = P(-near, -half), B = P(-near, half), C = P(far, half), D = P(far, -half);
+  const band = [A, B, C, D].map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+  const board = line(-near); // near-edge take-off board line
+
+  if (kind === 'water') {
+    return (
+      <g key={key}>
+        <polygon points={band} fill="#1f5480" />
+        <polygon points={[P(-near + 0.35, -half), P(-near + 0.35, half), P(far, half), P(far, -half)].map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')} fill="#2f79aa" />
+        <polyline points={line(-0.2)} fill="none" stroke="#bfe2f2" strokeWidth={0.35} opacity={0.8} />
+        <polyline points={line(0.6)} fill="none" stroke="#ffffff" strokeWidth={0.26} opacity={0.4} />
+        <polyline points={board} fill="none" stroke="#f2efe4" strokeWidth={0.85} strokeLinecap="round" />
+      </g>
+    );
+  }
+  if (kind === 'bamboo') {
+    const nPole = 11;
+    const poles = Array.from({ length: nPole }, (_, i) => {
+      const dn = -half + (i / (nPole - 1)) * track.width;
+      const a = P(-near + 0.2, dn), b = P(far - 0.2, dn);
+      return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={i % 2 ? '#b98f4f' : '#a97e46'} strokeWidth={0.55} strokeLinecap="round" />;
+    });
+    return (
+      <g key={key}>
+        <polygon points={band} fill="#caa25c" />
+        <g>{poles}</g>
+        <polyline points={line(-0.55)} fill="none" stroke="#6cb356" strokeWidth={0.7} strokeLinecap="round" />
+        <polyline points={board} fill="none" stroke="#f2efe4" strokeWidth={0.7} strokeLinecap="round" />
+      </g>
+    );
+  }
+  // hedge / brush fence
+  const tufts = Array.from({ length: 12 }, (_, i) => {
+    const p = P(-0.1 + (i % 2 ? 0.35 : -0.35), -half + (i / 11) * track.width);
+    return <circle key={i} cx={p.x} cy={p.y} r={0.95} fill={i % 2 ? '#3f7d38' : '#4f9243'} />;
+  });
+  return (
+    <g key={key}>
+      <polygon points={band} fill="#356e30" />
+      <g>{tufts}</g>
+      <polyline points={line(0.5)} fill="none" stroke="#5aa049" strokeWidth={0.45} opacity={0.85} />
+      <polyline points={board} fill="none" stroke="#efe6c8" strokeWidth={0.7} strokeLinecap="round" />
+    </g>
+  );
+}
+
 export function buildScenery(track: Track, course: Course, vb: VB, standsH: number) {
   const lap = lapLength(track);
   const halfW = track.width / 2;

@@ -6,7 +6,7 @@ import type { HorseLook } from '../types';
 import HorseDefs from './HorseDefs';
 import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
-import { buildScenery } from './trackScenery';
+import { buildScenery, obstacleMark } from './trackScenery';
 import { betTier, type Bet, type BetKind } from '../logic/betting';
 import styles from './RaceTrack2.module.css';
 
@@ -374,15 +374,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
           <g opacity={clamp(1 - travelled / 30, 0, 1)}>{startGate}</g>
           {/* boost panels are invisible during the race (hidden power-ups) — the
               simulation still applies them, they're just not drawn. */}
-          {result.obstacles.map((o, i) => {
-            const c = centerline(track, o.s);
-            const w = toWorld(track, o.s, 0);
-            return (
-              <line key={'o' + i} x1={w.x + c.nx * track.width * 0.5} y1={w.y + c.ny * track.width * 0.5}
-                x2={w.x - c.nx * track.width * 0.5} y2={w.y - c.ny * track.width * 0.5}
-                stroke={o.kind === 'water' ? '#79c8ea' : o.kind === 'bamboo' ? '#b7913f' : '#4d7c3a'} strokeWidth="1.6" />
-            );
-          })}
+          {result.obstacles.map((o, i) => obstacleMark(track, o.s, o.kind, 'o' + i))}
           {/* horses — trailing runners drawn first so the player reads on top */}
           {positions
             .map((p, i) => ({ p, i }))
