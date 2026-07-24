@@ -45,19 +45,22 @@ export default function Collection() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <h1 className={styles.title}>図鑑</h1>
-        <div className={styles.progress}>
-          <div className={styles.bar}>
-            <div className={styles.fill} style={{ width: `${pct}%` }} />
+      {/* 図鑑タイトル＋所持数＋カテゴリタブを1つの固定ヘッダーにまとめ、スクロール
+          しても消えない様に（木目背景で内容が透けない）。 */}
+      <div className={styles.pinned}>
+        <header className={styles.head}>
+          <h1 className={styles.title}>図鑑</h1>
+          <div className={styles.progress}>
+            <div className={styles.bar}>
+              <div className={styles.fill} style={{ width: `${pct}%` }} />
+            </div>
+            <span className={styles.count}>
+              {ownedTotal} / {TOTAL}
+            </span>
           </div>
-          <span className={styles.count}>
-            {ownedTotal} / {TOTAL}
-          </span>
-        </div>
-      </header>
+        </header>
 
-      <div className={styles.tabs} role="tablist" aria-label="図鑑のカテゴリ">
+        <div className={styles.tabs} role="tablist" aria-label="図鑑のカテゴリ">
         {SECTIONS.map((s, i) => {
           const have = ownedIn(s.entries);
           const done = have === s.entries.length;
@@ -77,6 +80,7 @@ export default function Collection() {
             </button>
           );
         })}
+        </div>
       </div>
 
       <section className={styles.section}>
