@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { useAuth } from '../cloud';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
-import AvatarFrame from './AvatarFrame';
+import EquippedFrame from './EquippedFrame';
 import ProfileModal from './ProfileModal';
 import styles from './ProfileButton.module.css';
 
@@ -43,7 +43,7 @@ export default function ProfileButton() {
         aria-label="プロフィール"
       >
         {equippedFrame ? (
-          <AvatarFrame rank={equippedFrame.rank} metric={equippedFrame.metric} period={equippedFrame.period} look={avatar} size={46} />
+          <EquippedFrame frame={equippedFrame} look={avatar} size={46} />
         ) : (
           <HorseFace horse={avatar} size={40} />
         )}

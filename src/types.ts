@@ -239,6 +239,16 @@ export type FrameMetric = 'odds' | 'payout';
 export type FrameRank = 1 | 2 | 3;
 export type FrameAward = { period: string; rank: FrameRank; metric: FrameMetric };
 
+// スペシャルタスク：連勝フレーム（1人でレース・馬券あり・払戻>賭けの連勝で獲得）。
+// 連勝数(数のみ)を刻んだ特別フレーム。Lv1..10、重ねるほど豪華になる。
+export const STREAK_MAX = 10;
+export type StreakFrame = { kind: 'streak'; level: number };
+// アイコンに装備できるフレームは殿堂フレームか連勝フレームのいずれか。
+export type EquipFrame = FrameAward | StreakFrame;
+export function isStreakFrame(f: EquipFrame | null | undefined): f is StreakFrame {
+  return !!f && (f as StreakFrame).kind === 'streak';
+}
+
 // メールボックスの1通。フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
 export type MailItem = {
   id: string; // 重複防止の安定ID（例 'frame-2026-06-odds'）
@@ -259,6 +269,10 @@ export type SaveData = {
   trophies: Trophy[]; // grand-prix only
   badges: Badge[]; // everyday single-race rewards (ACCOUNT.md §2)
   winStreaks: Record<string, number>; // horseId -> current consecutive 1st count
+  // スペシャルタスク（連勝チャレンジ）。1人でレース・馬券ありで払戻>賭けなら1勝。
+  soloStreak?: number; // 現在の連勝数（負け＝払戻≤賭けで0にリセット）
+  streakBest?: number; // これまでの最高連勝数（達成済みLv = 1..min(streakBest,STREAK_MAX)）
+  streakClaimed?: number; // 受け取り済みのLv数（0..STREAK_MAX）
   items: TrainingItem[]; // owned training items (unused inventory)
   raceRecords: RaceRecord[];
   gpUnlocked: { g2: boolean; g1: boolean }; // grand-prix grade unlocks
@@ -273,7 +287,7 @@ export type SaveData = {
   avatarHorseId: string | null; // profile: which owned horse is the player's icon
   displayTrophies: number[]; // profile: trophy ranks (1|2|3) shown on the shelf (max 5)
   mailbox?: MailItem[]; // 受信箱（フレーム配布・補填など）
-  equippedFrame?: FrameAward | null; // アイコンに装備中のフレーム
+  equippedFrame?: EquipFrame | null; // アイコンに装備中のフレーム（殿堂 or 連勝）
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads
   arena?: ArenaState | null; // 対戦: pending entry + last revealed tournament
   farmClaimedAt?: number; // 牧場の放置収入を最後に回収した時刻（ms）

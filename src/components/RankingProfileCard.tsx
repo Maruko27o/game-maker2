@@ -1,7 +1,7 @@
 import type { ScoreRow } from '../cloud';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
-import AvatarFrame from './AvatarFrame';
+import EquippedFrame from './EquippedFrame';
 import TrophyIcon from './TrophyIcon';
 import CoinIcon from './CoinIcon';
 import styles from './RankingProfileCard.module.css';
@@ -22,7 +22,7 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
       <div className={styles.card} onClick={(e) => e.stopPropagation()}>
         <div className={`${styles.avatarBox} ${row.equippedFrame ? styles.avatarBoxFramed : ''}`}>
           {row.equippedFrame ? (
-            <AvatarFrame rank={row.equippedFrame.rank} metric={row.equippedFrame.metric} period={row.equippedFrame.period} look={look} size={132} />
+            <EquippedFrame frame={row.equippedFrame} look={look} size={132} />
           ) : (
             <HorseFace horse={look} size={104} />
           )}

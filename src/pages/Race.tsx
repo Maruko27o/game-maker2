@@ -218,6 +218,7 @@ export default function Race() {
   const recordBet = useStore((s) => s.recordBet);
   const finishRaceTask = useStore((s) => s.finishRaceTask);
   const recordBetStats = useStore((s) => s.recordBetStats);
+  const recordSoloStreak = useStore((s) => s.recordSoloStreak);
   const raceSession = useStore((s) => s.raceSession);
   const setRaceSession = useStore((s) => s.setRaceSession);
   const patchRaceSession = useStore((s) => s.patchRaceSession);
@@ -319,6 +320,10 @@ export default function Race() {
     }
     addCoins(earned + payout);
     recordBetStats({ placed: betList.length, staked, payout, wonOdds: bestWonOdds });
+    // スペシャルタスク（連勝チャレンジ）：馬券を賭けた1人でレースのみ対象。払戻>賭けで
+    // 連勝を1つ伸ばし、そうでなければ連勝リセット。レースは開始時に確定(seed)＆セッション
+    // 保持なので、タブを離れても結果は変わらず連勝を稼ぎ直せない。
+    if (betList.length > 0) recordSoloStreak(payout > staked);
     if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup0.course.id, payout);
     bufferSubmission(buildSubmission(setup0.entrants, setup0.course.id, setup0.mode, setup0.seed, res, setup0.entrants[0].horseId));
     return { reward: { rank, awarded, earned, payout }, achievements };

@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, loadLeaderboard, type ScoreRow, type RankBy } from '../cloud';
 import { useStore } from '../store';
-import type { HorseLook, FrameAward } from '../types';
+import type { HorseLook, EquipFrame } from '../types';
 import HorseFace from '../components/HorseFace';
-import AvatarFrame from '../components/AvatarFrame';
+import EquippedFrame from '../components/EquippedFrame';
 import TrophyMark from '../components/TrophyMark';
 import RankingProfileCard from '../components/RankingProfileCard';
 import CoinIcon from '../components/CoinIcon';
@@ -107,7 +107,7 @@ export default function Ranking() {
       : r.avatar
         ? { name: '', colors: r.avatar.colors, decos: r.avatar.decos }
         : DEFAULT_LOOK;
-    const frame: FrameAward | null = me ? myFrame : r.equippedFrame;
+    const frame: EquipFrame | null = me ? myFrame : r.equippedFrame;
     const facePx = place <= 3 ? 46 : 34;
     return (
       <li
@@ -120,7 +120,7 @@ export default function Ranking() {
         <span className={`${styles.place} ${medal(place)}`}>{place}</span>
         {frame ? (
           <span className={styles.avatarFramed}>
-            <AvatarFrame rank={frame.rank} metric={frame.metric} period={frame.period} look={look} size={facePx} />
+            <EquippedFrame frame={frame} look={look} size={facePx} />
           </span>
         ) : (
           <span className={styles.avatar}>
