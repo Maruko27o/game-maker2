@@ -58,6 +58,9 @@ export default function App() {
       <CloudSync />
       <SyncConflictModal />
       {showTitle && <Title onStart={dismissTitle} />}
+      {/* 上部アイコンの裏を固定の木目バンドで埋める（スクロールしても中身が
+          アイコンの裏に透けない様に）。草むらは専用シーンなので出さない。 */}
+      <div className={styles.topBand} data-screen={screen} aria-hidden />
       <ProfileButton />
       <TaskButton />
       <MailButton />
