@@ -122,7 +122,6 @@
     0 6px 0 #5c3f20,
     0 11px 16px rgba(0, 0, 0, 0.32);
   cursor: pointer;
-  overflow: hidden;
 }
 /* 棚板の上面（トロフィーが立つ明るい板） */
 .shelfBtn::before {
@@ -145,6 +144,7 @@
   height: 20px;
   background: linear-gradient(180deg, #8a6636 0 2px, #71501e 2px 20px);
   border-top: 2px solid #ddb676;
+  border-radius: 0 0 12px 12px;
   box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.22);
 }
 .shelfSlot {

@@ -128,7 +128,7 @@ export default function Ranking() {
           </span>
         )}
         <span className={styles.name}>
-          {r.username}
+          <span className={styles.uname}>{r.username}</span>
           {me && <span className={styles.youTag}>あなた</span>}
         </span>
         <span className={styles.odds}>{metric(r)}</span>

@@ -106,7 +106,7 @@
 }
 .row {
   display: grid;
-  grid-template-columns: 34px auto 1fr auto;
+  grid-template-columns: 34px auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
@@ -170,12 +170,17 @@
 .name {
   font-weight: 800;
   color: var(--ink);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+}
+/* 名前本体だけを省略表示（…）にして、長い名前でも倍率欄に重ならない。 */
+.uname {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .youTag {
   flex: none;

@@ -74,7 +74,7 @@ export default function ProfileModal({
 
   const [nameDraft, setNameDraft] = useState('');
   const [nameBusy, setNameBusy] = useState(false);
-  useEffect(() => setNameDraft(displayName ?? ''), [displayName]);
+  useEffect(() => setNameDraft((displayName ?? '').slice(0, NAME_MAX)), [displayName]);
   async function saveName() {
     const nm = normalizeUsername(nameDraft);
     if (!nm || nm === displayName) return;

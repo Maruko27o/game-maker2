@@ -119,12 +119,13 @@
 
 .podium {
   display: grid;
-  grid-template-columns: 1fr 1.15fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
   align-items: end;
   gap: 6px;
   padding: 6px 2px 2px;
 }
-.slot { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+/* min-width:0 で列が名前の長さに引き伸ばされないようにし、はみ出しを防ぐ。 */
+.slot { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
 .slotFirst { transform: translateY(-8px); }
 
 .winName {
