@@ -20,7 +20,8 @@ export function randomUsername(rng: () => number = Math.random): string {
   return `${a}${n}${num}`;
 }
 
-/** Trim + clamp a username to what the server accepts (1..32 chars). */
+/** Trim + clamp a username. Kept short (<=12) so it fits on one line in the
+ *  ranking / hall rows; the server still accepts up to 32. */
 export function normalizeUsername(name: string): string {
-  return name.trim().slice(0, 32);
+  return name.trim().slice(0, 12);
 }
