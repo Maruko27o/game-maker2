@@ -6,6 +6,7 @@
 // outlines, two-tone mowing stripes.
 import { toWorld, lapLength, goalS, centerline, type Track } from '../logic/track';
 import type { Course } from '../data/courses';
+import { mulberry32 } from '../logic/stats';
 import styles from './RaceTrack2.module.css';
 
 export type VB = { x: number; y: number; w: number; h: number };
@@ -150,8 +151,18 @@ export function obstacleMark(track: Track, s: number, kind: 'hedge' | 'bamboo' |
 export function buildScenery(track: Track, course: Course, vb: VB, standsH: number) {
   const lap = lapLength(track);
   const halfW = track.width / 2;
-  const [c1, c2] = SURFACE[course.surface] ?? SURFACE.turf;
-  const isCircuit = course.surface === 'circuit';
+  // ナイトサーキットは surface こそ turf（物理はturf）だが、見た目は夜。id で判定する。
+  const isCircuit = course.id === 'circuit';
+  const [c1, c2] = isCircuit ? SURFACE.circuit : SURFACE[course.surface] ?? SURFACE.turf;
+
+  // コース別の空気感（空・遠景・地面の色みと、名物の飾り）。夜は別処理。
+  type Theme = { sky: [string, string]; mtnA: string; mtnB: string; tree: string; bg: string; sun?: boolean; cacti?: boolean; pines?: boolean; puddles?: boolean };
+  const THEME: Record<string, Theme> = {
+    dirt: { sky: ['#c7c1ab', '#e4ddc6'], mtnA: '#9a8f78', mtnB: '#877c66', tree: '#8d855f', bg: '#b4a37f', puddles: true },
+    sand: { sky: ['#ffd49a', '#ffe9c6'], mtnA: '#e3c088', mtnB: '#d5ac6e', tree: '#dcbe80', bg: '#e6ce96', sun: true, cacti: true },
+    trail: { sky: ['#cfe6f0', '#e1eecb'], mtnA: '#6f9a6a', mtnB: '#5b8857', tree: '#4d8843', bg: '#9abf6a', pines: true },
+  };
+  const theme: Theme = THEME[course.id] ?? { sky: ['#bfe3f2', '#e6f2d6'], mtnA: '#9fc4a0', mtnB: '#8fb992', tree: '#7bab5e', bg: '#a9cf7a' };
   const horizon = vb.y + standsH * 0.72; // where stands meet the track apron
 
   // --- mowing stripes: alternating thick strokes on short centerline arcs ---
@@ -301,52 +312,149 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
       <circle cx={bx - 0.5 * s} cy={by - 1.9 * s} r={1.0 * s} fill="#6cba5a" />
     </g>
   );
-  const bushes = [];
+  // infield ring positions (shared by bushes / cacti / puddles, kept off the pond)
+  const ringPts: { x: number; y: number; s: number }[] = [];
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 + 0.25;
     const bx = Math.cos(a) * (track.straight * 0.52 + 6);
     const by = Math.sin(a) * (track.radius * 0.62);
     if (Math.abs(bx) < pondRx * 1.05 && Math.abs(by) < pondRy * 1.05) continue;
-    bushes.push(bush(bx, by, 0.85 + (i % 3) * 0.16, 'bs' + i));
+    ringPts.push({ x: bx, y: by, s: 0.85 + (i % 3) * 0.16 });
   }
+  const bushes = ringPts.map((p, i) => bush(p.x, p.y, p.s, 'bs' + i));
+
+  // 名物の飾り：デザート=サボテン、トレイル=松、ダート=水たまり。
+  const pine = (x: number, y: number, s: number, key: string) => (
+    <g key={key}>
+      <ellipse cx={x} cy={y + 0.6 * s} rx={2.2 * s} ry={0.6 * s} fill="#000" opacity={0.1} />
+      <rect x={x - 0.45 * s} y={y - 1.2 * s} width={0.9 * s} height={2.2 * s} fill="#7a5a34" />
+      <polygon points={`${x},${y - 6.4 * s} ${x - 2.5 * s},${y - 1 * s} ${x + 2.5 * s},${y - 1 * s}`} fill="#3f7d48" />
+      <polygon points={`${x},${y - 8.4 * s} ${x - 1.9 * s},${y - 3.6 * s} ${x + 1.9 * s},${y - 3.6 * s}`} fill="#4f9243" />
+      <polygon points={`${x},${y - 10 * s} ${x - 1.3 * s},${y - 6 * s} ${x + 1.3 * s},${y - 6 * s}`} fill="#5aa64f" />
+    </g>
+  );
+  const cactus = (x: number, y: number, s: number, key: string) => (
+    <g key={key}>
+      <ellipse cx={x} cy={y + 2.2 * s} rx={2.6 * s} ry={0.7 * s} fill="#000" opacity={0.1} />
+      <rect x={x - 1.1 * s} y={y - 3.4 * s} width={2.2 * s} height={5.8 * s} rx={1.1 * s} fill="#4f9a5a" />
+      <rect x={x - 3 * s} y={y - 1.6 * s} width={1.5 * s} height={2.8 * s} rx={0.75 * s} fill="#57a866" />
+      <rect x={x - 3 * s} y={y - 2.8 * s} width={1.4 * s} height={1.7 * s} rx={0.7 * s} fill="#57a866" />
+      <rect x={x + 1.5 * s} y={y - 2.2 * s} width={1.5 * s} height={2.6 * s} rx={0.75 * s} fill="#4f9a5a" />
+      <rect x={x + 1.5 * s} y={y - 3.3 * s} width={1.4 * s} height={1.5 * s} rx={0.7 * s} fill="#4f9a5a" />
+      <circle cx={x} cy={y - 3.4 * s} r={0.5 * s} fill="#f2c14e" />
+    </g>
+  );
+  const cacti = ringPts.map((p, i) => cactus(p.x, p.y, p.s, 'ca' + i));
+  const infieldPines = ringPts.filter((_, i) => i % 2 === 0).map((p, i) => pine(p.x, p.y, p.s * 1.1, 'ip' + i));
+  const puddles = ringPts.filter((_, i) => i % 2 === 1).map((p, i) => (
+    <g key={'pd' + i}>
+      <ellipse cx={p.x} cy={p.y} rx={3.4 * p.s} ry={1.5 * p.s} fill="#7c7358" opacity={0.55} />
+      <ellipse cx={p.x - 0.4} cy={p.y - 0.4} rx={2.4 * p.s} ry={0.9 * p.s} fill="#a9b2b0" opacity={0.5} />
+    </g>
+  ));
+  // trail: a line of pines along the far tree line
+  const horizonPines = theme.pines
+    ? Array.from({ length: 9 }, (_, i) => pine(vb.x + vb.w * (0.06 + i * 0.11), horizon - 1, standsH * 0.05, 'hp' + i))
+    : [];
 
   // --- distant mountains + tree line along the horizon (no outline) ---
   const mtn = (mx: number, w: number, h: number) =>
     `M ${mx - w} ${horizon} Q ${mx - w * 0.4} ${horizon - h} ${mx} ${horizon - h * 0.82} Q ${mx + w * 0.5} ${horizon - h} ${mx + w} ${horizon} Z`;
 
+  // --- night course (ナイトサーキット): stars, a moon, and floodlight pylons that
+  //     cast warm light pools onto the track. ---
+  const nrng = mulberry32(98713);
+  const stars = isCircuit
+    ? Array.from({ length: 55 }, (_, i) => {
+        const sx = vb.x + nrng() * vb.w;
+        const sy = vb.y + nrng() * (horizon - vb.y) * 0.92;
+        const r = 0.25 + nrng() * 0.55;
+        return <circle key={'nst' + i} cx={sx} cy={sy} r={r} fill="#fdfce8" opacity={0.35 + nrng() * 0.6} />;
+      })
+    : [];
+  const floodX = [0.16, 0.4, 0.62, 0.85];
+  const floodPylons = floodX.map((fx, i) => {
+    const x = vb.x + vb.w * fx;
+    const topY = horizon - standsH * 0.66;
+    return (
+      <g key={'fpy' + i}>
+        <line x1={x} y1={horizon} x2={x} y2={topY} stroke="#20242e" strokeWidth={1.1} />
+        <rect x={x - 3.2} y={topY - 2.6} width={6.4} height={3.0} rx={0.5} fill="#2b2f3a" />
+        {[-2.1, 0, 2.1].map((k) => (
+          <circle key={k} cx={x + k} cy={topY - 1.1} r={0.75} fill="#fff3c0" />
+        ))}
+        <circle cx={x} cy={topY - 1.1} r={3.4} fill="url(#flood)" />
+      </g>
+    );
+  });
+  const floodGlow = floodX.map((fx, i) => {
+    const x = vb.x + vb.w * fx;
+    return <ellipse key={'fgl' + i} cx={x} cy={horizon + standsH * 0.34} rx={standsH * 0.5} ry={standsH * 0.62} fill="url(#flood)" />;
+  });
+
   return (
     <>
       <defs>
         <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={isCircuit ? '#2b3350' : '#bfe3f2'} />
-          <stop offset="100%" stopColor={isCircuit ? '#3a4460' : '#e6f2d6'} />
+          <stop offset="0%" stopColor={isCircuit ? '#161b30' : theme.sky[0]} />
+          <stop offset="100%" stopColor={isCircuit ? '#2b3352' : theme.sky[1]} />
         </linearGradient>
         <radialGradient id="pond" cx="50%" cy="40%" r="70%">
           <stop offset="0%" stopColor="#bfe6ee" />
           <stop offset="100%" stopColor="#79bcd0" />
         </radialGradient>
+        <radialGradient id="flood" cx="50%" cy="28%" r="70%">
+          <stop offset="0%" stopColor="#fff6d8" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#fff6d8" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="moon" cx="42%" cy="38%" r="62%">
+          <stop offset="0%" stopColor="#fdfae6" />
+          <stop offset="100%" stopColor="#e6e0bf" />
+        </radialGradient>
       </defs>
 
       {/* ground + sky */}
-      <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill={isCircuit ? '#39424f' : '#a9cf7a'} />
+      <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill={isCircuit ? '#2a3140' : theme.bg} />
       <rect x={vb.x} y={vb.y} width={vb.w} height={standsH + 6} fill="url(#sky)" />
 
+      {/* night: stars + moon (behind the mountains/stands) */}
+      {isCircuit && (
+        <>
+          <g>{stars}</g>
+          <circle cx={vb.x + vb.w * 0.82} cy={vb.y + standsH * 0.34} r={standsH * 0.15} fill="url(#moon)" />
+          <circle cx={vb.x + vb.w * 0.86} cy={vb.y + standsH * 0.29} r={standsH * 0.12} fill="#1c2338" opacity={0.5} />
+        </>
+      )}
+      {/* desert: a big warm sun */}
+      {theme.sun && (
+        <>
+          <circle cx={vb.x + vb.w * 0.78} cy={vb.y + standsH * 0.36} r={standsH * 0.28} fill="#ffcf6a" opacity={0.35} />
+          <circle cx={vb.x + vb.w * 0.78} cy={vb.y + standsH * 0.36} r={standsH * 0.19} fill="#ffdc7a" />
+        </>
+      )}
+
       {/* far mountains + trees */}
-      <path d={mtn(vb.x + vb.w * 0.28, 34, standsH * 0.5)} fill={isCircuit ? '#404b6a' : '#9fc4a0'} opacity={0.8} />
-      <path d={mtn(vb.x + vb.w * 0.62, 44, standsH * 0.64)} fill={isCircuit ? '#4a557a' : '#8fb992'} opacity={0.85} />
-      <path d={mtn(vb.x + vb.w * 0.85, 30, standsH * 0.44)} fill={isCircuit ? '#404b6a' : '#9fc4a0'} opacity={0.8} />
-      <rect x={vb.x} y={horizon - 2} width={vb.w} height={standsH * 0.34 + 2} fill={isCircuit ? '#3a4358' : '#7bab5e'} opacity={0.55} />
+      <path d={mtn(vb.x + vb.w * 0.28, 34, standsH * 0.5)} fill={isCircuit ? '#232a3e' : theme.mtnA} opacity={0.85} />
+      <path d={mtn(vb.x + vb.w * 0.62, 44, standsH * 0.64)} fill={isCircuit ? '#2a3248' : theme.mtnB} opacity={0.9} />
+      <path d={mtn(vb.x + vb.w * 0.85, 30, standsH * 0.44)} fill={isCircuit ? '#232a3e' : theme.mtnA} opacity={0.85} />
+      <rect x={vb.x} y={horizon - 2} width={vb.w} height={standsH * 0.34 + 2} fill={isCircuit ? '#2b3350' : theme.tree} opacity={0.55} />
+      {/* trail: a line of pine trees along the horizon */}
+      {theme.pines && <g>{horizonPines}</g>}
 
       {/* grandstand: apron + tiers + mono-pitch roof */}
-      <rect x={vb.x} y={horizon} width={vb.w} height={standsH * 0.4} fill="#cdb083" />
-      <rect x={vb.x} y={horizon - standsH * 0.06} width={vb.w} height={standsH * 0.1} fill="#b98f5c" />
+      <rect x={vb.x} y={horizon} width={vb.w} height={standsH * 0.4} fill={isCircuit ? '#3a4056' : '#cdb083'} />
+      <rect x={vb.x} y={horizon - standsH * 0.06} width={vb.w} height={standsH * 0.1} fill={isCircuit ? '#2f3548' : '#b98f5c'} />
       {/* roof: a slim slanted bar over the stand */}
       <path d={`M ${vb.x} ${horizon - standsH * 0.1} L ${vb.x + vb.w} ${horizon - standsH * 0.16} L ${vb.x + vb.w} ${horizon - standsH * 0.06} L ${vb.x} ${horizon - standsH * 0.02} Z`}
-        fill="#d7dde6" opacity={0.9} />
+        fill={isCircuit ? '#525a72' : '#d7dde6'} opacity={0.9} />
+      {/* night: floodlight pylons over the stands */}
+      {isCircuit && <g>{floodPylons}</g>}
 
       {/* running surface: two-tone mowing stripes + apron rings */}
-      <path d={edgePath(track, 0)} fill="none" stroke="#eef0e6" strokeWidth={track.width + 3} strokeLinejoin="round" />
+      <path d={edgePath(track, 0)} fill="none" stroke={isCircuit ? '#c8cbe0' : '#eef0e6'} strokeWidth={track.width + 3} strokeLinejoin="round" />
       <g>{stripes}</g>
+      {/* night: warm floodlight pools spilling onto the track */}
+      {isCircuit && <g>{floodGlow}</g>}
 
       {/* outer fence (the inner rail is drawn last, over the infield, so it stays
           a clean white line and isn't crowded by the green hedge). */}
@@ -359,8 +467,9 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
       <g opacity={isCircuit ? 0 : 0.55}>{mowRings}</g>
       {/* flower-border planting inside the inner rail so the fence-to-pond ring isn't bare */}
       {!isCircuit && <g>{planting}</g>}
-      {/* shrubs dotted around the infield */}
-      {!isCircuit && <g>{bushes}</g>}
+      {/* infield decor — desert=cacti, trail=pines, dirt=puddles(+bushes), else bushes */}
+      {!isCircuit && <g>{theme.cacti ? cacti : theme.pines ? [...bushes, ...infieldPines] : bushes}</g>}
+      {!isCircuit && theme.puddles && <g>{puddles}</g>}
       <g>{tufts}</g>
       {/* pond body + shadow rim */}
       <ellipse cx={cx} cy={cy} rx={pondRx} ry={pondRy} fill={isCircuit ? '#3b4a63' : '#5aa0b0'} opacity={0.5} />
