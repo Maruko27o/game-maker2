@@ -4,7 +4,7 @@
 // text, waving flags, the result board) are drawn by RaceTrack2 itself, where the
 // live frame/phase data lives. Hand-drawn, earthy look: soft shapes, no harsh
 // outlines, two-tone mowing stripes.
-import { toWorld, lapLength, goalS, type Track } from '../logic/track';
+import { toWorld, lapLength, goalS, centerline, type Track } from '../logic/track';
 import type { Course } from '../data/courses';
 import styles from './RaceTrack2.module.css';
 
@@ -199,16 +199,38 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
         { rx: track.straight * 0.46 + 6, ry: track.radius * 0.6, c: '#8dc25c' },
         { rx: track.straight * 0.3 + 4, ry: track.radius * 0.42, c: '#84b953' },
       ].map((m, i) => <ellipse key={'mr' + i} cx={cx} cy={cy} rx={m.rx} ry={m.ry} fill={m.c} />);
-  // hedge ring inside the inner rail (set back so it doesn't crowd the white rail);
-  // a thick green band + scalloped bumps, with a mown-grass verge left between it
-  // and the rail.
+  // 内柵の内側に沿う「花のボーダー花壇」：低木と花クラスタを交互に並べた華やかな
+  // 縁取り（内柵の白ラインは最前面なので、ここは白ラチを邪魔しない内側に置く）。
   const hedgeOff = -halfW - 3.0;
-  const hedgeD = edgePath(track, hedgeOff);
-  const hedgeBumps = [];
-  const nBump = Math.max(10, Math.round(lap / 6));
-  for (let i = 0; i < nBump; i++) {
-    const p = toWorld(track, (i / nBump) * lap, hedgeOff);
-    hedgeBumps.push(<circle key={'hb' + i} cx={p.x} cy={p.y} r={1.15} fill={i % 2 ? '#4f9243' : '#58a24a'} />);
+  const fpal2 = ['#e97ba0', '#f2c14e', '#ffffff', '#d98be0', '#f28a6a'];
+  const nPlant = Math.max(6, Math.round(lap / 4));
+  const planting = [];
+  for (let i = 0; i < nPlant; i++) {
+    const s = (i / nPlant) * lap;
+    const p = toWorld(track, s, hedgeOff);
+    const c = centerline(track, s);
+    planting.push(
+      i % 2 === 0 ? (
+        <g key={'pl' + i}>
+          <ellipse cx={p.x} cy={p.y + 1.3} rx={2.2} ry={0.8} fill="#000" opacity={0.1} />
+          <circle cx={p.x - c.nx * 0.6} cy={p.y - c.ny * 0.6} r={1.5} fill="#4f9243" />
+          <circle cx={p.x + c.nx * 0.6} cy={p.y + c.ny * 0.6} r={1.5} fill="#4f9243" />
+          <circle cx={p.x} cy={p.y} r={1.7} fill="#59a44b" />
+          <circle cx={p.x - 0.4} cy={p.y - 0.7} r={0.7} fill="#6cba5a" />
+        </g>
+      ) : (
+        <g key={'pl' + i}>
+          <ellipse cx={p.x} cy={p.y + 0.6} rx={2.0} ry={0.9} fill="#5f9a44" />
+          <ellipse cx={p.x} cy={p.y + 0.2} rx={2.0} ry={0.75} fill="#6eb356" />
+          {[-1, 0, 1].map((k) => (
+            <g key={k}>
+              <circle cx={p.x + k * 0.9} cy={p.y - 0.2 - (k === 0 ? 0.4 : 0)} r={0.6} fill={fpal2[(i + k + 2) % fpal2.length]} />
+              <circle cx={p.x + k * 0.9} cy={p.y - 0.2 - (k === 0 ? 0.4 : 0)} r={0.22} fill="#fff3c4" />
+            </g>
+          ))}
+        </g>
+      ),
+    );
   }
   // rounded shrubs dotted around the infield ring (kept off the pond)
   const bush = (bx: number, by: number, s: number, key: string) => (
@@ -276,14 +298,8 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
       <path d={edgePath(track, -halfW - 1.3)} fill={isCircuit ? '#3f4a3c' : '#8fc25c'} stroke="none" />
       {/* concentric mown rings (lawn texture) */}
       <g opacity={isCircuit ? 0 : 0.55}>{mowRings}</g>
-      {/* hedge hugging the inner rail so the fence-to-pond ring isn't bare */}
-      {!isCircuit && (
-        <>
-          <path d={hedgeD} fill="none" stroke="#3f7d38" strokeWidth={2.6} strokeLinejoin="round" />
-          <g>{hedgeBumps}</g>
-          <path d={hedgeD} fill="none" stroke="#5aa049" strokeWidth={0.9} opacity={0.8} />
-        </>
-      )}
+      {/* flower-border planting inside the inner rail so the fence-to-pond ring isn't bare */}
+      {!isCircuit && <g>{planting}</g>}
       {/* shrubs dotted around the infield */}
       {!isCircuit && <g>{bushes}</g>}
       <g>{tufts}</g>
