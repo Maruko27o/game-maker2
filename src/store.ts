@@ -44,6 +44,7 @@ import { styleFor } from './logic/runStyle';
 import { runTournament, playerSnapshot } from './logic/arena';
 import { periodId, ARENA_ENTRY_FEE, ARENA_MODE, ARENA_CATCHUP_MAX, ARENA_RESULTS_CAP } from './data/arena';
 import { farmRatePerHour, farmAccrued, retireValueOf } from './logic/farm';
+import { trustedNow } from './logic/trustedClock';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 6; // 所持できるマイウマの上限（拡張なし）
@@ -184,7 +185,7 @@ function freshSave(): SaveData {
     equippedFrame: null,
     raceSession: null,
     arena: freshArena(),
-    farmClaimedAt: Date.now(),
+    farmClaimedAt: trustedNow(),
     savedAt: 0, // untouched save loses to any real cloud data on first sync
   };
 }
@@ -315,7 +316,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         ...normProfile(d),
         raceSession: normRaceSession(d.raceSession),
         arena: normArena(d.arena),
-        farmClaimedAt: typeof d.farmClaimedAt === 'number' ? d.farmClaimedAt : Date.now(),
+        farmClaimedAt: typeof d.farmClaimedAt === 'number' ? d.farmClaimedAt : trustedNow(),
         savedAt,
       },
       migrated: false,
@@ -522,7 +523,7 @@ export const useStore = create<Store>((set, get) => {
       equippedFrame: next.equippedFrame ?? null,
       raceSession: next.raceSession ?? null,
       arena: next.arena ?? freshArena(),
-      farmClaimedAt: next.farmClaimedAt ?? Date.now(),
+      farmClaimedAt: next.farmClaimedAt ?? trustedNow(),
       savedAt,
     };
     persist(data);
@@ -533,7 +534,7 @@ export const useStore = create<Store>((set, get) => {
     ...initial,
     raceSession: initial.raceSession ?? null,
     arena: initial.arena ?? freshArena(),
-    farmClaimedAt: initial.farmClaimedAt ?? Date.now(),
+    farmClaimedAt: initial.farmClaimedAt ?? trustedNow(),
     freeRename: initial.freeRename ?? true,
     migrated,
     clearMigrated: () => set({ migrated: false }),
@@ -985,9 +986,10 @@ export const useStore = create<Store>((set, get) => {
     claimFarm: () => {
       const s = get();
       const rate = farmRatePerHour(s.horses, s.trophies, s.badges);
-      const got = farmAccrued(s.farmClaimedAt ?? Date.now(), Date.now(), rate);
+      const now = trustedNow();
+      const got = farmAccrued(s.farmClaimedAt ?? now, now, rate);
       if (got <= 0) return 0; // nothing yet — keep the anchor so fractions aren't lost
-      commit({ coins: s.coins + got, farmClaimedAt: Date.now() });
+      commit({ coins: s.coins + got, farmClaimedAt: now });
       return got;
     },
 

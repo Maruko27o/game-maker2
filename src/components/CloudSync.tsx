@@ -17,6 +17,7 @@ import {
   loadMyBetScore,
   loadMyFrameAwards,
   setRankingFrame,
+  syncServerClock,
 } from '../cloud';
 import { reconcile } from '../logic/cloudReconcile';
 import { randomUsername } from '../logic/username';
@@ -65,6 +66,24 @@ export default function CloudSync() {
   useEffect(() => {
     if (configured) initAuth();
   }, [configured]);
+
+  // 端末時計に頼らない「信頼できる時刻」をサーバ時刻でアンカーする。起動時＋復帰時＋
+  // オンライン復帰時に更新すれば、時計を進めても牧場収入・対戦の「部」は先取りできない。
+  useEffect(() => {
+    const resync = () => void syncServerClock();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') resync();
+    };
+    resync();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', resync);
+    window.addEventListener('focus', resync);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', resync);
+      window.removeEventListener('focus', resync);
+    };
+  }, []);
 
   // On sign-in: reconcile local vs cloud, and fetch the player number.
   useEffect(() => {

@@ -6,6 +6,7 @@ import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
 import { RENAME_COST } from '../data/coins';
 import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRateOf } from '../logic/farm';
+import { trustedNow } from '../logic/trustedClock';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Trophy, Badge, TrainingItem, StatKey } from '../types';
 import { BADGES } from '../data/badges';
@@ -130,9 +131,9 @@ export default function Stable() {
   const anyItemCount = items.filter((i) => i.kind === 'any').length;
 
   // 牧場の放置収入：1秒ごとに表示を更新（回収でアンカーがリセットされる）。
-  const [nowTs, setNowTs] = useState(Date.now());
+  const [nowTs, setNowTs] = useState(trustedNow());
   useEffect(() => {
-    const t = setInterval(() => setNowTs(Date.now()), 1000);
+    const t = setInterval(() => setNowTs(trustedNow()), 1000);
     return () => clearInterval(t);
   }, []);
   const farmRate = useMemo(() => farmRatePerHour(horses, trophies, badges), [horses, trophies, badges]);
