@@ -1,14 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies } from '../cloud';
+import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRankingFrame } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
-import type { HorseLook } from '../types';
+import type { HorseLook, EquipFrame } from '../types';
+import { isStreakFrame } from '../types';
+import { ownedLevels } from '../logic/streak';
 import HorseFace from './HorseFace';
+import EquippedFrame from './EquippedFrame';
 import TrophyIcon from './TrophyIcon';
 import CoinIcon from './CoinIcon';
 import AccountPanel from './AccountPanel';
 import styles from './ProfileModal.module.css';
+
+// アイコンに装備できるフレーム同士の同一判定。
+function sameFrame(a: EquipFrame | null, b: EquipFrame | null): boolean {
+  if (!a || !b) return a === b;
+  if (isStreakFrame(a) || isStreakFrame(b)) return isStreakFrame(a) && isStreakFrame(b) && a.level === b.level;
+  return a.period === b.period && a.rank === b.rank && a.metric === b.metric;
+}
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 const SLOTS = 5;
@@ -31,6 +41,10 @@ export default function ProfileModal({
   const owned = useStore((s) => s.owned);
   const tasks = useStore((s) => s.tasks);
   const pstats = useStore((s) => s.stats);
+  const streakClaimed = useStore((s) => s.streakClaimed ?? 0);
+  const mailbox = useStore((s) => s.mailbox ?? []);
+  const equippedFrame = useStore((s) => s.equippedFrame ?? null);
+  const equipFrame = useStore((s) => s.equipFrame);
 
   const user = useAuth((s) => s.user);
   const displayName = useAuth((s) => s.displayName);
@@ -44,6 +58,30 @@ export default function ProfileModal({
     const byId = avatarHorseId ? horses.find((h) => h.id === avatarHorseId) : null;
     return byId ?? horses[0] ?? DEFAULT_LOOK;
   }, [avatarHorseId, horses]);
+
+  // 獲得済みフレーム一覧（連勝フレーム＋殿堂フレーム）。アイコン設定の「フレーム」で装備する。
+  const ownedFrames = useMemo<EquipFrame[]>(() => {
+    const streak: EquipFrame[] = ownedLevels({ soloStreak: 0, streakBest: 0, streakClaimed })
+      .slice()
+      .reverse() // 高い連勝ほど手前に
+      .map((level) => ({ kind: 'streak', level }));
+    const seen = new Set<string>();
+    const rank: EquipFrame[] = [];
+    for (const m of mailbox) {
+      if (m.kind !== 'frame' || !m.frame) continue;
+      const key = `${m.frame.period}-${m.frame.rank}-${m.frame.metric}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rank.push(m.frame);
+    }
+    return [...streak, ...rank];
+  }, [streakClaimed, mailbox]);
+
+  // フレームを装備／解除（ローカル＋ランキング行にも反映）。
+  function equip(frame: EquipFrame | null) {
+    equipFrame(frame);
+    void setRankingFrame(frame);
+  }
 
   const ownedTrophies = useMemo(() => {
     const c: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
@@ -206,8 +244,37 @@ export default function ProfileModal({
                   })}
                 </div>
               )
+            ) : ownedFrames.length === 0 ? (
+              <p className={styles.hint}>まだフレームがありません。連勝チャレンジ（タスク→スペシャル）や殿堂入りで手に入ります。</p>
             ) : (
-              <p className={styles.hint}>フレーム装飾は近日実装予定です。お楽しみに！</p>
+              <>
+                <div className={styles.frameGrid}>
+                  {/* なし（フレームを外す） */}
+                  <button
+                    className={`${styles.framePick} ${!equippedFrame ? styles.picked : ''}`}
+                    onClick={() => equip(null)}
+                    aria-label="フレームなし"
+                  >
+                    <div className={styles.frameFace}><HorseFace horse={avatar} size={56} /></div>
+                    <span className={styles.frameName}>なし</span>
+                  </button>
+                  {ownedFrames.map((f, i) => {
+                    const on = sameFrame(equippedFrame, f);
+                    return (
+                      <button
+                        key={i}
+                        className={`${styles.framePick} ${on ? styles.picked : ''}`}
+                        onClick={() => equip(f)}
+                        aria-label="フレーム"
+                      >
+                        <EquippedFrame frame={f} look={avatar} size={56} />
+                        {on && <span className={styles.frameTag}>装備中</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className={styles.hint}>タップでアイコンに装備できます。</p>
+              </>
             )}
           </div>
         </div>
