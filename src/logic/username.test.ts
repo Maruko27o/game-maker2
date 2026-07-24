@@ -16,8 +16,8 @@ describe('username', () => {
     expect(randomUsername(mulberry32(7))).toBe(randomUsername(mulberry32(7)));
   });
 
-  it('normalizes: trims and clamps to 32 chars', () => {
+  it('normalizes: trims and clamps to 12 chars (fits one ranking row)', () => {
     expect(normalizeUsername('  なまえ  ')).toBe('なまえ');
-    expect(normalizeUsername('あ'.repeat(50)).length).toBe(32);
+    expect(normalizeUsername('あ'.repeat(50)).length).toBe(12);
   });
 });

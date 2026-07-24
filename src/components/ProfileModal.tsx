@@ -12,6 +12,8 @@ import styles from './ProfileModal.module.css';
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 const SLOTS = 5;
+// ランキング／殿堂の各行に1行で収まる長さに制限（長すぎる名前でのレイアウト崩れ防止）。
+const NAME_MAX = 12;
 
 export default function ProfileModal({
   onClose,
@@ -88,40 +90,45 @@ export default function ProfileModal({
         {/* Header: tap the avatar to change the icon, tap the shelf to edit trophies */}
         <div className={styles.head}>
           <button className={styles.avatarBtn} onClick={() => { setIconMode('horse'); setEditing('icon'); }} aria-label="アイコンを変更">
-            <HorseFace horse={avatar} size={84} />
+            <HorseFace horse={avatar} size={76} />
             <span className={styles.avatarEdit} aria-hidden>✎</span>
           </button>
           <div className={styles.headInfo}>
             {user ? (
-              <div className={styles.nameRow}>
-                <input
-                  className={styles.nameInput}
-                  value={nameDraft}
-                  maxLength={32}
-                  placeholder="名前"
-                  aria-label="名前（ランキング名）"
-                  onChange={(e) => setNameDraft(e.target.value)}
-                />
-                <button className={styles.saveBtn} onClick={saveName} disabled={nameBusy || !nameDraft.trim() || nameDraft.trim() === displayName}>
-                  {nameBusy ? '…' : '保存'}
-                </button>
-              </div>
+              <>
+                <div className={styles.nameRow}>
+                  <input
+                    className={styles.nameInput}
+                    value={nameDraft}
+                    maxLength={NAME_MAX}
+                    placeholder="名前"
+                    aria-label="名前（ランキング名）"
+                    onChange={(e) => setNameDraft(e.target.value.slice(0, NAME_MAX))}
+                  />
+                  <button className={styles.saveBtn} onClick={saveName} disabled={nameBusy || !nameDraft.trim() || nameDraft.trim() === displayName}>
+                    {nameBusy ? '…' : '保存'}
+                  </button>
+                </div>
+                <div className={styles.nameHint}>なまえは{NAME_MAX}文字まで</div>
+              </>
             ) : (
               <div className={styles.headName}>{displayName || 'ゲスト'}</div>
             )}
-            <button className={styles.shelfBtn} onClick={() => setEditing('trophy')} aria-label="トロフィーを飾る">
-              {Array.from({ length: SLOTS }).map((_, i) => {
-                const r = shelf[i] as 1 | 2 | 3 | undefined;
-                return (
-                  <span key={i} className={styles.shelfSlot}>
-                    {r ? <TrophyIcon rank={r} size={26} /> : null}
-                  </span>
-                );
-              })}
-              <span className={styles.shelfEdit} aria-hidden>✎</span>
-            </button>
           </div>
         </div>
+
+        {/* トロフィー棚：名前の下に横いっぱいで飾る（棚の上に並ぶ見た目） */}
+        <button className={styles.shelfBtn} onClick={() => setEditing('trophy')} aria-label="トロフィーを飾る">
+          {Array.from({ length: SLOTS }).map((_, i) => {
+            const r = shelf[i] as 1 | 2 | 3 | undefined;
+            return (
+              <span key={i} className={styles.shelfSlot}>
+                {r ? <TrophyIcon rank={r} size={60} /> : null}
+              </span>
+            );
+          })}
+          <span className={styles.shelfEdit} aria-hidden>✎</span>
+        </button>
 
         {/* Lifetime stats */}
         <div className={styles.statGrid}>
