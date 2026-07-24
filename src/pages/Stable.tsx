@@ -55,7 +55,7 @@ function TrophyRack({ trophies }: { trophies: Trophy[] }) {
       {groups.map((g, i) => (
         <div key={i} className={styles.rackItem}>
           <TrophyIcon rank={g.rank} size={56} />
-          {g.count > 1 && <span className={styles.rackCount}>×{g.count}</span>}
+          {g.count > 1 && <span className={styles.countBadge}>{g.count}</span>}
         </div>
       ))}
     </div>
@@ -84,7 +84,7 @@ function BadgeRack({ badges }: { badges: Badge[] }) {
       {groups.map((g) => (
         <div key={g.id} className={styles.badgeRackItem} title={BADGES[g.id as keyof typeof BADGES]?.name}>
           <BadgeIcon id={g.id} size={40} />
-          {g.count > 1 && <span className={styles.rackCount}>×{g.count}</span>}
+          {g.count > 1 && <span className={styles.countBadge}>{g.count}</span>}
         </div>
       ))}
     </div>
@@ -235,51 +235,47 @@ export default function Stable() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             {view === 'detail' ? (
               <>
-                <div className={styles.modalThumb}>
-                  <HorseView horse={selected} size={140} shadow />
-                </div>
-                <div className={styles.renameRow}>
-                  <input
-                    className={styles.nameInput}
-                    value={draftName}
-                    maxLength={12}
-                    onChange={(e) => setDraftName(e.target.value)}
-                    aria-label="名前"
-                  />
-                  {draftName.trim() && draftName !== selected.name && (
-                    <button
-                      className={styles.renameBtn}
-                      disabled={!freeRename && coins < RENAME_COST}
-                      onClick={() => {
-                        if (freeRename) {
-                          renameHorse(selected.id, draftName.trim());
-                          consumeFreeRename();
-                        } else if (spendCoins(RENAME_COST)) {
-                          renameHorse(selected.id, draftName.trim());
-                        }
-                      }}
-                      title={!freeRename && coins < RENAME_COST ? 'コインが足りません' : ''}
-                    >
-                      {freeRename ? '改名（無料）' : <><CoinIcon size={15} /> 改名（{RENAME_COST}）</>}
-                    </button>
-                  )}
+                {/* 左：ウマ全体像／右上：名前＋能力図（高さを揃える）。数値6マスは廃止し合計だけ下に。 */}
+                <div className={styles.detailTop}>
+                  <div className={styles.detailHorse}>
+                    <HorseView horse={selected} size={140} shadow />
+                  </div>
+                  <div className={styles.detailRight}>
+                    <div className={styles.renameRow}>
+                      <input
+                        className={styles.nameInput}
+                        value={draftName}
+                        maxLength={12}
+                        onChange={(e) => setDraftName(e.target.value)}
+                        aria-label="名前"
+                      />
+                      {draftName.trim() && draftName !== selected.name && (
+                        <button
+                          className={styles.renameBtn}
+                          disabled={!freeRename && coins < RENAME_COST}
+                          onClick={() => {
+                            if (freeRename) {
+                              renameHorse(selected.id, draftName.trim());
+                              consumeFreeRename();
+                            } else if (spendCoins(RENAME_COST)) {
+                              renameHorse(selected.id, draftName.trim());
+                            }
+                          }}
+                          title={!freeRename && coins < RENAME_COST ? 'コインが足りません' : ''}
+                        >
+                          {freeRename ? '改名（無料）' : <><CoinIcon size={14} /> 改名（{RENAME_COST}）</>}
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.detailRadar}>
+                      <StatRadar stats={selected.stats} size={150} />
+                    </div>
+                  </div>
                 </div>
 
-                <div className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</div>
-
-                <div className={styles.statsBlock}>
-                  <StatRadar stats={selected.stats} size={168} />
-                  <div className={styles.statGrid}>
-                    {STAT_KEYS.map((k) => (
-                      <div key={k} className={styles.statCell}>
-                        <span className={styles.statCellLabel}>{STAT_LABEL[k]}</span>
-                        <span className={styles.statCellVal}>{selected.stats[k]}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className={styles.statTotal}>
-                    合計 {total} / {STAT_TOTAL_CAP}
-                  </div>
+                <div className={styles.metaRow}>
+                  <span className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</span>
+                  <span className={styles.metaTotal}>合計 {total} / {STAT_TOTAL_CAP}</span>
                 </div>
 
                 <div className={styles.rackWrap}>
