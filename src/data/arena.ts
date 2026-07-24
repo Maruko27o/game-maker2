@@ -5,6 +5,7 @@
 // リストに溜まっていく。優勝は特大の賞金だが、後半ラウンドのCOMを強くして希少に保つ。
 
 import type { ArenaOutcome } from '../types';
+import { trustedNow } from '../logic/trustedClock';
 
 export const ARENA_ENTRY_FEE = 1000; // コイン: 1回の参加費
 export const ARENA_FIELD = 8; // 1レースの頭数（全ラウンド8頭）
@@ -35,7 +36,7 @@ export const ARENA_COM_BANDS: [number, number][] = [
 
 // ---- 開催「部」(period) の計算 ---------------------------------------------
 // ローカル時刻の 0:00 と 12:00 で1つ進む整数ID。単調増加なので比較で新旧を判定できる。
-export function periodId(now = Date.now()): number {
+export function periodId(now = trustedNow()): number {
   const d = new Date(now);
   const localDay = Math.floor((now - d.getTimezoneOffset() * 60000) / 86400000);
   return localDay * 2 + (d.getHours() < 12 ? 0 : 1);
@@ -51,7 +52,7 @@ export function periodLabel(period: number): string {
 }
 
 // 次の開催（部の切り替わり）までの残りミリ秒。
-export function msToNextPeriod(now = Date.now()): number {
+export function msToNextPeriod(now = trustedNow()): number {
   const d = new Date(now);
   const next = new Date(d);
   if (d.getHours() < 12) next.setHours(12, 0, 0, 0);

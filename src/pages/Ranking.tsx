@@ -9,6 +9,7 @@ import TrophyMark from '../components/TrophyMark';
 import RankingProfileCard from '../components/RankingProfileCard';
 import CoinIcon from '../components/CoinIcon';
 import { monthKey, monthLabel, msToNextMonth, splitCountdown } from '../logic/period';
+import { trustedNow } from '../logic/trustedClock';
 import styles from './Ranking.module.css';
 
 // Unset avatar → the plain starter horse (base colours).
@@ -48,9 +49,9 @@ export default function Ranking() {
   // 今月の対象月（JST）。毎月1日0:00で自動的に新しい月へ切り替わる。
   const period = monthKey();
   // 1秒ごとに更新まで残り時間を再計算（赤いカウントダウン用）。
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => trustedNow());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => setNow(trustedNow()), 1000);
     return () => clearInterval(t);
   }, []);
   const cd = splitCountdown(msToNextMonth(now));

@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import type { SaveData, HorseLook, ArenaHorseSnapshot, FrameAward, FrameRank } from './types';
 import { monthKey } from './logic/period';
+import { anchorServerTime } from './logic/trustedClock';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from './supabaseConfig';
 import { migrate, useStore } from './store';
 
@@ -14,6 +15,26 @@ export const supabase: SupabaseClient | null = CLOUD_ENABLED
   : null;
 
 export const SAVE_TABLE = 'saves';
+
+// サーバの現在時刻で「信頼できる時計」をアンカーする。Supabase の REST 応答が返す
+// `Date` ヘッダ（CORS セーフリスト済みで読める）を使うので、追加のSQLは不要。
+// 端末がオンラインの間は端末時計の改変が牧場収入・対戦の「部」に一切効かなくなる。
+// オフライン/未設定なら何もしない（trustedClock は単調フォールバックで動く）。
+export async function syncServerClock(): Promise<void> {
+  if (!CLOUD_ENABLED) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+      method: 'HEAD',
+      headers: { apikey: SUPABASE_ANON_KEY },
+      cache: 'no-store',
+    });
+    const date = res.headers.get('date');
+    const ms = date ? Date.parse(date) : NaN;
+    if (Number.isFinite(ms)) anchorServerTime(ms);
+  } catch {
+    /* オフライン / ブロック — 単調フォールバックのまま */
+  }
+}
 
 // Which account the *local* save currently belongs to (device-local only; never
 // synced to the cloud). Used to stop guest/other-account data from overwriting
