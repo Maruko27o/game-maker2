@@ -35,8 +35,7 @@ import {
   GRASS_DAILY_BONUS_MAX,
   GRASS_OKAWARI_COST,
   GP_DAILY_LIMIT,
-  SLOT_EXPAND_COST,
-  SLOT_EXPAND_TO,
+  TEAM_SIZE,
   RACE_TASK_EVERY,
   RACE_TASK_REWARD,
   GRASS_TASK_EVERY,
@@ -46,11 +45,11 @@ import { cyclesOf, newlyBanked } from './logic/tasks';
 import { styleFor } from './logic/runStyle';
 import { runTournament, playerSnapshot } from './logic/arena';
 import { periodId, ARENA_ENTRY_FEE, ARENA_MODE, ARENA_CATCHUP_MAX, ARENA_RESULTS_CAP } from './data/arena';
-import { farmRatePerHour, farmAccrued, retireValueOf } from './logic/farm';
+import { farmRatePerHour, farmAccrued, retireValueOf, teamHorses } from './logic/farm';
 import { trustedNow } from './logic/trustedClock';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
-export const MAX_HORSES = 6; // 所持できるマイウマの上限（拡張なし）
+export const MAX_HORSES = 30; // 所持できるマイウマの上限（5×6ボックス）。全プレイヤー共通・無料開放
 
 // Which localStorage slot we currently read/write. Guests use STORAGE_KEY; a
 // signed-in user uses a per-account slot so two accounts on the same browser
@@ -295,8 +294,9 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   // v6 (RACE_V4 §4) economy fields — default sensibly for older saves.
   const coins = typeof d.coins === 'number' ? d.coins : 0;
   const bets = Array.isArray(d.bets) ? (d.bets as SaveData['bets']) : [];
-  // 上限は6頭に統一（旧セーブが10/15でも6にクランプ。既存の馬は消さない）。
-  const maxHorses = Math.min(typeof d.maxHorses === 'number' ? d.maxHorses : MAX_HORSES, MAX_HORSES);
+  // 所持上限は全プレイヤー共通で MAX_HORSES（5×6ボックス）に開放。旧セーブの maxHorses
+  // （6 や旧10/15）に関わらず一律で引き上げる。既存の馬は当然そのまま残る。
+  const maxHorses = MAX_HORSES;
   const daily = normDaily(d.daily);
   const tasks = normTasks(d.tasks);
   // Profile stats: normalize, and one-time backfill from bet history for saves
@@ -314,8 +314,8 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   // 無ければ既存の所持ウマ全員をチームに（上限 maxHorses）。この時点では表示・挙動に影響しない。
   const horseIds = new Set(horses.map((h) => h.id));
   const team = Array.isArray(d.team)
-    ? (d.team as unknown[]).filter((x): x is string => typeof x === 'string' && horseIds.has(x)).slice(0, maxHorses)
-    : horses.map((h) => h.id).slice(0, maxHorses);
+    ? (d.team as unknown[]).filter((x): x is string => typeof x === 'string' && horseIds.has(x)).slice(0, TEAM_SIZE)
+    : horses.map((h) => h.id).slice(0, TEAM_SIZE);
 
   if (d.version === 6) {
     return {
@@ -474,8 +474,6 @@ type Store = SaveData & {
   /** Begin a grand-prix attempt, consuming one of the day's plays (max
    *  GP_DAILY_LIMIT). Returns false when the daily limit is reached. */
   startGpAttempt: (grade: 'g1' | 'g2' | 'g3') => boolean;
-  /** Expand the stable 10→15 for 3000 coins (once). Returns true on success. */
-  expandSlots: () => boolean;
   // Coin-earning tasks (改修：タスク).
   /** Count one finished race toward the task (also banks a reward every N). Call
    *  ONLY on the result screen so it can't be farmed by bailing out mid-race. */
@@ -866,13 +864,6 @@ export const useStore = create<Store>((set, get) => {
       return true;
     },
 
-    expandSlots: () => {
-      const s = get();
-      if (s.maxHorses >= SLOT_EXPAND_TO || s.coins < SLOT_EXPAND_COST) return false;
-      commit({ coins: s.coins - SLOT_EXPAND_COST, maxHorses: SLOT_EXPAND_TO });
-      return true;
-    },
-
     finishRaceTask: () => {
       const t = get().tasks;
       const racesFinished = t.racesFinished + 1;
@@ -1076,7 +1067,9 @@ export const useStore = create<Store>((set, get) => {
 
     claimFarm: () => {
       const s = get();
-      const rate = farmRatePerHour(s.horses, s.trophies, s.badges);
+      // 牧場収入はチーム（最大 TEAM_SIZE 頭）だけが対象。既存ユーザーは team=所持ウマ全員
+      // なので収入は従来と同一。以降に増やした新ウマは team に入るまで収入を生まない。
+      const rate = farmRatePerHour(teamHorses(s.horses, s.team, TEAM_SIZE), s.trophies, s.badges);
       const now = trustedNow();
       const got = farmAccrued(s.farmClaimedAt ?? now, now, rate);
       if (got <= 0) return 0; // nothing yet — keep the anchor so fractions aren't lost

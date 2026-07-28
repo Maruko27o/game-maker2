@@ -4,11 +4,11 @@ import { useStore, trophyCount } from '../store';
 import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
-import { RENAME_COST } from '../data/coins';
-import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRateOf } from '../logic/farm';
+import { RENAME_COST, TEAM_SIZE } from '../data/coins';
+import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRateOf, teamHorses } from '../logic/farm';
 import { trustedNow } from '../logic/trustedClock';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
-import type { Trophy, Badge, TrainingItem, StatKey } from '../types';
+import type { Horse, Trophy, Badge, TrainingItem, StatKey } from '../types';
 import { BADGES } from '../data/badges';
 import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
@@ -94,6 +94,7 @@ function BadgeRack({ badges }: { badges: Badge[] }) {
 export default function Stable() {
   const navigate = useNavigate();
   const horses = useStore((s) => s.horses);
+  const team = useStore((s) => s.team);
   const trophies = useStore((s) => s.trophies);
   const badges = useStore((s) => s.badges);
   const items = useStore((s) => s.items);
@@ -136,7 +137,20 @@ export default function Stable() {
     const t = setInterval(() => setNowTs(trustedNow()), 1000);
     return () => clearInterval(t);
   }, []);
-  const farmRate = useMemo(() => farmRatePerHour(horses, trophies, badges), [horses, trophies, badges]);
+  // チーム（牧場収入・出走の対象／最大 TEAM_SIZE 頭）。既存ユーザーは team=所持ウマ全員。
+  const teamSet = useMemo(() => new Set(team ?? []), [team]);
+  const teamMembers = useMemo(
+    () => (team ?? []).map((id) => horses.find((h) => h.id === id)).filter((h): h is Horse => !!h),
+    [team, horses],
+  );
+  const others = useMemo(() => horses.filter((h) => !teamSet.has(h.id)), [horses, teamSet]);
+  const ordered = useMemo(() => [...teamMembers, ...others], [teamMembers, others]); // チーム→その他
+  const teamCount = teamMembers.length;
+  // 牧場収入はチームのウマだけが対象（インフレ防止）。
+  const farmRate = useMemo(
+    () => farmRatePerHour(teamHorses(horses, team, TEAM_SIZE), trophies, badges),
+    [horses, team, trophies, badges],
+  );
   const [farmInfo, setFarmInfo] = useState(false); // しゅうにゅうの内訳ポップオーバー
   const farmAmt = farmAccrued(farmClaimedAt, nowTs, farmRate);
   const farmToFull = farmMsToFull(farmClaimedAt, nowTs);
@@ -205,29 +219,36 @@ export default function Stable() {
           </button>
         </div>
       ) : (
-        <div className={styles.grid}>
-          {horses.map((h) => {
-            const tc = trophyCount(trophies, h.id);
-            return (
-              <button key={h.id} className={styles.card} onClick={() => setOpenId(h.id)}>
-                <div className={styles.cardThumb}>
-                  <HorseView horse={h} size={130} shadow />
-                </div>
-                <div className={styles.cardName}>{h.name}</div>
-                <div className={styles.cardMeta}>
-                  <span className={styles.cardEarn}><CoinIcon size={13} /> {Math.round(horseFarmRateOf(h, trophies, badges)).toLocaleString()}／時</span>
-                  {tc > 0 && <span className={styles.cardTrophy}><Icon name="trophy" size={13} />{tc}</span>}
-                </div>
-              </button>
-            );
-          })}
-          {horses.length < maxHorses && (
-            <button className={styles.add} onClick={() => navigate('/create')}>
-              <span className={styles.plus}>＋</span>
-              <span>作る</span>
-            </button>
-          )}
-        </div>
+        <>
+          {/* 5×6 ボックス（最大30頭）。先頭がチーム（牧場収入・出走の対象）で枠が光る。 */}
+          <div className={styles.box}>
+            {Array.from({ length: maxHorses }).map((_, i) => {
+              const h = ordered[i];
+              if (!h) {
+                return (
+                  <button key={`empty-${i}`} className={styles.slotEmpty} onClick={() => navigate('/create')} aria-label="ウマを作る">
+                    <span className={styles.slotPlus}>＋</span>
+                  </button>
+                );
+              }
+              const isTeam = i < teamCount;
+              const tc = trophyCount(trophies, h.id);
+              return (
+                <button key={h.id} className={`${styles.slot} ${isTeam ? styles.slotTeam : ''}`} onClick={() => setOpenId(h.id)}>
+                  {isTeam && <span className={styles.teamTag}>チーム</span>}
+                  <div className={styles.slotThumb}>
+                    <HorseView horse={h} size={64} />
+                    {tc > 0 && <span className={styles.slotTrophy}><Icon name="trophy" size={11} />{tc}</span>}
+                  </div>
+                  <div className={styles.slotName}>{h.name}</div>
+                </button>
+              );
+            })}
+          </div>
+          <p className={styles.boxCaption}>
+            <span className={styles.boxCaptionMark} /> の付いたウマがチーム（牧場収入・出走の対象／最大{TEAM_SIZE}頭）。並べ替えは今後のアップデートで。
+          </p>
+        </>
       )}
 
       {selected && (
@@ -276,6 +297,16 @@ export default function Stable() {
                 <div className={styles.metaRow}>
                   <span className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</span>
                   <span className={styles.metaTotal}>合計 {total} / {STAT_TOTAL_CAP}</span>
+                </div>
+
+                <div className={styles.earnRow}>
+                  {teamSet.has(selected.id) ? (
+                    <span className={styles.earnIn}>
+                      <CoinIcon size={14} /> 牧場収入 {Math.round(horseFarmRateOf(selected, trophies, badges)).toLocaleString()}／時
+                    </span>
+                  ) : (
+                    <span className={styles.earnOut}>チーム外のため牧場収入なし</span>
+                  )}
                 </div>
 
                 <div className={styles.rackWrap}>

@@ -683,3 +683,126 @@
   font-weight: 900;
   color: var(--red);
 }
+
+/* ===== 5×6 ボックス（最大30頭）。先頭がチーム＝牧場収入・出走の対象 ===== */
+.box {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+}
+.slot {
+  position: relative;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 4px 2px 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.slotTeam {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold) inset;
+  background: linear-gradient(180deg, #fff6df, #ffeec2);
+}
+.teamTag {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: #5a3b00;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 1;
+}
+.slotThumb {
+  position: relative;
+  background: linear-gradient(180deg, #d7ecb4, #bfe08a);
+  border-radius: 7px;
+  border: 1.5px solid var(--border);
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.slotThumb :global(svg) {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.slotTrophy {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
+  padding: 0 3px;
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--gold);
+}
+.slotName {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.2;
+}
+.slotEmpty {
+  background: var(--panel);
+  border: 2px dashed var(--border);
+  border-radius: 9px;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  min-width: 0;
+}
+.slotPlus {
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 800;
+}
+.boxCaption {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin: 9px 2px 0;
+  line-height: 1.5;
+}
+.boxCaptionMark {
+  display: inline-block;
+  vertical-align: -2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  border: 2px solid var(--gold);
+  background: linear-gradient(180deg, #fff6df, #ffeec2);
+}
+.earnRow {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 800;
+}
+.earnIn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b3852a;
+}
+.earnOut {
+  color: var(--ink-soft);
+}
