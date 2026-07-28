@@ -131,8 +131,10 @@ export default function AvatarFrame({
           <rect x="20" y="-11" width="80" height="22" rx="5" fill={c.darkest} transform="translate(0 1.4)" />
           <rect x="20" y="-11" width="80" height="22" rx="5" fill={`url(#band-${uid})`} stroke={c.darkest} strokeWidth="1.3" />
           <rect x="22.5" y="-8.5" width="75" height="4" rx="2" fill={c.hi} opacity="0.5" />
-          <MetricIcon metric={metric} x={35} y={-3} c={c} />
-          <text x={65} y="-3" textAnchor="middle" dominantBaseline="central" fontSize="9" fontWeight="900" fill={c.ink} fontFamily="'Hiragino Mincho ProN',serif" style={{ letterSpacing: '3px' }}>殿堂</text>
+          {/* 種別イラストを左右両端に対称配置（最高倍率＝×バースト／最大獲得賞金＝¥コイン）*/}
+          <MetricIcon metric={metric} x={33} y={-2.5} c={c} />
+          <MetricIcon metric={metric} x={87} y={-2.5} c={c} />
+          <text x={60} y="-2.5" textAnchor="middle" dominantBaseline="central" fontSize="9" fontWeight="900" fill={c.ink} fontFamily="'Hiragino Mincho ProN',serif" style={{ letterSpacing: '3px' }}>殿堂</text>
           <text x={60} y="6" textAnchor="middle" dominantBaseline="central" fontSize="5" fontWeight="800" fill={c.ink} fontFamily="Georgia,serif" style={{ letterSpacing: '0.6px' }}>{periodDot(period)}</text>
         </g>
       </svg>
