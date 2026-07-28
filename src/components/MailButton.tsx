@@ -74,7 +74,7 @@ export default function MailButton() {
                     <button className={`${styles.row} ${m.read ? '' : styles.unread}`} onClick={() => openMail(m)}>
                       {m.kind === 'frame' && m.frame ? (
                         <>
-                          <span className={styles.thumb}><AvatarFrame rank={m.frame.rank} metric={m.frame.metric} period={m.frame.period} look={look} size={52} /></span>
+                          <span className={styles.thumb}><AvatarFrame rank={m.frame.rank} metric={m.frame.metric} period={m.frame.period} look={look} size={40} /></span>
                           <span className={styles.rowText}>
                             <span className={styles.rowTitle}>アイコンフレーム獲得！</span>
                             <span className={styles.rowSub}>{frameTitle(m.frame)}</span>
@@ -101,7 +101,7 @@ export default function MailButton() {
               <div className={styles.detailCard} onClick={(e) => e.stopPropagation()}>
                 <div className={styles.congrats}>殿堂入りおめでとう！</div>
                 <div className={styles.detailFrame}>
-                  <AvatarFrame rank={detail.frame.rank} metric={detail.frame.metric} period={detail.frame.period} look={look} size={168} />
+                  <AvatarFrame rank={detail.frame.rank} metric={detail.frame.metric} period={detail.frame.period} look={look} size={128} />
                 </div>
                 <div className={styles.detailTitle}>{frameTitle(detail.frame)}</div>
                 <div className={styles.detailActions}>

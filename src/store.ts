@@ -302,6 +302,11 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   let stats = normStats(d.stats);
   const statsEmpty = stats.betsPlaced === 0 && stats.maxOdds === 0 && stats.maxPayout === 0 && stats.maxRecoveryPct === 0;
   if ((d.stats == null || statsEmpty) && bets.length > 0) stats = deriveStatsFromBets(bets);
+  // スペシャルタスク（連勝チャレンジ）の進捗。タスキル→再読込でも失われないよう保存値から復元。
+  const nnum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+  const soloStreak = nnum(d.soloStreak);
+  const streakBest = nnum(d.streakBest);
+  const streakClaimed = Math.min(nnum(d.streakClaimed), STREAK_MAX);
 
   if (d.version === 6) {
     return {
@@ -314,6 +319,9 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         trophies,
         badges,
         winStreaks,
+        soloStreak,
+        streakBest,
+        streakClaimed,
         items,
         raceRecords,
         gpUnlocked: normGp(d.gpUnlocked),
@@ -350,6 +358,9 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       trophies,
       badges,
       winStreaks,
+      soloStreak,
+      streakBest,
+      streakClaimed,
       items,
       raceRecords,
       gpUnlocked: normGp(d.gpUnlocked),
