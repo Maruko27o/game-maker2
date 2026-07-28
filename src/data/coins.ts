@@ -28,9 +28,11 @@ export const BET_AMOUNTS = [10, 100, 500, 1000] as const;
 export const MAX_BETS_PER_RACE = 10; // bet-slip cap per single race
 export const MAX_BETS_GP = 20; // bet-slip cap per grand-prix round (heat / final)
 export const GRASS_OKAWARI_COST = 300; // an extra grass charge (repeatable)
-export const SLOT_EXPAND_COST = 3000; // stable 10 → 15 (once)
-export const SLOT_EXPAND_TO = 15;
 export const RENAME_COST = 50; // rename a horse
+
+// チーム（個体値厳選アップデート）。5×6ボックス（最大 MAX_HORSES 頭所持）のうち、
+// 出走と牧場収入の対象になる先頭 TEAM_SIZE 頭。将来 PR で編成UIから並べ替える。
+export const TEAM_SIZE = 6;
 
 // Coin-earning tasks (改修：タスク). Every N actions banks this many coins; the bank
 // is claimed all at once from the top of the task screen.

@@ -45,6 +45,17 @@ export function farmRatePerHour(horses: Horse[], trophies: Trophy[], badges: Bad
   return horses.reduce((sum, h) => sum + horseFarmRateOf(h, trophies, badges), 0);
 }
 
+/** 牧場収入・（将来の）出走の対象になるチームのウマを取り出す。team（horse id の並び）が
+ *  あれば実在するものを最大 size 頭、無ければ所持ウマの先頭 size 頭にフォールバックする。
+ *  フォールバックでも size で頭打ちにするので、旧来の収入上限（＝所持上限）を超えない。 */
+export function teamHorses(horses: Horse[], team: string[] | undefined, size: number): Horse[] {
+  if (team && team.length > 0) {
+    const byId = new Map(horses.map((h) => [h.id, h]));
+    return team.map((id) => byId.get(id)).filter((h): h is Horse => !!h).slice(0, size);
+  }
+  return horses.slice(0, size);
+}
+
 /** lastClaim〜now に貯まった放置収入（FARM_CAP_HOURS で頭打ち）。 */
 export function farmAccrued(lastClaim: number, now: number, ratePerHour: number): number {
   const hours = Math.min(FARM_CAP_HOURS, Math.max(0, (now - lastClaim) / 3_600_000));

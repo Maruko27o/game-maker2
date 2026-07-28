@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { migrate } from './store';
+import { migrate, MAX_HORSES } from './store';
+import { TEAM_SIZE } from './data/coins';
 
 // チーム編成（個体値厳選アップデートの土台）の migrate 回帰テスト。
 // この段階では team はデータとして持つだけで、表示・挙動・牧場収入には一切影響しない。
@@ -39,9 +40,18 @@ describe('migrate: チーム編成 team の移行', () => {
     expect(res!.data.team).toEqual([]);
   });
 
-  it('team は maxHorses を超えない', () => {
+  it('team は TEAM_SIZE を超えない', () => {
     const many = Array.from({ length: 9 }, (_, i) => horse(`h${i}`));
     const res = migrate(baseSave({ horses: many }));
-    expect(res!.data.team!.length).toBeLessThanOrEqual(6);
+    expect(res!.data.team!.length).toBeLessThanOrEqual(TEAM_SIZE);
+  });
+});
+
+describe('migrate: 所持上限を全プレイヤー30に開放', () => {
+  it('旧セーブの maxHorses(6 など) に関わらず MAX_HORSES に引き上げる', () => {
+    expect(MAX_HORSES).toBe(30);
+    expect(migrate(baseSave({ maxHorses: 6 }))!.data.maxHorses).toBe(30);
+    expect(migrate(baseSave({ maxHorses: 15 }))!.data.maxHorses).toBe(30);
+    expect(migrate(baseSave())!.data.maxHorses).toBe(30); // 欠損でも30
   });
 });
