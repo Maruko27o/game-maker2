@@ -1,6 +1,6 @@
 // 対戦トーナメントの純粋ロジック（決定的・テスト可能）。
 // エントリー馬のスナップショット＋シード（＋あれば他プレイヤーのプール）から、
-// 「予選1回戦 → 予選2回戦 → 本線」を決定的に再現する。ネットワークが無くても
+// 「予選1回戦 → 予選2回戦 → 本戦」を決定的に再現する。ネットワークが無くても
 // COMだけで必ず成立し、RaceTrack2 に同じ entrants/course/seed を渡せば、ここで
 // 計算した着順とアニメが一致する。
 import { COURSES } from '../data/courses';
@@ -57,7 +57,7 @@ export function buildRoundField(
   // COM fill. Absolute strength bands (independent of the player) so training pays
   // off: a strong/maxed horse (合計48) clears the field and profits（参加費1000に対し
   // 期待値>1）、育てていない馬（合計40前後）は勝ち越せない。ラウンドが進むほど少し強くなり、
-  // 本線・優勝は鍛えた馬でも希少に保つ。
+  // 本戦・優勝は鍛えた馬でも希少に保つ。
   const band = (ARENA_COM_BANDS[round] ?? ARENA_COM_BANDS[2]) as [number, number];
   const avoidBody = colorById[player.colors.body]?.value;
   let i = 0;
@@ -80,7 +80,7 @@ export function buildRoundField(
 }
 
 /** Run the whole tournament deterministically. Plays round 0; on a top-4 finish
- *  advances to round 1, then (again top-4) to the 本線. Stops the moment the
+ *  advances to round 1, then (again top-4) to the 本戦. Stops the moment the
  *  player is eliminated. `mode` sets the race length. */
 export function runTournament(
   player: ArenaHorseSnapshot,

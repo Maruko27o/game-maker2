@@ -1,6 +1,6 @@
 // 対戦モード（勝ち抜きトーナメント）の定数とバランス。
 // 1日2回開催（毎日 0時 と 12時 に新しい「部」が始まる12時間区切り）。参加費を払って
-// 1頭エントリー → その部が締まると「予選1回戦 → 予選2回戦 → 本線」を勝ち抜き、着順で賞金。
+// 1頭エントリー → その部が締まると「予選1回戦 → 予選2回戦 → 本戦」を勝ち抜き、着順で賞金。
 // 「自動エントリー（固定）」を有効にすると、資金がある限り毎回の部に自動参加し、結果が
 // リストに溜まっていく。優勝は特大の賞金だが、後半ラウンドのCOMを強くして希少に保つ。
 
@@ -17,17 +17,17 @@ export const ARENA_PERIOD_MS = 12 * 3600 * 1000;
 export const ARENA_CATCHUP_MAX = 6; // 自動エントリーで一度にさかのぼって精算する最大部数（＝3日ぶん）
 export const ARENA_RESULTS_CAP = 40; // 溜めておく結果の最大件数
 
-// ラウンド名（0=予選1回戦, 1=予選2回戦, 2=本線）。
-export const ARENA_ROUND_NAMES = ['予選1回戦', '予選2回戦', '本線 決勝'] as const;
+// ラウンド名（0=予選1回戦, 1=予選2回戦, 2=本戦）。
+export const ARENA_ROUND_NAMES = ['予選1回戦', '予選2回戦', '本戦 決勝'] as const;
 
-// 本線に混ぜる「実プレイヤー」の最大数（ラウンドが進むほど減らし、残りは強めのCOMで
+// 本戦に混ぜる「実プレイヤー」の最大数（ラウンドが進むほど減らし、残りは強めのCOMで
 // 埋めることで、プールの顔ぶれに関わらず後半ほど難しくなるようにする）。
 export const ARENA_REAL_CAP = [4, 3, 2] as const;
 
 // COMの強さ（合計ステータスの範囲）。プレイヤーの強さに依らない絶対値なので、
 // 鍛えた馬ほど有利＝育成が報われる（参加費1000に対し、合計48なら期待値>1、
 // 合計40前後は勝ち越せない）。ラウンドが進むほど少し強くなり、優勝は希少に保つ。
-// [予選1回戦, 予選2回戦, 本線]。
+// [予選1回戦, 予選2回戦, 本戦]。
 export const ARENA_COM_BANDS: [number, number][] = [
   [33, 41],
   [35, 42],
@@ -66,11 +66,11 @@ export function msToNextPeriod(now = trustedNow()): number {
 
 // 着順・脱落に応じた賞金（ユーザー指定）。
 export function arenaPrize(outcome: ArenaOutcome, finalRank: number): number {
-  if (outcome === 'champion') return 12000; // 本線 優勝
+  if (outcome === 'champion') return 12000; // 本戦 優勝
   if (outcome === 'final') {
     if (finalRank === 2) return 5000; // 準優勝
     if (finalRank === 3) return 1000; // 3位
-    return 500; // 本線出場（4〜8位）
+    return 500; // 本戦出場（4〜8位）
   }
   return 0; // 予選で敗退（q1out / q2out）
 }
@@ -78,7 +78,7 @@ export function arenaPrize(outcome: ArenaOutcome, finalRank: number): number {
 // 見出し用のラベル。
 export function arenaOutcomeLabel(outcome: ArenaOutcome, finalRank: number): string {
   if (outcome === 'champion') return '優勝！';
-  if (outcome === 'final') return `本線 ${finalRank}位`;
+  if (outcome === 'final') return `本戦 ${finalRank}位`;
   if (outcome === 'q2out') return '予選2回戦 敗退';
   return '予選1回戦 敗退';
 }

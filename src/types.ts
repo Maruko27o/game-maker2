@@ -194,7 +194,7 @@ export type ArenaHorseSnapshot = {
 };
 // One round of the tournament, stored so it can be replayed identically.
 export type ArenaRoundResult = {
-  round: 0 | 1 | 2; // 予選1回戦 / 予選2回戦 / 本線
+  round: 0 | 1 | 2; // 予選1回戦 / 予選2回戦 / 本戦
   seed: number;
   courseId: string;
   field: ArenaHorseSnapshot[]; // the 8 entrants (index-aligned with ranks/finishTimes)
@@ -215,7 +215,7 @@ export type ArenaResult = {
   mode: 30 | 60;
   rounds: ArenaRoundResult[]; // 1..3 rounds actually raced
   outcome: ArenaOutcome;
-  finalRank: number | null; // placing in the 本線 if reached
+  finalRank: number | null; // placing in the 本戦 if reached
   payout: number;
   awarded: boolean; // coins credited exactly once
   seen: boolean; // whether the player has watched it (for the NEW badge)
