@@ -7,6 +7,7 @@ import {
   progress,
   pendingCount,
   ownedLevels,
+  isStreakWin,
   type StreakState,
 } from './streak';
 
@@ -18,6 +19,21 @@ function winN(s: StreakState, n: number): StreakState {
   for (let i = 0; i < n; i++) cur = foldRace(cur, true);
   return cur;
 }
+
+describe('isStreakWin (払戻が賭け金の1.5倍以上で1勝)', () => {
+  it('counts a win only when payout >= 1.5x the stake', () => {
+    expect(isStreakWin(150, 100)).toBe(true); // ちょうど1.5倍
+    expect(isStreakWin(300, 100)).toBe(true);
+    expect(isStreakWin(149, 100)).toBe(false); // 1.5倍未満は負け
+    expect(isStreakWin(120, 100)).toBe(false); // 払戻>賭けでも1.5倍未満なら負け
+    expect(isStreakWin(100, 100)).toBe(false);
+    expect(isStreakWin(0, 100)).toBe(false);
+  });
+  it('requires an actual bet (staked > 0)', () => {
+    expect(isStreakWin(0, 0)).toBe(false);
+    expect(isStreakWin(500, 0)).toBe(false);
+  });
+});
 
 describe('foldRace (連勝の積み上げ／リセット)', () => {
   it('a win increments the streak and raises the best', () => {

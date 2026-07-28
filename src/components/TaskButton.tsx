@@ -158,7 +158,7 @@ export default function TaskButton() {
               <>
                 <div className={styles.spLead}>
                   <span className={styles.spLeadTitle}>連勝チャレンジ</span>
-                  <span className={styles.spLeadSub}>「一人でレース」で馬券を買って、払戻＞賭け金なら1勝。連勝を重ねて特別なフレームを集めよう！</span>
+                  <span className={styles.spLeadSub}>「一人でレース」で馬券を買って、払戻が賭け金の<b>1.5倍以上</b>（例：100コイン賭けて150コイン以上戻る）なら1勝。連勝を重ねて特別なフレームを集めよう！</span>
                 </div>
 
                 {/* Current level task (claimable or in-progress) */}
