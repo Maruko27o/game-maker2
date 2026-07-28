@@ -282,6 +282,8 @@ export type SaveData = {
   coins: number; // soft currency (RACE_V4 §4)
   bets: BetRecord[]; // recent settled bets (capped)
   maxHorses: number; // stable slot cap (10, expandable to 15)
+  team?: string[]; // 出走・牧場収入の対象となるチーム（最大 maxHorses 頭。horse id の並び）
+  //   個体値厳選アップデートの土台。既存セーブは所持ウマ全員がチームに入る形で移行する。
   daily: DailyCounters; // per-day bonus/おかわり counters
   tasks: TaskProgress; // coin-earning task progress (改修：タスク)
   stats: PlayerStats; // lifetime profile stats (改修：プロフィール実績)
