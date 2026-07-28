@@ -183,6 +183,7 @@ function freshSave(): SaveData {
     coins: 0,
     bets: [],
     maxHorses: MAX_HORSES,
+    team: [],
     daily: freshDaily(),
     tasks: freshTasks(),
     stats: freshStats(),
@@ -309,6 +310,12 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   const streakBest = nnum(d.streakBest);
   const streakClaimed = Math.min(nnum(d.streakClaimed), STREAK_MAX);
   const streakRuleResetDone = !!d.streakRuleResetDone;
+  // チーム編成（個体値厳選アップデートの土台）。保存値があれば実在するウマIDだけ採用、
+  // 無ければ既存の所持ウマ全員をチームに（上限 maxHorses）。この時点では表示・挙動に影響しない。
+  const horseIds = new Set(horses.map((h) => h.id));
+  const team = Array.isArray(d.team)
+    ? (d.team as unknown[]).filter((x): x is string => typeof x === 'string' && horseIds.has(x)).slice(0, maxHorses)
+    : horses.map((h) => h.id).slice(0, maxHorses);
 
   if (d.version === 6) {
     return {
@@ -333,6 +340,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         coins,
         bets,
         maxHorses,
+        team,
         daily,
         tasks,
         stats,
@@ -373,6 +381,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       coins,
       bets,
       maxHorses,
+      team,
       daily,
       tasks,
       stats,
@@ -555,6 +564,7 @@ export const useStore = create<Store>((set, get) => {
       coins: next.coins,
       bets: next.bets,
       maxHorses: next.maxHorses,
+      team: next.team ?? [],
       daily: next.daily,
       tasks: next.tasks,
       stats: next.stats,
@@ -581,6 +591,7 @@ export const useStore = create<Store>((set, get) => {
     streakBest: initial.streakBest ?? 0,
     streakClaimed: initial.streakClaimed ?? 0,
     streakRuleResetDone: initial.streakRuleResetDone ?? false,
+    team: initial.team ?? [],
     migrated,
     clearMigrated: () => set({ migrated: false }),
 
@@ -618,6 +629,7 @@ export const useStore = create<Store>((set, get) => {
         coins: s.coins,
         bets: s.bets,
         maxHorses: s.maxHorses,
+        team: s.team ?? [],
         daily: s.daily,
         tasks: s.tasks,
         stats: s.stats,

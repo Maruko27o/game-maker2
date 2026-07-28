@@ -46,6 +46,7 @@ function snapshot(): SaveData {
     coins: s.coins,
     bets: s.bets,
     maxHorses: s.maxHorses,
+    team: s.team ?? [],
     daily: s.daily,
     tasks: s.tasks,
     stats: s.stats,
