@@ -6,6 +6,7 @@ import { TOTAL_PARTS } from '../data/parts';
 import type { HorseLook, EquipFrame } from '../types';
 import { isStreakFrame } from '../types';
 import { ownedLevels } from '../logic/streak';
+import { fmtOdds } from '../logic/betting';
 import HorseFace from './HorseFace';
 import EquippedFrame from './EquippedFrame';
 import TrophyIcon from './TrophyIcon';
@@ -176,7 +177,7 @@ export default function ProfileModal({
           </div>
           <div className={styles.statCell}>
             <span className={styles.statLabel}>最大オッズ</span>
-            <span className={styles.statValue}>{pstats.maxOdds > 0 ? <>{pstats.maxOdds.toLocaleString(undefined, { maximumFractionDigits: 1 })}<small>倍</small></> : '—'}</span>
+            <span className={styles.statValue}>{pstats.maxOdds > 0 ? <>{fmtOdds(pstats.maxOdds)}<small>倍</small></> : '—'}</span>
           </div>
           <div className={styles.statCell}>
             <span className={styles.statLabel}>最高回収率</span>

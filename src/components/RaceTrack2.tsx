@@ -7,7 +7,7 @@ import HorseDefs from './HorseDefs';
 import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
 import { buildScenery, obstacleMark } from './trackScenery';
-import { betTier, type Bet, type BetKind } from '../logic/betting';
+import { betTier, fmtOdds, type Bet, type BetKind } from '../logic/betting';
 import styles from './RaceTrack2.module.css';
 
 const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', quinella: '馬連', wide: 'ワイド', trifecta: '3連単' };
@@ -457,7 +457,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
                 <span key={i} className={`${styles.betTag} ${tierClass[tier]}`}>
                   <span className={styles.betTagKind}>{KIND_LABEL[b.kind]}</span>
                   {picks}
-                  <span className={styles.betTagOdds}>{b.odds.toFixed(1)}倍</span>
+                  <span className={styles.betTagOdds}>{fmtOdds(b.odds)}倍</span>
                 </span>
               );
             })}

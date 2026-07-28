@@ -3,7 +3,7 @@ import type { Entrant } from '../logic/raceSim2';
 import type { Course } from '../data/courses';
 import type { HorseLook, StatKey } from '../types';
 import { STAT_KEYS, STAT_LABEL, RUN_STYLE_LABEL } from '../types';
-import { raceOddsFromProbs, oddsFor, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
+import { raceOddsFromProbs, oddsFor, fmtOdds, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
 import { statTotal } from '../logic/stats';
 import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
@@ -134,7 +134,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                     <span className={styles.pop}>{r.pop}人気</span>
                   </div>
                   <div className={styles.oddsRow}>
-                    <span className={styles.win}>{r.odds.toFixed(1)}倍</span>
+                    <span className={styles.win}>{fmtOdds(r.odds)}倍</span>
                     <button
                       className={`${styles.info} ${open ? styles.infoOn : ''}`}
                       aria-label={`能力を見る（総合${statTotal(e.stats)}）`}
@@ -192,7 +192,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
           </button>
         ))}
         <button className={styles.add} disabled={!complete || coins < amount || full} onClick={add}>
-          {full ? `上限${maxBets}パターン` : complete ? `${curOdds.toFixed(1)}倍で追加` : `${KIND_LABEL[kind]}を選ぶ`}
+          {full ? `上限${maxBets}パターン` : complete ? `${fmtOdds(curOdds)}倍で追加` : `${KIND_LABEL[kind]}を選ぶ`}
         </button>
       </div>
 
@@ -204,7 +204,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
             <div key={i} className={styles.slipRow}>
               <span className={styles.slipKind}>{KIND_LABEL[b.kind]}</span>
               <span className={styles.slipPicks}>{b.sel.map((idx) => (entrants[idx].isPlayer ? '自' : entrants[idx].name.slice(0, 3))).join(b.kind === 'trifecta' ? '→' : '・')}</span>
-              <span className={styles.slipOdds}>{b.odds.toFixed(1)}倍</span>
+              <span className={styles.slipOdds}>{fmtOdds(b.odds)}倍</span>
               <span className={styles.slipAmt}><CoinIcon size={12} /> {b.amount}</span>
               <button className={styles.slipDel} onClick={() => onRemove(i)}>取消</button>
             </div>
