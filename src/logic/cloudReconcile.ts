@@ -51,3 +51,16 @@ export function reconcile(
   if (!hasProgress(local)) return { action: 'loadCloud' };
   return { action: 'conflict' };
 }
+
+/**
+ * A debounced push was rejected because the server `rev` advanced since we read it
+ * — i.e. another tab / another device / a reload of the SAME signed-in account
+ * wrote in the meantime. Both saves belong to this account, so resolve silently by
+ * last-write-wins (the same policy `reconcile` already uses for owner === userId)
+ * instead of surfacing the conflict modal on every rev mismatch (which made two
+ * open instances ping-pong "データが食い違っています" endlessly). Returns whether to
+ * take the freshly-read cloud save, or to re-push our local one on top of it.
+ */
+export function resolvePushConflict(cloudSavedAt: number, localSavedAt: number): 'adoptCloud' | 'repushLocal' {
+  return (cloudSavedAt ?? 0) > (localSavedAt ?? 0) ? 'adoptCloud' : 'repushLocal';
+}
