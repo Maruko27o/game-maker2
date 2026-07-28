@@ -337,18 +337,18 @@ export default function Arena({ onExit }: { onExit: () => void }) {
           <span className={a.flowArrow}>▶</span>
           <div className={a.flowStep}>予選<br />2回戦<br /><span className={a.flowGo}>上位{ARENA_ADVANCE}通過</span></div>
           <span className={a.flowArrow}>▶</span>
-          <div className={`${a.flowStep} ${a.flowFinal}`}>本線<br />決勝<br /><span className={a.flowWin}>着順で賞金</span></div>
+          <div className={`${a.flowStep} ${a.flowFinal}`}>本戦<br />決勝<br /><span className={a.flowWin}>着順で賞金</span></div>
         </div>
       </div>
 
       {/* prize table */}
       <div className={a.section}>
-        <div className={a.sectionTitle}>本線の賞金（8頭立て）</div>
+        <div className={a.sectionTitle}>本戦の賞金（8頭立て）</div>
         <div className={a.prizes}>
           <div className={`${a.prize} ${a.prizeTop}`}><b>🥇 優勝</b><b className={a.prizeAmt}>＋12,000</b></div>
           <div className={a.prize}><b>🥈 準優勝</b><b className={a.prizeAmt}>＋5,000</b></div>
           <div className={a.prize}><b>🥉 3位</b><b className={a.prizeAmt}>＋1,000</b></div>
-          <div className={a.prize}><b>4〜8位（本線出場）</b><b className={a.prizeAmt}>＋500</b></div>
+          <div className={a.prize}><b>4〜8位（本戦出場）</b><b className={a.prizeAmt}>＋500</b></div>
           <div className={a.prize}><b>予選で敗退</b><b className={a.prizeAmt}>±0</b></div>
         </div>
         <div className={a.balanceNote}>参加費1,000／1日2回開催。予選2連戦を勝ち抜いて優勝すると大金！</div>

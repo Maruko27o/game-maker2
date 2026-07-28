@@ -102,7 +102,7 @@ describe('runTournament', () => {
         expect(res.rounds).toHaveLength(2);
         expect(res.rounds[1].advanced).toBe(false);
       } else {
-        expect(res.rounds).toHaveLength(3); // reached the 本線
+        expect(res.rounds).toHaveLength(3); // reached the 本戦
       }
       expect(res.payout).toBe(arenaPrize(res.outcome, res.finalRank ?? 0));
     }

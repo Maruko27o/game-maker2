@@ -247,11 +247,13 @@ function RibbonNumber({ t, level, uid }: { t: Tier; level: number; uid: string }
 // 「N WINS」を一つの塊として見せ、リングの下端にポップさせる。
 function EmblemNumber({ t, level }: { t: Tier; level: number }) {
   const two = level >= 10;
-  const numSize = 22;
+  const numSize = 19;
   const numX = two ? -5 : -3; // 数字中心（WINS 側に少し寄せて全体を中央寄せ）
-  const winsX = two ? 11 : 8;
+  const winsX = two ? 10 : 7;
+  // リングの下端に載せる（箱の下へはみ出しすぎると各画面で下の文字と被るため、
+  // 枠の内側〜縁に収める）。
   return (
-    <g transform={`translate(${CX} ${CY + R + 5})`}>
+    <g transform={`translate(${CX} ${CY + R - 4})`}>
       {/* 高Lv：数字の左右に星を添える */}
       {level >= 6 && [-1, 1].map((s) => (
         <Star key={s} x={s * (two ? 22 : 18)} y={1} r={level >= 9 ? 2.8 : 2.3} fill={t.gem} line={t.numLine} />

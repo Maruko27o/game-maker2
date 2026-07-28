@@ -28,12 +28,14 @@
   place-items: center;
   overflow: hidden;
 }
-/* フレーム装備時は額縁そのものを見せる（枠・背景・クリップを外す）。 */
+/* フレーム装備時は額縁そのものを見せる（枠・背景・クリップを外す）。連勝数の銘板が
+   枠の下へ少しはみ出すので、名前と被らないよう下に余白を確保する。 */
 .avatarBoxFramed {
   border: none;
   background: transparent;
   padding: 0;
   overflow: visible;
+  margin-bottom: 8px;
 }
 .name {
   font-size: 20px;
