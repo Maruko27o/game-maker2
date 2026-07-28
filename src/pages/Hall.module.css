@@ -129,7 +129,7 @@
 .slotFirst { transform: translateY(-8px); }
 
 .winName {
-  margin-top: 9px; /* 連勝フレームの銘板が枠下に少しはみ出すぶんの余白 */
+  margin-top: 13px; /* フレーム銘板（殿堂/連勝）が枠下にはみ出すぶんの余白 */
   font-size: 12px;
   font-weight: 800;
   color: #f3ead0;

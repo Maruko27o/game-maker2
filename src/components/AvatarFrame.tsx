@@ -2,48 +2,65 @@ import { useId } from 'react';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
 
-// 殿堂＆メールで配られる「アイコンフレーム」。デザインは固定で、
+// 殿堂フレーム（月間ランキング上位3名へ毎月配布）。全プレイヤーの頂点にふさわしい
+// 重厚な鋳造メタル調のメダル：分厚いベベルのリング＋台座付きの塊の宝石＋立体的な
+// 王冠、下部に「殿堂」銘板（種別＝最高倍率／最大獲得賞金のイラスト付き）＋年月。
+// 連勝フレーム（円リング＋英字 "N WINS"）とは意匠を明確に分けている。
 //  ・順位（1/2/3）＝金/銀/銅で色分け
-//  ・種別（オッズ/賞金）＝上部の飾り帯に内包した小マークで見分け
-//    （倍率＝✕バースト、賞金＝コイン）。年月を左右対称のマークで挟む（案C）。
-//  ・獲得した年月＝帯の中央に「YYYY.M」
-// 文字は年月だけ＝スタイリッシュに。毎月ランキング更新時に年月入りが自動生成される。
+//  ・種別（odds=最高倍率＝倍率バースト / payout=最大獲得賞金＝コイン）
 
 export type FrameRank = 1 | 2 | 3;
 export type FrameMetric = 'odds' | 'payout';
 
-const PALETTE: Record<FrameRank, { ring: string; ringHi: string; ringLo: string; gem: string; ink: string; band: string; bandHi: string }> = {
-  1: { ring: '#eabf3e', ringHi: '#fff2b0', ringLo: '#a8791a', gem: '#fff6cf', ink: '#5c3f0c', band: '#f4d873', bandHi: '#fffbe6' },
-  2: { ring: '#cdd5dd', ringHi: '#ffffff', ringLo: '#8b96a1', gem: '#eef3f7', ink: '#3c4750', band: '#dee5eb', bandHi: '#ffffff' },
-  3: { ring: '#d8975a', ringHi: '#ffd9ac', ringLo: '#8f5a28', gem: '#ffe6cd', ink: '#5a3416', band: '#e3a86e', bandHi: '#ffe9d2' },
+type Pal = {
+  ring: string; hi: string; lo: string; deep: string; darkest: string;
+  gem: string; accent: string; ink: string; bandHi: string; band: string;
+};
+const PALETTE: Record<FrameRank, Pal> = {
+  1: { ring: '#e6b833', hi: '#fff2b0', lo: '#9c6f13', deep: '#6b4a0c', darkest: '#3f2c06', gem: '#fff6cf', accent: '#d8385f', ink: '#4a3208', bandHi: '#fff0b8', band: '#d9ad3a' },
+  2: { ring: '#c2ccd6', hi: '#ffffff', lo: '#7c8894', deep: '#525d67', darkest: '#333b43', gem: '#eef3f7', accent: '#4a90e0', ink: '#333d47', bandHi: '#ffffff', band: '#cbd4dc' },
+  3: { ring: '#cf8f4f', hi: '#ffd9ac', lo: '#82521f', deep: '#5a3416', darkest: '#361d0b', gem: '#ffe6cd', accent: '#2fa877', ink: '#4a2c11', bandHi: '#ffe3c4', band: '#c98a52' },
 };
 
-function periodDot(period: string): string {
-  const [y, m] = period.split('-');
-  return `${y}.${Number(m)}`;
+const CX = 60, CY = 60, R = 47;
+const pol = (a: number, r: number): [number, number] => [CX + Math.cos((a * Math.PI) / 180) * r, CY + Math.sin((a * Math.PI) / 180) * r];
+
+// 台座付きの太い宝石（線ではなく塊で重量感）。
+function BezelGem({ x, y, r, c, uid }: { x: number; y: number; r: number; c: Pal; uid: string }) {
+  return (
+    <g>
+      <circle cx={x} cy={y} r={r + 1.7} fill={`url(#bevel-${uid})`} stroke={c.darkest} strokeWidth="0.8" />
+      <circle cx={x} cy={y} r={r} fill={c.accent} stroke={c.darkest} strokeWidth="0.8" />
+      <circle cx={x - r * 0.32} cy={y - r * 0.32} r={r * 0.34} fill="#fff" opacity="0.85" />
+    </g>
+  );
 }
 
-// 種別の小マーク（帯に内包）。倍率＝バースト＋✕、賞金＝コイン。
-function MetricMark({ metric, cx, cy, r, ink, coinFill }: { metric: FrameMetric; cx: number; cy: number; r: number; ink: string; coinFill: string }) {
-  if (metric === 'odds') {
-    const x = r * 0.42;
+// 種別イラスト：最高倍率＝倍率バースト（×）、最大獲得賞金＝コイン。銘板の左に置く。
+function MetricIcon({ metric, x, y, c }: { metric: FrameMetric; x: number; y: number; c: Pal }) {
+  if (metric === 'payout') {
     return (
-      <g>
-        {Array.from({ length: 12 }).map((_, i) => {
-          const a = (i / 12) * Math.PI * 2;
-          const r1 = (i % 2 ? 0.5 : 0.92) * r;
-          return <line key={i} x1={cx} y1={cy} x2={cx + Math.cos(a) * r1} y2={cy + Math.sin(a) * r1} stroke={ink} strokeWidth={r * 0.13} strokeLinecap="round" opacity="0.5" />;
-        })}
-        <path d={`M${cx - x} ${cy - x} L${cx + x} ${cy + x} M${cx + x} ${cy - x} L${cx - x} ${cy + x}`} stroke={ink} strokeWidth={r * 0.34} strokeLinecap="round" />
+      <g transform={`translate(${x} ${y})`}>
+        <circle r="4.6" fill={c.bandHi} stroke={c.ink} strokeWidth="1" />
+        <circle r="2.9" fill="none" stroke={c.ink} strokeWidth="0.9" opacity="0.8" />
+        <text x="0" y="0.4" textAnchor="middle" dominantBaseline="central" fontSize="4.4" fontWeight="900" fill={c.ink} fontFamily="Georgia,serif">¥</text>
       </g>
     );
   }
   return (
-    <g>
-      <circle cx={cx} cy={cy} r={r * 0.82} fill={coinFill} stroke={ink} strokeWidth={r * 0.16} />
-      <circle cx={cx} cy={cy} r={r * 0.46} fill="none" stroke={ink} strokeWidth={r * 0.14} opacity="0.8" />
+    <g transform={`translate(${x} ${y})`}>
+      {Array.from({ length: 12 }).map((_, i) => {
+        const a = (i / 12) * Math.PI * 2, r1 = (i % 2 ? 2.4 : 4.6);
+        return <line key={i} x1="0" y1="0" x2={Math.cos(a) * r1} y2={Math.sin(a) * r1} stroke={c.ink} strokeWidth="0.9" strokeLinecap="round" opacity="0.45" />;
+      })}
+      <path d="M-2.2 -2.2 L2.2 2.2 M2.2 -2.2 L-2.2 2.2" stroke={c.ink} strokeWidth="1.6" strokeLinecap="round" />
     </g>
   );
+}
+
+function periodDot(period: string): string {
+  const [y, m] = period.split('-');
+  return `${y}.${Number(m)}`;
 }
 
 export default function AvatarFrame({
@@ -61,8 +78,6 @@ export default function AvatarFrame({
 }) {
   const uid = useId().replace(/:/g, '');
   const c = PALETTE[rank];
-  // 顔は箱いっぱい（＝フレーム無しと同じ大きさ）。リング/飾り帯は箱より一回り大きい
-  // SVGで顔の外側にはみ出して描く（フレームを付けても馬は小さくならない）。
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
@@ -71,42 +86,54 @@ export default function AvatarFrame({
         <HorseFace horse={look} size={size} />
       </div>
 
-      {/* ornate frame overlay — larger than the box, spilling around the face */}
-      <svg viewBox="0 0 100 100" style={{ position: 'absolute', left: '-16%', top: '-16%', width: '132%', height: '132%', pointerEvents: 'none', overflow: 'visible' }} aria-hidden>
+      {/* heavy medal overlay — larger than the box, spilling around the face */}
+      <svg viewBox="0 0 120 120" style={{ position: 'absolute', left: '-16%', top: '-16%', width: '132%', height: '132%', pointerEvents: 'none', overflow: 'visible' }} aria-hidden>
         <defs>
-          <radialGradient id={`g-${uid}`} cx="50%" cy="40%" r="65%">
-            <stop offset="0%" stopColor={c.ringHi} />
-            <stop offset="55%" stopColor={c.ring} />
-            <stop offset="100%" stopColor={c.ringLo} />
+          <radialGradient id={`ring-${uid}`} cx="50%" cy="30%" r="78%">
+            <stop offset="0%" stopColor={c.hi} /><stop offset="45%" stopColor={c.ring} /><stop offset="100%" stopColor={c.lo} />
           </radialGradient>
-          <linearGradient id={`b-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={c.bandHi} />
-            <stop offset="100%" stopColor={c.band} />
+          <linearGradient id={`bevel-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={c.hi} /><stop offset="45%" stopColor={c.ring} /><stop offset="100%" stopColor={c.deep} />
+          </linearGradient>
+          <linearGradient id={`band-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={c.bandHi} /><stop offset="55%" stopColor={c.band} /><stop offset="100%" stopColor={c.deep} />
           </linearGradient>
         </defs>
 
-        {/* soft base + double ring, hugging the outer rim of the face */}
-        <circle cx="50" cy="50" r="41" fill="none" stroke={c.ringLo} strokeOpacity="0.35" strokeWidth="7.5" />
-        <circle cx="50" cy="50" r="39.6" fill="none" stroke={`url(#g-${uid})`} strokeWidth="6" />
-        <circle cx="50" cy="50" r="36.9" fill="none" stroke={c.ringHi} strokeOpacity="0.8" strokeWidth="1.3" />
-        <circle cx="50" cy="50" r="43" fill="none" stroke={c.ringLo} strokeOpacity="0.5" strokeWidth="1" />
+        {/* thick beveled cast-metal ring (面と層で重厚に) */}
+        <circle cx={CX} cy={CY} r={R + 6} fill="none" stroke={c.darkest} strokeWidth="2.5" />
+        <circle cx={CX} cy={CY} r={R + 3.4} fill="none" stroke={c.lo} strokeWidth="4" />
+        <circle cx={CX} cy={CY} r={R} fill="none" stroke={`url(#bevel-${uid})`} strokeWidth="7.5" />
+        <circle cx={CX} cy={CY} r={R + 2.4} fill="none" stroke={c.hi} strokeOpacity="0.7" strokeWidth="1" />
+        <circle cx={CX} cy={CY} r={R - 3.2} fill="none" stroke={c.hi} strokeOpacity="0.6" strokeWidth="1" />
+        <circle cx={CX} cy={CY} r={R - 4.4} fill="none" stroke={c.darkest} strokeWidth="1.8" />
 
-        {/* studs around the ring */}
+        {/* studs (solid dots) between the cardinal gems */}
         {Array.from({ length: 12 }).map((_, i) => {
-          const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
-          const x = 50 + Math.cos(a) * 39.6;
-          const y = 50 + Math.sin(a) * 39.6;
-          return <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 2.4 : 1.5} fill={c.gem} stroke={c.ringLo} strokeWidth="0.6" />;
+          const [x, y] = pol((i / 12) * 360 - 90 + 15, R);
+          return <circle key={i} cx={x} cy={y} r="1.3" fill={c.gem} stroke={c.darkest} strokeWidth="0.4" />;
         })}
+        {/* four chunky bezel gems (rank accent) */}
+        {[0, 1, 2, 3].map((i) => { const [x, y] = pol(i * 90 - 90, R); return <BezelGem key={i} x={x} y={y} r={3.4} c={c} uid={uid} />; })}
 
-        {/* top cartouche: 左右対称の種別マークで年月を挟む（案C）。飾り帯はリング上端に
-            重なって外側へポップ。 */}
-        <g transform="translate(0 -8)">
-          <path d="M20 15 Q20 9 26 9 L74 9 Q80 9 80 15 L80 15.5 Q80 21 74 21 L26 21 Q20 21 20 15 Z" fill={`url(#b-${uid})`} stroke={c.ringLo} strokeWidth="1.3" />
-          <path d="M16 15 l4.5 -3 0 6 z M84 15 l-4.5 -3 0 6 z" fill={c.ringLo} />
-          <MetricMark metric={metric} cx={27} cy={15} r={3.6} ink={c.ink} coinFill={c.bandHi} />
-          <MetricMark metric={metric} cx={73} cy={15} r={3.6} ink={c.ink} coinFill={c.bandHi} />
-          <text x="50" y="18.4" textAnchor="middle" fontSize="10" fontWeight="900" fill={c.ink} fontFamily="Georgia, 'Hiragino Mincho ProN', serif" style={{ letterSpacing: '0.4px' }}>{periodDot(period)}</text>
+        {/* heavy crown on top (shadow base + bright top for depth) */}
+        <g transform={`translate(${CX} ${CY - R - 1})`}>
+          <path d="M-15 7 L-15 -7 L-8 2 L0 -12 L8 2 L15 -7 L15 7 Z" fill={c.deep} transform="translate(0 1.2)" />
+          <path d="M-15 7 L-15 -7 L-8 2 L0 -12 L8 2 L15 -7 L15 7 Z" fill={`url(#bevel-${uid})`} stroke={c.darkest} strokeWidth="1.1" strokeLinejoin="round" />
+          <rect x="-16" y="6" width="32" height="5.2" rx="2.4" fill={`url(#band-${uid})`} stroke={c.darkest} strokeWidth="1" />
+          {[-10, 0, 10].map((x, i) => <BezelGem key={i} x={x} y={-8 + (i === 1 ? -3 : 0)} r={2.2} c={c} uid={uid} />)}
+        </g>
+
+        {/* bottom 殿堂 plate: metric illustration + 殿堂, year.month below */}
+        <g transform={`translate(0 ${CY + R - 3})`}>
+          <path d="M22 3 L11 12 L18 1 L11 -10 L22 -3 Z" fill={c.deep} />
+          <path d="M98 3 L109 12 L102 1 L109 -10 L98 -3 Z" fill={c.deep} />
+          <rect x="20" y="-11" width="80" height="22" rx="5" fill={c.darkest} transform="translate(0 1.4)" />
+          <rect x="20" y="-11" width="80" height="22" rx="5" fill={`url(#band-${uid})`} stroke={c.darkest} strokeWidth="1.3" />
+          <rect x="22.5" y="-8.5" width="75" height="4" rx="2" fill={c.hi} opacity="0.5" />
+          <MetricIcon metric={metric} x={35} y={-3} c={c} />
+          <text x={65} y="-3" textAnchor="middle" dominantBaseline="central" fontSize="9" fontWeight="900" fill={c.ink} fontFamily="'Hiragino Mincho ProN',serif" style={{ letterSpacing: '3px' }}>殿堂</text>
+          <text x={60} y="6" textAnchor="middle" dominantBaseline="central" fontSize="5" fontWeight="800" fill={c.ink} fontFamily="Georgia,serif" style={{ letterSpacing: '0.6px' }}>{periodDot(period)}</text>
         </g>
       </svg>
     </div>
