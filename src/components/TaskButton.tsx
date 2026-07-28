@@ -164,14 +164,14 @@ export default function TaskButton() {
                 {/* Current level task (claimable or in-progress) */}
                 {level === null ? (
                   <div className={styles.spDone}>
-                    <StreakFrame level={STREAK_MAX} look={look} size={116} />
+                    <StreakFrame level={STREAK_MAX} look={look} size={86} />
                     <div className={styles.spDoneTitle}>10連勝フレーム制覇！</div>
                     <div className={styles.spDoneSub}>すべての連勝フレームを獲得しました。おめでとう！</div>
                   </div>
                 ) : (
                   <div className={`${styles.spTask} ${canClaim ? styles.spTaskReady : ''}`}>
                     <div className={styles.spFrameWrap}>
-                      <StreakFrame level={level} look={look} size={104} />
+                      <StreakFrame level={level} look={look} size={78} />
                     </div>
                     <div className={styles.spTaskBody}>
                       <div className={styles.spTaskTitle}>{level}連勝</div>
@@ -218,7 +218,7 @@ export default function TaskButton() {
               <div className={styles.revealCard} onClick={(e) => e.stopPropagation()}>
                 <div className={styles.revealBurst} aria-hidden />
                 <div className={styles.revealTitle}>{reveal}連勝フレーム獲得！</div>
-                <div className={styles.revealFrame}><StreakFrame level={reveal} look={look} size={172} /></div>
+                <div className={styles.revealFrame}><StreakFrame level={reveal} look={look} size={128} /></div>
                 <div className={styles.revealActions}>
                   {equippedStreakLv === reveal ? (
                     <button className="btn neutral" onClick={() => equip(null)}>はずす</button>

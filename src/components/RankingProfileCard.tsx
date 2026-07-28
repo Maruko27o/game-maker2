@@ -22,7 +22,7 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
       <div className={styles.card} onClick={(e) => e.stopPropagation()}>
         <div className={`${styles.avatarBox} ${row.equippedFrame ? styles.avatarBoxFramed : ''}`}>
           {row.equippedFrame ? (
-            <EquippedFrame frame={row.equippedFrame} look={look} size={132} />
+            <EquippedFrame frame={row.equippedFrame} look={look} size={100} />
           ) : (
             <HorseFace horse={look} size={104} />
           )}

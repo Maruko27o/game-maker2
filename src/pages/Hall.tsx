@@ -30,7 +30,7 @@ function Podium({ rows, metric, period }: { rows: ScoreRow[]; metric: FrameMetri
           <div key={rank} className={`${styles.slot} ${rank === 1 ? styles.slotFirst : ''}`}>
             {r ? (
               <>
-                <AvatarFrame rank={rank as FrameRank} metric={metric} period={period} look={lookOf(r)} size={rank === 1 ? 104 : 84} />
+                <AvatarFrame rank={rank as FrameRank} metric={metric} period={period} look={lookOf(r)} size={rank === 1 ? 79 : 64} />
                 <div className={styles.winName}>{r.username}</div>
                 <div className={styles.winRec}>{value(r)}</div>
               </>
