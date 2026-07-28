@@ -4,6 +4,7 @@ import HorseFace from './HorseFace';
 import EquippedFrame from './EquippedFrame';
 import TrophyIcon from './TrophyIcon';
 import CoinIcon from './CoinIcon';
+import { fmtOdds } from '../logic/betting';
 import styles from './RankingProfileCard.module.css';
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
@@ -31,7 +32,7 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
         <div className={styles.stats}>
           <div className={styles.stat}>
             <span className={styles.statLabel}>最高的中</span>
-            <span className={styles.statVal}>{row.bestOdds.toFixed(1)}<small>倍</small></span>
+            <span className={styles.statVal}>{fmtOdds(row.bestOdds)}<small>倍</small></span>
           </div>
           {row.bestPayout > 0 && (
             <div className={styles.stat}>

@@ -8,6 +8,7 @@ import EquippedFrame from '../components/EquippedFrame';
 import TrophyMark from '../components/TrophyMark';
 import RankingProfileCard from '../components/RankingProfileCard';
 import CoinIcon from '../components/CoinIcon';
+import { fmtOdds } from '../logic/betting';
 import { monthKey, monthLabel, msToNextMonth, splitCountdown } from '../logic/period';
 import { trustedNow } from '../logic/trustedClock';
 import styles from './Ranking.module.css';
@@ -73,7 +74,7 @@ export default function Ranking() {
   const metric = (r: ScoreRow) =>
     tab === 'payout'
       ? <><CoinIcon size={14} /> {r.bestPayout.toLocaleString()}</>
-      : <>{r.bestOdds.toFixed(1)}倍</>;
+      : <>{fmtOdds(r.bestOdds)}倍</>;
   const shown = (rows ?? []).filter((r) => (tab === 'payout' ? r.bestPayout > 0 : r.bestOdds > 0));
   // 自分の順位（4位以下でも自分のスコアを見せるため）。見つからなければ null。
   const myIdx = user ? shown.findIndex((r) => r.userId === user.id) : -1;

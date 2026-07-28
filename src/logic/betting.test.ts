@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { raceOdds, oddsFor, selProb, settle, wouldWin, betTier, MAX_ODDS, type Bet } from './betting';
+import { raceOdds, oddsFor, selProb, settle, wouldWin, betTier, fmtOdds, MAX_ODDS, type Bet } from './betting';
 import { winProbs } from './grandprix';
 import { COURSES, courseById } from '../data/courses';
 import { styleFor } from './runStyle';
@@ -20,6 +20,20 @@ function field(): Entrant[] {
   ];
   return specs.map(([id, stats]) => ({ horseId: id, name: id, isPlayer: false, stats, style: styleFor(id, stats) }));
 }
+
+describe('fmtOdds (小数第2位まで・切り捨て、四捨五入しない)', () => {
+  it('truncates to 2 decimals — never rounds up', () => {
+    expect(fmtOdds(1.4837)).toBe('1.48'); // 1.5 に丸めない
+    expect(fmtOdds(1.489)).toBe('1.48');
+    expect(fmtOdds(1.5)).toBe('1.50');
+    expect(fmtOdds(2)).toBe('2.00');
+    expect(fmtOdds(369.349)).toBe('369.34');
+  });
+  it('is stable against floating-point boundary values', () => {
+    expect(fmtOdds(1.48)).toBe('1.48');
+    expect(fmtOdds(2.3)).toBe('2.30');
+  });
+});
 
 describe('win odds table', () => {
   it('within clamp, unique popularity, favourite is strongest, ~20% takeout', () => {

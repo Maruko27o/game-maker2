@@ -37,6 +37,7 @@ function snapshot(): SaveData {
     soloStreak: s.soloStreak ?? 0,
     streakBest: s.streakBest ?? 0,
     streakClaimed: s.streakClaimed ?? 0,
+    streakRuleResetDone: s.streakRuleResetDone ?? false,
     items: s.items,
     raceRecords: s.raceRecords,
     gpUnlocked: s.gpUnlocked,
@@ -147,6 +148,13 @@ export default function CloudSync() {
 
       const no = await loadPlayerNo();
       if (!cancelled) setPlayerNo(no);
+
+      // 連勝の勝利条件変更（払戻1.5倍以上）に伴い、旧条件で連勝記録を貯めた ID=1（まるこ）の
+      // 記録を一度だけリセットする。適用済みフラグ（保存＆同期）で二度目以降は何もしない。
+      if (no === 1 && !cancelled) {
+        const didReset = useStore.getState().resetStreakForRuleChange();
+        if (didReset) void setRankingFrame(useStore.getState().equippedFrame ?? null);
+      }
 
       // Backfill profile stats from the account's ranking history so an existing
       // player's past 最大オッズ / 最大獲得賞金 show up (raise-only merge).

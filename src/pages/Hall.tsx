@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadLeaderboard, loadHallPeriods, type ScoreRow, type RankBy } from '../cloud';
 import { monthKey, monthLabel } from '../logic/period';
+import { fmtOdds } from '../logic/betting';
 import type { HorseLook } from '../types';
 import AvatarFrame, { type FrameRank, type FrameMetric } from '../components/AvatarFrame';
 import CoinIcon from '../components/CoinIcon';
@@ -20,7 +21,7 @@ function Podium({ rows, metric, period }: { rows: ScoreRow[]; metric: FrameMetri
     metric === 'payout' ? (
       <span className={styles.recPayout}><CoinIcon size={13} /> {r.bestPayout.toLocaleString()}</span>
     ) : (
-      <span className={styles.recOdds}>{r.bestOdds.toFixed(1)}倍</span>
+      <span className={styles.recOdds}>{fmtOdds(r.bestOdds)}倍</span>
     );
   return (
     <div className={styles.podium}>

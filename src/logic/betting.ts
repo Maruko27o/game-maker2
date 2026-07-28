@@ -61,6 +61,13 @@ export function oddsFor(kind: BetKind, sel: number[], p: number[]): number {
   return prob > 0 ? clampOdds((1 / prob) * TAKEOUT) : MAX_ODDS;
 }
 
+/** 倍率の表示用フォーマット：小数第2位まで・切り捨て（四捨五入しない）。
+ *  払戻＝floor(賭け金×倍率) と一致させ、「1.5倍」表示なのに実際は1.48倍…という
+ *  誤差をなくす。例）1.4837→"1.48"、2→"2.00"。FP 誤差対策に微小値を足す。 */
+export function fmtOdds(x: number): string {
+  return (Math.floor(x * 100 + 1e-6) / 100).toFixed(2);
+}
+
 // Win odds/popularity table for the paddock header (people bet from 人気).
 export type OddsRow = { idx: number; odds: number; pop: number };
 export function raceOdds(entrants: Entrant[], course: Course): OddsRow[] {

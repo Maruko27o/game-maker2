@@ -270,9 +270,10 @@ export type SaveData = {
   badges: Badge[]; // everyday single-race rewards (ACCOUNT.md §2)
   winStreaks: Record<string, number>; // horseId -> current consecutive 1st count
   // スペシャルタスク（連勝チャレンジ）。1人でレース・馬券ありで払戻>賭けなら1勝。
-  soloStreak?: number; // 現在の連勝数（負け＝払戻≤賭けで0にリセット）
+  soloStreak?: number; // 現在の連勝数（負け＝払戻<1.5倍で0にリセット）
   streakBest?: number; // これまでの最高連勝数（達成済みLv = 1..min(streakBest,STREAK_MAX)）
   streakClaimed?: number; // 受け取り済みのLv数（0..STREAK_MAX）
+  streakRuleResetDone?: boolean; // 勝利条件変更(1.5倍)に伴う連勝リセットを適用済みか（一度だけ）
   items: TrainingItem[]; // owned training items (unused inventory)
   raceRecords: RaceRecord[];
   gpUnlocked: { g2: boolean; g1: boolean }; // grand-prix grade unlocks

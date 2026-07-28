@@ -174,6 +174,7 @@ function freshSave(): SaveData {
     soloStreak: 0,
     streakBest: 0,
     streakClaimed: 0,
+    streakRuleResetDone: false,
     items: [],
     raceRecords: [],
     gpUnlocked: { g2: false, g1: false },
@@ -307,6 +308,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   const soloStreak = nnum(d.soloStreak);
   const streakBest = nnum(d.streakBest);
   const streakClaimed = Math.min(nnum(d.streakClaimed), STREAK_MAX);
+  const streakRuleResetDone = !!d.streakRuleResetDone;
 
   if (d.version === 6) {
     return {
@@ -322,6 +324,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         soloStreak,
         streakBest,
         streakClaimed,
+        streakRuleResetDone,
         items,
         raceRecords,
         gpUnlocked: normGp(d.gpUnlocked),
@@ -361,6 +364,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       soloStreak,
       streakBest,
       streakClaimed,
+      streakRuleResetDone,
       items,
       raceRecords,
       gpUnlocked: normGp(d.gpUnlocked),
@@ -492,6 +496,10 @@ type Store = SaveData & {
   recordSoloStreak: (win: boolean) => void;
   /** 受け取り待ちの連勝フレームを1つ受け取る。受け取った Lv を返す（無ければ0）。 */
   claimStreakFrame: () => number;
+  /** 勝利条件変更（払戻1.5倍以上）に伴い、連勝の記録を一度だけリセットする。旧条件で
+   *  貯めた連勝・受け取り済みLvを 0 に戻し、装備中の連勝フレームも外す。適用済みなら何もしない。
+   *  戻り値：実際にリセットしたら true。 */
+  resetStreakForRuleChange: () => boolean;
   // In-progress race, kept in the save so it resumes across reloads (改修：レース継続).
   raceSession: RaceSession | null;
   setRaceSession: (s: RaceSession | null) => void;
@@ -538,6 +546,7 @@ export const useStore = create<Store>((set, get) => {
       soloStreak: next.soloStreak ?? 0,
       streakBest: next.streakBest ?? 0,
       streakClaimed: next.streakClaimed ?? 0,
+      streakRuleResetDone: next.streakRuleResetDone ?? false,
       items: next.items,
       raceRecords: next.raceRecords,
       gpUnlocked: next.gpUnlocked,
@@ -571,6 +580,7 @@ export const useStore = create<Store>((set, get) => {
     soloStreak: initial.soloStreak ?? 0,
     streakBest: initial.streakBest ?? 0,
     streakClaimed: initial.streakClaimed ?? 0,
+    streakRuleResetDone: initial.streakRuleResetDone ?? false,
     migrated,
     clearMigrated: () => set({ migrated: false }),
 
@@ -599,6 +609,7 @@ export const useStore = create<Store>((set, get) => {
         soloStreak: s.soloStreak ?? 0,
         streakBest: s.streakBest ?? 0,
         streakClaimed: s.streakClaimed ?? 0,
+        streakRuleResetDone: s.streakRuleResetDone ?? false,
         items: s.items,
         raceRecords: s.raceRecords,
         gpUnlocked: s.gpUnlocked,
@@ -947,6 +958,20 @@ export const useStore = create<Store>((set, get) => {
       if (level > achievedLevel(cur) || level > STREAK_MAX) return 0; // 受け取り待ちなし
       commit({ streakClaimed: level });
       return level;
+    },
+
+    resetStreakForRuleChange: () => {
+      const s = get();
+      if (s.streakRuleResetDone) return false; // 二重適用しない（一度だけ）
+      const wasStreakFrame = !!s.equippedFrame && (s.equippedFrame as { kind?: string }).kind === 'streak';
+      commit({
+        soloStreak: 0,
+        streakBest: 0,
+        streakClaimed: 0,
+        streakRuleResetDone: true,
+        ...(wasStreakFrame ? { equippedFrame: null } : {}),
+      });
+      return true;
     },
 
     setRaceSession: (s) => commit({ raceSession: s }),
