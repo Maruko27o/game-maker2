@@ -19,7 +19,7 @@ import {
   setRankingFrame,
   syncServerClock,
 } from '../cloud';
-import { reconcile } from '../logic/cloudReconcile';
+import { reconcile, resolvePushConflict } from '../logic/cloudReconcile';
 import { randomUsername } from '../logic/username';
 
 // Extract the persisted shape from the live store state.
@@ -193,12 +193,31 @@ export default function CloudSync() {
           setRev(res.rev);
           useAuth.getState().setSync('saved');
         } else if (res.conflict) {
-          // Another device moved ahead: re-read and ask the player.
+          // The server rev advanced since we read it — another tab / device / reload
+          // of THIS SAME account wrote in the meantime. Don't prompt (that made two
+          // open instances ping-pong the conflict modal); resolve by last-write-wins,
+          // the same policy sign-in already uses for the same account.
           const loaded = await cloudLoad(user.id);
-          if (loaded.status === 'ok') {
-            useAuth.getState().setConflict({ userId: user.id, cloud: loaded.save, local: snapshot() });
+          if (loaded.status !== 'ok') {
+            useAuth.getState().setSync('error');
+            return;
           }
-          useAuth.getState().setSync('idle');
+          const cloud = loaded.save;
+          const local = snapshot();
+          if (resolvePushConflict(cloud.data.savedAt, local.savedAt) === 'adoptCloud') {
+            useStore.getState().hydrate(cloud.data); // cloud is newer → take it
+            setRev(cloud.rev);
+            useAuth.getState().setSync('saved');
+          } else {
+            const retry = await cloudSave(user.id, local, cloud.rev); // local is newer → re-push on top
+            if (retry.ok) {
+              setRev(retry.rev);
+              useAuth.getState().setSync('saved');
+            } else {
+              setRev(cloud.rev);
+              useAuth.getState().setSync(retry.conflict ? 'idle' : 'error');
+            }
+          }
         } else {
           useAuth.getState().setSync('error');
         }

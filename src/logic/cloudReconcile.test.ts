@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { reconcile } from './cloudReconcile';
+import { reconcile, resolvePushConflict } from './cloudReconcile';
 import type { SaveData } from '../types';
 
 function save(savedAt: number, horses = 0): SaveData {
@@ -74,5 +74,20 @@ describe('cloud reconcile', () => {
 
   it('same account, equal timestamps → load cloud (no needless write)', () => {
     expect(reconcile(save(500), save(500), A, A)).toEqual({ action: 'loadCloud' });
+  });
+});
+
+// A push rejected on rev mismatch is always the SAME account (only the owner pushes),
+// so it must resolve silently by last-write-wins — never re-open the conflict modal,
+// which made two open instances ping-pong "データが食い違っています" forever.
+describe('resolvePushConflict (同一アカウントの push 競合は自動解決)', () => {
+  it('adopts the cloud when it is newer', () => {
+    expect(resolvePushConflict(900, 100)).toBe('adoptCloud');
+  });
+  it('re-pushes local when it is newer', () => {
+    expect(resolvePushConflict(100, 900)).toBe('repushLocal');
+  });
+  it('re-pushes local on a tie (avoid a needless extra round-trip toward cloud)', () => {
+    expect(resolvePushConflict(500, 500)).toBe('repushLocal');
   });
 });
