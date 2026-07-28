@@ -21,6 +21,7 @@ import CourseScene, { SceneDefs, courseTheme, THEME_LABEL } from '../components/
 import GrandPrix from './GrandPrix';
 import Arena from './Arena';
 import { settle, type Bet } from '../logic/betting';
+import { isStreakWin } from '../logic/streak';
 import { mcWinProbsAsync } from '../logic/odds';
 import { winProbs } from '../logic/grandprix';
 import { assignMoods, moodMultipliers, type MoodLevel } from '../logic/mood';
@@ -320,10 +321,10 @@ export default function Race() {
     }
     addCoins(earned + payout);
     recordBetStats({ placed: betList.length, staked, payout, wonOdds: bestWonOdds });
-    // スペシャルタスク（連勝チャレンジ）：馬券を賭けた1人でレースのみ対象。払戻>賭けで
-    // 連勝を1つ伸ばし、そうでなければ連勝リセット。レースは開始時に確定(seed)＆セッション
-    // 保持なので、タブを離れても結果は変わらず連勝を稼ぎ直せない。
-    if (betList.length > 0) recordSoloStreak(payout > staked);
+    // スペシャルタスク（連勝チャレンジ）：馬券を賭けた1人でレースのみ対象。払戻が賭け金の
+    // 1.5倍以上で連勝を1つ伸ばし、そうでなければ連勝リセット。レースは開始時に確定(seed)＆
+    // セッション保持なので、タブを離れても結果は変わらず連勝を稼ぎ直せない。
+    if (betList.length > 0) recordSoloStreak(isStreakWin(payout, staked));
     if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup0.course.id, payout);
     bufferSubmission(buildSubmission(setup0.entrants, setup0.course.id, setup0.mode, setup0.seed, res, setup0.entrants[0].horseId));
     return { reward: { rank, awarded, earned, payout }, achievements };

@@ -1,8 +1,17 @@
 import { STREAK_MAX } from '../types';
 
 // スペシャルタスク（連勝チャレンジ）の純ロジック。ストア（状態更新）と UI（表示）で
-// 共有する。1勝＝「1人でレース・馬券あり」で払戻額 > 賭け額。負けで連勝は 0 に戻る。
-// 一度到達した Lv の報酬（連勝フレーム）は、連勝が途切れても受け取れる（貯まる）。
+// 共有する。1勝＝「1人でレース・馬券あり」で払戻額が賭け金の 1.5 倍以上（例：100 賭けて
+// 150 以上戻る）。負けで連勝は 0 に戻る。一度到達した Lv の報酬（連勝フレーム）は、
+// 連勝が途切れても受け取れる（貯まる）。
+
+// 1勝と認められる払戻倍率のしきい値（回収率 150% 以上）。
+export const STREAK_WIN_MULT = 1.5;
+
+/** そのレースが「1勝」か。馬券を賭けていて、払戻が賭け金の 1.5 倍以上なら勝ち。 */
+export function isStreakWin(payout: number, staked: number): boolean {
+  return staked > 0 && payout >= staked * STREAK_WIN_MULT;
+}
 
 export type StreakState = {
   soloStreak: number; // 現在の連勝数（負けで 0）
@@ -10,7 +19,7 @@ export type StreakState = {
   streakClaimed: number; // 受け取り済み Lv 数（0..STREAK_MAX）
 };
 
-/** 1レースの結果を折り込む。win=払戻>賭け。負けは連勝リセット、勝ちは +1（最高値も更新）。 */
+/** 1レースの結果を折り込む。win=払戻が賭け金の1.5倍以上。負けは連勝リセット、勝ちは +1（最高値も更新）。 */
 export function foldRace(s: StreakState, win: boolean): StreakState {
   if (!win) return { ...s, soloStreak: 0 };
   const soloStreak = s.soloStreak + 1;
