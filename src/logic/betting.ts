@@ -75,9 +75,11 @@ export function oddsFor(kind: BetKind, sel: number[], p: number[]): number {
  *  払戻＝floor(賭け金×倍率) と一致させ、「1.5倍」表示なのに実際は1.48倍…という
  *  誤差をなくす。例）1.4837→"1.48"、2→"2.00"。FP 誤差対策に微小値を足す。 */
 export function fmtOdds(x: number): string {
-  // 1000倍以上は小数を出さず桁区切りにする（"32050.00倍" は読みづらいため）。
+  // 1000倍以上は小数を出さず桁区切りにする（"32050.0倍" は読みづらいため）。
   if (x >= 1000) return Math.floor(x + 1e-6).toLocaleString();
-  return (Math.floor(x * 100 + 1e-6) / 100).toFixed(2);
+  // 小数第1位まで・第2位以下は切り捨て。切り上げないので「表示より実際が低い」が
+  // 起こらない＝"1.5倍" と出ていれば必ず 1.5倍以上ある（連勝条件の判定と食い違わない）。
+  return (Math.floor(x * 10 + 1e-6) / 10).toFixed(1);
 }
 
 // Win odds/popularity table for the paddock header (people bet from 人気).

@@ -860,7 +860,7 @@
 .boxHead {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   margin: 0 2px 6px;
 }
 .boxHeadTitle {
@@ -1073,4 +1073,82 @@
   font-weight: 900;
   color: #7a4f00;
   box-shadow: 0 2px 0 #c8912a;
+}
+
+/* ===== まとめて引退 ===== */
+.bulkBtn {
+  margin-left: auto;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.bulkHint {
+  margin: 0 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.slotPicked {
+  border-color: var(--red, #c9483f);
+  box-shadow: 0 0 0 2px rgba(201, 72, 63, 0.35);
+}
+.slotDim {
+  opacity: 0.45;
+}
+.pickMark {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--red, #c9483f);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 17px;
+  text-align: center;
+  border: 1.5px solid #fff;
+  z-index: 1;
+}
+.bulkBar {
+  position: sticky;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--panel-inner);
+  border: 3px solid var(--border);
+  border-radius: 14px;
+  padding: 9px 11px;
+  box-shadow: 0 3px 0 var(--border);
+}
+.bulkText {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.bulkActions {
+  display: flex;
+  gap: 8px;
+}
+.bulkNote {
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 11px;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
 }

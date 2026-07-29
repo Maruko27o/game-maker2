@@ -116,6 +116,7 @@ export default function Stable() {
   const farmClaimedAt = useStore((s) => s.farmClaimedAt);
   const claimFarm = useStore((s) => s.claimFarm);
   const retireHorse = useStore((s) => s.retireHorse);
+  const retireMany = useStore((s) => s.retireMany);
   const toggleLock = useStore((s) => s.toggleLock);
   const joinTeam = useStore((s) => s.joinTeam);
   const leaveTeam = useStore((s) => s.leaveTeam);
@@ -125,6 +126,11 @@ export default function Stable() {
   const [view, setView] = useState<View>('detail');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [rerollOpen, setRerollOpen] = useState(false);
+  // まとめて引退：選択モードと選択中のウマ
+  const [pickMode, setPickMode] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [bulkNote, setBulkNote] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const selected = horses.find((h) => h.id === openId) ?? null;
 
@@ -279,12 +285,39 @@ export default function Stable() {
             <div className={styles.boxHead}>
               <span className={styles.boxHeadTitle}>ボックス</span>
               <span className={styles.boxHeadCount}>{horses.length}/{maxHorses}</span>
+              {others.length > 0 && (
+                <button
+                  className={styles.bulkBtn}
+                  onClick={() => { setPickMode((v) => !v); setPicked(new Set()); setBulkConfirm(false); }}
+                >
+                  {pickMode ? 'やめる' : 'まとめて引退'}
+                </button>
+              )}
             </div>
+            {pickMode && (
+              <p className={styles.bulkHint}>
+                引退させるウマをタップして選んでね（ロック中のウマは選べません）
+              </p>
+            )}
             <div className={styles.box}>
               {others.map((h) => {
                 const tc = trophyCount(trophies, h.id);
+                const on = picked.has(h.id);
                 return (
-                  <button key={h.id} className={styles.slot} onClick={() => setOpenId(h.id)}>
+                  <button
+                    key={h.id}
+                    className={`${styles.slot} ${on ? styles.slotPicked : ''} ${pickMode && h.locked ? styles.slotDim : ''}`}
+                    onClick={() => {
+                      if (!pickMode) { setOpenId(h.id); return; }
+                      if (h.locked) return; // ロック中は選べない
+                      setPicked((p) => {
+                        const n = new Set(p);
+                        if (n.has(h.id)) n.delete(h.id); else n.add(h.id);
+                        return n;
+                      });
+                    }}
+                  >
+                    {on && <span className={styles.pickMark}>✓</span>}
                     <div className={styles.slotThumb}>
                       <HorseView horse={h} size={64} />
                       {h.locked && <span className={styles.slotLock} aria-label="ロック中"><Icon name="lock" size={9} /></span>}
@@ -299,6 +332,53 @@ export default function Stable() {
               ))}
             </div>
           </section>
+
+          {/* まとめて引退：選択中の確認バー */}
+          {pickMode && picked.size > 0 && (
+            <div className={styles.bulkBar}>
+              {bulkConfirm ? (
+                <>
+                  <span className={styles.bulkText}>
+                    {picked.size}頭を引退させます。<strong>戻せません。</strong>
+                  </span>
+                  <div className={styles.bulkActions}>
+                    <button className="btn neutral" onClick={() => setBulkConfirm(false)}>やめる</button>
+                    <button
+                      className="btn secondary"
+                      onClick={() => {
+                        const r = retireMany([...picked]);
+                        setBulkNote(`${r.retired}頭を引退させて ${r.coins.toLocaleString()} コインを受け取りました`);
+                        setPicked(new Set());
+                        setBulkConfirm(false);
+                        setPickMode(false);
+                      }}
+                    >
+                      引退する
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className={styles.bulkText}>
+                    {picked.size}頭を選択中 ・ 受け取り <CoinIcon size={13} />{' '}
+                    {[...picked]
+                      .map((id) => horses.find((h) => h.id === id))
+                      .filter((h): h is Horse => !!h)
+                      .reduce((n, h) => n + retireValueOf(h, trophies, badges), 0)
+                      .toLocaleString()}
+                  </span>
+                  <button className="btn secondary" onClick={() => setBulkConfirm(true)}>
+                    まとめて引退
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          {bulkNote && (
+            <div className={styles.bulkNote} role="status" onClick={() => setBulkNote(null)}>
+              {bulkNote}
+            </div>
+          )}
         </>
       )}
 
@@ -390,7 +470,7 @@ export default function Stable() {
                 </div>
 
                 {/* 厳選：既存ウマだけ。活躍に応じて最大10回まで枠を振り直せる。 */}
-                {selected && canReroll(selected) && rr && (
+                {selected && canReroll(selected) && rr && rr.left > 0 && (
                   <button className={styles.rerollBtn} onClick={() => setRerollOpen(true)}>
                     <Icon name="sparkle" size={14} /> 厳選する（のこり{rr.left}／{rr.rights}回）
                   </button>

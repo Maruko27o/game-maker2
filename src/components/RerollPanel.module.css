@@ -233,3 +233,16 @@
   color: var(--ink-soft);
   line-height: 1.6;
 }
+
+/* 確定ボタン（回数が余っていても打ち切れる） */
+.finish {
+  margin-top: 8px;
+  width: 100%;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}

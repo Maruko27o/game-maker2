@@ -134,7 +134,8 @@
 .gradeItem {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   background: rgba(255, 255, 255, 0.5);
   border: 2px solid var(--border);
   border-radius: 9px;
@@ -156,4 +157,34 @@
   font-weight: 700;
   color: var(--ink-soft);
   line-height: 1.5;
+}
+
+/* 具体的な効果の数値 */
+.num {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+.numWhen {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 800;
+  color: #8a6a3a;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  padding: 0 5px;
+  white-space: nowrap;
+}
+.numText {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.gradeEffect {
+  flex: 1 1 100%;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-soft);
 }

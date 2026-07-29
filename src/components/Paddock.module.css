@@ -463,3 +463,47 @@
   color: var(--ink-soft);
   line-height: 1.4;
 }
+
+/* ===== 能力ポップアップ（画面外タップか✕で閉じる） ===== */
+.statsOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 65;
+}
+.statsCard {
+  width: 100%;
+  max-width: 360px;
+  max-height: 84vh;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+}
+.statsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.statsTitle {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.statsClose {
+  flex: 0 0 auto;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}

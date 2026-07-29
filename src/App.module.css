@@ -73,7 +73,9 @@
   /* Top padding reserves the fixed top band (profile + task FAB + coin pill,
      y≈10–56 incl. their drop shadow) with a clear gap so no page's content
      touches them. */
-  padding: 68px 14px calc(var(--nav-h) + 20px);
+  /* 下ナビは高さに env(safe-area-inset-bottom) を含むので、本文の下余白にも
+     同じぶんを足さないと、ホームバーのある端末で最下部がナビに隠れてしまう。 */
+  padding: 68px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 20px);
   overflow-x: hidden;
   /* 全画面共通の「積み丸太の壁」下地（草むらのログハウスと同じ木目）。
      壁もワンポイントも .main（スクロール容器）の背景として敷くので、中身を
