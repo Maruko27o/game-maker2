@@ -1,6 +1,8 @@
 // CPU horse generation shared by single races and the grand prix.
 import { colorsBySlot, decosBySlot, DECO_SLOTS } from '../data/parts';
 import { rollStatsForStyle, type RNG } from './stats';
+import { rollSkill } from './skill';
+import { rollGrade } from './aptitude';
 import type { Entrant } from './raceSim2';
 import type { HorseLook, DecoSlot, RunStyle } from '../types';
 
@@ -78,8 +80,12 @@ export function makeCpu(
     },
     decos,
   };
+  // CPU も固有スキルと（そのコースの）適性を持つ。プレイヤーだけが特典を得る形に
+  // ならないようにするため。分布はプレイヤーのウマと同じ抽選テーブルを使う。
+  const skill = rollSkill(rng).id;
+  const apt = rollGrade(rng);
   return {
-    entrant: { horseId: id, name, isPlayer: false, stats, style },
+    entrant: { horseId: id, name, isPlayer: false, stats, style, skill, apt },
     look,
   };
 }

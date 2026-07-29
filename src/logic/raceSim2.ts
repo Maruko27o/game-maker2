@@ -7,6 +7,8 @@ import type { Course } from '../data/courses';
 import { lapLength, goalS } from './track';
 import { mulberry32 } from './stats';
 import { paceAt } from './runStyle';
+import type { Grade } from '../data/aptitude';
+import { racerMods, type Mods } from './skillEffect';
 
 export type RunnerState =
   | 'gate'
@@ -24,6 +26,8 @@ export type Entrant = {
   isPlayer: boolean;
   stats: Stats;
   style: RunStyle;
+  skill?: string; // 固有スキルのID（data/skills.ts）。無ければ効果なし。
+  apt?: Grade; // このコースの適性 C/B/A/S。無ければ B 相当（効果なし）。
 };
 
 export type RunnerFrame = { s: number; d: number; state: RunnerState; rank: number };
@@ -117,6 +121,7 @@ type R = {
   eff: Stats;
   gate: number;
   perf: number; // hidden race-day luck (flat, RACE §odds)
+  mods: Mods; // 固有スキル＋コース適性から決まる倍率（1.0 が効果なし）
   moodDelta: number; // shown mood as a signed swing; ramps in over the race (⬆/⬇)
   vMax0: number;
   accel0: number;
@@ -209,6 +214,8 @@ export function simulate2(
 
   const runners: R[] = entrants.map((e, ei) => {
     const ef = eff(e.stats, course.weights);
+    // 固有スキル＋コース適性の倍率。コースの路面と距離（30/60秒）で効き方が変わる。
+    const mods = racerMods(e.skill, e.apt, { surface: course.surface, mode });
     const gate = gateOf[entrants.indexOf(e)];
     // hidden race-day luck (flat, varies per seed) and the shown mood kept apart:
     // luck is a constant factor, mood is a signed swing that builds over the race.
@@ -224,15 +231,16 @@ export function simulate2(
       eff: ef,
       gate,
       perf: luck,
+      mods,
       moodDelta,
-      vMax0: 9 + ef.spd * 0.6,
-      accel0: 1.8 + ef.pwr * 0.26,
-      spMax: 44 + ef.sta * 13,
+      vMax0: (9 + ef.spd * 0.6) * mods.vMax,
+      accel0: (1.8 + ef.pwr * 0.26) * mods.accel,
+      spMax: (44 + ef.sta * 13) * mods.spMax,
       s: s0,
       d: startD,
       v: 0,
       vd: 0,
-      sp: 44 + ef.sta * 13, // start with a full tank (== spMax)
+      sp: (44 + ef.sta * 13) * mods.spMax, // start with a full tank (== spMax)
       state: 'gate',
       boostUntil: 0,
       jumpUntil: 0,
@@ -298,8 +306,12 @@ export function simulate2(
       // the shown level, so the Monte-Carlo odds still price it exactly (倍率=勝率).
       const moodFactor = 1 + r.moodDelta * moodRamp(progress);
       let vMax = (13.0 + ef.spd * 0.36) * paceAt(r.e.style, progress) * r.perf * moodFactor;
+      // 固有スキル・適性：常時の最高速に加えて、序盤（前半）と終盤（後半）で効く分。
+      vMax *= r.mods.vMax;
+      if (progress < 0.4) vMax *= 1 + (r.mods.early - 1) * (1 - progress / 0.4);
+      if (progress > 0.6) vMax *= 1 + (r.mods.late - 1) * ((progress - 0.6) / 0.4);
       vMax *= 1 - Math.max(0, course.drag - ef.pwr * 0.015);
-      if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.03);
+      if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.03) / r.mods.corner;
       // Graduated fatigue: as the tank runs low the top speed sags, so stamina
       // bites *continuously* (a small tank fades late on any course) rather than
       // only at empty. Big-tank builds (high sta) and closers hold their speed.
@@ -331,14 +343,14 @@ export function simulate2(
       // early empty out and fade; gut ("こんじょう") rarely buys a second wind, so
       // only genuinely gutsy (closer) horses can keep striking on empty.
       const sandMul = course.surface === 'sand' ? 1.15 : 1;
-      const drain = DT * Math.pow(r.v / 13, 2.2) * 4.0 * (1 - ef.wit * 0.012) * sandMul;
+      const drain = DT * Math.pow(r.v / 13, 2.2) * 4.0 * (1 - ef.wit * 0.012) * sandMul * r.mods.drain;
       r.sp = Math.max(0, r.sp - drain);
       if (r.sp <= 0 && rng() < ef.gut * 0.0045) r.sp = r.spMax * 0.15;
 
       // acceleration
       let accel = r.accel0;
       if (boosting) accel *= 2;
-      if (t < DASH_TIME) accel *= 2;
+      if (t < DASH_TIME) accel *= 2 * r.mods.gate;
       const stumbling = t < r.stumbleUntil;
       if (stumbling) accel *= 0.4;
 
