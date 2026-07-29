@@ -438,6 +438,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         looks={looks}
         gate={result.gate}
         ranks={fr.runners.map((r) => r.rank)}
+        stamina={fr.runners.map((r) => r.sp)}
         finished={done}
       />
       {/* Bet slip strip below — each tag is tinted by how close it is to hitting

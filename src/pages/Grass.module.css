@@ -450,3 +450,36 @@
   text-align: center;
   margin-bottom: 4px;
 }
+
+/* 出てきたウマのコース適性（6コースぶん） */
+.wildApt {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin: 0 0 6px;
+}
+.wildAptCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+}
+.wildAptName {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.wildAptGrade {
+  min-width: 19px;
+  text-align: center;
+  border: 1.5px solid;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.5;
+}

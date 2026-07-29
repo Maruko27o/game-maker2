@@ -235,7 +235,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
       )}
 
       <div className={styles.actions}>
-        <button className="btn" onClick={onStart}>{startLabel ?? (bets.length > 0 ? '出走！' : '賭けずに出走')}</button>
+        <button className={styles.start} onClick={onStart}>{startLabel ?? '出走'}</button>
       </div>
     </div>
   );

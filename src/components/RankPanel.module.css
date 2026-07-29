@@ -107,3 +107,20 @@
   text-overflow: ellipsis;
   line-height: 1.1;
 }
+
+/* スタミナメーター（名前の下） */
+.spBar {
+  display: block;
+  width: 82%;
+  height: 4px;
+  margin: 2px auto 0;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.spFill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.15s linear, background 0.3s linear;
+}

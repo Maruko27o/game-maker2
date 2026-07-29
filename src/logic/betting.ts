@@ -20,8 +20,18 @@ export const BET_KINDS: { kind: BetKind; label: string; pick: number; ordered: b
 ];
 
 const TAKEOUT = 0.8; // 80% payout
-export const MAX_ODDS = 9999; // display/pay cap — keeps 3連単 under 1万倍 (real-racing feel)
-const clampOdds = (o: number) => Math.min(MAX_ODDS, Math.max(1.1, o));
+// 倍率の上限：以前は9999で頭打ちだったが、大波乱の妙味を削っていたので大きく緩めた。
+// 単勝・複勝・馬連・ワイドは実測でも最大3万倍ほどなので、事実上「上限なし」で動く。
+// 3連単だけは組み合わせが爆発して1000万倍級になりうるため、ここで頭を止める
+// （最大賭け金1000コインでも払戻が青天井にならないようにするための安全弁）。
+export const MAX_ODDS = 100_000;
+//
+// 下限は 1.0 倍（元返し）。ここを 1.1 にしていたことで、複勝のように的中率が
+// 9割を超える買い目で「公正倍率(0.8/確率) < 1.1」となり、期待値が1を超えて
+// “必ず儲かる”状態になっていた（実測 複勝の最大期待値 1.0719）。
+// 1.0 なら 期待値 = 確率 × max(1.0, 0.8/確率) ≤ 1 が常に成り立つ。
+const clampOdds = (o: number) =>
+  Number.isFinite(o) ? Math.min(MAX_ODDS, Math.max(1.0, o)) : MAX_ODDS;
 
 export type Bet = { kind: BetKind; sel: number[]; amount: number; odds: number };
 
@@ -65,6 +75,8 @@ export function oddsFor(kind: BetKind, sel: number[], p: number[]): number {
  *  払戻＝floor(賭け金×倍率) と一致させ、「1.5倍」表示なのに実際は1.48倍…という
  *  誤差をなくす。例）1.4837→"1.48"、2→"2.00"。FP 誤差対策に微小値を足す。 */
 export function fmtOdds(x: number): string {
+  // 1000倍以上は小数を出さず桁区切りにする（"32050.00倍" は読みづらいため）。
+  if (x >= 1000) return Math.floor(x + 1e-6).toLocaleString();
   return (Math.floor(x * 100 + 1e-6) / 100).toFixed(2);
 }
 
