@@ -127,10 +127,12 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
             <li key={r.idx} className={`${styles.item} ${e.isPlayer ? styles.me : ''}`}>
               <div className={`${styles.row} ${on ? styles.on : ''}`} onClick={() => toggle(r.idx)}>
                 <div className={styles.horseWrap}>
-                  <span className={styles.gate} aria-label={`ゲート${gate}番`}>{gate}</span>
-                  <HorseView horse={looks[e.horseId]} size={42} />
+                  <HorseView horse={looks[e.horseId]} size={38} />
                 </div>
+                {/* ゲート番号はウマの絵に重ねず名前の横に。絵の外へはみ出す余白が要らなく
+                    なるぶんカードが低くなり、出走ボタンまで画面に収まる。 */}
                 <div className={styles.nameRow}>
+                  <span className={styles.gate} aria-label={`ゲート${gate}番`}>{gate}</span>
                   <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
                 </div>
                 {/* 人気順は並び順そのものが示しているので、レーダーと被る「n人気」は出さない */}

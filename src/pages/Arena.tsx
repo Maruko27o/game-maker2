@@ -91,6 +91,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
   const arenaSync = useStore((s) => s.arenaSync);
   const arenaMarkSeen = useStore((s) => s.arenaMarkSeen);
   const arenaAdoptPending = useStore((s) => s.arenaAdoptPending);
+  const arenaSwapPending = useStore((s) => s.arenaSwapPending);
   const playerNo = useAuth((s) => s.playerNo);
 
   const st = arena ?? { auto: null, pending: null, lastPeriod: null, results: [] };
@@ -104,6 +105,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
   const [view, setView] = useState<ArenaResult | null>(null);
   const [round, setRound] = useState(0);
   const [note, setNote] = useState<string | null>(null);
+  const [changing, setChanging] = useState(false); // エントリー済みのウマを差し替え中
   const [, setTick] = useState(0);
 
   const selected: Horse | undefined = horses.find((h) => h.id === horseId) ?? horses[0];
@@ -142,9 +144,11 @@ export default function Arena({ onExit }: { onExit: () => void }) {
     if (!horses.find((h) => h.id === horseId)) setHorseId(horses[0]?.id ?? '');
   }, [horses, horseId]);
 
+  function mkSnapshot(horse: Horse) {
+    return playerSnapshot(horse.id, horse.name, horse.colors, horse.decos, horse.stats, styleFor(horse.id, horse.stats), playerNo);
+  }
   function mkEntry(horse: Horse): ArenaEntry {
-    const snap = playerSnapshot(horse.id, horse.name, horse.colors, horse.decos, horse.stats, styleFor(horse.id, horse.stats), playerNo);
-    return { period: cur, seed: (Math.random() * 2 ** 31) >>> 0, horseId: horse.id, snapshot: snap };
+    return { period: cur, seed: (Math.random() * 2 ** 31) >>> 0, horseId: horse.id, snapshot: mkSnapshot(horse) };
   }
   function doEnter() {
     if (!selected) return;
@@ -164,6 +168,44 @@ export default function Arena({ onExit }: { onExit: () => void }) {
   }
   function disableAuto() {
     arenaSetAuto(null);
+  }
+
+  // 締め切り前ならいつでも出走ウマを変えられる。参加費は取らず、抽選のシードも
+  // 据え置き（差し替えで組み合わせを引き直せないように）。
+  function startChange() {
+    const now = st.pending?.horseId ?? st.auto?.horseId;
+    if (now && horses.some((h) => h.id === now)) setHorseId(now);
+    setNote(null);
+    setChanging(true);
+  }
+  function doChange() {
+    if (!selected) return;
+    if (st.auto) arenaSetAuto(selected.id); // 自動エントリー中なら次回以降のウマも変える
+    const snap = mkSnapshot(selected);
+    if (arenaSwapPending(cur, selected.id, snap)) void enterArena(cur, snap);
+    setChanging(false);
+    setNote(null);
+  }
+
+  // エントリー用のウマ選び（新規エントリーと差し替えで共通）
+  function pickerUI() {
+    return (
+      <>
+        <div className={a.pickRow}>
+          {horses.map((h) => (
+            <button key={h.id} className={`${a.pickCard} ${horseId === h.id ? a.pickSel : ''}`} onClick={() => setHorseId(h.id)}>
+              <HorseView horse={h} size={60} />
+              <span className={a.pickName}>{h.name}</span>
+            </button>
+          ))}
+        </div>
+        {selected && (
+          <div className={a.pickInfo}>
+            脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]} ・ 総合力 <b>{stars(statTotal(selected.stats))}</b>
+          </div>
+        )}
+      </>
+    );
   }
 
   function watch(r: ArenaResult) {
@@ -244,7 +286,6 @@ export default function Arena({ onExit }: { onExit: () => void }) {
   }
 
   // ---- home ----
-  const pt = selected ? statTotal(selected.stats) : 0;
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>対戦</h1>
@@ -288,6 +329,13 @@ export default function Arena({ onExit }: { onExit: () => void }) {
             <p>エントリーできるウマがいません。</p>
             <button className="btn" onClick={() => navigate('/')}>草むらへ</button>
           </div>
+        ) : changing ? (
+          <>
+            <div className={a.changeLead}>出走するウマを選び直してね（参加費はかかりません）</div>
+            {pickerUI()}
+            <button className={`btn ${a.bigGreen}`} onClick={doChange} disabled={!selected}>このウマに変更する</button>
+            <button className={`btn neutral ${a.autoBtn}`} onClick={() => setChanging(false)}>やめる</button>
+          </>
         ) : st.auto ? (
           <div className={a.autoOn}>
             <div className={a.autoRow}>
@@ -298,31 +346,25 @@ export default function Arena({ onExit }: { onExit: () => void }) {
               </div>
             </div>
             <div className={a.autoState}>{enteredThisPeriod ? 'この部はエントリー済み' : coins < ARENA_ENTRY_FEE ? 'コイン不足で次はスキップ' : 'まもなくこの部に参加'}</div>
+            <button className={`btn ${a.changeBtn}`} onClick={startChange}>出走するウマを変える</button>
             <button className="btn neutral" onClick={disableAuto}>自動エントリーをやめる</button>
           </div>
         ) : enteredThisPeriod ? (
           <div className={a.entered}>
-            <Icon name="medal" size={22} />
-            <div>
-              <b>この部はエントリー済み：{st.pending?.snapshot.name}</b>
-              <div className={a.enteredSub}>結果は締め切り後に見られるよ！</div>
+            <div className={a.enteredRow}>
+              <Icon name="medal" size={22} />
+              <div>
+                <b>この部はエントリー済み：{st.pending?.snapshot.name}</b>
+                <div className={a.enteredSub}>締め切りまではウマを変えられるよ！</div>
+              </div>
             </div>
+            <button className={`btn ${a.changeBtn}`} onClick={startChange} disabled={!st.pending}>
+              出走するウマを変える
+            </button>
           </div>
         ) : (
           <>
-            <div className={a.pickRow}>
-              {horses.map((h) => (
-                <button key={h.id} className={`${a.pickCard} ${horseId === h.id ? a.pickSel : ''}`} onClick={() => setHorseId(h.id)}>
-                  <HorseView horse={h} size={60} />
-                  <span className={a.pickName}>{h.name}</span>
-                </button>
-              ))}
-            </div>
-            {selected && (
-              <div className={a.pickInfo}>
-                脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]} ・ 総合力 <b>{stars(pt)}</b>
-              </div>
-            )}
+            {pickerUI()}
             <div className={a.feeRow}>
               <span>参加費</span>
               <span className={a.fee}><CoinIcon size={16} /> {ARENA_ENTRY_FEE.toLocaleString()}</span>

@@ -1,24 +1,19 @@
 // チーム編成の純粋ロジック（個体値厳選アップデート）。
 // チーム＝出走と牧場収入の対象になる最大 TEAM_SIZE 頭。ボックス（最大30頭）から選ぶ。
 //
-// 調整期間中のルール：
-//   新世代(gen2)のウマ＝個体値・スキル・適性を持つ、アップデート後に生まれたウマは
-//   まだシムに接続していないため、原則チーム（＝レース）に入れない。
-//   ただし「既存ウマが6頭に満たない分だけ」は新世代で埋められる。そうしないと
-//   ウマを1頭も持っていない新規プレイヤーが永久にレースへ出られなくなるため。
-//   → 既存ウマを6頭持っているアカウントでは、新世代は一切チームに入らない（仕様どおり）。
+// 新世代(gen2)のウマは、固有スキル・コース適性がシム（raceSim2）と倍率の両方に
+// 接続され調整も済んだので、既存ウマと同じ条件でチームに入れられる。
+// 入れられない理由は「チームが満員」だけ。
 import type { Horse } from '../types';
 
 /** チームに入れる資格があるか。理由つきで返す（UIの説明文にそのまま使う）。 */
-export type JoinCheck = { ok: true } | { ok: false; reason: 'full' | 'gen2' };
+export type JoinCheck = { ok: true } | { ok: false; reason: 'full' };
 
-export function canJoinTeam(horse: Horse, team: string[], horses: Horse[], size: number): JoinCheck {
+// `horses` は今は使わないが、将来また条件を足せるようシグネチャは維持する。
+export function canJoinTeam(horse: Horse, team: string[], _horses: Horse[], size: number): JoinCheck {
   if (team.includes(horse.id)) return { ok: true }; // すでに入っている
   if (team.length >= size) return { ok: false, reason: 'full' };
-  if (!horse.gen2) return { ok: true }; // 既存ウマはいつでも入れる
-  // 新世代：チーム外に既存ウマが残っているなら、そちらを優先（新世代はまだ入れない）。
-  const legacyOutside = horses.some((h) => !h.gen2 && !team.includes(h.id));
-  return legacyOutside ? { ok: false, reason: 'gen2' } : { ok: true };
+  return { ok: true };
 }
 
 /** チームに追加（末尾）。入れられないときは元の配列をそのまま返す。 */

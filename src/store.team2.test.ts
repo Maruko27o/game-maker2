@@ -25,12 +25,21 @@ describe('addHorse：新しく作ったウマは新世代(gen2)', () => {
     expect(made?.gen2).toBe(true);
   });
 
-  it('既存ウマがチーム外に残っていれば、新ウマは自動でチームに入らない', () => {
+  // 新世代の制限を撤廃したので、空き枠があれば新ウマもそのまま入る（満員なら入らない）。
+  it('チームに空きがあれば、新ウマは自動でチームに入る', () => {
     const legacy = seedLegacy(2);
-    useStore.setState({ team: [legacy[0].id] }); // L1 をチーム外に残す
+    useStore.setState({ team: [legacy[0].id] });
     const made = useStore.getState().addHorse(look, { ...STATS })!;
-    expect(useStore.getState().team).toEqual([legacy[0].id]);
+    expect(useStore.getState().team).toEqual([legacy[0].id, made.id]);
+  });
+
+  it('チームが満員なら、新ウマはボックス止まりでチーム編成は変わらない', () => {
+    const legacy = seedLegacy(6);
+    const team = useStore.getState().team;
+    const made = useStore.getState().addHorse(look, { ...STATS })!;
+    expect(useStore.getState().team).toEqual(team);
     expect(useStore.getState().team).not.toContain(made.id);
+    expect(legacy).toHaveLength(6);
   });
 
   it('ウマ0頭の新規プレイヤーは、作ったウマが自動でチームに入る（レースに出られる）', () => {
@@ -63,15 +72,15 @@ describe('joinTeam / leaveTeam / reorderTeam', () => {
     expect(legacy).toHaveLength(6);
   });
 
-  it('既存ウマがチーム外にいる間、新世代はチームに入れられない', () => {
-    const legacy = seedLegacy(2);
-    useStore.setState({ team: [legacy[0].id] });
+  // 調整完了により、新世代も既存ウマと同じ条件で出し入れできる。
+  it('満員の状態でも、既存ウマを1頭外せば新世代を入れられる', () => {
+    const legacy = seedLegacy(6);
     const made = useStore.getState().addHorse(look, { ...STATS })!;
-    expect(useStore.getState().joinTeam(made.id)).toBe(false);
-    // 既存ウマを全員チームに戻したら、空き枠を新世代で埋められる
-    expect(useStore.getState().joinTeam(legacy[1].id)).toBe(true);
+    expect(useStore.getState().joinTeam(made.id)).toBe(false); // 満員
+    expect(useStore.getState().leaveTeam(legacy[0].id)).toBe(true);
     expect(useStore.getState().joinTeam(made.id)).toBe(true);
     expect(useStore.getState().team).toContain(made.id);
+    expect(useStore.getState().team).not.toContain(legacy[0].id);
   });
 });
 

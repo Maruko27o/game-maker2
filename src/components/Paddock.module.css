@@ -57,8 +57,12 @@
   grid-template-columns: 1fr 1fr;
   gap: 5px;
   /* Cap the field so the stake row and 出走 button always stay on one screen —
-     the list scrolls internally instead of pushing the controls off the bottom. */
-  max-height: 48vh;
+     the list scrolls internally instead of pushing the controls off the bottom.
+     48vh だと画面の短い端末で出走ボタンが下タブに隠れたので、パドックの一覧以外
+     （タイトル・馬券種タブ・おまかせ・金額・出走・ヘッダー・下タブ）の実測ぶんを
+     画面高から引いた残りを上限にする。足りなければ一覧の中だけがスクロールする。 */
+  max-height: calc(100dvh - 430px - env(safe-area-inset-bottom, 0px));
+  min-height: 150px;
   overflow-y: auto;
   overscroll-behavior: contain;
   align-content: start;
@@ -84,8 +88,8 @@
     'horse odds info';
   align-items: center;
   column-gap: 7px;
-  row-gap: 2px;
-  padding: 6px 8px;
+  row-gap: 1px;
+  padding: 4px 8px;
   position: relative;
   background: var(--panel-inner);
   border: 2px solid var(--border);
@@ -95,26 +99,21 @@
   transition: background 0.12s, box-shadow 0.12s;
 }
 .horseWrap {
-  position: relative;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   flex: none;
   display: grid;
   place-items: center;
 }
-/* ゲート番号（馬番）＝ゼッケン風の小さなバッジ。どのウマかひと目で分かる。 */
+/* ゲート番号（馬番）＝ゼッケン風の小さなバッジ。名前の左に置く（絵に重ねない）。 */
 .gate {
-  position: absolute;
-  top: -5px;
-  left: -6px;
-  z-index: 2;
-  min-width: 18px;
-  height: 18px;
+  flex: none;
+  min-width: 17px;
+  height: 16px;
   padding: 0 3px;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--ink);
   color: var(--paper);
-  border: 2px solid var(--paper);
   font-size: 11px;
   font-weight: 900;
   line-height: 1;
@@ -129,7 +128,7 @@
 /* .mark は absolute なのでグリッド配置しない（カード右上のチェック） */
 .nameRow {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 5px;
   min-width: 0;
   /* 右上のチェック（.mark）はカードの角に重なるので、名前がその下に潜らないよう空ける */

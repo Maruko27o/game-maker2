@@ -27,6 +27,49 @@ describe('arena store: manual entry', () => {
   });
 });
 
+// 締め切り前ならエントリー中のウマを何度でも変えられる（参加費なし・シード据え置き）。
+describe('arena store: 出走ウマの差し替え', () => {
+  const snapOf = (id: string) => mkEntry(100, id).snapshot;
+
+  it('swaps the horse without charging again and keeps the seed', () => {
+    useStore.getState().arenaEnterManual(mkEntry(100, 'h1'));
+    const after = useStore.getState().coins;
+    const seed = useStore.getState().arena!.pending!.seed;
+
+    expect(useStore.getState().arenaSwapPending(100, 'h2', snapOf('h2'))).toBe(true);
+    const p = useStore.getState().arena!.pending!;
+    expect(p.horseId).toBe('h2');
+    expect(p.snapshot.horseId).toBe('h2');
+    expect(p.seed).toBe(seed); // 抽選の中身は据え置き＝差し替えで引き直せない
+    expect(p.period).toBe(100);
+    expect(useStore.getState().coins).toBe(after); // 追加の参加費なし
+  });
+
+  it('can be repeated any number of times before the deadline', () => {
+    useStore.getState().arenaEnterManual(mkEntry(100, 'h1'));
+    const after = useStore.getState().coins;
+    for (const id of ['h2', 'h3', 'h1']) {
+      expect(useStore.getState().arenaSwapPending(100, id, snapOf(id))).toBe(true);
+    }
+    expect(useStore.getState().arena!.pending!.horseId).toBe('h1');
+    expect(useStore.getState().coins).toBe(after);
+  });
+
+  it('rejects a swap for a period we have not entered (or that already closed)', () => {
+    expect(useStore.getState().arenaSwapPending(100, 'h2', snapOf('h2'))).toBe(false); // 未エントリー
+    useStore.getState().arenaEnterManual(mkEntry(100, 'h1'));
+    expect(useStore.getState().arenaSwapPending(101, 'h2', snapOf('h2'))).toBe(false); // 別の部
+    expect(useStore.getState().arena!.pending!.horseId).toBe('h1');
+  });
+
+  it('does not create an entry out of thin air', () => {
+    const before = useStore.getState().coins;
+    expect(useStore.getState().arenaSwapPending(periodId(), 'h2', snapOf('h2'))).toBe(false);
+    expect(useStore.getState().arena?.pending ?? null).toBe(null);
+    expect(useStore.getState().coins).toBe(before);
+  });
+});
+
 describe('arena store: resolution + idempotency', () => {
   it('resolves a closed entry into a result exactly once and credits its prize', () => {
     useStore.getState().arenaEnterManual(mkEntry(100));
