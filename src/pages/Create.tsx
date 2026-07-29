@@ -92,7 +92,7 @@ export default function Create() {
   const [decos, setDecos] = useState<Partial<Record<DecoSlot, string>>>(() =>
     editing ? { ...editing.decos } : {},
   );
-  const [name, setName] = useState(editing?.name ?? '');
+  const name = editing?.name ?? ''; // 名前はここでは変えない（改名はマイウマの詳細から）
 
   // Stat allocation state. Seeded from the horse when rebalancing, else the
   // balanced preset. Not shown when only editing a horse's look.
@@ -250,16 +250,6 @@ export default function Create() {
             );
           })}
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>名前</h2>
-            <input
-              className={styles.nameInput}
-              value={name}
-              maxLength={12}
-              placeholder="名前をつけよう"
-              onChange={(e) => setName(e.target.value)}
-            />
-          </section>
         </>
       )}
 

@@ -295,9 +295,7 @@ export default function Stable() {
                 );
               })}
               {Array.from({ length: Math.max(0, maxHorses - horses.length) }).map((_, i) => (
-                <div key={`empty-${i}`} className={styles.slotEmpty} aria-hidden>
-                  <span className={styles.slotPlus}>＋</span>
-                </div>
+                <div key={`empty-${i}`} className={styles.slotEmpty} aria-hidden />
               ))}
             </div>
           </section>
