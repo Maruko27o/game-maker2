@@ -27,6 +27,7 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
   const trophies = useStore((s) => s.trophies);
   const badges = useStore((s) => s.badges);
   const rerollHorse = useStore((s) => s.rerollHorse);
+  const finishReroll = useStore((s) => s.finishReroll);
 
   const [picked, setPicked] = useState<Set<string>>(new Set()); // 「更新する」と選んだ枠
   const [changed, setChanged] = useState<Set<string>>(new Set()); // 直前の振り直しで変わった枠
@@ -163,9 +164,16 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
               : `${picked.size}枠を振り直す（のこり${st.left}回）`}
         </button>
 
+        <button
+          className={styles.finish}
+          onClick={() => { finishReroll(horse.id); onClose(); }}
+        >
+          この内容で確定する{st.left > 0 ? `（のこり${st.left}回は使わない）` : ''}
+        </button>
+
         <p className={styles.note}>
-          ※ 振り直すと前の内容には戻せません。スキルと適性の効果は、これから順番にレースへ
-          反映していきます。
+          ※ 振り直すと前の内容には戻せません。確定すると、回数が残っていても
+          もう振り直せなくなります。
         </p>
       </div>
     </div>

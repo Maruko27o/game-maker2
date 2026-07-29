@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { SKILLS_BY_STAR, starChance, type SkillStar } from '../data/skills';
 import { GRADES, GRADE_STYLE, gradeChance } from '../data/aptitude';
 import { COURSES } from '../data/courses';
+import { skillEffectLines, aptitudeEffectText } from '../logic/skillEffect';
 import Icon from './Icon';
 import styles from './SkillBook.module.css';
 
-// ウマのとくちょう図鑑（固有スキル＋コース適性）。段ごとに ▼ で開閉する。
+// ウマの特徴図鑑（固有スキル＋コース適性）。段ごとに ▼ で開閉する。
 // 草むらの i ボタンから開く。効果の文言は「予定」——レースの挙動にはまだ
 // つながっていないことを明記する。
 
@@ -25,9 +26,9 @@ export default function SkillBook({ onClose }: { onClose: () => void }) {
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.sheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="ウマのとくちょう図鑑">
+      <div className={styles.sheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="ウマの特徴図鑑">
         <div className={styles.head}>
-          <h2 className={styles.title}>ウマのとくちょう図鑑</h2>
+          <h2 className={styles.title}>ウマの特徴図鑑</h2>
           <button className={styles.close} onClick={onClose} aria-label="閉じる">✕</button>
         </div>
         <p className={styles.lead}>
@@ -55,6 +56,12 @@ export default function SkillBook({ onClose }: { onClose: () => void }) {
                     <li key={s.id} className={styles.item}>
                       <span className={styles.name}>{s.name}</span>
                       <span className={styles.effect}>{s.effect}</span>
+                      {skillEffectLines(s.id).map((l, li) => (
+                        <span key={li} className={styles.num}>
+                          <span className={styles.numWhen}>{l.when}</span>
+                          <span className={styles.numText}>{l.text}</span>
+                        </span>
+                      ))}
                     </li>
                   ))}
                 </ul>
@@ -86,6 +93,7 @@ export default function SkillBook({ onClose }: { onClose: () => void }) {
                       {g}
                     </span>
                     <span className={styles.name}>{GRADE_STYLE[g].label}</span>
+                    <span className={styles.gradeEffect}>{aptitudeEffectText(g)}</span>
                     <span className={styles.groupChance}>出やすさ {(gradeChance(g) * 100).toFixed(0)}%</span>
                   </li>
                 ))}
@@ -98,8 +106,8 @@ export default function SkillBook({ onClose }: { onClose: () => void }) {
         </section>
 
         <p className={styles.note}>
-          ※ スキルと適性の効果は、これから順番にレースへ反映していきます。いまは「どんな
-          とくちょうがあるか」を見られる図鑑です。
+          ※ 数値はレースの走りにかかる倍率です。効果はいくつも重なるので、
+          「最高速 ＋3.0%」でも勝率はそれ以上に変わることがあります。
         </p>
       </div>
     </div>

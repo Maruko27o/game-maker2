@@ -166,3 +166,55 @@ export function strengthFactor(m: Mods): number {
 export function racerStrength(skillId: string | undefined, grade: Grade | undefined, ctx: RaceCtx): number {
   return strengthFactor(racerMods(skillId, grade, ctx));
 }
+
+// ---- 図鑑用：効果を具体的な数値の文章にする ---------------------------------
+// 実際に使っている SPECS から生成するので、効果を変えれば図鑑の数値も自動で変わる
+// （説明文と中身がズレない）。
+
+const KNOB_LABEL: Record<Knob, string> = {
+  vMax: '最高速',
+  accel: '加速力',
+  spMax: 'スタミナ',
+  drain: 'スタミナ長持ち',
+  early: '序盤の伸び',
+  late: '終盤の伸び',
+  gate: 'スタート',
+  corner: 'コーナー',
+  farm: '牧場の収入',
+};
+
+const SURFACE_LABEL: Record<Surface, string> = {
+  turf: '芝', dirt: 'ダート', sand: '砂', trail: '山道', circuit: 'ナイター', steeple: '障害',
+};
+
+export type EffectLine = { when: string; text: string };
+
+/** そのスキルの効果を「いつ・何が・何%」の形で並べる（図鑑用）。 */
+export function skillEffectLines(skillId: string): EffectLine[] {
+  const skill = SKILL_BY_ID[skillId];
+  const spec = SPECS[skillId];
+  if (!skill || !spec) return [];
+  const amount = skill.star * UNIT;
+  const fmt = (knob: Knob, mult: number): string => {
+    const pct = Math.abs(mult) * amount * 100;
+    // drain は「減りにくくなる」ので、マイナス指定＝プラスの効果として見せる。
+    const up = knob === 'drain' ? mult < 0 : mult > 0;
+    return `${KNOB_LABEL[knob]} ${up ? '＋' : '−'}${pct.toFixed(1)}%`;
+  };
+  const lines: EffectLine[] = [];
+  const push = (when: string, mods: Partial<Record<Knob, number>>) => {
+    const parts = (Object.keys(mods) as Knob[]).map((k) => fmt(k, mods[k] ?? 0));
+    if (parts.length) lines.push({ when, text: parts.join('・') });
+  };
+  if (spec.base) push('いつでも', spec.base);
+  if (spec.onSurface) push(spec.onSurface.surfaces.map((s) => SURFACE_LABEL[s]).join('・') + 'のとき', spec.onSurface.mods);
+  if (spec.onMode) push(`${spec.onMode.mode}秒レースのとき`, spec.onMode.mods);
+  return lines;
+}
+
+/** 適性の効果を数値で（図鑑用）。 */
+export function aptitudeEffectText(grade: Grade): string {
+  const d = (APT_MULT[grade] - 1) * 100;
+  if (Math.abs(d) < 0.001) return '基準（増減なし）';
+  return `最高速・加速 ${d > 0 ? '＋' : '−'}${Math.abs(d).toFixed(1)}%・スタミナ ${d > 0 ? '＋' : '−'}${Math.abs(d * 1.5).toFixed(1)}%`;
+}

@@ -124,7 +124,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
           const open = openStats === r.idx;
           const gate = r.idx + 1; // ゲート番号（馬番）
           return (
-            <li key={r.idx} className={`${styles.item} ${e.isPlayer ? styles.me : ''} ${open ? styles.expanded : ''}`}>
+            <li key={r.idx} className={`${styles.item} ${e.isPlayer ? styles.me : ''}`}>
               <div className={`${styles.row} ${on ? styles.on : ''}`} onClick={() => toggle(r.idx)}>
                 <div className={styles.horseWrap}>
                   <span className={styles.gate} aria-label={`ゲート${gate}番`}>{gate}</span>
@@ -151,49 +151,6 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                   {on ? (spec.ordered ? order + 1 : '✓') : ''}
                 </span>
               </div>
-              {open && (
-                <div className={styles.stats}>
-                  <StatRadar stats={e.stats} size={132} />
-                  <div className={styles.statMeta}>
-                    <div className={styles.chipRow}>
-                      <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
-                      {e.apt && (
-                        <span
-                          className={styles.aptChip}
-                          style={{ background: GRADE_STYLE[e.apt].background, color: GRADE_STYLE[e.apt].ink, borderColor: GRADE_STYLE[e.apt].border }}
-                          title={`このコースの適性 ${e.apt}`}
-                        >
-                          適性 {e.apt}
-                        </span>
-                      )}
-                      {moods && (
-                        <span className={styles.moodChip} style={{ background: MOODS[moods[r.idx]].color, color: MOODS[moods[r.idx]].ink }}>
-                          <MoodFace level={moods[r.idx]} size={16} title={false} /> {MOODS[moods[r.idx]].label}
-                        </span>
-                      )}
-                    </div>
-                    {e.skill && (
-                      <div className={styles.skillLine}>
-                        <span className={styles.skillLineName}>{SKILL_BY_ID[e.skill]?.name}</span>
-                        <span className={styles.skillLineStars}>
-                          {Array.from({ length: 5 }).map((_, si) => (
-                            <Icon key={si} name="star" size={10} className={si < (SKILL_BY_ID[e.skill!]?.star ?? 0) ? styles.starOn : styles.starOff} />
-                          ))}
-                        </span>
-                        <span className={styles.skillLineEffect}>{SKILL_BY_ID[e.skill]?.effect}</span>
-                      </div>
-                    )}
-                    <dl className={styles.statNums}>
-                      {STAT_KEYS.map((k: StatKey) => (
-                        <div key={k} className={styles.statNum}>
-                          <dt>{STAT_LABEL[k]}</dt>
-                          <dd>{e.stats[k]}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </div>
-                </div>
-              )}
             </li>
           );
         })}
@@ -231,6 +188,64 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
               <button className={styles.slipDel} onClick={() => onRemove(i)}>取消</button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 能力のポップアップ：画面外タップか✕で閉じる */}
+      {openStats !== null && entrants[openStats] && (
+        <div className={styles.statsOverlay} onClick={() => setOpenStats(null)}>
+          <div className={styles.statsCard} onClick={(ev) => ev.stopPropagation()} role="dialog" aria-label="能力">
+            <div className={styles.statsHead}>
+              <span className={styles.statsTitle}>
+                {openStats + 1}番 {entrants[openStats].isPlayer ? 'あなた' : entrants[openStats].name}
+              </span>
+              <button className={styles.statsClose} onClick={() => setOpenStats(null)} aria-label="閉じる">✕</button>
+            </div>
+            {((e) => (
+              <div className={styles.stats}>
+
+          <StatRadar stats={e.stats} size={132} />
+          <div className={styles.statMeta}>
+          <div className={styles.chipRow}>
+          <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
+          {e.apt && (
+          <span
+          className={styles.aptChip}
+          style={{ background: GRADE_STYLE[e.apt].background, color: GRADE_STYLE[e.apt].ink, borderColor: GRADE_STYLE[e.apt].border }}
+          title={`このコースの適性 ${e.apt}`}
+          >
+          適性 {e.apt}
+          </span>
+          )}
+          {moods && (
+          <span className={styles.moodChip} style={{ background: MOODS[moods[openStats]].color, color: MOODS[moods[openStats]].ink }}>
+          <MoodFace level={moods[openStats]} size={16} title={false} /> {MOODS[moods[openStats]].label}
+          </span>
+          )}
+          </div>
+          {e.skill && (
+          <div className={styles.skillLine}>
+          <span className={styles.skillLineName}>{SKILL_BY_ID[e.skill]?.name}</span>
+          <span className={styles.skillLineStars}>
+          {Array.from({ length: 5 }).map((_, si) => (
+          <Icon key={si} name="star" size={10} className={si < (SKILL_BY_ID[e.skill!]?.star ?? 0) ? styles.starOn : styles.starOff} />
+          ))}
+          </span>
+          <span className={styles.skillLineEffect}>{SKILL_BY_ID[e.skill]?.effect}</span>
+          </div>
+          )}
+          <dl className={styles.statNums}>
+          {STAT_KEYS.map((k: StatKey) => (
+          <div key={k} className={styles.statNum}>
+          <dt>{STAT_LABEL[k]}</dt>
+          <dd>{e.stats[k]}</dd>
+          </div>
+          ))}
+          </dl>
+          </div>
+              </div>
+            ))(entrants[openStats])}
+          </div>
         </div>
       )}
 

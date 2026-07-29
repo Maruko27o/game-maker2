@@ -549,6 +549,10 @@ type Store = SaveData & {
   toggleLock: (id: string) => boolean;
   /** 厳選：選んだ枠だけを振り直す（権利を1消費）。既存ウマのみ。成功したら true。 */
   rerollHorse: (id: string, slots: string[]) => boolean;
+  /** 厳選を確定する。回数が余っていても、もう振り直せなくなる。 */
+  finishReroll: (id: string) => boolean;
+  /** 複数のウマをまとめて引退させる。ロック中のウマは飛ばす。受け取った合計コインを返す。 */
+  retireMany: (ids: string[]) => { coins: number; retired: number; skipped: number };
   /** チーム（出走・牧場収入の対象／最大 TEAM_SIZE 頭）に入れる。入れられなければ false。 */
   joinTeam: (id: string) => boolean;
   /** チームから外してボックスに戻す。 */
@@ -1164,6 +1168,33 @@ export const useStore = create<Store>((set, get) => {
         ),
       });
       return true;
+    },
+
+    finishReroll: (id) => {
+      const s = get();
+      const horse = s.horses.find((h) => h.id === id);
+      if (!horse || horse.rerollDone) return false;
+      commit({ horses: s.horses.map((h) => (h.id === id ? { ...h, rerollDone: true } : h)) });
+      return true;
+    },
+
+    retireMany: (ids) => {
+      const s = get();
+      const want = new Set(ids);
+      // ロック中のウマは守る（誤操作でまとめて消えないように）。
+      const targets = s.horses.filter((h) => want.has(h.id) && !h.locked);
+      if (targets.length === 0) return { coins: 0, retired: 0, skipped: want.size };
+      const gone = new Set(targets.map((h) => h.id));
+      const coins = targets.reduce((n, h) => n + retireValueOf(h, s.trophies, s.badges), 0);
+      commit({
+        coins: s.coins + coins,
+        horses: s.horses.filter((h) => !gone.has(h.id)),
+        team: (s.team ?? []).filter((x) => !gone.has(x)),
+        trophies: s.trophies.filter((t) => !gone.has(t.horseId)),
+        badges: s.badges.filter((b) => !gone.has(b.horseId)),
+        avatarHorseId: s.avatarHorseId && gone.has(s.avatarHorseId) ? null : s.avatarHorseId,
+      });
+      return { coins, retired: targets.length, skipped: want.size - targets.length };
     },
 
     toggleLock: (id) => {

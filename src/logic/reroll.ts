@@ -52,9 +52,9 @@ export function rightsBreakdown(trophyCount: number, badgeCount: number): Rights
   ];
 }
 
-/** そのウマが厳選できるか（新世代は対象外）。 */
+/** そのウマが厳選できるか（新世代は対象外／確定済みも対象外）。 */
 export function canReroll(horse: Horse): boolean {
-  return !horse.gen2;
+  return !horse.gen2 && !horse.rerollDone;
 }
 
 /** そのウマの権利・使用済み・残り。 */
@@ -67,6 +67,7 @@ export function rerollState(horse: Horse, trophies: Trophy[], badges: Badge[]): 
 } {
   const trophyCount = trophies.filter((t) => t.horseId === horse.id).length;
   const badgeCount = badges.filter((b) => b.horseId === horse.id).length;
+  // 確定済み・新世代は権利0として扱う（＝厳選ボタンを出さない）。
   const rights = canReroll(horse) ? rerollRights(trophyCount, badgeCount) : 0;
   const used = Math.max(0, Math.floor(horse.rerollsUsed ?? 0));
   return { rights, used, left: Math.max(0, rights - used), trophyCount, badgeCount };
