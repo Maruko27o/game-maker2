@@ -74,17 +74,17 @@
   grid-column: 1 / -1;
 }
 .row {
-  /* カードが2列並びで幅が狭いので、名前・倍率・能力ボタンが同じ列を奪い合わないよう
-     役割ごとに列を分ける。ウマの絵と能力ボタンは固定幅で縦2行ぶち抜き、中央の列は
-     名前が全幅を使える。これで名前も倍率も潰れない。 */
+  /* カードが2列並びで幅が狭い。名前を絵やボタンと同じ行に置くと数文字で「…」に
+     なってしまうので、名前だけカード幅いっぱいの1行目に出す。2行目にウマの絵・倍率・
+     能力ボタンを並べる。これで名前も倍率も潰れない。 */
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas:
-    'horse name info'
+    'name name name'
     'horse odds info';
   align-items: center;
   column-gap: 7px;
-  row-gap: 1px;
+  row-gap: 2px;
   padding: 6px 8px;
   position: relative;
   background: var(--panel-inner);
@@ -132,6 +132,8 @@
   align-items: baseline;
   gap: 5px;
   min-width: 0;
+  /* 右上のチェック（.mark）はカードの角に重なるので、名前がその下に潜らないよう空ける */
+  padding-right: 14px;
 }
 .oddsRow {
   display: flex;
@@ -269,12 +271,6 @@
   font-weight: 900;
   color: var(--ink);
 }
-.pop {
-  flex: none;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--ink-soft);
-}
 .name {
   flex: 1;
   min-width: 0;
@@ -289,7 +285,7 @@
   flex: none;
   font-weight: 900;
   color: #c33f39;
-  font-size: 14px;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
 /* selection mark — top-right corner of the card, out of the content flow. */

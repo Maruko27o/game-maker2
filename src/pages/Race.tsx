@@ -258,7 +258,14 @@ export default function Race() {
 
   // パドックに入ってから結果を見るまでは、賭け金を預けている状態。ここで他のタブへ
   // 移動されるとコインだけ減って馬券が消えるので、タブ移動を止める。
-  const busy = screen === 'paddock' || screen === 'race' || screen === 'roulette' || screen === 'gp' || screen === 'arena';
+  // ロックするのはコインを預ける「1人でレース」の賭け導線と「グランプリ」だけ。
+  // 対戦（arena）とコースを選ぶレース（pickMode）は馬券が絡まないので、
+  // レース中でも他のタブへ自由に移動できる。
+  const busy =
+    screen === 'paddock' ||
+    screen === 'roulette' ||
+    screen === 'gp' ||
+    (screen === 'race' && !pickMode);
   useEffect(() => {
     setRaceBusy(busy);
     return () => setRaceBusy(false);
