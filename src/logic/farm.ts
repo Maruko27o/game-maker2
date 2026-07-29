@@ -1,5 +1,6 @@
 // 牧場の放置収入（idle income）と 引退（retire for coins）の純粋計算。
 import { statTotal } from './stats';
+import { skillFarmMultiplier } from './skillEffect';
 import { STAT_ALLOC_TOTAL } from '../types';
 import type { Horse, Trophy, Badge } from '../types';
 import {
@@ -32,13 +33,15 @@ export function horseFarmRate(total: number, trophies: Trophy[], badges: Badge[]
   return Math.min(FARM_PER_HORSE_CAP, raw);
 }
 
-/** Horse を直接受け取る便利版（UI用）。 */
+/** Horse を直接受け取る便利版（UI用）。固有スキルによる収入アップもここで乗せる
+ *  （「ひとなつっこい」「くいしんぼう」などレース以外に効くスキル）。 */
 export function horseFarmRateOf(horse: Horse, trophies: Trophy[], badges: Badge[]): number {
-  return horseFarmRate(
+  const base = horseFarmRate(
     statTotal(horse.stats),
     trophies.filter((t) => t.horseId === horse.id),
     badges.filter((b) => b.horseId === horse.id),
   );
+  return Math.min(FARM_PER_HORSE_CAP, base * skillFarmMultiplier(horse.skill));
 }
 
 /** ステーブル全体の時給（coins/時）。各馬の上限適用後を合算する。 */

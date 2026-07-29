@@ -5,6 +5,8 @@ import type { HorseLook, StatKey } from '../types';
 import { STAT_KEYS, STAT_LABEL, RUN_STYLE_LABEL } from '../types';
 import { raceOddsFromProbs, oddsFor, fmtOdds, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
 import { statTotal } from '../logic/stats';
+import { SKILL_BY_ID } from '../data/skills';
+import { GRADE_STYLE } from '../data/aptitude';
 import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
 import HorseView from './HorseView';
@@ -155,12 +157,32 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                   <div className={styles.statMeta}>
                     <div className={styles.chipRow}>
                       <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
+                      {e.apt && (
+                        <span
+                          className={styles.aptChip}
+                          style={{ background: GRADE_STYLE[e.apt].background, color: GRADE_STYLE[e.apt].ink, borderColor: GRADE_STYLE[e.apt].border }}
+                          title={`このコースの適性 ${e.apt}`}
+                        >
+                          適性 {e.apt}
+                        </span>
+                      )}
                       {moods && (
                         <span className={styles.moodChip} style={{ background: MOODS[moods[r.idx]].color, color: MOODS[moods[r.idx]].ink }}>
                           <MoodFace level={moods[r.idx]} size={16} title={false} /> {MOODS[moods[r.idx]].label}
                         </span>
                       )}
                     </div>
+                    {e.skill && (
+                      <div className={styles.skillLine}>
+                        <span className={styles.skillLineName}>{SKILL_BY_ID[e.skill]?.name}</span>
+                        <span className={styles.skillLineStars}>
+                          {Array.from({ length: 5 }).map((_, si) => (
+                            <Icon key={si} name="star" size={10} className={si < (SKILL_BY_ID[e.skill!]?.star ?? 0) ? styles.starOn : styles.starOff} />
+                          ))}
+                        </span>
+                        <span className={styles.skillLineEffect}>{SKILL_BY_ID[e.skill]?.effect}</span>
+                      </div>
+                    )}
                     <dl className={styles.statNums}>
                       {STAT_KEYS.map((k: StatKey) => (
                         <div key={k} className={styles.statNum}>

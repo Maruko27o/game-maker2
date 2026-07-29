@@ -3,6 +3,8 @@ import { useStore, dayKey } from '../store';
 import { COURSES } from '../data/courses';
 import { statTotal, mulberry32 } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
+import { skillOf } from '../logic/skill';
+import { aptitudeOf } from '../logic/aptitude';
 import { simulate2, type Entrant, type SimResult } from '../logic/raceSim2';
 import {
   buildGpField,
@@ -58,7 +60,12 @@ type GpState = {
 function buildGpState(grade: GpGrade, seed: number, player: Horse): GpState {
   const rng = mulberry32(seed ^ 0x1234);
   const course = COURSES[Math.floor(rng() * COURSES.length)];
-  const playerEntrant: Entrant = { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) };
+  const playerEntrant: Entrant = {
+    horseId: player.id, name: player.name, isPlayer: true, stats: player.stats,
+    style: styleFor(player.id, player.stats),
+    skill: skillOf(player).id,
+    apt: aptitudeOf(player)[course.id],
+  };
   const field = buildGpField(playerEntrant, player, grade, seed);
   return { grade, course, seed, ...field };
 }

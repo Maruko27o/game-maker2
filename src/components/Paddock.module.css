@@ -408,3 +408,44 @@
   font-weight: 900;
   font-size: 12px;
 }
+
+/* 固有スキル・コース適性（賭ける判断材料） */
+.aptChip {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid;
+  border-radius: 7px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 900;
+}
+.skillLine {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  align-items: center;
+  gap: 2px 6px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 5px 8px;
+  margin-bottom: 6px;
+}
+.skillLineName {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.skillLineStars {
+  display: inline-flex;
+  gap: 1px;
+}
+.starOn { color: var(--gold); }
+.starOff { color: rgba(0, 0, 0, 0.16); }
+.skillLineEffect {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
