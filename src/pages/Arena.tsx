@@ -286,7 +286,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
         {horses.length === 0 ? (
           <div className={a.empty}>
             <p>エントリーできるウマがいません。</p>
-            <button className="btn" onClick={() => navigate('/create')}>ウマを作る</button>
+            <button className="btn" onClick={() => navigate('/')}>草むらへ</button>
           </div>
         ) : st.auto ? (
           <div className={a.autoOn}>

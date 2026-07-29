@@ -461,7 +461,7 @@ export default function Race() {
             {allHorses.length === 0 ? (
               <>
                 <p>走らせるウマがいません。</p>
-                <button className="btn" onClick={() => navigate('/create')}>ウマを作る</button>
+                <button className="btn" onClick={() => navigate('/')}>草むらへ</button>
               </>
             ) : (
               <>

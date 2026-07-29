@@ -353,3 +353,12 @@
 .confirmActions button {
   flex: 1;
 }
+
+/* 色が変えられないことの説明（着せ替え画面） */
+.lockedNote {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}

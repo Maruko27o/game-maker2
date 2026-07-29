@@ -1,7 +1,6 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
-import Icon from '../components/Icon';
 import { colorsBySlot, decosBySlot, COLOR_SLOTS, DECO_SLOTS } from '../data/parts';
 import { predictStyle } from '../logic/runStyle';
 import type { ColorSlot, DecoSlot, HorseLook, Stats, StatKey } from '../types';
@@ -16,7 +15,6 @@ import {
 import HorseView from '../components/HorseView';
 import styles from './Create.module.css';
 
-const COLOR_LABEL: Record<ColorSlot, string> = { body: '体', mane: 'たてがみ', hoof: 'ひづめ' };
 const DECO_LABEL: Record<DecoSlot, string> = { head: '頭', face: '顔', back: '背中', tail: 'しっぽ' };
 
 // Where each slot's decorations live on the horse — so the picker can show the part
@@ -73,14 +71,16 @@ export default function Create() {
 
   const editing = editId ? horses.find((h) => h.id === editId) ?? null : null;
   const rebalancing = rebalanceId ? horses.find((h) => h.id === rebalanceId) ?? null : null;
-  const isNew = !editing && !rebalancing; // brand-new horse
+  // ウマは草むらから来る（作成画面での新規作成は廃止）。この画面は既存ウマの
+  // 「着せ替え」と、旧セーブ向けの「ステータス振り直し」だけを担当する。
+  const isNew = !editing && !rebalancing;
   const atCap = isNew && horses.length >= maxHorses;
   // ウマの作成は無料（パーツを草むらで集めるのがコスト）。
 
   // Whether the player owns at least one color in every color slot.
   const canBuild = COLOR_SLOTS.every((s) => colorsBySlot[s].some((c) => (owned[c.id] ?? 0) > 0));
 
-  const [colors, setColors] = useState<Record<ColorSlot, string>>(() =>
+  const [colors] = useState<Record<ColorSlot, string>>(() =>
     editing
       ? { ...editing.colors }
       : {
@@ -132,6 +132,11 @@ export default function Create() {
     });
   }
 
+  // 新規作成の入口は廃止（ウマは草むらから来る）。直リンクで来たら草むらへ戻す。
+  useEffect(() => {
+    if (isNew) navigate('/', { replace: true });
+  }, [isNew, navigate]);
+
   function commitSave() {
     const finalName = name.trim() || '名前のないウマ';
     if (rebalancing) {
@@ -151,7 +156,7 @@ export default function Create() {
     else commitSave();
   }
 
-  const title = rebalancing ? 'ステータス振り直し' : editing ? 'ウマを直す' : 'ウマを作る';
+  const title = rebalancing ? 'ステータス振り直し' : '着せ替え';
 
   return (
     <div className={styles.page}>
@@ -182,56 +187,11 @@ export default function Create() {
       {/* Look (colors / decorations / name) — hidden while rebalancing stats */}
       {!rebalancing && (
         <>
-          {COLOR_SLOTS.map((slot) => {
-            const isOpen = openSlots[slot] ?? false;
-            const sel = colorsBySlot[slot].find((c) => c.id === colors[slot]);
-            return (
-              <section key={slot} className={styles.section}>
-                <button
-                  type="button"
-                  className={styles.sectionHead}
-                  onClick={() => toggle(slot)}
-                  aria-expanded={isOpen}
-                >
-                  <h2 className={styles.sectionTitle}>{COLOR_LABEL[slot]}</h2>
-                  <span className={styles.sectionPreview}>
-                    {sel && (
-                      <span
-                        className={styles.previewSwatch}
-                        style={{ background: sel.swatch ?? sel.value }}
-                      />
-                    )}
-                    <span className={`${styles.caret} ${isOpen ? styles.caretOpen : ''}`}>▼</span>
-                  </span>
-                </button>
-                {isOpen && (
-                  <div className={styles.sectionBody}>
-                    <div className={styles.swatchRow}>
-                      {colorsBySlot[slot].map((c) => {
-                        const has = (owned[c.id] ?? 0) > 0;
-                        const selected = colors[slot] === c.id;
-                        return (
-                          <button
-                            key={c.id}
-                            className={`${styles.swatch} ${selected ? styles.selected : ''} ${
-                              has ? '' : styles.lockedSwatch
-                            }`}
-                            style={{ background: c.swatch ?? c.value }}
-                            disabled={!has}
-                            onClick={() => setColors((p) => ({ ...p, [slot]: c.id }))}
-                            aria-label={c.name}
-                            title={has ? c.name : '未所持'}
-                          >
-                            {!has && <span className={styles.lock}><Icon name="lock" size={13} /></span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </section>
-            );
-          })}
+          {/* 色（からだ・たてがみ・ひづめ）は生まれつきで変えられないため、ここでは
+              出さない。着せ替えできるのは飾り（頭・顔・背中・しっぽ）だけ。 */}
+          <p className={styles.lockedNote}>
+            からだ・たてがみ・ひづめの色は生まれつきで、変えられません。
+          </p>
 
           {DECO_SLOTS.map((slot) => {
             const isOpen = openSlots[slot] ?? false;

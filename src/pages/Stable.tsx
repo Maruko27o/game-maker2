@@ -232,9 +232,9 @@ export default function Stable() {
         <div className={styles.empty}>
           <div className={styles.emptyEmoji}><Icon name="horse" size={56} /></div>
           <p>まだウマがいません。</p>
-          <p className={styles.emptySub}>草むらでパーツを集めて、ウマを作ろう！</p>
-          <button className="btn" onClick={() => navigate('/create')}>
-            ウマを作る
+          <p className={styles.emptySub}>草むらでウマを見つけよう！</p>
+          <button className="btn" onClick={() => navigate('/')}>
+            草むらへ
           </button>
         </div>
       ) : (
@@ -295,9 +295,9 @@ export default function Stable() {
                 );
               })}
               {Array.from({ length: Math.max(0, maxHorses - horses.length) }).map((_, i) => (
-                <button key={`empty-${i}`} className={styles.slotEmpty} onClick={() => navigate('/create')} aria-label="ウマを作る">
+                <div key={`empty-${i}`} className={styles.slotEmpty} aria-hidden>
                   <span className={styles.slotPlus}>＋</span>
-                </button>
+                </div>
               ))}
             </div>
           </section>
@@ -504,7 +504,7 @@ export default function Stable() {
                         育てる
                       </button>
                       <button className="btn neutral" onClick={() => navigate(`/create?edit=${selected.id}`)}>
-                        直す
+                        着せ替え
                       </button>
                     </div>
                     <div className={styles.actions}>

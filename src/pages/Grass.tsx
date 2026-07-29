@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore, type SpawnedPart } from '../store';
 import { ENERGY_CAP, normalizeEnergy, msUntilNextEnergy } from '../logic/energy';
-import { colorSlotById, decoById, partName, partRarity, isColorId } from '../data/parts';
+import { partName, partRarity } from '../data/parts';
 import { GRASS_OKAWARI_COST } from '../data/coins';
-import type { HorseLook, DecoSlot } from '../types';
+import type { Horse } from '../types';
 import HorseView from '../components/HorseView';
 import GrassScene from '../components/GrassScene';
 import GrassRoom from '../components/GrassRoom';
@@ -13,26 +13,10 @@ import Icon from '../components/Icon';
 import PartThumb from '../components/PartThumb';
 import { usePrefersReducedMotion } from '../hooks';
 import SkillBook from '../components/SkillBook';
+import { skillOf } from '../logic/skill';
 import styles from './Grass.module.css';
 
 type Phase = 'ready' | 'searching' | 'reveal';
-
-// Build the appearing horse FROM the drawn parts (RACE_V2 §11.1): a drawn color
-// paints its slot, a drawn decoration is equipped, and un-drawn slots stay base.
-// So the horse that runs up is exactly what the reward cards show.
-function makeWildHorse(parts: SpawnedPart[]): HorseLook {
-  const decos: Partial<Record<DecoSlot, string>> = {};
-  const colors: HorseLook['colors'] = { body: '', mane: '', hoof: '' };
-  for (const p of parts) {
-    if (isColorId(p.id)) {
-      colors[colorSlotById[p.id]] = p.id;
-    } else {
-      const slot = decoById[p.id]?.slot;
-      if (slot && !decos[slot]) decos[slot] = p.id;
-    }
-  }
-  return { name: '', colors, decos };
-}
 
 function fmt(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -57,7 +41,7 @@ export default function Grass() {
   const [now, setNow] = useState(() => Date.now());
   const [phase, setPhase] = useState<Phase>('ready');
   const [reward, setReward] = useState<SpawnedPart[]>([]);
-  const [wild, setWild] = useState<HorseLook | null>(null);
+  const [wild, setWild] = useState<Horse | null>(null); // 仲間になったウマ
   const [revealed, setRevealed] = useState(false); // 登場演出が終わってから確認欄を出す
   const [bookOpen, setBookOpen] = useState(false); // 固有スキル図鑑
   const [bonus, setBonus] = useState(0); // grass first-of-day coin bonus toast
@@ -80,7 +64,8 @@ export default function Grass() {
   const state = { energy, energyUpdatedAt };
   const stock = normalizeEnergy(state, now).energy;
   const countdown = useMemo(() => fmt(msUntilNextEnergy(state, now)), [energy, energyUpdatedAt, now]);
-  const available = stock > 0;
+  const boxFull = horseCount >= maxHorses;
+  const available = stock > 0 && !boxFull; // 箱が満杯なら草むらに行けない
 
   // 昼夜サイクル（草むらは実時計で1時間かけて一周。reduced は昼で固定）。
   const dn = sampleDayNight(reduced ? 0 : clockPhase(now, 3_600_000));
@@ -97,7 +82,7 @@ export default function Grass() {
         return;
       }
       setReward(res.parts);
-      setWild(makeWildHorse(res.parts));
+      setWild(res.horse);
       setPhase('reveal');
       // reduced motion では登場演出（runIn）が無いので、すぐ確認欄を出す。
       if (reduced) setRevealed(true);
@@ -143,7 +128,7 @@ export default function Grass() {
         }`}
         onClick={onTap}
         disabled={!available || phase !== 'ready'}
-        aria-label={available ? '草むらをタップしてウマを探す' : '次のチャージまで待つ'}
+        aria-label={boxFull ? 'ボックスがいっぱい' : available ? '草むらをタップしてウマを探す' : '次のチャージまで待つ'}
       >
         <GrassScene d={dn} reduced={reduced} />
 
@@ -161,6 +146,12 @@ export default function Grass() {
               <HorseView horse={wild} size={200} shadow />
             </div>
           </>
+        ) : boxFull ? (
+          // ボックスが満杯：新しいウマを迎えられない。
+          <div className={`${styles.hint} ${isDark ? styles.nightText : ''}`}>
+            <p>ボックスがいっぱい！</p>
+            <p className={styles.hintSub}>マイウマで引退させると草むらに行けるよ</p>
+          </div>
         ) : available ? (
           // ストック有り：タップを促す（外を眺める窓の中央に軽く重ねる）。
           <div className={`${styles.hint} ${isDark ? styles.nightText : ''}`}>
@@ -201,9 +192,20 @@ export default function Grass() {
         <div className={styles.reward} role="status">
           <button className={styles.rewardClose} onClick={close} aria-label="閉じる">✕</button>
           <div className={styles.rewardTitle}>
-            {reward.length}個 ゲット！
+            {wild ? `${wild.name} が仲間になった！` : 'ゲット！'}
             {stock > 0 && <span className={styles.rewardSub}>あと{stock}個</span>}
           </div>
+          {wild && (
+            <div className={styles.wildSkill}>
+              <span className={styles.wildSkillName}>{skillOf(wild).name}</span>
+              <span className={styles.wildStars}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Icon key={i} name="star" size={11} className={i < skillOf(wild).star ? styles.starOn : styles.starOff} />
+                ))}
+              </span>
+            </div>
+          )}
+          <div className={styles.rewardParts}>パーツ {reward.length}個 ゲット</div>
           <div className={styles.cards}>
             {reward.slice(0, 4).map((p, i) => (
               <div
