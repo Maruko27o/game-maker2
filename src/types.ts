@@ -60,6 +60,9 @@ export type Horse = {
   stats: Stats;
   createdAt: number;
   free?: boolean; // 一体目(0→1)を無料で作った馬。引退時にベース分は付かない（make→retire farm防止）
+  gen2?: boolean; // 個体値厳選アップデート後に生まれた「新世代」のウマ。既存ウマには付かない。
+  //   調整期間中は チーム/レースに入れない（既存ウマが6頭に満たない分だけ埋められる）。
+  //   引退額のベースも小さい（おかわり300→引退の荒稼ぎ防止）。
 };
 
 // The minimum a Horse needs to be *drawn*. Real Horse is assignable to this, and

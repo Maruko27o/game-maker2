@@ -6,6 +6,7 @@ import { styleFor } from '../logic/runStyle';
 import { canApply } from '../logic/training';
 import { RENAME_COST, TEAM_SIZE } from '../data/coins';
 import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRateOf, teamHorses } from '../logic/farm';
+import { canJoinTeam, type JoinCheck } from '../logic/team';
 import { trustedNow } from '../logic/trustedClock';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Horse, Trophy, Badge, TrainingItem, StatKey } from '../types';
@@ -109,6 +110,9 @@ export default function Stable() {
   const farmClaimedAt = useStore((s) => s.farmClaimedAt);
   const claimFarm = useStore((s) => s.claimFarm);
   const retireHorse = useStore((s) => s.retireHorse);
+  const joinTeam = useStore((s) => s.joinTeam);
+  const leaveTeam = useStore((s) => s.leaveTeam);
+  const reorderTeam = useStore((s) => s.reorderTeam);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [view, setView] = useState<View>('detail');
@@ -144,7 +148,6 @@ export default function Stable() {
     [team, horses],
   );
   const others = useMemo(() => horses.filter((h) => !teamSet.has(h.id)), [horses, teamSet]);
-  const ordered = useMemo(() => [...teamMembers, ...others], [teamMembers, others]); // チーム→その他
   const teamCount = teamMembers.length;
   // 牧場収入はチームのウマだけが対象（インフレ防止）。
   const farmRate = useMemo(
@@ -159,6 +162,10 @@ export default function Stable() {
       ? '満タン！回収しよう'
       : `あと${Math.floor(farmToFull / 3600000)}時間${Math.floor((farmToFull % 3600000) / 60000)}分で満タン`;
   const retireVal = selected ? retireValueOf(selected, trophies, badges) : 0;
+  const teamIndex = selected ? (team ?? []).indexOf(selected.id) : -1;
+  const joinCheck: JoinCheck = selected
+    ? canJoinTeam(selected, team ?? [], horses, TEAM_SIZE)
+    : { ok: false, reason: 'full' };
 
   return (
     <div className={styles.page}>
@@ -220,34 +227,66 @@ export default function Stable() {
         </div>
       ) : (
         <>
-          {/* 5×6 ボックス（最大30頭）。先頭がチーム（牧場収入・出走の対象）で枠が光る。 */}
-          <div className={styles.box}>
-            {Array.from({ length: maxHorses }).map((_, i) => {
-              const h = ordered[i];
-              if (!h) {
+          {/* チーム：はっきり囲ったパネルにして「この6頭がチーム」を一目で分かるように。 */}
+          <section className={styles.teamPanel}>
+            <div className={styles.teamHead}>
+              <span className={styles.teamHeadTitle}>
+                <Icon name="trophy" size={15} /> チーム
+              </span>
+              <span className={styles.teamHeadCount}>{teamCount}/{TEAM_SIZE}</span>
+            </div>
+            <p className={styles.teamHeadNote}>レースに出られる・牧場の収入を生むのはこの{TEAM_SIZE}頭だけ</p>
+            <div className={styles.teamGrid}>
+              {Array.from({ length: TEAM_SIZE }).map((_, i) => {
+                const h = teamMembers[i];
+                if (!h) {
+                  return (
+                    <div key={`t-empty-${i}`} className={styles.teamSlotEmpty}>
+                      <span className={styles.teamSlotEmptyMark}>空き</span>
+                    </div>
+                  );
+                }
+                const tc = trophyCount(trophies, h.id);
                 return (
-                  <button key={`empty-${i}`} className={styles.slotEmpty} onClick={() => navigate('/create')} aria-label="ウマを作る">
-                    <span className={styles.slotPlus}>＋</span>
+                  <button key={h.id} className={`${styles.slot} ${styles.slotTeam}`} onClick={() => setOpenId(h.id)}>
+                    <span className={styles.slotOrder}>{i + 1}</span>
+                    <div className={styles.slotThumb}>
+                      <HorseView horse={h} size={64} />
+                      {tc > 0 && <span className={styles.slotTrophy}><Icon name="trophy" size={11} />{tc}</span>}
+                    </div>
+                    <div className={styles.slotName}>{h.name}</div>
                   </button>
                 );
-              }
-              const isTeam = i < teamCount;
-              const tc = trophyCount(trophies, h.id);
-              return (
-                <button key={h.id} className={`${styles.slot} ${isTeam ? styles.slotTeam : ''}`} onClick={() => setOpenId(h.id)}>
-                  {isTeam && <span className={styles.teamTag}>チーム</span>}
-                  <div className={styles.slotThumb}>
-                    <HorseView horse={h} size={64} />
-                    {tc > 0 && <span className={styles.slotTrophy}><Icon name="trophy" size={11} />{tc}</span>}
-                  </div>
-                  <div className={styles.slotName}>{h.name}</div>
+              })}
+            </div>
+          </section>
+
+          {/* ボックス：チーム外のウマ＋空き枠（最大30頭）。 */}
+          <section className={styles.boxPanel}>
+            <div className={styles.boxHead}>
+              <span className={styles.boxHeadTitle}>ボックス</span>
+              <span className={styles.boxHeadCount}>{horses.length}/{maxHorses}</span>
+            </div>
+            <div className={styles.box}>
+              {others.map((h) => {
+                const tc = trophyCount(trophies, h.id);
+                return (
+                  <button key={h.id} className={styles.slot} onClick={() => setOpenId(h.id)}>
+                    <div className={styles.slotThumb}>
+                      <HorseView horse={h} size={64} />
+                      {tc > 0 && <span className={styles.slotTrophy}><Icon name="trophy" size={11} />{tc}</span>}
+                    </div>
+                    <div className={styles.slotName}>{h.name}</div>
+                  </button>
+                );
+              })}
+              {Array.from({ length: Math.max(0, maxHorses - horses.length) }).map((_, i) => (
+                <button key={`empty-${i}`} className={styles.slotEmpty} onClick={() => navigate('/create')} aria-label="ウマを作る">
+                  <span className={styles.slotPlus}>＋</span>
                 </button>
-              );
-            })}
-          </div>
-          <p className={styles.boxCaption}>
-            <span className={styles.boxCaptionMark} /> の付いたウマがチーム（牧場収入・出走の対象／最大{TEAM_SIZE}頭）。並べ替えは今後のアップデートで。
-          </p>
+              ))}
+            </div>
+          </section>
         </>
       )}
 
@@ -305,7 +344,48 @@ export default function Stable() {
                       <CoinIcon size={14} /> 牧場収入 {Math.round(horseFarmRateOf(selected, trophies, badges)).toLocaleString()}／時
                     </span>
                   ) : (
-                    <span className={styles.earnOut}>チーム外のため牧場収入なし</span>
+                    <span className={styles.earnOut}>チーム外のため牧場収入なし・レースに出られません</span>
+                  )}
+                </div>
+
+                {/* チーム編成：入れる/外す＋並び順 */}
+                <div className={styles.teamEdit}>
+                  {teamSet.has(selected.id) ? (
+                    <>
+                      <button
+                        className={styles.teamMove}
+                        disabled={teamIndex <= 0}
+                        onClick={() => reorderTeam(selected.id, -1)}
+                        aria-label="順番を前へ"
+                      >
+                        ◀
+                      </button>
+                      <span className={styles.teamPos}>チーム {teamIndex + 1}番目</span>
+                      <button
+                        className={styles.teamMove}
+                        disabled={teamIndex < 0 || teamIndex >= teamCount - 1}
+                        onClick={() => reorderTeam(selected.id, 1)}
+                        aria-label="順番を後ろへ"
+                      >
+                        ▶
+                      </button>
+                      <button className={styles.teamLeave} onClick={() => leaveTeam(selected.id)}>
+                        チームから外す
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className={styles.teamJoin} disabled={!joinCheck.ok} onClick={() => joinTeam(selected.id)}>
+                        チームに入れる
+                      </button>
+                      {!joinCheck.ok && (
+                        <span className={styles.teamWhy}>
+                          {joinCheck.reason === 'full'
+                            ? `チームは${TEAM_SIZE}頭までです。だれかを外してね。`
+                            : '調整中のため、新しく生まれたウマはまだチームに入れられません。'}
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
 

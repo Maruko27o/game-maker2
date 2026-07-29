@@ -10,6 +10,8 @@ import { styleFor } from '../logic/runStyle';
 import { makeCpu } from '../logic/cpu';
 import { colorById } from '../data/parts';
 import { BADGES } from '../data/badges';
+import { teamHorses } from '../logic/farm';
+import { TEAM_SIZE } from '../data/coins';
 import type { Horse, HorseLook, Badge, Stats } from '../types';
 import { RUN_STYLE_LABEL, STAT_KEYS } from '../types';
 import HorseView from '../components/HorseView';
@@ -211,7 +213,10 @@ function Roulette({ course, player, reduced, onDone }: { course: Course; player:
 export default function Race() {
   const navigate = useNavigate();
   const reduced = usePrefersReducedMotion();
-  const horses = useStore((s) => s.horses);
+  const allHorses = useStore((s) => s.horses);
+  const team = useStore((s) => s.team);
+  // 出走できるのはチームの6頭だけ（個体値厳選アップデート）。
+  const horses = useMemo(() => teamHorses(allHorses, team, TEAM_SIZE), [allHorses, team]);
   const coins = useStore((s) => s.coins);
   const finishNormalRace = useStore((s) => s.finishNormalRace);
   const addCoins = useStore((s) => s.addCoins);
@@ -238,7 +243,9 @@ export default function Race() {
   const [oddsPct, setOddsPct] = useState(0); // odds-calc progress 0..1
   const rewardApplied = useRef(false);
 
-  const player = horses.find((h) => h.id === horseId) ?? null;
+  // 出走中のウマは所持ウマ全体から解決する（レース中にチームを編成し直しても壊れない）。
+  // 「ウマを選ぶ」の一覧だけがチーム限定（horses）。
+  const player = allHorses.find((h) => h.id === horseId) ?? null;
 
   // Price the race off the *real* simulation: run it many times and read the actual
   // win rates, so the odds match the true chances (RACE §odds整合性). Kicked off as
@@ -359,7 +366,8 @@ export default function Race() {
     if (!s) return;
     if (s.kind === 'gp') {
       // A grand prix is in progress — route to it; GrandPrix resumes its own flow.
-      const horse = horses.find((h) => h.id === s.player.id);
+      // 再開時は所持ウマ全体から探す（チーム編成を変えても進行中のレースを捨てない）。
+      const horse = allHorses.find((h) => h.id === s.player.id);
       if (!horse) { setRaceSession(null); return; }
       setHorseId(s.player.id);
       setMode(s.mode);
@@ -450,12 +458,22 @@ export default function Race() {
         {horses.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyEmoji}><Icon name="horse" size={56} /></div>
-            <p>走らせるウマがいません。</p>
-            <button className="btn" onClick={() => navigate('/create')}>ウマを作る</button>
+            {allHorses.length === 0 ? (
+              <>
+                <p>走らせるウマがいません。</p>
+                <button className="btn" onClick={() => navigate('/create')}>ウマを作る</button>
+              </>
+            ) : (
+              <>
+                <p>チームにウマがいません。</p>
+                <p className={styles.emptySub}>レースに出られるのはチームのウマだけです。マイウマでチームに入れてね。</p>
+                <button className="btn" onClick={() => navigate('/stable')}>チームを編成する</button>
+              </>
+            )}
           </div>
         ) : (
           <>
-            <h2 className={styles.h2}>ウマを選ぶ</h2>
+            <h2 className={styles.h2}>ウマを選ぶ（チーム）</h2>
             <div className={styles.pickRow}>
               {horses.map((h) => (
                 <button key={h.id} className={`${styles.pickCard} ${horseId === h.id ? styles.pickSel : ''}`} onClick={() => setHorseId(h.id)}>

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { horseFarmRate, farmRatePerHour, farmAccrued, retireValue, retireValueOf, teamHorses } from './farm';
-import { FARM_CAP_HOURS, FARM_BASE_PER_HORSE, FARM_PER_STAT, FARM_TROPHY_RATE, FARM_BADGE_RATE, FARM_PER_HORSE_CAP, RETIRE_BASE } from '../data/coins';
+import { FARM_CAP_HOURS, FARM_BASE_PER_HORSE, FARM_PER_STAT, FARM_TROPHY_RATE, FARM_BADGE_RATE, FARM_PER_HORSE_CAP, RETIRE_BASE, RETIRE_BASE_GEN2, GRASS_OKAWARI_COST } from '../data/coins';
 import type { Horse, Trophy, Badge } from '../types';
 
 const H = (id: string, total: number): Horse => ({
@@ -92,6 +92,17 @@ describe('retire value (farm-safe)', () => {
     expect(retireValue(40, 0, 5)).toBeGreaterThan(retireValue(40, 0, 0)); // badges
     // a maxed, trophied horse is worth several times a fresh one
     expect(retireValue(48, 3, 4)).toBeGreaterThan(retireValue(40, 0, 0) * 3);
+  });
+
+  it('新世代(gen2)はベースが小さく、おかわり(300)→引退の荒稼ぎが黒字にならない', () => {
+    const legacy = H('a', 40);
+    const gen2 = { ...H('b', 40), gen2: true };
+    expect(retireValueOf(legacy, [], [])).toBe(RETIRE_BASE); // 既存ウマは据え置き
+    expect(retireValueOf(gen2, [], [])).toBe(RETIRE_BASE_GEN2); // 新世代は50
+    expect(retireValueOf(gen2, [], [])).toBeLessThan(GRASS_OKAWARI_COST); // 50 < 300
+    // 育てた分・トロフィー・バッジの加算は据え置き（投資した馬の価値は保たれる）
+    const trained = { ...H('c', 48), gen2: true };
+    expect(retireValueOf(trained, [T('c')], [])).toBeGreaterThan(retireValueOf(gen2, [], []));
   });
 
   it('a free (0→1) horse retires without the base — closes make-free→retire loop', () => {

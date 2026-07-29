@@ -46,6 +46,7 @@ import { styleFor } from './logic/runStyle';
 import { runTournament, playerSnapshot } from './logic/arena';
 import { periodId, ARENA_ENTRY_FEE, ARENA_MODE, ARENA_CATCHUP_MAX, ARENA_RESULTS_CAP } from './data/arena';
 import { farmRatePerHour, farmAccrued, retireValueOf, teamHorses } from './logic/farm';
+import { addToTeam, removeFromTeam, moveInTeam, normalizeTeam } from './logic/team';
 import { trustedNow } from './logic/trustedClock';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
@@ -312,9 +313,8 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   const streakRuleResetDone = !!d.streakRuleResetDone;
   // チーム編成（個体値厳選アップデートの土台）。保存値があれば実在するウマIDだけ採用、
   // 無ければ既存の所持ウマ全員をチームに（上限 maxHorses）。この時点では表示・挙動に影響しない。
-  const horseIds = new Set(horses.map((h) => h.id));
   const team = Array.isArray(d.team)
-    ? (d.team as unknown[]).filter((x): x is string => typeof x === 'string' && horseIds.has(x)).slice(0, TEAM_SIZE)
+    ? normalizeTeam(d.team.filter((x): x is string => typeof x === 'string'), horses, TEAM_SIZE)
     : horses.map((h) => h.id).slice(0, TEAM_SIZE);
 
   if (d.version === 6) {
@@ -531,6 +531,12 @@ type Store = SaveData & {
   claimFarm: () => number;
   /** Retire a horse for coins (and free its stable slot). Returns coins granted. */
   retireHorse: (id: string) => number;
+  /** チーム（出走・牧場収入の対象／最大 TEAM_SIZE 頭）に入れる。入れられなければ false。 */
+  joinTeam: (id: string) => boolean;
+  /** チームから外してボックスに戻す。 */
+  leaveTeam: (id: string) => boolean;
+  /** チーム内の並び順を1つ動かす（-1=前へ / +1=後ろへ）。 */
+  reorderTeam: (id: string, dir: -1 | 1) => boolean;
   resetAll: () => void;
 };
 
@@ -685,10 +691,16 @@ export const useStore = create<Store>((set, get) => {
     },
 
     addHorse: (h, stats, free) => {
-      if (get().horses.length >= get().maxHorses) return null;
+      const s = get();
+      if (s.horses.length >= s.maxHorses) return null;
       const id = newId();
-      const horse: Horse = { ...h, id, stats, createdAt: Date.now(), ...(free ? { free: true } : {}) };
-      commit({ horses: [...get().horses, horse] });
+      // アップデート後に生まれたウマは「新世代」。既存ウマには付かないので、
+      // 既存ウマの強さ・引退額・チーム編成は一切変わらない。
+      const horse: Horse = { ...h, id, stats, createdAt: Date.now(), gen2: true, ...(free ? { free: true } : {}) };
+      const horses = [...s.horses, horse];
+      // 空きがあり資格があれば自動でチームへ（ウマ0頭の新規プレイヤーが走れるように）。
+      const team = addToTeam(horse, s.team ?? [], horses, TEAM_SIZE);
+      commit({ horses, team });
       return horse;
     },
 
@@ -1085,11 +1097,39 @@ export const useStore = create<Store>((set, get) => {
       commit({
         coins: s.coins + value,
         horses: s.horses.filter((h) => h.id !== id),
+        team: removeFromTeam(id, s.team ?? []), // チームからも外す（幽霊エントリを残さない）
         trophies: s.trophies.filter((t) => t.horseId !== id),
         badges: s.badges.filter((b) => b.horseId !== id),
         avatarHorseId: s.avatarHorseId === id ? null : s.avatarHorseId,
       });
       return value;
+    },
+
+    // --- チーム編成（出走・牧場収入の対象） --------------------------------
+    joinTeam: (id) => {
+      const s = get();
+      const horse = s.horses.find((h) => h.id === id);
+      if (!horse) return false;
+      const next = addToTeam(horse, s.team ?? [], s.horses, TEAM_SIZE);
+      if (next === (s.team ?? [])) return false;
+      commit({ team: next });
+      return true;
+    },
+
+    leaveTeam: (id) => {
+      const s = get();
+      const next = removeFromTeam(id, s.team ?? []);
+      if (next.length === (s.team ?? []).length) return false;
+      commit({ team: next });
+      return true;
+    },
+
+    reorderTeam: (id, dir) => {
+      const s = get();
+      const next = moveInTeam(id, s.team ?? [], dir);
+      if (next === (s.team ?? [])) return false;
+      commit({ team: next });
+      return true;
     },
 
     resetAll: () => commit({ ...freshSave() }),

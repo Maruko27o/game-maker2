@@ -707,21 +707,6 @@
   box-shadow: 0 0 0 1px var(--gold) inset;
   background: linear-gradient(180deg, #fff6df, #ffeec2);
 }
-.teamTag {
-  position: absolute;
-  top: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--gold);
-  color: #5a3b00;
-  font-size: 8px;
-  font-weight: 900;
-  line-height: 1;
-  padding: 2px 4px;
-  border-radius: 6px;
-  white-space: nowrap;
-  z-index: 1;
-}
 .slotThumb {
   position: relative;
   background: linear-gradient(180deg, #d7ecb4, #bfe08a);
@@ -777,21 +762,6 @@
   line-height: 1;
   font-weight: 800;
 }
-.boxCaption {
-  font-size: 11px;
-  color: var(--ink-soft);
-  margin: 9px 2px 0;
-  line-height: 1.5;
-}
-.boxCaptionMark {
-  display: inline-block;
-  vertical-align: -2px;
-  width: 13px;
-  height: 13px;
-  border-radius: 4px;
-  border: 2px solid var(--gold);
-  background: linear-gradient(180deg, #fff6df, #ffeec2);
-}
 .earnRow {
   margin-top: 6px;
   font-size: 13px;
@@ -805,4 +775,158 @@
 }
 .earnOut {
   color: var(--ink-soft);
+}
+
+/* ===== チーム：はっきり囲ったパネル（出走・牧場収入の対象6頭） ===== */
+.teamPanel {
+  border: 3px solid var(--gold);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff7e2, #ffeec6);
+  padding: 8px 8px 10px;
+  box-shadow: 0 3px 0 #c8912a, 0 0 0 2px #fff8e6 inset;
+}
+.teamHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.teamHeadTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #7a4f00;
+}
+.teamHeadCount {
+  font-size: 13px;
+  font-weight: 900;
+  color: #7a4f00;
+  background: rgba(255, 255, 255, 0.75);
+  border: 2px solid var(--gold);
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+.teamHeadNote {
+  margin: 0 0 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #96702c;
+  line-height: 1.4;
+}
+.teamGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+}
+.teamSlotEmpty {
+  border: 2px dashed #d8b25a;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.45);
+  aspect-ratio: 1 / 1.28;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+.teamSlotEmptyMark {
+  font-size: 10px;
+  font-weight: 800;
+  color: #b98f3c;
+}
+.slotOrder {
+  position: absolute;
+  top: -6px;
+  left: -4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #5a3b00;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 15px;
+  text-align: center;
+  border: 1.5px solid #fff6df;
+  z-index: 1;
+}
+
+/* ===== ボックス（チーム外＋空き枠） ===== */
+.boxPanel {
+  margin-top: 4px;
+}
+.boxHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 6px;
+}
+.boxHeadTitle {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.boxHeadCount {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+
+/* ===== 詳細モーダルのチーム編成 ===== */
+.teamEdit {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.teamMove {
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 3px 10px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.teamMove:disabled {
+  opacity: 0.4;
+}
+.teamPos {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.teamJoin {
+  background: var(--gold);
+  border: 2px solid #b8871f;
+  border-radius: 9px;
+  padding: 5px 12px;
+  font-weight: 900;
+  color: #4a3000;
+  box-shadow: 0 2px 0 #b8871f;
+}
+.teamJoin:disabled {
+  background: var(--panel);
+  border-color: var(--border);
+  color: var(--ink-soft);
+  box-shadow: none;
+  opacity: 0.6;
+}
+.teamLeave {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 5px 10px;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.teamWhy {
+  flex: 1 1 100%;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.5;
 }

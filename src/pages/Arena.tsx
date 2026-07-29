@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { useAuth, enterArena, loadArenaPool, loadMyArenaEntry } from '../cloud';
@@ -6,6 +6,8 @@ import { COURSES } from '../data/courses';
 import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { playerSnapshot, snapToEntrant, fieldLooks } from '../logic/arena';
+import { teamHorses } from '../logic/farm';
+import { TEAM_SIZE } from '../data/coins';
 import {
   ARENA_ENTRY_FEE,
   ARENA_ADVANCE,
@@ -78,7 +80,10 @@ function RoundBoard({ rr }: { rr: ArenaRoundResult }) {
 export default function Arena({ onExit }: { onExit: () => void }) {
   const navigate = useNavigate();
   const reduced = usePrefersReducedMotion();
-  const horses = useStore((s) => s.horses);
+  const allHorses = useStore((s) => s.horses);
+  const team = useStore((s) => s.team);
+  // 対戦に出せるのもチームの6頭だけ（個体値厳選アップデート）。
+  const horses = useMemo(() => teamHorses(allHorses, team, TEAM_SIZE), [allHorses, team]);
   const coins = useStore((s) => s.coins);
   const arena = useStore((s) => s.arena);
   const arenaEnterManual = useStore((s) => s.arenaEnterManual);
@@ -102,7 +107,8 @@ export default function Arena({ onExit }: { onExit: () => void }) {
   const [, setTick] = useState(0);
 
   const selected: Horse | undefined = horses.find((h) => h.id === horseId) ?? horses[0];
-  const autoHorse = st.auto ? horses.find((h) => h.id === st.auto!.horseId) : undefined;
+  // 自動エントリー中のウマは所持ウマ全体から解決（チーム編成を変えても表示が消えない）。
+  const autoHorse = st.auto ? allHorses.find((h) => h.id === st.auto!.horseId) : undefined;
 
   // Resolve closed entries + run auto catch-up on mount (and after enabling auto).
   const syncing = useRef(false);
