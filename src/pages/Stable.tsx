@@ -110,6 +110,7 @@ export default function Stable() {
   const farmClaimedAt = useStore((s) => s.farmClaimedAt);
   const claimFarm = useStore((s) => s.claimFarm);
   const retireHorse = useStore((s) => s.retireHorse);
+  const toggleLock = useStore((s) => s.toggleLock);
   const joinTeam = useStore((s) => s.joinTeam);
   const leaveTeam = useStore((s) => s.leaveTeam);
   const reorderTeam = useStore((s) => s.reorderTeam);
@@ -252,6 +253,7 @@ export default function Stable() {
                     <span className={styles.slotOrder}>{i + 1}</span>
                     <div className={styles.slotThumb}>
                       <HorseView horse={h} size={64} />
+                      {h.locked && <span className={styles.slotLock} aria-label="ロック中"><Icon name="lock" size={9} /></span>}
                       {tc > 0 && <span className={styles.slotTrophy}><Icon name="trophy" size={11} />{tc}</span>}
                     </div>
                     <div className={styles.slotName}>{h.name}</div>
@@ -274,6 +276,7 @@ export default function Stable() {
                   <button key={h.id} className={styles.slot} onClick={() => setOpenId(h.id)}>
                     <div className={styles.slotThumb}>
                       <HorseView horse={h} size={64} />
+                      {h.locked && <span className={styles.slotLock} aria-label="ロック中"><Icon name="lock" size={9} /></span>}
                       {tc > 0 && <span className={styles.slotTrophy}><Icon name="trophy" size={11} />{tc}</span>}
                     </div>
                     <div className={styles.slotName}>{h.name}</div>
@@ -396,6 +399,16 @@ export default function Stable() {
                   <BadgeRack badges={badges.filter((b) => b.horseId === selected.id)} />
                 </div>
 
+                {/* お気に入りロック：大切なウマの誤引退を防ぐ */}
+                <button
+                  className={`${styles.lockBtn} ${selected.locked ? styles.lockBtnOn : ''}`}
+                  onClick={() => toggleLock(selected.id)}
+                  aria-pressed={!!selected.locked}
+                >
+                  <Icon name="lock" size={14} />
+                  {selected.locked ? 'ロック中（引退できません）' : 'ロックする（引退を防ぐ）'}
+                </button>
+
                 {confirmDelete ? (
                   <div className={styles.confirm}>
                     <p className={styles.confirmText}>
@@ -438,7 +451,12 @@ export default function Stable() {
                       </button>
                     </div>
                     <div className={styles.actions}>
-                      <button className="btn secondary" onClick={() => setConfirmDelete(true)}>
+                      <button
+                        className="btn secondary"
+                        disabled={!!selected.locked}
+                        title={selected.locked ? 'ロック中は引退できません' : ''}
+                        onClick={() => setConfirmDelete(true)}
+                      >
                         <Icon name="leaf" size={14} /> 引退（<CoinIcon size={13} /> {retireVal.toLocaleString()}）
                       </button>
                       <button className="btn neutral" onClick={close}>

@@ -531,6 +531,8 @@ type Store = SaveData & {
   claimFarm: () => number;
   /** Retire a horse for coins (and free its stable slot). Returns coins granted. */
   retireHorse: (id: string) => number;
+  /** お気に入りロックを切り替える。ロック中のウマは引退できない。戻り値は切替後の状態。 */
+  toggleLock: (id: string) => boolean;
   /** チーム（出走・牧場収入の対象／最大 TEAM_SIZE 頭）に入れる。入れられなければ false。 */
   joinTeam: (id: string) => boolean;
   /** チームから外してボックスに戻す。 */
@@ -1093,6 +1095,7 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const horse = s.horses.find((h) => h.id === id);
       if (!horse) return 0;
+      if (horse.locked) return 0; // お気に入りロック中は引退できない（誤タップ対策）
       const value = retireValueOf(horse, s.trophies, s.badges);
       commit({
         coins: s.coins + value,
@@ -1103,6 +1106,15 @@ export const useStore = create<Store>((set, get) => {
         avatarHorseId: s.avatarHorseId === id ? null : s.avatarHorseId,
       });
       return value;
+    },
+
+    toggleLock: (id) => {
+      const s = get();
+      const horse = s.horses.find((h) => h.id === id);
+      if (!horse) return false;
+      const next = !horse.locked;
+      commit({ horses: s.horses.map((h) => (h.id === id ? { ...h, locked: next } : h)) });
+      return next;
     },
 
     // --- チーム編成（出走・牧場収入の対象） --------------------------------

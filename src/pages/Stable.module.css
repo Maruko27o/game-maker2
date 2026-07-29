@@ -930,3 +930,38 @@
   color: var(--ink-soft);
   line-height: 1.5;
 }
+
+/* ===== お気に入りロック（誤引退の防止） ===== */
+.slotLock {
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink-soft);
+}
+.lockBtn {
+  margin-top: 8px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.lockBtnOn {
+  background: linear-gradient(180deg, #fff3d4, #ffe6ad);
+  border-color: var(--gold);
+  color: #7a4f00;
+}
