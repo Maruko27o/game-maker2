@@ -10,6 +10,7 @@ import {
   FARM_PER_HORSE_CAP,
   FARM_CAP_HOURS,
   RETIRE_BASE,
+  RETIRE_BASE_GEN2,
   RETIRE_PER_TRAINED,
   RETIRE_PER_TROPHY,
   RETIRE_PER_BADGE,
@@ -78,12 +79,15 @@ export function retireValue(total: number, trophyCount: number, badgeCount: numb
 }
 
 /** Horse を直接受け取る便利版（UI/ストアから）。無料で作った馬(free)はベース分を
- *  付けない（無料作成→引退の荒稼ぎ loop を封じる）。 */
+ *  付けない（無料作成→引退の荒稼ぎ loop を封じる）。新世代(gen2)はベースが小さい
+ *  （おかわり300→引退の荒稼ぎ防止）。育成・トロフィー・バッジ分は据え置き。 */
 export function retireValueOf(horse: Horse, trophies: Trophy[], badges: Badge[]): number {
   const v = retireValue(
     statTotal(horse.stats),
     trophies.filter((t) => t.horseId === horse.id).length,
     badges.filter((b) => b.horseId === horse.id).length,
   );
-  return horse.free ? Math.max(0, v - RETIRE_BASE) : v;
+  if (horse.free) return Math.max(0, v - RETIRE_BASE); // 無料作成 → ベースなし
+  if (horse.gen2) return v - RETIRE_BASE + RETIRE_BASE_GEN2; // 新世代 → 小さいベース
+  return v;
 }

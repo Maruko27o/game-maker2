@@ -63,6 +63,10 @@ export const CREATE_COST = 1000; // 新しいウマを1頭つくるのに必要�
 // 余った馬をコインに換えて馬房を空ける。育てた分（40超の強化）とトロフィー・バッジ＝
 // 「投資」に価値を置き、作りたてを量産しても稼げない（作成1000＞引退ベース500で必ず赤字）。
 export const RETIRE_BASE = 500; // 作りたて（未強化・無冠）でも最低これだけ
+// 新世代（gen2）のベースは小さくする。草むらの「おかわり」(GRASS_OKAWARI_COST=300) で
+// パーツを買って作って即引退…が黒字になる荒稼ぎループを閉じるため（50 < 300）。
+// 育成・トロフィー・バッジ分の加算は据え置きなので、投資した馬の価値は保たれる。
+export const RETIRE_BASE_GEN2 = 50;
 export const RETIRE_PER_TRAINED = 150; // 合計40を超えて強化した1につき
 export const RETIRE_PER_TROPHY = 700; // トロフィー1個につき
 export const RETIRE_PER_BADGE = 40; // バッジ1個につき

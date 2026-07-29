@@ -104,6 +104,11 @@
   margin: 0;
   font-weight: 800;
 }
+.emptySub {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
 .pickRow {
   display: flex;
   gap: 8px;
