@@ -30,6 +30,7 @@ import { ENERGY_CAP, spendEnergy } from './logic/energy';
 import { rescaleTo40, mulberry32, hashString } from './logic/stats';
 import { rollSkill, skillForHorseId } from './logic/skill';
 import { rollAptitude, aptitudeForHorseId } from './logic/aptitude';
+import { makeWildHorse } from './logic/wild';
 import { applyReroll, rerollState, canReroll } from './logic/reroll';
 import { applyTraining } from './logic/training';
 import { evaluateBadges } from './logic/badges';
@@ -431,7 +432,9 @@ function newId(): string {
 }
 
 export type SpawnedPart = { id: string; isNew: boolean };
-export type SpawnResult = { parts: SpawnedPart[]; energyLeft: number } | null;
+// 草むらの結果：集まったパーツと、そのまま仲間になったウマ。
+// ボックスが満杯のときは召喚できない（horse は null にはならず、spawn 自体が失敗する）。
+export type SpawnResult = { parts: SpawnedPart[]; horse: Horse; energyLeft: number } | null;
 
 type Store = SaveData & {
   migrated: boolean; // true once, right after a save upgrade (for a one-time notice)
@@ -678,6 +681,8 @@ export const useStore = create<Store>((set, get) => {
 
     doSpawn: (rng = Math.random) => {
       const now = Date.now();
+      // ボックスが満杯なら召喚できない（ストックも消費しない）。
+      if (get().horses.length >= get().maxHorses) return null;
       const spent = spendEnergy({ energy: get().energy, energyUpdatedAt: get().energyUpdatedAt }, now);
       if (!spent) return null;
 
@@ -701,8 +706,25 @@ export const useStore = create<Store>((set, get) => {
         grassBanked: Math.max(t.grassBanked, gCycles),
         bank: t.bank + newlyBanked(grassSpawns, t.grassBanked, GRASS_TASK_EVERY, GRASS_TASK_REWARD),
       };
-      commit({ owned, energy: spent.energy, energyUpdatedAt: spent.energyUpdatedAt, tasks });
-      return { parts, energyLeft: spent.energy };
+      // 現れたウマがそのままボックスへ。姿は引いたパーツどおり（色は生まれつきで固定、
+      // 飾りはあとから着せ替え可）。ステータスは合計40のランダム配分。
+      const wild = makeWildHorse(ids, rng);
+      const id = newId();
+      const horse: Horse = {
+        name: wild.name,
+        colors: wild.colors,
+        decos: wild.decos,
+        stats: wild.stats,
+        id,
+        createdAt: now,
+        gen2: true,
+        skill: rollSkill(mulberry32(hashString(`skill:${id}`))).id,
+        apt: rollAptitude(mulberry32(hashString(`apt:${id}`))),
+      };
+      const horses = [...get().horses, horse];
+      const team = addToTeam(horse, get().team ?? [], horses, TEAM_SIZE);
+      commit({ owned, energy: spent.energy, energyUpdatedAt: spent.energyUpdatedAt, tasks, horses, team });
+      return { parts, horse, energyLeft: spent.energy };
     },
 
     addHorse: (h, stats, free) => {

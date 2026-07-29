@@ -419,3 +419,34 @@
   line-height: 1;
   flex: 0 0 auto;
 }
+
+/* 仲間になったウマの固有スキル（草むらの結果パネル） */
+.wildSkill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 2px 0 4px;
+}
+.wildSkillName {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.wildStars {
+  display: inline-flex;
+  gap: 1px;
+}
+.starOn {
+  color: var(--gold);
+}
+.starOff {
+  color: rgba(0, 0, 0, 0.16);
+}
+.rewardParts {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  text-align: center;
+  margin-bottom: 4px;
+}
