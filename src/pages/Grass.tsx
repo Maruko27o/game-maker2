@@ -14,6 +14,9 @@ import PartThumb from '../components/PartThumb';
 import { usePrefersReducedMotion } from '../hooks';
 import SkillBook from '../components/SkillBook';
 import { skillOf } from '../logic/skill';
+import { aptitudeOf } from '../logic/aptitude';
+import { GRADE_STYLE } from '../data/aptitude';
+import { COURSES } from '../data/courses';
 import styles from './Grass.module.css';
 
 type Phase = 'ready' | 'searching' | 'reveal';
@@ -203,6 +206,25 @@ export default function Grass() {
                   <Icon key={i} name="star" size={11} className={i < skillOf(wild).star ? styles.starOn : styles.starOff} />
                 ))}
               </span>
+            </div>
+          )}
+          {wild && (
+            <div className={styles.wildApt}>
+              {COURSES.map((c) => {
+                const g = aptitudeOf(wild)[c.id];
+                const st = GRADE_STYLE[g];
+                return (
+                  <span key={c.id} className={styles.wildAptCell} title={`${c.name} ${g}`}>
+                    <span className={styles.wildAptName}>{c.name.slice(0, 4)}</span>
+                    <span
+                      className={styles.wildAptGrade}
+                      style={{ background: st.background, color: st.ink, borderColor: st.border }}
+                    >
+                      {g}
+                    </span>
+                  </span>
+                );
+              })}
             </div>
           )}
           <div className={styles.rewardParts}>パーツ {reward.length}個 ゲット</div>

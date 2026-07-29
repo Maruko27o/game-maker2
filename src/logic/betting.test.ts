@@ -38,7 +38,7 @@ describe('fmtOdds (小数第2位まで・切り捨て、四捨五入しない)',
 describe('win odds table', () => {
   it('within clamp, unique popularity, favourite is strongest, ~20% takeout', () => {
     const rows = raceOdds(field(), COURSES[0]);
-    for (const r of rows) expect(r.odds).toBeGreaterThanOrEqual(1.1);
+    for (const r of rows) expect(r.odds).toBeGreaterThanOrEqual(1.0); // 下限は元返し(1.0倍)
     expect([...rows.map((r) => r.pop)].sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
     expect(rows.reduce((a, b) => (a.odds < b.odds ? a : b)).idx).toBe(0);
     const implied = rows.reduce((n, r) => n + 1 / r.odds, 0);
@@ -63,7 +63,7 @@ describe('market probabilities (Harville)', () => {
     ];
     for (const [k, sel] of cases) {
       const o = oddsFor(k, sel, p);
-      expect(o).toBeGreaterThanOrEqual(1.1);
+      expect(o).toBeGreaterThanOrEqual(1.0); // 下限は元返し(1.0倍)
       expect(o).toBeLessThanOrEqual(MAX_ODDS);
     }
   });
@@ -135,7 +135,7 @@ describe('odds are realistic vs win probability', () => {
       const f = field();
       const p = winProbs(f, c);
       const rows = raceOdds(f, c);
-      if (rows.some((r) => r.odds <= 1.1 || r.odds >= MAX_ODDS)) continue; // skip clamped edges
+      if (rows.some((r) => r.odds <= 1.0 || r.odds >= MAX_ODDS)) continue; // skip clamped edges
       for (const r of rows) expect(r.odds).toBeCloseTo(0.8 / p[r.idx], 2);
       const book = rows.reduce((n, r) => n + 1 / r.odds, 0);
       expect(book).toBeCloseTo(1.25, 2); // 1 / 0.8
@@ -161,5 +161,86 @@ describe('odds are realistic vs win probability', () => {
     const onSpeed = raceOdds(g, courseById('circuit'))[0].odds; // spd-weighted
     const onStamina = raceOdds(g, courseById('sand'))[0].odds; // sta-weighted
     expect(onSpeed).toBeLessThan(onStamina); // sprinter is favoured on the speed course
+  });
+});
+
+// ---- 期待値の監査（コイン増殖バグの再発防止） --------------------------------
+// どの馬券種でも「必ず儲かる買い目」があってはいけない。
+// 期待値 = 的中確率 × 倍率。控除率0.8なので、公正倍率が下限(1.0)を上回る限り
+// 期待値は 0.8 で一定。的中率が非常に高い買い目（人気馬の複勝など）では公正倍率が
+// 1.0 を割り込み、下限に張り付く。このとき 期待値 = 的中確率 × 1.0 ≤ 1 でなければ
+// ならない。以前は下限が 1.1 だったため、複勝で期待値 1.07（＝必ず儲かる）になっていた。
+describe('bet EV audit（必ず儲かる買い目が無いこと）', () => {
+  const kinds: Bet['kind'][] = ['win', 'place', 'quinella', 'wide', 'trifecta'];
+
+  function evOf(kind: Bet['kind'], sel: number[], p: number[]): number {
+    return selProb(kind, sel, p) * oddsFor(kind, sel, p);
+  }
+
+  it('どんな確率分布でも、どの馬券種も期待値が1を超えない', () => {
+    // 一強〜横一線まで、極端な分布を含めて総当たりで確認する。
+    const fields: number[][] = [
+      [0.90, 0.04, 0.02, 0.015, 0.01, 0.007, 0.005, 0.003], // 超一強
+      [0.60, 0.20, 0.08, 0.05, 0.03, 0.02, 0.015, 0.005],
+      [0.30, 0.22, 0.16, 0.12, 0.09, 0.06, 0.03, 0.02],
+      [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125], // 横一線
+      [0.5, 0.45, 0.02, 0.01, 0.008, 0.006, 0.004, 0.002], // 2強
+    ];
+    for (const p of fields) {
+      for (let i = 0; i < p.length; i++) {
+        for (const k of ['win', 'place'] as Bet['kind'][]) {
+          expect(evOf(k, [i], p), `${k} #${i}`).toBeLessThanOrEqual(1.0000001);
+        }
+        for (let j = 0; j < p.length; j++) {
+          if (i === j) continue;
+          for (const k of ['quinella', 'wide'] as Bet['kind'][]) {
+            expect(evOf(k, [i, j], p), `${k} #${i}-${j}`).toBeLessThanOrEqual(1.0000001);
+          }
+        }
+      }
+      // 3連単は本命どころだけ確認（全順列は重い）
+      expect(evOf('trifecta', [0, 1, 2], p)).toBeLessThanOrEqual(1.0000001);
+    }
+  });
+
+  it('公正倍率が下限を上回る買い目では、期待値はきっちり控除率(0.8)になる', () => {
+    const p = [0.30, 0.22, 0.16, 0.12, 0.09, 0.06, 0.03, 0.02];
+    for (const k of kinds) {
+      const sel = k === 'win' || k === 'place' ? [7] : k === 'trifecta' ? [7, 6, 5] : [7, 6];
+      expect(evOf(k, sel, p)).toBeCloseTo(0.8, 6);
+    }
+  });
+
+  it('確率の整合：複勝 ≧ 単勝、ワイド ≧ 馬連', () => {
+    const p = [0.30, 0.22, 0.16, 0.12, 0.09, 0.06, 0.03, 0.02];
+    for (let i = 0; i < p.length; i++) {
+      expect(selProb('place', [i], p)).toBeGreaterThanOrEqual(p[i] - 1e-9);
+      for (let j = 0; j < p.length; j++) {
+        if (i === j) continue;
+        expect(selProb('wide', [i, j], p)).toBeGreaterThanOrEqual(selProb('quinella', [i, j], p) - 1e-9);
+      }
+    }
+  });
+
+  it('3連単の全順列の確率を足すと1になる（Harvilleの正規化）', () => {
+    const p = [0.30, 0.22, 0.16, 0.12, 0.09, 0.06, 0.03, 0.02];
+    let sum = 0;
+    for (let a = 0; a < 8; a++) for (let b = 0; b < 8; b++) for (let c = 0; c < 8; c++) {
+      if (a === b || a === c || b === c) continue;
+      sum += selProb('trifecta', [a, b, c], p);
+    }
+    expect(sum).toBeCloseTo(1, 6);
+  });
+});
+
+describe('fmtOdds（表示）', () => {
+  it('1000倍未満は小数第2位まで・切り捨て', () => {
+    expect(fmtOdds(1.4837)).toBe('1.48');
+    expect(fmtOdds(2)).toBe('2.00');
+    expect(fmtOdds(999.999)).toBe('999.99');
+  });
+  it('1000倍以上は小数を出さず桁区切りにする', () => {
+    expect(fmtOdds(1000)).toBe('1,000');
+    expect(fmtOdds(32050.7)).toBe('32,050');
   });
 });

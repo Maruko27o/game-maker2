@@ -30,7 +30,8 @@ export type Entrant = {
   apt?: Grade; // このコースの適性 C/B/A/S。無ければ B 相当（効果なし）。
 };
 
-export type RunnerFrame = { s: number; d: number; state: RunnerState; rank: number };
+// sp はスタミナの残り（0..1）。レース画面のスタミナメーターに使う。
+export type RunnerFrame = { s: number; d: number; state: RunnerState; rank: number; sp: number };
 export type SimFrame = { t: number; runners: RunnerFrame[] };
 
 export type Obstacle = { s: number; kind: 'hedge' | 'bamboo' | 'water' };
@@ -94,7 +95,7 @@ const LUCK = 0.16;
 //   ・強い馬が必ず勝つわけではない（本命が飛ぶ余地が生まれる）
 //   ・平均するとゼロなので、走破時計や馬場の速さは変わらない
 // という3つを同時に満たす。倍率の帯（本命2〜5倍／大穴が時々来る）を作る主役。
-const WOBBLE = 0.085; // 振れ幅（±8.5%）
+const WOBBLE = 0.15; // 振れ幅（±15%）。上げすぎても分布はほぼ動かず、接戦基準を壊す手前で止めている
 const WOBBLE_W1 = 0.55; // ゆっくりした波（rad/s）
 const WOBBLE_W2 = 1.30; // 少し速い波
 
@@ -599,7 +600,10 @@ export function simulate2(
     if (opts.recordFrames) {
       frames.push({
         t,
-        runners: runners.map((r, i) => ({ s: r.s, d: r.d, state: r.state, rank: rank[i] })),
+        runners: runners.map((r, i) => ({
+          s: r.s, d: r.d, state: r.state, rank: rank[i],
+          sp: r.spMax > 0 ? Math.max(0, Math.min(1, r.sp / r.spMax)) : 0,
+        })),
       });
     }
   }

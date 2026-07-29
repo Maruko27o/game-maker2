@@ -23,6 +23,7 @@ type Props = {
   looks: Record<string, HorseLook>;
   gate: number[]; // zekken (post) number per entrant index — distinct from rank
   ranks: number[]; // current rank per entrant index (1..n), updated every frame
+  stamina?: number[]; // スタミナ残り（0..1）。名前の下にメーターで出す。
   finished: boolean;
 };
 
@@ -30,7 +31,7 @@ type Props = {
 // DOM slot (keyed by horseId) and only slide via transform — a FLIP reorder that
 // never re-mounts the portrait. Rank sampling is throttled to ~10Hz with a short
 // hysteresis so photo-finishes don't make the cards jitter.
-export default function RankPanel({ entrants, looks, gate, ranks, finished }: Props) {
+export default function RankPanel({ entrants, looks, gate, ranks, stamina, finished }: Props) {
   const n = entrants.length;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(0);
@@ -98,6 +99,18 @@ export default function RankPanel({ entrants, looks, gate, ranks, finished }: Pr
               <span className={styles.gateChip}>{gate[i]}</span>
               <span className={styles.name}>{e.isPlayer ? 'あなた' : shortName(e.name)}</span>
             </span>
+            {/* スタミナメーター：残りが減るほど短く・色が変わる（切れると失速する） */}
+            {stamina && (
+              <span className={styles.spBar} aria-label={`スタミナ ${Math.round((stamina[i] ?? 0) * 100)}%`}>
+                <span
+                  className={styles.spFill}
+                  style={{
+                    width: `${Math.max(0, Math.min(1, stamina[i] ?? 0)) * 100}%`,
+                    background: (stamina[i] ?? 0) > 0.5 ? '#5bbf5b' : (stamina[i] ?? 0) > 0.22 ? '#e8b53c' : '#d9534f',
+                  }}
+                />
+              </span>
+            )}
           </div>
         );
       })}
