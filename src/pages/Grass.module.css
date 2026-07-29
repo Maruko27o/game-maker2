@@ -404,3 +404,18 @@
   0% { transform: translateX(-50%) translateY(-14px) scale(0.8); opacity: 0; }
   100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 }
+
+/* 固有スキル図鑑を開く i ボタン */
+.skillBookBtn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  color: var(--ink-soft);
+  font-weight: 900;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1;
+  flex: 0 0 auto;
+}

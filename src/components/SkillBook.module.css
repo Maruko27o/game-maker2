@@ -1,0 +1,121 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 60;
+}
+.sheet {
+  width: 100%;
+  max-width: 460px;
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  padding: 14px 14px 22px;
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.close {
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  width: 32px;
+  height: 32px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.lead {
+  margin: 6px 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.group {
+  margin-bottom: 8px;
+}
+.groupHead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 11px;
+  padding: 8px 10px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.caret {
+  font-size: 11px;
+  color: var(--ink-soft);
+  width: 12px;
+}
+.stars {
+  display: inline-flex;
+  gap: 1px;
+}
+.starOn {
+  color: var(--gold);
+}
+.starOff {
+  color: rgba(0, 0, 0, 0.16);
+}
+.groupCount {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.groupChance {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 6px 9px;
+}
+.name {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.effect {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.note {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}

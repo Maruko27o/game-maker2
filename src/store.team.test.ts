@@ -55,3 +55,21 @@ describe('migrate: 所持上限を全プレイヤー30に開放', () => {
     expect(migrate(baseSave())!.data.maxHorses).toBe(30); // 欠損でも30
   });
 });
+
+describe('migrate: 既存ウマにも固有スキルを付与（置いていかれない）', () => {
+  it('スキル未設定の既存ウマにスキルが入り、IDから決まる固定値になる', () => {
+    const res = migrate(baseSave());
+    const hs = res!.data.horses;
+    expect(hs).toHaveLength(3);
+    for (const h of hs) expect(h.skill).toBeTruthy();
+    // 同じセーブを2回移行しても同じスキル（クラウド突合でブレない）
+    const again = migrate(baseSave());
+    expect(again!.data.horses.map((h) => h.skill)).toEqual(hs.map((h) => h.skill));
+  });
+
+  it('すでにスキルを持つウマは上書きしない（厳選の結果を壊さない）', () => {
+    const hs = [{ ...(horse('h1') as object), skill: 'sky_legs' }];
+    const res = migrate(baseSave({ horses: hs }));
+    expect(res!.data.horses[0].skill).toBe('sky_legs');
+  });
+});

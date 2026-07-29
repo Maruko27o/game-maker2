@@ -965,3 +965,43 @@
   border-color: var(--gold);
   color: #7a4f00;
 }
+
+/* ===== 固有スキル（詳細モーダル） ===== */
+.skillRow {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 11px;
+  padding: 8px 10px;
+}
+.skillLabel {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.skillName {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.skillStars {
+  display: inline-flex;
+  gap: 1px;
+}
+.starOn {
+  color: var(--gold);
+}
+.starOff {
+  color: rgba(0, 0, 0, 0.16);
+}
+.skillEffect {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
