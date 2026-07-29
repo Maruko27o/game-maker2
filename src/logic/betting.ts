@@ -133,28 +133,28 @@ export function wouldWin(bet: Bet, ranks: number[]): boolean {
   return settle({ ...bet, amount: Math.max(1, bet.amount) }, order) > 0;
 }
 
+// 馬券が当たるのに必要な着順の数（払戻圏の広さ）。単勝は1着だけ、複勝/ワイド/3連単は3着まで。
+const PAYLINE: Record<BetKind, number> = { win: 1, place: 3, quinella: 2, wide: 3, trifecta: 3 };
+
 // How close a bet is to hitting *right now* (RACE §in-race見込み): 3 的中 (would pay
-// if the race ended now), 2 ニアピン (right horses, wrong order / one place off), 1 普通
-// (a pick is contending), 0 圏外. Drives the tag colour and the top-left sort.
+// if the race ended now), 2 ニアピン, 1 普通, 0 圏外. Drives the tag colour and the sort.
+//
+// 判定は「いちばん出遅れている買い目」で決める。1頭でも払戻圏から大きく離れていたら、
+// 残りが1着2着でも色は付かない（3連単の1頭が最下位なのに金、を防ぐ）。
+// slack = そのウマの現在順位 − 払戻圏の着順（0以下＝圏内、1＝1つ外）。
 export type BetTier = 0 | 1 | 2 | 3;
 export function betTier(bet: Bet, ranks: number[]): BetTier {
   if (wouldWin(bet, ranks)) return 3;
-  const rs = bet.sel.map((i) => ranks[i] ?? Infinity); // current rank of each pick
-  const within = (k: number) => rs.filter((r) => r <= k).length;
-  switch (bet.kind) {
-    case 'win':
-      return rs[0] === 2 ? 2 : rs[0] <= 4 ? 1 : 0;
-    case 'place':
-      return rs[0] === 4 ? 2 : rs[0] <= 6 ? 1 : 0;
-    case 'quinella':
-      if (within(3) === 2) return 2; // both top-3, just not the exact top-2
-      return within(2) >= 1 || within(4) === 2 ? 1 : 0;
-    case 'wide':
-      if (within(3) === 1 && within(4) === 2) return 2; // one in, the other 4th
-      return within(3) >= 1 ? 1 : 0;
-    case 'trifecta':
-      if (rs.every((r) => r <= 3) && new Set(rs).size === 3) return 2; // right 3, wrong order
-      return within(3) >= 2 ? 1 : 0;
-  }
-  return 0;
+  const n = ranks.length;
+  const line = PAYLINE[bet.kind];
+  // 圏外に落ちるまでの猶予。頭数が少ないレースで「全員が普通」にならないよう頭数で絞る。
+  const reach = Math.min(3, Math.max(1, Math.ceil((n - line) / 2)));
+  // いちばん悪い買い目の slack。未出走・不明なウマは圏外扱い。
+  const worst = bet.sel.reduce((w, i) => {
+    const r = ranks[i];
+    return Math.max(w, r == null ? Infinity : r - line);
+  }, -Infinity);
+  if (worst <= 1) return 2; // 全頭が圏内、または1つ外まで＝ニアピン（3連単の順違いもここ）
+  if (worst <= reach) return 1; // 全頭がまだ射程内＝普通
+  return 0; // 1頭でも大きく離れていたら圏外
 }

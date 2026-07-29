@@ -101,6 +101,37 @@ describe('betTier (in-race closeness: 虹/金/銀/無地)', () => {
     expect(betTier({ kind: 'win', sel: [7], amount: 10, odds: 2 }, ranks)).toBe(0); // last
     expect(betTier({ kind: 'trifecta', sel: [5, 6, 7], amount: 10, odds: 2 }, ranks)).toBe(0);
   });
+
+  // 報告バグ：3連単の1頭が最下位なのに色が付いていた。判定は「いちばん出遅れている
+  // 買い目」で決めるので、他が1着2着でも圏外は圏外。
+  it('0=圏外 as soon as ANY pick is far out, however good the rest are', () => {
+    const b = (kind: Bet['kind'], sel: number[]): Bet => ({ kind, sel, amount: 10, odds: 2 });
+    expect(betTier(b('trifecta', [0, 1, 7]), ranks)).toBe(0); // 1着・2着・最下位
+    expect(betTier(b('trifecta', [0, 1, 6]), ranks)).toBe(0); // 1着・2着・7着
+    expect(betTier(b('quinella', [0, 7]), ranks)).toBe(0); // 1着＋最下位
+    expect(betTier(b('wide', [0, 7]), ranks)).toBe(0); // 1着＋最下位
+  });
+
+  it('the worst pick sets the tier — no tier is "bought" by a leading pick', () => {
+    const b = (kind: Bet['kind'], sel: number[]): Bet => ({ kind, sel, amount: 10, odds: 2 });
+    // 3連単：3頭とも3着以内＝金。1頭が4着まで＝まだ金。5〜6着＝銀。7着以下＝無地。
+    expect(betTier(b('trifecta', [1, 0, 2]), ranks)).toBe(2);
+    expect(betTier(b('trifecta', [0, 1, 3]), ranks)).toBe(2);
+    expect(betTier(b('trifecta', [0, 1, 4]), ranks)).toBe(1);
+    expect(betTier(b('trifecta', [0, 1, 5]), ranks)).toBe(1);
+    expect(betTier(b('trifecta', [0, 1, 6]), ranks)).toBe(0);
+    // 馬連（2着まで）：両方3着以内＝金、5着まで＝銀、6着以下＝無地。
+    expect(betTier(b('quinella', [0, 2]), ranks)).toBe(2);
+    expect(betTier(b('quinella', [0, 4]), ranks)).toBe(1);
+    expect(betTier(b('quinella', [0, 5]), ranks)).toBe(0);
+  });
+
+  it('a short field tightens the contending window instead of colouring everyone', () => {
+    const five = [1, 2, 3, 4, 5];
+    // 5頭立ての複勝：4着＝ニアピン、5着（＝ドベ）は圏外。
+    expect(betTier({ kind: 'place', sel: [3], amount: 10, odds: 2 }, five)).toBe(2);
+    expect(betTier({ kind: 'place', sel: [4], amount: 10, odds: 2 }, five)).toBe(0);
+  });
 });
 
 describe('wouldWin (in-race glow)', () => {

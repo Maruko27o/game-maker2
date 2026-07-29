@@ -133,9 +133,9 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                 <div className={styles.nameRow}>
                   <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
                 </div>
+                {/* 人気順は並び順そのものが示しているので、レーダーと被る「n人気」は出さない */}
                 <div className={styles.oddsRow}>
                   <span className={styles.win}>{fmtOdds(r.odds)}倍</span>
-                  <span className={styles.pop}>{r.pop}人気</span>
                 </div>
                 <button
                   className={`${styles.info} ${open ? styles.infoOn : ''}`}
