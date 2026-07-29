@@ -2,8 +2,6 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import Icon from '../components/Icon';
-import CoinIcon from '../components/CoinIcon';
-import { CREATE_COST } from '../data/coins';
 import { colorsBySlot, decosBySlot, COLOR_SLOTS, DECO_SLOTS } from '../data/parts';
 import { predictStyle } from '../logic/runStyle';
 import type { ColorSlot, DecoSlot, HorseLook, Stats, StatKey } from '../types';
@@ -72,15 +70,12 @@ export default function Create() {
   const rebalanceHorse = useStore((s) => s.rebalanceHorse);
   const freeRebalance = useStore((s) => s.freeRebalance);
   const maxHorses = useStore((s) => s.maxHorses);
-  const coins = useStore((s) => s.coins);
-  const spendCoins = useStore((s) => s.spendCoins);
 
   const editing = editId ? horses.find((h) => h.id === editId) ?? null : null;
   const rebalancing = rebalanceId ? horses.find((h) => h.id === rebalanceId) ?? null : null;
   const isNew = !editing && !rebalancing; // brand-new horse
   const atCap = isNew && horses.length >= maxHorses;
-  const createCost = horses.length === 0 ? 0 : CREATE_COST; // 一体目(0→1)は無料
-  const poor = isNew && createCost > 0 && coins < createCost; // can't afford to create
+  // ウマの作成は無料（パーツを草むらで集めるのがコスト）。
 
   // Whether the player owns at least one color in every color slot.
   const canBuild = COLOR_SLOTS.every((s) => colorsBySlot[s].some((c) => (owned[c.id] ?? 0) > 0));
@@ -125,7 +120,7 @@ export default function Create() {
   const canSave = rebalancing
     ? freeRebalance && remaining === 0
     : allocMode
-      ? lookReady && remaining === 0 && !poor
+      ? lookReady && remaining === 0
       : lookReady;
 
   function bump(k: StatKey, dir: 1 | -1) {
@@ -144,8 +139,8 @@ export default function Create() {
     } else if (editing) {
       updateHorse(editing.id, { name: finalName, colors, decos });
     } else {
-      if (createCost > 0 && !spendCoins(createCost)) return; // 有料作成（一体目のみ無料）
-      addHorse({ name: finalName, colors, decos }, stats, createCost === 0); // free horse → 引退ベース無し
+      // ウマの作成は無料。パーツは草むらで集めるものなので、コインの二重取りにしない。
+      addHorse({ name: finalName, colors, decos }, stats);
     }
     navigate('/stable');
   }
@@ -369,11 +364,7 @@ export default function Create() {
               ? '保存する'
               : remaining !== 0
                 ? `残り ${remaining} ポイント`
-                : poor
-                  ? 'コインが足りません'
-                  : createCost === 0
-                    ? 'このウマにする（無料）'
-                    : `このウマにする（${CREATE_COST}）`}
+                : 'このウマにする'}
         </button>
       </div>
 
@@ -391,11 +382,7 @@ export default function Create() {
               ))}
             </div>
             <p className={styles.confirmMsg} style={{ textAlign: 'center', margin: '0 0 12px' }}>
-              {createCost === 0 ? (
-                <>一体目のウマは <strong>無料</strong> で作れます！</>
-              ) : (
-                <>作成に <CoinIcon size={15} /> <strong>{CREATE_COST.toLocaleString()}</strong> コインかかります</>
-              )}
+              ウマの作成は <strong>無料</strong> です（パーツは草むらで集めよう）
             </p>
             <div className={styles.confirmActions}>
               <button className="btn neutral" onClick={() => setConfirming(false)}>
