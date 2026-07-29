@@ -345,8 +345,20 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           bets={heatBets}
           maxBets={MAX_BETS_GP}
           startLabel="予選スタート"
-          onAdd={(b) => { if (heatBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) setHeatBets((prev) => [...prev, b]); }}
-          onRemove={(i) => { addCoins(heatBets[i].amount); setHeatBets((prev) => prev.filter((_, k) => k !== i)); }}
+          onAdd={(b) => {
+            if (heatBets.length >= MAX_BETS_GP) return;
+            if (spendCoins(b.amount)) {
+              const nb = [...heatBets, b];
+              setHeatBets(nb);
+              patchRaceSession({ heatBets: nb.map(toSaved) }); // 予選の馬券も保存する
+            }
+          }}
+          onRemove={(i) => {
+            addCoins(heatBets[i].amount);
+            const nb = heatBets.filter((_, k) => k !== i);
+            setHeatBets(nb);
+            patchRaceSession({ heatBets: nb.map(toSaved) });
+          }}
           onStart={() => {
             if (!startGpAttempt(state.grade)) { onExit(); return; }
             // The daily attempt is now spent — persist a resumable session from here on.

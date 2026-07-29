@@ -131,6 +131,9 @@ export default function Stable() {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [bulkNote, setBulkNote] = useState<string | null>(null);
+  // ボックスの絞り込み（固有スキルの星）と並び替え
+  const [starFilter, setStarFilter] = useState<Set<number>>(new Set());
+  const [sortBy, setSortBy] = useState<'new' | 'star' | 'total' | 'name'>('new');
   const [draftName, setDraftName] = useState('');
   const selected = horses.find((h) => h.id === openId) ?? null;
 
@@ -162,7 +165,17 @@ export default function Stable() {
     () => (team ?? []).map((id) => horses.find((h) => h.id === id)).filter((h): h is Horse => !!h),
     [team, horses],
   );
-  const others = useMemo(() => horses.filter((h) => !teamSet.has(h.id)), [horses, teamSet]);
+  const othersAll = useMemo(() => horses.filter((h) => !teamSet.has(h.id)), [horses, teamSet]);
+  const others = useMemo(() => {
+    let list = othersAll;
+    if (starFilter.size > 0) list = list.filter((h) => starFilter.has(skillOf(h).star));
+    const sorted = [...list];
+    if (sortBy === 'star') sorted.sort((a, b) => skillOf(b).star - skillOf(a).star || statTotal(b.stats) - statTotal(a.stats));
+    else if (sortBy === 'total') sorted.sort((a, b) => statTotal(b.stats) - statTotal(a.stats));
+    else if (sortBy === 'name') sorted.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+    else sorted.sort((a, b) => b.createdAt - a.createdAt); // 新しい順
+    return sorted;
+  }, [othersAll, starFilter, sortBy]);
   const teamCount = teamMembers.length;
   // 牧場収入はチームのウマだけが対象（インフレ防止）。
   const farmRate = useMemo(
@@ -299,6 +312,44 @@ export default function Stable() {
                 引退させるウマをタップして選んでね（ロック中のウマは選べません）
               </p>
             )}
+            {othersAll.length > 1 && (
+              <div className={styles.filterBar}>
+                <div className={styles.starFilter}>
+                  <span className={styles.filterLabel}>星</span>
+                  {[5, 4, 3, 2, 1].map((n) => {
+                    const on = starFilter.has(n);
+                    return (
+                      <button
+                        key={n}
+                        className={`${styles.starChip} ${on ? styles.starChipOn : ''}`}
+                        onClick={() => setStarFilter((p) => {
+                          const x = new Set(p);
+                          if (x.has(n)) x.delete(n); else x.add(n);
+                          return x;
+                        })}
+                        aria-pressed={on}
+                      >
+                        <Icon name="star" size={10} /> {n}
+                      </button>
+                    );
+                  })}
+                  {starFilter.size > 0 && (
+                    <button className={styles.clearChip} onClick={() => setStarFilter(new Set())}>解除</button>
+                  )}
+                </div>
+                <select
+                  className={styles.sortSelect}
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  aria-label="並び替え"
+                >
+                  <option value="new">新しい順</option>
+                  <option value="star">星が高い順</option>
+                  <option value="total">能力が高い順</option>
+                  <option value="name">名前順</option>
+                </select>
+              </div>
+            )}
             <div className={styles.box}>
               {others.map((h) => {
                 const tc = trophyCount(trophies, h.id);
@@ -327,7 +378,7 @@ export default function Stable() {
                   </button>
                 );
               })}
-              {Array.from({ length: Math.max(0, maxHorses - horses.length) }).map((_, i) => (
+              {starFilter.size === 0 && Array.from({ length: Math.max(0, maxHorses - horses.length) }).map((_, i) => (
                 <div key={`empty-${i}`} className={styles.slotEmpty} aria-hidden />
               ))}
             </div>
@@ -394,7 +445,7 @@ export default function Stable() {
                 {/* 左：ウマ全体像／右上：名前＋能力図（高さを揃える）。数値6マスは廃止し合計だけ下に。 */}
                 <div className={styles.detailTop}>
                   <div className={styles.detailHorse}>
-                    <HorseView horse={selected} size={140} shadow />
+                    <HorseView horse={selected} size={72} shadow />
                   </div>
                   <div className={styles.detailRight}>
                     <div className={styles.renameRow}>
@@ -424,7 +475,7 @@ export default function Stable() {
                       )}
                     </div>
                     <div className={styles.detailRadar}>
-                      <StatRadar stats={selected.stats} size={150} />
+                      <StatRadar stats={selected.stats} size={104} />
                     </div>
                   </div>
                 </div>
@@ -578,23 +629,23 @@ export default function Stable() {
                       </button>
                     )}
                     <div className={styles.actions}>
-                      <button className="btn" onClick={() => setView('train')}>
+                      <button className={`${styles.smallBtn} ${styles.smallPrimary}`} onClick={() => setView('train')}>
                         育てる
                       </button>
-                      <button className="btn neutral" onClick={() => navigate(`/create?edit=${selected.id}`)}>
+                      <button className={styles.smallBtn} onClick={() => navigate(`/create?edit=${selected.id}`)}>
                         着せ替え
                       </button>
                     </div>
                     <div className={styles.actions}>
                       <button
-                        className="btn secondary"
+                        className={`${styles.smallBtn} ${styles.smallDanger}`}
                         disabled={!!selected.locked}
                         title={selected.locked ? 'ロック中は引退できません' : ''}
                         onClick={() => setConfirmDelete(true)}
                       >
-                        <Icon name="leaf" size={14} /> 引退（<CoinIcon size={13} /> {retireVal.toLocaleString()}）
+                        引退（<CoinIcon size={12} /> {retireVal.toLocaleString()}）
                       </button>
-                      <button className="btn neutral" onClick={close}>
+                      <button className={styles.smallBtn} onClick={close}>
                         閉じる
                       </button>
                     </div>

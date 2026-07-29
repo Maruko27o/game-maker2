@@ -184,20 +184,42 @@
   padding: 0 4px;
 }
 .pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: var(--panel);
   border: 2px solid var(--border);
   border-radius: 8px;
-  padding: 4px 8px;
+  padding: 5px 9px;
   font-size: 11px;
   font-weight: 800;
   color: var(--ink-soft);
   white-space: nowrap;
+}
+/* 空チェックボックス。選ぶと ✓ が入って青くなるので、どちらの状態か一目で分かる。 */
+.pickBox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  background: #fff;
+  color: var(--blue-dark);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
 }
 .pickOn {
   background: var(--blue);
   border-color: var(--blue-dark);
   color: #fff;
   box-shadow: 0 2px 0 var(--blue-dark);
+}
+.pickOn .pickBox {
+  background: #fff;
+  border-color: #fff;
 }
 .pick:disabled {
   opacity: 0.5;
@@ -245,4 +267,91 @@
   font-size: 13px;
   font-weight: 900;
   color: var(--ink-soft);
+}
+
+/* ===== 確認ダイアログ ===== */
+.confirmWrap {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 80;
+}
+.confirmCard {
+  width: 100%;
+  max-width: 330px;
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+}
+.confirmTitle {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink);
+  text-align: center;
+}
+.confirmList {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.confirmItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 5px 8px;
+}
+.confirmLabel {
+  flex: 1 1 auto;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.confirmNow {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.confirmWarn {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  text-align: center;
+}
+.confirmActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.confirmNo {
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 11px;
+  padding: 10px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.confirmYes {
+  background: var(--gold);
+  border: 2px solid #b8871f;
+  border-radius: 11px;
+  padding: 10px;
+  font-weight: 900;
+  color: #4a3000;
+  box-shadow: 0 2px 0 #b8871f;
 }

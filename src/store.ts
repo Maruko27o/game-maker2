@@ -437,7 +437,11 @@ export type SpawnedPart = { id: string; isNew: boolean };
 export type SpawnResult = { parts: SpawnedPart[]; horse: Horse; energyLeft: number } | null;
 
 type Store = SaveData & {
-  migrated: boolean; // true once, right after a save upgrade (for a one-time notice)
+  migrated: boolean;
+  /** レース（1人でレース／グランプリ）の進行中か。賭け金を預けたまま他のタブへ
+   *  移動してコインが消えるのを防ぐため、進行中はタブ移動を止める。保存しない。 */
+  raceBusy: boolean;
+  setRaceBusy: (v: boolean) => void; // true once, right after a save upgrade (for a one-time notice)
   clearMigrated: () => void;
   /** Replace the entire save (used when loading a cloud save on login). */
   hydrate: (data: SaveData) => void;
@@ -619,6 +623,8 @@ export const useStore = create<Store>((set, get) => {
     streakRuleResetDone: initial.streakRuleResetDone ?? false,
     team: initial.team ?? [],
     migrated,
+    raceBusy: false,
+    setRaceBusy: (v) => set({ raceBusy: v }),
     clearMigrated: () => set({ migrated: false }),
 
     hydrate: (data) => {

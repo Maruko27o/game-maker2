@@ -156,3 +156,24 @@
 .active .tabLabel {
   font-weight: 800;
 }
+
+/* レース進行中：タブ移動を止めていることを見た目でも示す */
+.tabLocked {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.busyNote {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px);
+  transform: translateX(-50%);
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+}
