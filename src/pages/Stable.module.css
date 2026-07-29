@@ -138,8 +138,10 @@
   padding: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  /* 中身は横幅いっぱいに揃える（中央寄せだとブロックごとに幅がバラつく）。
+     中央に置きたいものは、その要素の中で place-items:center する。 */
+  align-items: stretch;
+  gap: 9px;
 }
 
 /* 稼ぐ力（1行目）とトロフィー数（2行目）を縦に2段で表示。桁が増えても（稼ぐ力が
@@ -413,21 +415,23 @@
 
 /* 詳細トップ：左＝ウマ全体像／右＝名前＋能力図（高さを揃える two-column） */
 .detailTop {
+  /* ウマの枠は絵にぴったり沿わせ、余った幅は名前と脚質・合計に回す。
+     能力図はこの下に全幅で置く（縦長の余白を作らない）。 */
   display: flex;
-  gap: 10px;
+  gap: 9px;
   width: 100%;
-  align-items: stretch;
-  min-height: 156px;
+  align-items: center;
 }
 .detailHorse {
-  flex: 0 0 45%;
+  flex: 0 0 auto;
+  width: 82px;
+  height: 82px;
   background: linear-gradient(180deg, #d7ecb4, #bfe08a);
-  border: 3px solid var(--border);
-  border-radius: 16px;
-  padding: 6px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
   display: grid;
   place-items: center;
-  min-width: 0;
 }
 .detailHorse svg {
   width: auto;
@@ -437,21 +441,20 @@
   display: block;
 }
 .detailRight {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 6px;
 }
 .detailRadar {
-  flex: 1;
-  min-height: 0;
   display: grid;
   place-items: center;
   background: var(--panel-inner);
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  padding: 4px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
 }
 .detailRadar svg {
   width: auto;
@@ -463,10 +466,10 @@
 .metaRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 5px;
   width: 100%;
-  padding: 0 2px;
+  min-width: 0;
 }
 .metaTotal {
   font-weight: 800;
