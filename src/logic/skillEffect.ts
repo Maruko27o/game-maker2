@@ -144,3 +144,25 @@ export function combineMods(a: Mods, b: Mods): Mods {
 export function racerMods(skillId: string | undefined, grade: Grade | undefined, ctx: RaceCtx): Mods {
   return combineMods(skillMods(skillId, ctx), aptitudeMods(grade));
 }
+
+/** 倍率のセットを「総合的な強さ1つ」に畳み込む。
+ *  オッズの事前分布（解析モデル）で使う。レース本体はモード別に細かく効かせるが、
+ *  事前分布はざっくり「どれくらい強いか」だけ分かればよい。
+ *  重みは、実際のレースでの効きやすさの目安（最高速がいちばん効く）。 */
+export function strengthFactor(m: Mods): number {
+  return (
+    Math.pow(m.vMax, 1.0) *
+    Math.pow(m.late, 0.5) *
+    Math.pow(m.early, 0.2) *
+    Math.pow(m.accel, 0.3) *
+    Math.pow(m.spMax, 0.3) *
+    Math.pow(1 / m.drain, 0.3) *
+    Math.pow(m.corner, 0.2) *
+    Math.pow(m.gate, 0.1)
+  );
+}
+
+/** そのウマの、このレースでの総合的な強さ倍率（1.0 が標準）。 */
+export function racerStrength(skillId: string | undefined, grade: Grade | undefined, ctx: RaceCtx): number {
+  return strengthFactor(racerMods(skillId, grade, ctx));
+}

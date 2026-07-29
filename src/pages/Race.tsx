@@ -11,6 +11,8 @@ import { makeCpu } from '../logic/cpu';
 import { colorById } from '../data/parts';
 import { BADGES } from '../data/badges';
 import { teamHorses } from '../logic/farm';
+import { skillOf } from '../logic/skill';
+import { aptitudeOf } from '../logic/aptitude';
 import { TEAM_SIZE } from '../data/coins';
 import type { Horse, HorseLook, Badge, Stats } from '../types';
 import { RUN_STYLE_LABEL, STAT_KEYS } from '../types';
@@ -83,7 +85,13 @@ function buildSingleSetup(seed: number, player: Horse, mode: 30 | 60, chosenCour
   const band: [number, number] = [Math.max(34, pt - 4), Math.min(48, pt + 4)];
   const looks: Record<string, HorseLook> = { [player.id]: player };
   const entrants: Entrant[] = [
-    { horseId: player.id, name: player.name, isPlayer: true, stats: player.stats, style: styleFor(player.id, player.stats) },
+    {
+      horseId: player.id, name: player.name, isPlayer: true, stats: player.stats,
+      style: styleFor(player.id, player.stats),
+      // 固有スキルと、このコースの適性をレースに持ち込む（＝倍率にも反映される）
+      skill: skillOf(player).id,
+      apt: aptitudeOf(player)[course.id],
+    },
   ];
   const avoidBody = colorById[player.colors.body]?.value;
   for (let i = 0; i < 7; i++) {

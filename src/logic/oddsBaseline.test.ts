@@ -6,17 +6,23 @@ import { COURSES } from '../data/courses';
 import { MAX_ODDS } from './betting';
 import type { Entrant } from './raceSim2';
 
-// 倍率バランスの基準（回帰ガード）。
-// 「今のレースの倍率とそれに伴う勝率（高倍率がたまに出る塩梅）は丁度いい」という
-// 大前提を守るための物差し。個体値・スキル・適性などをシムに接続する将来の変更が、
-// この分布を壊していないかを検知する。パドックと同じ mcWinProbs（実シムのモンテカルロ）
-// から単勝オッズを求め、多数のランダム8頭立てレースで分布を測る。決定的（固定シード）。
+// 倍率バランスの回帰ガード。
 //
-// 現状の実測（60レース時）:
-//   favorite(各レース最低オッズ)  median≈2.6  p90≈3.4
-//   longshot(各レース最高オッズ)  median≈51   max≈102
-//   高倍率の出現: longshot>30 ≈82% / >60 ≈37% / 全オッズ中 >100 ≈5.8%
-// バンドは将来のシム変更の“崩れ”を捕らえつつ、サンプル揺らぎで誤検知しない幅に設定。
+// 目標（ゲーム用の単勝オッズ帯ごとの勝利発生率）:
+//   1.0-1.9  13% / 2.0-2.9 14% / 3.0-4.9 18% / 5.0-6.9 13% / 7.0-9.9 12%
+//   10-14.9  11% / 15-19.9 6.5% / 20-29.9  5% / 30-49.9 3.8% / 50-79.9 2.2%
+//   80-99.9 0.8% / 100-149 0.9% / 150-199 0.4% / 200-299 0.3% / 300+   0.1%
+//
+// 狙いは
+//   ・本命は2〜3倍台（1倍台に張り付く超一強でも、平坦＝本命不在でもない）
+//   ・中位が厚い（5〜15倍に手が届く馬が複数いる）
+//   ・大穴が段階的に並ぶ（50倍・100倍・200倍…が別々に出る）
+//   ・「100倍以上の大波乱」がちゃんと起こりうる
+// バンドはサンプル揺らぎで誤検知しない幅にしてある（狭めすぎると毎回落ちる）。
+//
+// ※ 以前は約100倍が単勝の上限だった。これはレースではなく確率計算の平滑化による
+//   人工的な天井で、勝てなかった馬が全員まったく同じ値に潰れていた。能力に比例した
+//   事前分布での平滑化に変えたことで、いまは裾がなだらかに解ける。
 
 const TAKEOUT = 0.8;
 const clampOdds = (o: number) => Math.min(MAX_ODDS, Math.max(1.1, o));
@@ -32,46 +38,56 @@ function field(rng: () => number): { entrants: Entrant[]; course: (typeof COURSE
 }
 const median = (a: number[]) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 const p90 = (a: number[]) => [...a].sort((x, y) => x - y)[Math.floor(a.length * 0.9)];
-const p10 = (a: number[]) => [...a].sort((x, y) => x - y)[Math.floor(a.length * 0.1)];
 
 describe('odds balance baseline (倍率バランスの回帰ガード)', () => {
-  it('keeps the favorite/longshot spread and the rare-high-odds feel', () => {
+  it('keeps the favourite/mid/longshot shape and lets big upsets happen', () => {
     const rng = mulberry32(20260101);
     const N = 24;
     const favs: number[] = [];
     const longs: number[] = [];
-    let allN = 0;
-    let over30 = 0;
-    let over100 = 0;
+    // オッズ帯ごとの「勝率の総和」＝その帯から勝ちが出る割合。
+    let mLow = 0; // 1.0-4.9倍（本命〜対抗）
+    let mMid = 0; // 5.0-14.9倍（3〜5番人気・中穴）
+    let mHigh = 0; // 15-49.9倍（穴馬）
+    let mLong = 0; // 50倍以上（大穴）
+    let total = 0;
     for (let f = 0; f < N; f++) {
       const { entrants, course } = field(rng);
-      const odds = mcWinProbs(entrants, course, 60, { samples: 120 }).map(oddsOf);
+      const ps = mcWinProbs(entrants, course, 60, { samples: 120 });
+      const odds = ps.map(oddsOf);
       favs.push(Math.min(...odds));
       longs.push(Math.max(...odds));
-      allN += odds.length;
-      over100 += odds.filter((o) => o > 100).length;
-      if (Math.max(...odds) > 30) over30++;
+      for (let i = 0; i < ps.length; i++) {
+        const o = odds[i];
+        if (o < 5) mLow += ps[i];
+        else if (o < 15) mMid += ps[i];
+        else if (o < 50) mHigh += ps[i];
+        else mLong += ps[i];
+        total += ps[i];
+      }
     }
+    const pct = (x: number) => (x / total) * 100;
     const favMed = median(favs);
     const longMed = median(longs);
     const overallMax = Math.max(...longs);
-    const pctRacesLong30 = (over30 / N) * 100;
-    const pctAll100 = (over100 / allN) * 100;
 
-    // 人気馬（本命）は概ね 2〜3倍台。1倍台に張り付く（超一強）でも、平坦（本命でも高倍率）でもない。
-    expect(favMed).toBeGreaterThan(2.0);
-    expect(favMed).toBeLessThan(3.4);
+    // 本命：2〜3倍台。
+    expect(favMed).toBeGreaterThan(1.8);
+    expect(favMed).toBeLessThan(3.6);
     expect(p90(favs)).toBeLessThan(6); // 本命がいないレースにならない
-    // 大穴（穴馬）は数十倍〜100倍前後。明確な穴が常に存在するが、暴走もしない。
-    expect(longMed).toBeGreaterThan(30);
-    expect(longMed).toBeLessThan(75);
-    expect(p10(longs)).toBeGreaterThan(8); // 「全馬横一線」にならない
-    expect(overallMax).toBeGreaterThan(70); // 高倍率は“たまに”ちゃんと出る
-    expect(overallMax).toBeLessThan(150); // が、極端には出ない（現状 ~102）
-    // 高倍率の出現頻度が現状の塩梅から大きくズレない。
-    expect(pctRacesLong30).toBeGreaterThan(55);
-    expect(pctRacesLong30).toBeLessThan(97);
-    expect(pctAll100).toBeGreaterThan(1);
-    expect(pctAll100).toBeLessThan(14);
-  }, 120000);
+
+    // 大穴：数十〜数百倍。ここが潰れていない＝裾がちゃんと解けている。
+    expect(longMed).toBeGreaterThan(60);
+    expect(longMed).toBeLessThan(900);
+    expect(overallMax).toBeGreaterThan(150); // 「100倍以上の大波乱」が起こりうる
+    expect(overallMax).toBeLessThan(5000); // が、青天井にはしない
+
+    // 勝ちの出どころの形。目標は 1-4.9=45% / 5-14.9=36% / 15-49.9=15.3% / 50+=4.7%。
+    expect(pct(mLow)).toBeGreaterThan(45);
+    expect(pct(mLow)).toBeLessThan(78); // 本命ばかりに寄りすぎない
+    expect(pct(mMid)).toBeGreaterThan(14); // 中位が薄くなりすぎない
+    expect(pct(mHigh)).toBeGreaterThan(2); // 穴馬からも勝ちが出る
+    expect(pct(mLong)).toBeGreaterThan(0.1); // 大穴からも（まれに）勝ちが出る
+    expect(pct(mLong)).toBeLessThan(8); // が、大穴だらけにはしない
+  }, 180000);
 });

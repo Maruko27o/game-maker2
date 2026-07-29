@@ -6,6 +6,7 @@ import { mulberry32 } from './stats';
 import { makeCpu } from './cpu';
 import { colorById } from '../data/parts';
 import { paceAt } from './runStyle';
+import { racerStrength } from './skillEffect';
 import type { HorseLook, StatKey } from '../types';
 import { STAT_KEYS } from '../types';
 
@@ -81,13 +82,16 @@ export function computeQualifiers(heats: Entrant[][], results: SimResult[]): Qua
 // Win probability per entrant (softmax of course-effective ability, with a small
 // late-pace allowance). The single source of truth for both display odds and the
 // betting markets (RACE_V4 §4). Deterministic — same field+course → same probs.
-export function winProbs(entrants: Entrant[], course: Course): number[] {
+export function winProbs(entrants: Entrant[], course: Course, mode: 30 | 60 = 60, temp = 3.2): number[] {
   const score = entrants.map((e) => {
     const eff = STAT_KEYS.reduce((n, k) => n + e.stats[k] * course.weights[k as StatKey], 0);
     const late = paceAt(e.style, 0.9); // reward strong finishers a touch
-    return eff * (0.9 + late * 0.1);
+    // 固有スキルとコース適性ぶんの強さも織り込む。これがオッズに乗るので、
+    // 「見えている数値やスキルが倍率に効く」ことがプレイヤーから確認できる。
+    const strength = racerStrength(e.skill, e.apt, { surface: course.surface, mode });
+    return eff * (0.9 + late * 0.1) * strength;
   });
-  const T = 3.2;
+  const T = temp;
   const exps = score.map((s) => Math.exp(s / T));
   const sum = exps.reduce((a, b) => a + b, 0) || 1;
   return exps.map((x) => x / sum);

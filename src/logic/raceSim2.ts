@@ -88,6 +88,15 @@ const DASH_TIME = 0.5;
 // racing instead of collapsing to one odds-on favourite. Folded into `perf` with the
 // shown mood; the Monte-Carlo odds integrate over it, so 倍率=勝率 stays exact.
 const LUCK = 0.16;
+// レース中にゆっくり上下する「調子の波」。LUCK（レース通して一定の運）と違い、
+// 走っている間に伸びたり凹んだりするので、
+//   ・ゴール前で並ぶ（接戦が保たれる）
+//   ・強い馬が必ず勝つわけではない（本命が飛ぶ余地が生まれる）
+//   ・平均するとゼロなので、走破時計や馬場の速さは変わらない
+// という3つを同時に満たす。倍率の帯（本命2〜5倍／大穴が時々来る）を作る主役。
+const WOBBLE = 0.085; // 振れ幅（±8.5%）
+const WOBBLE_W1 = 0.55; // ゆっくりした波（rad/s）
+const WOBBLE_W2 = 1.30; // 少し速い波
 
 // How the shown mood is dealt out over the race distance (0→1 progress). It grows
 // from a small early edge to the full swing at the line, so a good mood reads as a
@@ -121,6 +130,8 @@ type R = {
   eff: Stats;
   gate: number;
   perf: number; // hidden race-day luck (flat, RACE §odds)
+  wob1: number; // 調子の波の位相（ゆっくり）
+  wob2: number; // 調子の波の位相（少し速い）
   mods: Mods; // 固有スキル＋コース適性から決まる倍率（1.0 が効果なし）
   moodDelta: number; // shown mood as a signed swing; ramps in over the race (⬆/⬇)
   vMax0: number;
@@ -220,6 +231,9 @@ export function simulate2(
     // hidden race-day luck (flat, varies per seed) and the shown mood kept apart:
     // luck is a constant factor, mood is a signed swing that builds over the race.
     const luck = 1 + (rng() * 2 - 1) * LUCK;
+    // 調子の波の位相（ウマごとにバラバラ。決定的なのでオッズ計算とも一致する）
+    const wob1 = rng() * Math.PI * 2;
+    const wob2 = rng() * Math.PI * 2;
     const moodDelta = (opts.moods?.[ei] ?? 1) - 1;
     // Inner posts start nearer the inner rail, but the draw is compressed toward
     // the middle (not the full track width) so an outer post isn't a near-certain
@@ -231,6 +245,8 @@ export function simulate2(
       eff: ef,
       gate,
       perf: luck,
+      wob1,
+      wob2,
       mods,
       moodDelta,
       vMax0: (9 + ef.spd * 0.6) * mods.vMax,
@@ -306,6 +322,8 @@ export function simulate2(
       // the shown level, so the Monte-Carlo odds still price it exactly (倍率=勝率).
       const moodFactor = 1 + r.moodDelta * moodRamp(progress);
       let vMax = (13.0 + ef.spd * 0.36) * paceAt(r.e.style, progress) * r.perf * moodFactor;
+      // レース中の調子の波（平均するとゼロ。接戦を保ったまま勝者を読みにくくする）
+      vMax *= 1 + WOBBLE * (Math.sin(WOBBLE_W1 * t + r.wob1) + Math.sin(WOBBLE_W2 * t + r.wob2)) * 0.5;
       // 固有スキル・適性：常時の最高速に加えて、序盤（前半）と終盤（後半）で効く分。
       vMax *= r.mods.vMax;
       if (progress < 0.4) vMax *= 1 + (r.mods.early - 1) * (1 - progress / 0.4);
