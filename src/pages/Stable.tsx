@@ -7,6 +7,7 @@ import { canApply } from '../logic/training';
 import { RENAME_COST, TEAM_SIZE } from '../data/coins';
 import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRateOf, teamHorses } from '../logic/farm';
 import { canJoinTeam, type JoinCheck } from '../logic/team';
+import { skillOf } from '../logic/skill';
 import { trustedNow } from '../logic/trustedClock';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Horse, Trophy, Badge, TrainingItem, StatKey } from '../types';
@@ -163,6 +164,7 @@ export default function Stable() {
       ? '満タン！回収しよう'
       : `あと${Math.floor(farmToFull / 3600000)}時間${Math.floor((farmToFull % 3600000) / 60000)}分で満タン`;
   const retireVal = selected ? retireValueOf(selected, trophies, badges) : 0;
+  const selectedSkill = skillOf(selected ?? { id: '' });
   const teamIndex = selected ? (team ?? []).indexOf(selected.id) : -1;
   const joinCheck: JoinCheck = selected
     ? canJoinTeam(selected, team ?? [], horses, TEAM_SIZE)
@@ -339,6 +341,18 @@ export default function Stable() {
                 <div className={styles.metaRow}>
                   <span className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</span>
                   <span className={styles.metaTotal}>合計 {total} / {STAT_TOTAL_CAP}</span>
+                </div>
+
+                {/* 固有スキル（生まれつき1つ。いまは表示のみ・レースには未反映） */}
+                <div className={styles.skillRow}>
+                  <span className={styles.skillLabel}>固有スキル</span>
+                  <span className={styles.skillName}>{selectedSkill.name}</span>
+                  <span className={styles.skillStars} aria-label={`星${selectedSkill.star}`}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Icon key={i} name="star" size={11} className={i < selectedSkill.star ? styles.starOn : styles.starOff} />
+                    ))}
+                  </span>
+                  <span className={styles.skillEffect}>{selectedSkill.effect}</span>
                 </div>
 
                 <div className={styles.earnRow}>

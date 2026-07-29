@@ -12,6 +12,7 @@ import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import PartThumb from '../components/PartThumb';
 import { usePrefersReducedMotion } from '../hooks';
+import SkillBook from '../components/SkillBook';
 import styles from './Grass.module.css';
 
 type Phase = 'ready' | 'searching' | 'reveal';
@@ -58,6 +59,7 @@ export default function Grass() {
   const [reward, setReward] = useState<SpawnedPart[]>([]);
   const [wild, setWild] = useState<HorseLook | null>(null);
   const [revealed, setRevealed] = useState(false); // 登場演出が終わってから確認欄を出す
+  const [bookOpen, setBookOpen] = useState(false); // 固有スキル図鑑
   const [bonus, setBonus] = useState(0); // grass first-of-day coin bonus toast
 
   useEffect(() => {
@@ -170,6 +172,9 @@ export default function Grass() {
 
       <div className={styles.footRow}>
         <span className={styles.footNote}>マイウマ {horseCount}/{maxHorses}</span>
+        <button className={styles.skillBookBtn} onClick={() => setBookOpen(true)} aria-label="固有スキル図鑑を見る">
+          i
+        </button>
         {stock < ENERGY_CAP && (
           <button
             className={styles.okawari}
@@ -181,6 +186,8 @@ export default function Grass() {
           </button>
         )}
       </div>
+
+      {bookOpen && <SkillBook onClose={() => setBookOpen(false)} />}
 
       {bonus > 0 && (
         <div className={styles.bonusToast} role="status">

@@ -27,7 +27,8 @@ import { allParts, slotOf } from './data/parts';
 import { COURSES } from './data/courses';
 import { spawn as gachaSpawn } from './logic/gacha';
 import { ENERGY_CAP, spendEnergy } from './logic/energy';
-import { rescaleTo40 } from './logic/stats';
+import { rescaleTo40, mulberry32, hashString } from './logic/stats';
+import { rollSkill, skillForHorseId } from './logic/skill';
 import { applyTraining } from './logic/training';
 import { evaluateBadges } from './logic/badges';
 import {
@@ -282,6 +283,13 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   if (typeof d.owned !== 'object' || d.owned === null || !Array.isArray(d.horses)) return null;
   const owned = d.owned as Record<string, number>;
   const horses = d.horses as Horse[];
+
+  // 固有スキルの後付け付与：既存ウマも“生まれつき持っていた”ことにして、アップデートで
+  // 置いていかれないようにする。ウマIDから決まる固定スキルなので、端末やクラウド同期を
+  // またいでも必ず同じものになる（＝クラウド突合でブレない）。
+  for (let i = 0; i < horses.length; i++) {
+    if (!horses[i]?.skill) horses[i] = { ...horses[i], skill: skillForHorseId(horses[i].id).id };
+  }
 
   const energy = typeof d.energy === 'number' ? d.energy : ENERGY_CAP;
   const energyUpdatedAt = typeof d.energyUpdatedAt === 'number' ? d.energyUpdatedAt : Date.now();
@@ -698,7 +706,12 @@ export const useStore = create<Store>((set, get) => {
       const id = newId();
       // アップデート後に生まれたウマは「新世代」。既存ウマには付かないので、
       // 既存ウマの強さ・引退額・チーム編成は一切変わらない。
-      const horse: Horse = { ...h, id, stats, createdAt: Date.now(), gen2: true, ...(free ? { free: true } : {}) };
+      // 生まれた時点で固有スキルを1つ確定で持つ（「1回目の枠は確定」）。
+      const horse: Horse = {
+        ...h, id, stats, createdAt: Date.now(), gen2: true,
+        skill: rollSkill(mulberry32(hashString(`skill:${id}`))).id,
+        ...(free ? { free: true } : {}),
+      };
       const horses = [...s.horses, horse];
       // 空きがあり資格があれば自動でチームへ（ウマ0頭の新規プレイヤーが走れるように）。
       const team = addToTeam(horse, s.team ?? [], horses, TEAM_SIZE);
