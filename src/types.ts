@@ -62,6 +62,7 @@ export type Horse = {
   free?: boolean; // 一体目(0→1)を無料で作った馬。引退時にベース分は付かない（make→retire farm防止）
   skill?: string; // 固有スキルのID（data/skills.ts）。未設定なら ウマID から決まる固定スキル。
   apt?: Record<string, string>; // コース適性（コースID -> 'C'|'B'|'A'|'S'）。未設定はIDから決まる固定値。
+  rerollsUsed?: number; // 厳選（振り直し）を使った回数。権利は活躍に応じて最大10回。
   locked?: boolean; // お気に入りロック。引退（＝削除）を防ぐ。大切に育てたウマの誤タップ対策。
   gen2?: boolean; // 個体値厳選アップデート後に生まれた「新世代」のウマ。既存ウマには付かない。
   //   調整期間中は チーム/レースに入れない（既存ウマが6頭に満たない分だけ埋められる）。

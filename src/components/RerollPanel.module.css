@@ -1,0 +1,235 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 70;
+}
+.sheet {
+  width: 100%;
+  max-width: 460px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  padding: 14px 14px 22px;
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.close {
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  width: 32px;
+  height: 32px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+
+.countRow {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin: 10px 0 4px;
+}
+.countLabel {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.countBig {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1;
+}
+.countSub {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.rightsBtn {
+  margin-left: auto;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.rightsList {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rightGot,
+.rightMiss {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.rightGot {
+  color: var(--ink);
+}
+.rightMiss {
+  color: var(--ink-soft);
+  opacity: 0.65;
+}
+.rightLabel {
+  flex: 1 1 auto;
+}
+.rightPlus {
+  font-weight: 900;
+}
+.rightsNote {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.lead {
+  margin: 10px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 9px;
+}
+.rowOn {
+  border-color: var(--blue);
+  background: #eaf2fd;
+}
+.rowChanged {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #fff8e4, #ffeec2);
+}
+.rowLabel {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  min-width: 0;
+}
+.rowValue {
+  display: inline-flex;
+  align-items: center;
+}
+.skillVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.skillName {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.stars {
+  display: inline-flex;
+  gap: 1px;
+}
+.starOn {
+  color: var(--gold);
+}
+.starOff {
+  color: rgba(0, 0, 0, 0.16);
+}
+.gradeChip {
+  min-width: 23px;
+  text-align: center;
+  border: 1.5px solid;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.6;
+  padding: 0 4px;
+}
+.pick {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.pickOn {
+  background: var(--blue);
+  border-color: var(--blue-dark);
+  color: #fff;
+  box-shadow: 0 2px 0 var(--blue-dark);
+}
+.pick:disabled {
+  opacity: 0.5;
+}
+
+.changedNote {
+  margin: 8px 0 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #96702c;
+}
+.go {
+  margin-top: 12px;
+  width: 100%;
+  background: var(--gold);
+  border: 2px solid #b8871f;
+  border-radius: 12px;
+  padding: 11px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #4a3000;
+  box-shadow: 0 3px 0 #b8871f;
+}
+.go:disabled {
+  background: var(--panel-inner);
+  border-color: var(--border);
+  color: var(--ink-soft);
+  box-shadow: none;
+}
+.note {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
