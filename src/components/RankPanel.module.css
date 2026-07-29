@@ -124,3 +124,11 @@
   border-radius: 3px;
   transition: width 0.15s linear, background 0.3s linear;
 }
+
+/* タップで能力ポップアップが開くカード（レース中でも見られるように） */
+.tappable {
+  cursor: pointer;
+}
+.tappable:active {
+  filter: brightness(0.94);
+}

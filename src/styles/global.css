@@ -35,6 +35,12 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
+  /* 縦スクロールのアプリなので、画面全体が横にずれないよう横方向を塞ぐ。
+     iOS は overflow だけだと慣性で横に流れることがあるため touch-action も指定する。 */
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
 }
 
 body {

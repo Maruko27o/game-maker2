@@ -31,7 +31,7 @@ import { rescaleTo40, mulberry32, hashString } from './logic/stats';
 import { rollSkill, skillForHorseId } from './logic/skill';
 import { rollAptitude, aptitudeForHorseId } from './logic/aptitude';
 import { makeWildHorse } from './logic/wild';
-import { applyReroll, rerollState, canReroll } from './logic/reroll';
+import { applyReroll, rerollState, canReroll, REROLL_COST } from './logic/reroll';
 import { applyTraining } from './logic/training';
 import { evaluateBadges } from './logic/badges';
 import {
@@ -569,6 +569,14 @@ type Store = SaveData & {
   resetAll: () => void;
 };
 
+// 新しく手に入れたウマをチームへ自動で入れるのは「チームが空のとき」だけ。
+// ウマ0頭のプレイヤーがレースに出られなくならないための救済であって、草むらで
+// 厳選しているときに空き枠を勝手に埋めないようにする（チーム編成は基本ぜんぶ手動）。
+function autoJoinTeam(horse: Horse, team: string[], horses: Horse[]): string[] {
+  if (team.length > 0) return team;
+  return addToTeam(horse, team, horses, TEAM_SIZE);
+}
+
 export const useStore = create<Store>((set, get) => {
   const { data: initial, migrated } = load();
   if (migrated) persist(initial); // save the upgraded shape immediately
@@ -735,7 +743,7 @@ export const useStore = create<Store>((set, get) => {
         apt: rollAptitude(mulberry32(hashString(`apt:${id}`))),
       };
       const horses = [...get().horses, horse];
-      const team = addToTeam(horse, get().team ?? [], horses, TEAM_SIZE);
+      const team = autoJoinTeam(horse, get().team ?? [], horses);
       commit({ owned, energy: spent.energy, energyUpdatedAt: spent.energyUpdatedAt, tasks, horses, team });
       return { parts, horse, energyLeft: spent.energy };
     },
@@ -754,8 +762,7 @@ export const useStore = create<Store>((set, get) => {
         ...(free ? { free: true } : {}),
       };
       const horses = [...s.horses, horse];
-      // 空きがあり資格があれば自動でチームへ（ウマ0頭の新規プレイヤーが走れるように）。
-      const team = addToTeam(horse, s.team ?? [], horses, TEAM_SIZE);
+      const team = autoJoinTeam(horse, s.team ?? [], horses);
       commit({ horses, team });
       return horse;
     },
@@ -1178,9 +1185,11 @@ export const useStore = create<Store>((set, get) => {
       if (!slots || slots.length === 0) return false; // 更新する枠が無い
       const { left } = rerollState(horse, s.trophies, s.badges);
       if (left <= 0) return false; // 権利を使い切っている
+      if (s.coins < REROLL_COST) return false; // 1回につきコインもかかる
       const rng = mulberry32((Math.random() * 2 ** 31) >>> 0);
       const { skill, apt } = applyReroll(horse, slots, rng);
       commit({
+        coins: s.coins - REROLL_COST,
         horses: s.horses.map((h) =>
           h.id === id ? { ...h, skill, apt, rerollsUsed: (h.rerollsUsed ?? 0) + 1 } : h,
         ),

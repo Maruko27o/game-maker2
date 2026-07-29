@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { runTournament, buildRoundField, playerSnapshot } from './arena';
-import { arenaPrize, periodId, periodLabel, msToNextPeriod, ARENA_PERIOD_MS } from '../data/arena';
+import { arenaPrize, periodId, periodLabel, msToNextPeriod, ARENA_PERIOD_MS, ARENA_FORM_SCALE } from '../data/arena';
 import { simulate2 } from './raceSim2';
 import { snapToEntrant } from './arena';
 import { COURSES } from '../data/courses';
@@ -112,7 +112,7 @@ describe('runTournament', () => {
     const res = runTournament(snap(STRONG), 314, [], 60, 1);
     const rr = res.rounds[0];
     const course = COURSES.find((c) => c.id === rr.courseId)!;
-    const fresh = simulate2(rr.field.map(snapToEntrant), course, res.mode, rr.seed);
+    const fresh = simulate2(rr.field.map(snapToEntrant), course, res.mode, rr.seed, { formScale: ARENA_FORM_SCALE });
     expect(fresh.order).toEqual(rr.order);
     expect(fresh.ranks).toEqual(rr.ranks);
   });

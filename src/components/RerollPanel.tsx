@@ -4,9 +4,10 @@ import { COURSES } from '../data/courses';
 import { GRADE_STYLE, type Grade } from '../data/aptitude';
 import { skillOf } from '../logic/skill';
 import { aptitudeOf } from '../logic/aptitude';
-import { rerollState, rightsBreakdown, SKILL_SLOT } from '../logic/reroll';
+import { rerollState, rightsBreakdown, SKILL_SLOT, REROLL_COST } from '../logic/reroll';
 import type { Horse } from '../types';
 import Icon from './Icon';
+import CoinIcon from './CoinIcon';
 import styles from './RerollPanel.module.css';
 
 // 厳選：固有スキル1枠＋コース6枠のうち、「更新する」と選んだ枠だけをまとめて引き直す。
@@ -26,6 +27,7 @@ function Stars({ n }: { n: number }) {
 export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose: () => void }) {
   const trophies = useStore((s) => s.trophies);
   const badges = useStore((s) => s.badges);
+  const coins = useStore((s) => s.coins);
   const rerollHorse = useStore((s) => s.rerollHorse);
   const finishReroll = useStore((s) => s.finishReroll);
 
@@ -38,9 +40,10 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
   const skill = skillOf(horse);
   const apt = aptitudeOf(horse);
   const breakdown = useMemo(
-    () => rightsBreakdown(st.trophyCount, st.badgeCount),
-    [st.trophyCount, st.badgeCount],
+    () => rightsBreakdown(horse.id, st.trophyCount, st.badgeCount),
+    [horse.id, st.trophyCount, st.badgeCount],
   );
+  const poor = coins < REROLL_COST; // コインが足りないと振り直せない
 
   function toggle(slot: string) {
     setPicked((p) => {
@@ -52,7 +55,7 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
   }
 
   function doReroll() {
-    if (picked.size === 0 || st.left <= 0) return;
+    if (picked.size === 0 || st.left <= 0 || poor) return;
     const before = { skill: skill.id, apt: { ...apt } };
     if (!rerollHorse(horse.id, [...picked])) return;
     // 変わった枠を光らせる（store 更新後の値は次のレンダーで入る）
@@ -132,6 +135,8 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
         <p className={styles.lead}>
           引き直したい枠を<strong>タップして「✓振り直す」</strong>にしてください。
           「このまま」の枠は動きません。選び終えたら下のボタンでまとめて振り直します。
+          <br />1回振り直すごとに <strong>{REROLL_COST.toLocaleString()}コイン</strong> かかります
+          （いまの持ちコイン {coins.toLocaleString()}）。
         </p>
 
         <ul className={styles.rows}>
@@ -158,12 +163,18 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
 
         {changed.size > 0 && <p className={styles.changedNote}>光っている枠が今回変わったところです。</p>}
 
-        <button className={styles.go} disabled={picked.size === 0 || st.left <= 0} onClick={() => setConfirm('reroll')}>
+        <button
+          className={styles.go}
+          disabled={picked.size === 0 || st.left <= 0 || poor}
+          onClick={() => setConfirm('reroll')}
+        >
           {st.left <= 0
             ? '回数を使いきりました'
-            : picked.size === 0
-              ? '振り直す枠を選んでね'
-              : `${picked.size}枠を振り直す（のこり${st.left}回）`}
+            : poor
+              ? `コインが足りません（${REROLL_COST.toLocaleString()}コイン必要）`
+              : picked.size === 0
+                ? '振り直す枠を選んでね'
+                : `${picked.size}枠を振り直す（${REROLL_COST.toLocaleString()}コイン・のこり${st.left}回）`}
         </button>
 
         <button className={styles.finish} onClick={() => setConfirm('finish')}>
@@ -189,6 +200,11 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
                   <p className={styles.confirmWarn}>
                     今の内容には<strong>戻せません</strong>。悪くなることもあります。
                     <br />のこり回数：{st.left} → {st.left - 1}
+                    <br />
+                    <span className={styles.confirmCost}>
+                      <CoinIcon size={14} /> {REROLL_COST.toLocaleString()} つかいます（{coins.toLocaleString()} →{' '}
+                      {(coins - REROLL_COST).toLocaleString()}）
+                    </span>
                   </p>
                 </>
               ) : (
@@ -218,7 +234,7 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
 
         <p className={styles.note}>
           ※ 振り直すと前の内容には戻せません。確定すると、回数が残っていても
-          もう振り直せなくなります。
+          もう振り直せなくなります。ベース回数はウマごとに1〜3回で決まっています。
         </p>
       </div>
     </div>

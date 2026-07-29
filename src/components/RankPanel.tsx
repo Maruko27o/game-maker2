@@ -18,6 +18,22 @@ function shortName(n: string): string {
   return n.length > 4 ? n.slice(0, 4) + '…' : n;
 }
 
+// スタミナメーターの見せ方。
+// 実測すると、ゴール時点の残量は中央値 0.065・99% が 0.22 以下に張り付く（タンクを
+// 使い切って走り切る設計なので、挙動としては正しい）。素の値をそのまま出すと全頭が
+// 真っ赤で「誰がまだ余しているか」が読めないため、燃料計と同じで空に近いほど目盛りを
+// 細かく取る（ガンマ補正）。順序は保たれるので速さの読み筋は変わらない。
+const SP_GAMMA = 0.45;
+export function spDisplay(sp: number): number {
+  return Math.pow(Math.max(0, Math.min(1, sp)), SP_GAMMA);
+}
+// 3色のバケツ分けをやめて緑→黄→橙→赤へ連続で変える。1頭ずつ違う色になるので、
+// 終盤に「この馬はまだ橙」「この馬はもう赤」が一目で分かる。
+export function spColor(disp: number): string {
+  const d = Math.max(0, Math.min(1, disp));
+  return `hsl(${Math.round(d * 130)} 70% ${Math.round(41 + d * 7)}%)`;
+}
+
 type Props = {
   entrants: Entrant[];
   looks: Record<string, HorseLook>;
@@ -25,13 +41,14 @@ type Props = {
   ranks: number[]; // current rank per entrant index (1..n), updated every frame
   stamina?: number[]; // スタミナ残り（0..1）。名前の下にメーターで出す。
   finished: boolean;
+  onPick?: (entrantIdx: number) => void; // カードをタップ → そのウマの能力ポップアップ
 };
 
 // The always-visible order strip under the track (RACE_V3 §1). Cards keep a fixed
 // DOM slot (keyed by horseId) and only slide via transform — a FLIP reorder that
 // never re-mounts the portrait. Rank sampling is throttled to ~10Hz with a short
 // hysteresis so photo-finishes don't make the cards jitter.
-export default function RankPanel({ entrants, looks, gate, ranks, stamina, finished }: Props) {
+export default function RankPanel({ entrants, looks, gate, ranks, stamina, finished, onPick }: Props) {
   const n = entrants.length;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(0);
@@ -82,7 +99,11 @@ export default function RankPanel({ entrants, looks, gate, ranks, stamina, finis
         return (
           <div
             key={e.horseId}
-            className={`${styles.card} ${e.isPlayer ? styles.me : ''} ${improved ? styles.rose : ''}`}
+            className={`${styles.card} ${e.isPlayer ? styles.me : ''} ${improved ? styles.rose : ''} ${onPick ? styles.tappable : ''}`}
+            role={onPick ? 'button' : undefined}
+            tabIndex={onPick ? 0 : undefined}
+            aria-label={onPick ? `${e.isPlayer ? 'あなた' : e.name}の能力を見る` : undefined}
+            onClick={onPick ? () => onPick(i) : undefined}
             style={{
               width: cardW || undefined,
               transform: `translateX(${x}px)`,
@@ -100,17 +121,11 @@ export default function RankPanel({ entrants, looks, gate, ranks, stamina, finis
               <span className={styles.name}>{e.isPlayer ? 'あなた' : shortName(e.name)}</span>
             </span>
             {/* スタミナメーター：残りが減るほど短く・色が変わる（切れると失速する） */}
-            {stamina && (
-              <span className={styles.spBar} aria-label={`スタミナ ${Math.round((stamina[i] ?? 0) * 100)}%`}>
-                <span
-                  className={styles.spFill}
-                  style={{
-                    width: `${Math.max(0, Math.min(1, stamina[i] ?? 0)) * 100}%`,
-                    background: (stamina[i] ?? 0) > 0.5 ? '#5bbf5b' : (stamina[i] ?? 0) > 0.22 ? '#e8b53c' : '#d9534f',
-                  }}
-                />
+            {stamina && ((d) => (
+              <span className={styles.spBar} aria-label={`スタミナ ${Math.round(d * 100)}%`}>
+                <span className={styles.spFill} style={{ width: `${d * 100}%`, background: spColor(d) }} />
               </span>
-            )}
+            ))(spDisplay(stamina[i] ?? 0))}
           </div>
         );
       })}

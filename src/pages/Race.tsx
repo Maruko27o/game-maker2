@@ -31,6 +31,7 @@ import { winProbs } from '../logic/grandprix';
 import { assignMoods, moodMultipliers, type MoodLevel } from '../logic/mood';
 import Paddock from '../components/Paddock';
 import BetResult from '../components/BetResult';
+import HorseStatsPopup from '../components/HorseStatsPopup';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import { normalRaceCoins, BADGE_COINS, MAX_BETS_PER_RACE } from '../data/coins';
 import { usePrefersReducedMotion } from '../hooks';
@@ -250,6 +251,7 @@ export default function Race() {
   const [bets, setBets] = useState<Bet[]>([]); // the placed bets (empty = no bet)
   const [odds, setOdds] = useState<number[] | null>(null); // Monte-Carlo win probs for the paddock
   const [oddsPct, setOddsPct] = useState(0); // odds-calc progress 0..1
+  const [resultStats, setResultStats] = useState<number | null>(null); // 払戻画面で能力を見ているウマ
   const rewardApplied = useRef(false);
 
   // 出走中のウマは所持ウマ全体から解決する（レース中にチームを編成し直しても壊れない）。
@@ -684,7 +686,14 @@ export default function Race() {
               return (
                 <li key={idx} className={`${styles.rankRow} ${e.isPlayer ? styles.rankMe : ''}`}>
                   <span className={styles.rankNo} style={{ background: rc.bg, borderColor: rc.bd, color: rc.fg }}>{rank}</span>
-                  <div className={styles.rankHorse}><HorseView horse={setup.looks[e.horseId]} size={36} /></div>
+                  {/* ウマをタップ → 能力ポップアップ（レース中の順位カードと同じもの） */}
+                  <button
+                    className={styles.rankHorse}
+                    onClick={() => setResultStats(idx)}
+                    aria-label={`${e.isPlayer ? 'あなた' : e.name}の能力を見る`}
+                  >
+                    <HorseView horse={setup.looks[e.horseId]} size={36} />
+                  </button>
                   <span className={styles.rankName}>{e.isPlayer ? 'あなた' : e.name} <span className={styles.rankStyle}>{RUN_STYLE_LABEL[e.style]}</span></span>
                   <span className={styles.rankTime}>{Number.isFinite(time) ? time.toFixed(1) + 's' : '-'}</span>
                 </li>
@@ -692,6 +701,13 @@ export default function Race() {
             })}
           </ol>
         </div>
+        {resultStats !== null && setup.entrants[resultStats] && (
+          <HorseStatsPopup
+            entrant={setup.entrants[resultStats]}
+            gate={result.gate[resultStats]}
+            onClose={() => setResultStats(null)}
+          />
+        )}
         {cutin.length > 0 && <BadgeCutin badges={cutin} onDone={() => setCutin([])} />}
       </div>
     );

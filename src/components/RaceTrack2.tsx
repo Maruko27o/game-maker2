@@ -6,6 +6,7 @@ import type { HorseLook } from '../types';
 import HorseDefs from './HorseDefs';
 import HorseRaceView from './HorseRaceView';
 import RankPanel from './RankPanel';
+import HorseStatsPopup from './HorseStatsPopup';
 import { buildScenery, obstacleMark } from './trackScenery';
 import { betTier, fmtOdds, type Bet, type BetKind } from '../logic/betting';
 import styles from './RaceTrack2.module.css';
@@ -27,19 +28,21 @@ type Props = {
   laps?: number; // override lap count (grand-prix heats/finals)
   bets?: Bet[]; // the player's placed bets — shown as a live strip that glows when winning
   moods?: number[]; // per-entrant mood performance multipliers (must match the odds calc)
+  formScale?: number; // 調子・運のブレの倍率（対戦は能力勝負にしたいので小さくする）
   anchorMs?: number; // wall-clock start (ms) of the countdown; drives resumable playback
   onFinish: (result: SimResult) => void;
 };
 
-export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, bets, moods, anchorMs, onFinish }: Props) {
+export default function RaceTrack2({ entrants, looks, course, mode, seed, reduced, skippable, laps, bets, moods, formScale, anchorMs, onFinish }: Props) {
   const result = useMemo(
-    () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps, moods }),
-    [entrants, course, mode, seed, laps, moods],
+    () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps, moods, formScale }),
+    [entrants, course, mode, seed, laps, moods, formScale],
   );
   const track = course.track;
   const lap = lapLength(track);
   const totalLaps = laps ?? (mode === 30 ? course.laps30 : course.laps60);
 
+  const [openStats, setOpenStats] = useState<number | null>(null); // 能力ポップアップ中の entrant idx
   const [phase, setPhase] = useState<'countdown' | 'run' | 'done'>('countdown');
   const [count, setCount] = useState(3);
   const elapsed = useRef(0);
@@ -440,7 +443,16 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         ranks={fr.runners.map((r) => r.rank)}
         stamina={fr.runners.map((r) => r.sp)}
         finished={done}
+        onPick={setOpenStats}
       />
+      {/* 順位カードをタップ → そのウマの能力ポップアップ（走っている最中でも見られる） */}
+      {openStats !== null && entrants[openStats] && (
+        <HorseStatsPopup
+          entrant={entrants[openStats]}
+          gate={result.gate[openStats]}
+          onClose={() => setOpenStats(null)}
+        />
+      )}
       {/* Bet slip strip below — each tag is tinted by how close it is to hitting
           right now (虹=的中 / 金=ニアピン / 銀=普通 / 無地=圏外) and the closest bets
           sort to the front (top-left), like the rank cards reshuffle. */}

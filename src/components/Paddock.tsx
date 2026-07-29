@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Entrant } from '../logic/raceSim2';
 import type { Course } from '../data/courses';
-import type { HorseLook, StatKey } from '../types';
-import { STAT_KEYS, STAT_LABEL, RUN_STYLE_LABEL } from '../types';
+import type { HorseLook } from '../types';
 import { raceOddsFromProbs, oddsFor, fmtOdds, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
 import { statTotal } from '../logic/stats';
-import { SKILL_BY_ID } from '../data/skills';
-import { GRADE_STYLE } from '../data/aptitude';
 import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
 import HorseView from './HorseView';
 import Icon from './Icon';
 import StatRadar from './StatRadar';
-import MoodFace from './MoodFace';
 import CoinIcon from './CoinIcon';
-import { MOODS, type MoodLevel } from '../logic/mood';
+import type { MoodLevel } from '../logic/mood';
+import HorseStatsPopup from './HorseStatsPopup';
 import styles from './Paddock.module.css';
 
 type Props = {
@@ -191,62 +188,14 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
         </div>
       )}
 
-      {/* 能力のポップアップ：画面外タップか✕で閉じる */}
+      {/* 能力のポップアップ：画面外タップか✕で閉じる（レース中・払戻画面と共通） */}
       {openStats !== null && entrants[openStats] && (
-        <div className={styles.statsOverlay} onClick={() => setOpenStats(null)}>
-          <div className={styles.statsCard} onClick={(ev) => ev.stopPropagation()} role="dialog" aria-label="能力">
-            <div className={styles.statsHead}>
-              <span className={styles.statsTitle}>
-                {openStats + 1}番 {entrants[openStats].isPlayer ? 'あなた' : entrants[openStats].name}
-              </span>
-              <button className={styles.statsClose} onClick={() => setOpenStats(null)} aria-label="閉じる">✕</button>
-            </div>
-            {((e) => (
-              <div className={styles.stats}>
-
-          <StatRadar stats={e.stats} size={150} />
-          <div className={styles.statMeta}>
-          <div className={styles.chipRow}>
-          <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
-          {e.apt && (
-          <span
-          className={styles.aptChip}
-          style={{ background: GRADE_STYLE[e.apt].background, color: GRADE_STYLE[e.apt].ink, borderColor: GRADE_STYLE[e.apt].border }}
-          title={`このコースの適性 ${e.apt}`}
-          >
-          適性 {e.apt}
-          </span>
-          )}
-          {moods && (
-          <span className={styles.moodChip} style={{ background: MOODS[moods[openStats]].color, color: MOODS[moods[openStats]].ink }}>
-          <MoodFace level={moods[openStats]} size={16} title={false} /> {MOODS[moods[openStats]].label}
-          </span>
-          )}
-          </div>
-          {e.skill && (
-          <div className={styles.skillLine}>
-          <span className={styles.skillLineName}>{SKILL_BY_ID[e.skill]?.name}</span>
-          <span className={styles.skillLineStars}>
-          {Array.from({ length: 5 }).map((_, si) => (
-          <Icon key={si} name="star" size={10} className={si < (SKILL_BY_ID[e.skill!]?.star ?? 0) ? styles.starOn : styles.starOff} />
-          ))}
-          </span>
-          <span className={styles.skillLineEffect}>{SKILL_BY_ID[e.skill]?.effect}</span>
-          </div>
-          )}
-          <dl className={styles.statNums}>
-          {STAT_KEYS.map((k: StatKey) => (
-          <div key={k} className={styles.statNum}>
-          <dt>{STAT_LABEL[k]}</dt>
-          <dd>{e.stats[k]}</dd>
-          </div>
-          ))}
-          </dl>
-          </div>
-              </div>
-            ))(entrants[openStats])}
-          </div>
-        </div>
+        <HorseStatsPopup
+          entrant={entrants[openStats]}
+          gate={openStats + 1}
+          mood={moods?.[openStats]}
+          onClose={() => setOpenStats(null)}
+        />
       )}
 
       <div className={styles.actions}>

@@ -10,6 +10,7 @@ import { teamHorses } from '../logic/farm';
 import { TEAM_SIZE } from '../data/coins';
 import {
   ARENA_ENTRY_FEE,
+  ARENA_FORM_SCALE,
   ARENA_ADVANCE,
   ARENA_ROUND_NAMES,
   arenaOutcomeLabel,
@@ -234,6 +235,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
           course={course}
           mode={view.mode}
           seed={rr.seed}
+          formScale={ARENA_FORM_SCALE}
           reduced={reduced}
           skippable
           onFinish={afterRound}
