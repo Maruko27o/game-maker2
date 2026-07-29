@@ -474,15 +474,15 @@ export default function Stable() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.detailRadar}>
-                      <StatRadar stats={selected.stats} size={104} />
+                    <div className={styles.metaRow}>
+                      <span className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</span>
+                      <span className={styles.metaTotal}>合計 {total} / {STAT_TOTAL_CAP}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className={styles.metaRow}>
-                  <span className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</span>
-                  <span className={styles.metaTotal}>合計 {total} / {STAT_TOTAL_CAP}</span>
+                <div className={styles.detailRadar}>
+                  <StatRadar stats={selected.stats} size={132} />
                 </div>
 
                 {/* 固有スキル（生まれつき1つ。いまは表示のみ・レースには未反映） */}

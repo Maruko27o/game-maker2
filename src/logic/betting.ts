@@ -75,15 +75,13 @@ export function oddsFor(kind: BetKind, sel: number[], p: number[]): number {
  *  払戻＝floor(賭け金×倍率) と一致させ、「1.5倍」表示なのに実際は1.48倍…という
  *  誤差をなくす。例）1.4837→"1.48"、2→"2.00"。FP 誤差対策に微小値を足す。 */
 export function fmtOdds(x: number): string {
-  // 「1001倍」と「100.1倍」を見間違えないようにする。
-  //   ・1000倍未満 … 必ず小数点を1つ付ける（"100.1"）。桁区切りは使わない。
-  //   ・1000〜9999倍 … 小数点なしの整数（"1001"）。点の有無だけで桁が分かる。
-  //   ・10000倍以上 … 「万」でまとめる（"3.2万"）。長い桁を読ませない。
-  if (x >= 10000) return `${(Math.floor(x / 1000 + 1e-6) / 10).toFixed(1)}万`;
-  if (x >= 1000) return String(Math.floor(x + 1e-6));
-  // 小数第1位まで・第2位以下は切り捨て。切り上げないので「表示より実際が低い」が
-  // 起こらない＝"1.5倍" と出ていれば必ず 1.5倍以上ある（連勝条件の判定と食い違わない）。
-  return (Math.floor(x * 10 + 1e-6) / 10).toFixed(1);
+  // 桁の見間違いを無くすため、書式を常に揃える。
+  //   ・小数第1位を必ず表示する（".0" でも省略しない）→ 小数点の位置が毎回同じ。
+  //   ・1000倍以上は3桁ごとにカンマを入れる → "1,001.0" と "100.1" が一目で違う。
+  // 第2位以下は切り捨て（切り上げない）。"1.5倍" と出ていれば必ず1.5倍以上あるので、
+  // 連勝条件（払戻1.5倍以上）の判定と食い違わない。
+  const t = Math.floor(x * 10 + 1e-6) / 10;
+  return t.toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
 // Win odds/popularity table for the paddock header (people bet from 人気).

@@ -130,23 +130,21 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
                   <span className={styles.gate} aria-label={`ゲート${gate}番`}>{gate}</span>
                   <HorseView horse={looks[e.horseId]} size={42} />
                 </div>
-                <div className={styles.meta}>
-                  <div className={styles.nameRow}>
-                    <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
-                    <span className={styles.pop}>{r.pop}人気</span>
-                  </div>
-                  <div className={styles.oddsRow}>
-                    <span className={styles.win}>{fmtOdds(r.odds)}倍</span>
-                    <button
-                      className={`${styles.info} ${open ? styles.infoOn : ''}`}
-                      aria-label={`能力を見る（総合${statTotal(e.stats)}）`}
-                      onClick={(ev) => { ev.stopPropagation(); setOpenStats(open ? null : r.idx); }}
-                    >
-                      <StatRadar stats={e.stats} size={16} bare />
-                      <span className={styles.infoTotal}>{statTotal(e.stats)}</span>
-                    </button>
-                  </div>
+                <div className={styles.nameRow}>
+                  <span className={styles.name}>{e.isPlayer ? 'あなた' : e.name}</span>
                 </div>
+                <div className={styles.oddsRow}>
+                  <span className={styles.win}>{fmtOdds(r.odds)}倍</span>
+                  <span className={styles.pop}>{r.pop}人気</span>
+                </div>
+                <button
+                  className={`${styles.info} ${open ? styles.infoOn : ''}`}
+                  aria-label={`能力を見る（総合${statTotal(e.stats)}）`}
+                  onClick={(ev) => { ev.stopPropagation(); setOpenStats(open ? null : r.idx); }}
+                >
+                  <StatRadar stats={e.stats} size={20} bare />
+                  <span className={styles.infoTotal}>{statTotal(e.stats)}</span>
+                </button>
                 <span className={`${styles.mark} ${on ? styles.markOn : ''}`}>
                   {on ? (spec.ordered ? order + 1 : '✓') : ''}
                 </span>
@@ -204,7 +202,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
             {((e) => (
               <div className={styles.stats}>
 
-          <StatRadar stats={e.stats} size={132} />
+          <StatRadar stats={e.stats} size={150} />
           <div className={styles.statMeta}>
           <div className={styles.chipRow}>
           <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
