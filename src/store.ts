@@ -543,6 +543,9 @@ type Store = SaveData & {
   /** Adopt an entry the cloud DB says we made (no fee) — reconciles an app-kill
    *  that lost the local entry, so the player can't enter the same period twice. */
   arenaAdoptPending: (entry: ArenaEntry) => void;
+  /** 締め切り前ならエントリー中のウマを差し替える（参加費は取らない）。
+   *  シード＝抽選内容は据え置きなので、差し替えで組み合わせを引き直すことはできない。 */
+  arenaSwapPending: (period: number, horseId: string, snapshot: ArenaHorseSnapshot) => boolean;
   // 牧場（放置収入・引退）.
   farmClaimedAt: number;
   /** Collect the accrued idle income and reset the anchor. Returns coins granted. */
@@ -1128,6 +1131,15 @@ export const useStore = create<Store>((set, get) => {
       const st = get().arena ?? freshArena();
       if (st.pending?.period === entry.period || (st.lastPeriod ?? -1) >= entry.period) return;
       commit({ arena: { ...st, pending: entry, lastPeriod: Math.max(st.lastPeriod ?? -1, entry.period) } });
+    },
+
+    arenaSwapPending: (period, horseId, snapshot) => {
+      const st = get().arena ?? freshArena();
+      const p = st.pending;
+      if (!p || p.period !== period) return false; // 未エントリー／締め切り済みは差し替えできない
+      // seed（＝抽選の中身）は据え置き。参加費も取らない、ウマだけを入れ替える。
+      commit({ arena: { ...st, pending: { ...p, horseId, snapshot } } });
+      return true;
     },
 
     claimFarm: () => {

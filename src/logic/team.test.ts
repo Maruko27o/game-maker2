@@ -9,7 +9,7 @@ const H = (id: string, gen2 = false): Horse => ({
   ...(gen2 ? { gen2: true } : {}),
 });
 
-describe('canJoinTeam（調整期間中の新世代ルール）', () => {
+describe('canJoinTeam（満員かどうかだけを見る）', () => {
   it('既存ウマは空きがあれば入れる', () => {
     const horses = [H('a'), H('b')];
     expect(canJoinTeam(H('b'), ['a'], horses, SIZE)).toEqual({ ok: true });
@@ -21,27 +21,21 @@ describe('canJoinTeam（調整期間中の新世代ルール）', () => {
     expect(canJoinTeam(horses[6], team, horses, SIZE)).toEqual({ ok: false, reason: 'full' });
   });
 
-  it('既存ウマがチーム外に残っている間は、新世代は入れない', () => {
+  // 調整完了により新世代の制限は撤廃。既存ウマが何頭チーム外にいても関係なく入れる。
+  it('新世代も既存ウマと同じ条件で入れる（既存ウマがチーム外に残っていても）', () => {
     const legacy = [H('a'), H('b')];
     const fresh = H('n1', true);
     const horses = [...legacy, fresh];
-    // 'b' がチーム外に残っている → 新世代 n1 は入れない
-    expect(canJoinTeam(fresh, ['a'], horses, SIZE)).toEqual({ ok: false, reason: 'gen2' });
+    expect(canJoinTeam(fresh, ['a'], horses, SIZE)).toEqual({ ok: true });
   });
 
-  it('既存ウマを6頭持つアカウントでは新世代は一切入れない（仕様どおり）', () => {
+  it('既存ウマを6頭持つアカウントでも、空きさえ作れば新世代を入れられる', () => {
     const legacy = Array.from({ length: 6 }, (_, i) => H(`L${i}`));
     const fresh = H('n1', true);
     const horses = [...legacy, fresh];
-    const team = legacy.map((h) => h.id);
-    expect(canJoinTeam(fresh, team, horses, SIZE).ok).toBe(false);
-  });
-
-  it('既存ウマが全員チームに入っていて空きがあるなら、新世代で埋められる', () => {
-    const legacy = [H('a'), H('b')];
-    const fresh = H('n1', true);
-    const horses = [...legacy, fresh];
-    expect(canJoinTeam(fresh, ['a', 'b'], horses, SIZE)).toEqual({ ok: true });
+    const full = legacy.map((h) => h.id);
+    expect(canJoinTeam(fresh, full, horses, SIZE)).toEqual({ ok: false, reason: 'full' }); // 満員だから
+    expect(canJoinTeam(fresh, full.slice(0, 5), horses, SIZE)).toEqual({ ok: true }); // 1頭外せば入る
   });
 
   it('ウマを1頭も持たない新規プレイヤーは、作ったウマ（新世代）でチームを組める', () => {
@@ -49,7 +43,7 @@ describe('canJoinTeam（調整期間中の新世代ルール）', () => {
     expect(canJoinTeam(fresh, [], [fresh], SIZE)).toEqual({ ok: true });
   });
 
-  it('すでにチームに入っているウマは常に ok', () => {
+  it('すでにチームに入っているウマは、満員でも ok', () => {
     const fresh = H('n1', true);
     const horses = [H('a'), fresh];
     expect(canJoinTeam(fresh, ['n1'], horses, SIZE)).toEqual({ ok: true });
@@ -64,11 +58,10 @@ describe('addToTeam / removeFromTeam / moveInTeam', () => {
     expect(addToTeam(H('a'), ['a'], horses, SIZE)).toEqual(['a']);
   });
 
-  it('入れられないときは元の配列をそのまま返す（参照も同じ）', () => {
-    const legacy = [H('a'), H('b')];
-    const fresh = H('n1', true);
-    const team = ['a'];
-    expect(addToTeam(fresh, team, [...legacy, fresh], SIZE)).toBe(team);
+  it('入れられないとき（満員）は元の配列をそのまま返す（参照も同じ）', () => {
+    const horses = Array.from({ length: 7 }, (_, i) => H(`h${i}`));
+    const team = horses.slice(0, SIZE).map((h) => h.id);
+    expect(addToTeam(horses[6], team, horses, SIZE)).toBe(team);
   });
 
   it('外すとチームから消える', () => {

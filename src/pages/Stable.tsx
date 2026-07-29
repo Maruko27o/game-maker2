@@ -569,9 +569,7 @@ export default function Stable() {
                       </button>
                       {!joinCheck.ok && (
                         <span className={styles.teamWhy}>
-                          {joinCheck.reason === 'full'
-                            ? `チームは${TEAM_SIZE}頭までです。だれかを外してね。`
-                            : '調整中のため、新しく生まれたウマはまだチームに入れられません。'}
+                          チームは{TEAM_SIZE}頭までです。だれかを外してね。
                         </span>
                       )}
                     </>

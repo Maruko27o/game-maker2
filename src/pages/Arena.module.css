@@ -138,17 +138,35 @@
 }
 .entered {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   background: var(--panel-inner);
   border: 3px solid var(--border);
   border-radius: 12px;
   padding: 12px;
 }
+.enteredRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .enteredSub {
   font-size: 12px;
   color: var(--ink-soft);
   margin-top: 2px;
+}
+/* 締め切り前ならいつでも出走ウマを変えられる導線 */
+.changeBtn {
+  width: 100%;
+  font-size: 15px;
+  padding: 10px;
+}
+.changeLead {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  line-height: 1.6;
 }
 .lockedEntry {
   text-align: center;
