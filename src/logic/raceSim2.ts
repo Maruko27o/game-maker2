@@ -171,12 +171,16 @@ export function simulate2(
   course: Course,
   mode: 30 | 60,
   seed: number,
-  opts: { recordFrames?: boolean; laps?: number; moods?: number[] } = {},
+  opts: { recordFrames?: boolean; laps?: number; moods?: number[]; formScale?: number } = {},
 ): SimResult {
   const rng = mulberry32(seed >>> 0);
   const track = course.track;
   const lap = lapLength(track);
   const laps = opts.laps ?? (mode === 30 ? course.laps30 : course.laps60);
+  // 調子・運のブレをどれだけ効かせるか（1 = 通常）。対戦は「能力の勝負」にしたいので
+  // 小さい値を渡す。0 にすると完全な能力順になって面白くないので、呼び出し側で加減する。
+  const form = Math.max(0, opts.formScale ?? 1);
+  const wobbleAmp = WOBBLE * form;
   // Start AND finish at the centre of the home (bottom) straight (RACE_V4 §2):
   // the field breaks from the start/finish line, runs N full laps and finishes
   // back down the home straight. s0 is the absolute start offset; the finish is
@@ -231,11 +235,11 @@ export function simulate2(
     const gate = gateOf[entrants.indexOf(e)];
     // hidden race-day luck (flat, varies per seed) and the shown mood kept apart:
     // luck is a constant factor, mood is a signed swing that builds over the race.
-    const luck = 1 + (rng() * 2 - 1) * LUCK;
+    const luck = 1 + (rng() * 2 - 1) * LUCK * form;
     // 調子の波の位相（ウマごとにバラバラ。決定的なのでオッズ計算とも一致する）
     const wob1 = rng() * Math.PI * 2;
     const wob2 = rng() * Math.PI * 2;
-    const moodDelta = (opts.moods?.[ei] ?? 1) - 1;
+    const moodDelta = ((opts.moods?.[ei] ?? 1) - 1) * form;
     // Inner posts start nearer the inner rail, but the draw is compressed toward
     // the middle (not the full track width) so an outer post isn't a near-certain
     // loss before the field even funnels to the rail.
@@ -324,7 +328,7 @@ export function simulate2(
       const moodFactor = 1 + r.moodDelta * moodRamp(progress);
       let vMax = (13.0 + ef.spd * 0.36) * paceAt(r.e.style, progress) * r.perf * moodFactor;
       // レース中の調子の波（平均するとゼロ。接戦を保ったまま勝者を読みにくくする）
-      vMax *= 1 + WOBBLE * (Math.sin(WOBBLE_W1 * t + r.wob1) + Math.sin(WOBBLE_W2 * t + r.wob2)) * 0.5;
+      vMax *= 1 + wobbleAmp * (Math.sin(WOBBLE_W1 * t + r.wob1) + Math.sin(WOBBLE_W2 * t + r.wob2)) * 0.5;
       // 固有スキル・適性：常時の最高速に加えて、序盤（前半）と終盤（後半）で効く分。
       vMax *= r.mods.vMax;
       if (progress < 0.4) vMax *= 1 + (r.mods.early - 1) * (1 - progress / 0.4);

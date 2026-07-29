@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from './store';
 import { COURSES } from './data/courses';
-import { SKILL_SLOT, allSlots, rerollState, canReroll } from './logic/reroll';
+import { SKILL_SLOT, allSlots, rerollState, canReroll, rerollBase, REROLL_COST, REROLL_MAX } from './logic/reroll';
 import type { Horse, Stats, Trophy, Badge } from './types';
 
 // PR-7：厳選（振り直し）のストア側の挙動。
@@ -16,9 +16,11 @@ function legacy(over: Partial<Horse> = {}): Horse {
     ...over,
   };
 }
+// 厳選は1回 REROLL_COST コインかかるので、テストは潤沢に持たせておく。
 function seed(h: Horse, trophies: Trophy[] = [], badges: Badge[] = []) {
-  useStore.setState({ horses: [h], team: [h.id], trophies, badges });
+  useStore.setState({ horses: [h], team: [h.id], trophies, badges, coins: 1_000_000 });
 }
+const BASE = rerollBase('L0'); // 'L0' のベース回数（1〜3のどれか。IDから決まる）
 
 describe('rerollHorse', () => {
   beforeEach(() => useStore.getState().resetAll());
@@ -41,11 +43,20 @@ describe('rerollHorse', () => {
     expect(h.skill).toBe('straight_run');
   });
 
-  it('権利を使い切ったら失敗する（ベース3回）', () => {
+  it('権利を使い切ったら失敗する（ベースはウマごとに1〜3回）', () => {
     seed(legacy());
-    for (let i = 0; i < 3; i++) expect(useStore.getState().rerollHorse('L0', [SKILL_SLOT])).toBe(true);
+    for (let i = 0; i < BASE; i++) expect(useStore.getState().rerollHorse('L0', [SKILL_SLOT])).toBe(true);
     expect(useStore.getState().rerollHorse('L0', [SKILL_SLOT])).toBe(false);
-    expect(useStore.getState().horses[0].rerollsUsed).toBe(3);
+    expect(useStore.getState().horses[0].rerollsUsed).toBe(BASE);
+  });
+
+  it('1回につきコインを払う。足りなければ振り直せない（回数も減らない）', () => {
+    seed(legacy());
+    useStore.setState({ coins: REROLL_COST });
+    expect(useStore.getState().rerollHorse('L0', [SKILL_SLOT])).toBe(true);
+    expect(useStore.getState().coins).toBe(0);
+    expect(useStore.getState().rerollHorse('L0', [SKILL_SLOT])).toBe(false); // コイン切れ
+    expect(useStore.getState().horses[0].rerollsUsed).toBe(1);
   });
 
   it('トロフィー・バッジが多いウマは10回まで回せる', () => {
@@ -54,8 +65,10 @@ describe('rerollHorse', () => {
     }));
     const badges: Badge[] = Array.from({ length: 100 }, (_, i) => ({ id: 'badge_1st', horseId: 'L0', at: i }));
     seed(legacy(), trophies, badges);
-    for (let i = 0; i < 10; i++) expect(useStore.getState().rerollHorse('L0', allSlots())).toBe(true);
+    const rights = Math.min(REROLL_MAX, BASE + 7);
+    for (let i = 0; i < rights; i++) expect(useStore.getState().rerollHorse('L0', allSlots())).toBe(true);
     expect(useStore.getState().rerollHorse('L0', allSlots())).toBe(false);
+    expect(rights).toBeGreaterThan(BASE); // 活躍したぶんだけ増えている
   });
 
   it('新世代(gen2)は厳選できない', () => {
@@ -95,7 +108,7 @@ describe('finishReroll（回数が余っていても確定できる）', () => {
 
   it('確定すると、回数が残っていても厳選できなくなる', () => {
     seed(legacy());
-    expect(rerollState(useStore.getState().horses[0], [], []).left).toBe(3);
+    expect(rerollState(useStore.getState().horses[0], [], []).left).toBe(BASE);
     expect(useStore.getState().finishReroll('L0')).toBe(true);
     expect(useStore.getState().horses[0].rerollDone).toBe(true);
     // 権利は0扱いになり、振り直しも拒否される

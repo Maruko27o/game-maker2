@@ -673,6 +673,11 @@
   border: 2px solid var(--border);
   display: grid;
   place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.rankHorse:active {
+  filter: brightness(0.94);
 }
 .rankName {
   font-weight: 800;

@@ -8,7 +8,7 @@ import { simulate2, type Entrant } from './raceSim2';
 import { mulberry32 } from './stats';
 import { makeCpu } from './cpu';
 import { colorById } from '../data/parts';
-import { ARENA_FIELD, ARENA_ADVANCE, ARENA_REAL_CAP, ARENA_COM_BANDS, arenaPrize, periodLabel } from '../data/arena';
+import { ARENA_FIELD, ARENA_ADVANCE, ARENA_REAL_CAP, ARENA_COM_BANDS, ARENA_FORM_SCALE, arenaPrize, periodLabel } from '../data/arena';
 import type { ArenaHorseSnapshot, ArenaRoundResult, ArenaResult, ArenaOutcome, HorseLook } from '../types';
 
 /** entrant/look へ変換するヘルパ（simulate2・HorseView 用）。 */
@@ -99,7 +99,7 @@ export function runTournament(
     const roundSeed = (seed + r * 7919) >>> 0;
     const field = buildRoundField(r, player, seed + r * 1009, pool);
     const entrants = field.map(snapToEntrant);
-    const res = simulate2(entrants, course, mode, roundSeed);
+    const res = simulate2(entrants, course, mode, roundSeed, { formScale: ARENA_FORM_SCALE });
     const playerIdx = field.findIndex((f) => f.isPlayer);
     const playerRank = res.ranks[playerIdx];
     const advanced = r < 2 && playerRank <= ARENA_ADVANCE;

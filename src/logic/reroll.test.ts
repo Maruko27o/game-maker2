@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   rerollRights, rightsBreakdown, canReroll, rerollState, allSlots, applyReroll,
-  REROLL_BASE, REROLL_MAX, SKILL_SLOT,
+  rerollBase, REROLL_BASE_MIN, REROLL_BASE_MAX, REROLL_MAX, SKILL_SLOT,
 } from './reroll';
 import { COURSES } from '../data/courses';
 import { mulberry32 } from './stats';
@@ -19,38 +19,60 @@ const T = (n: number, horseId = 'h1'): Trophy[] =>
 const B = (n: number, horseId = 'h1'): Badge[] =>
   Array.from({ length: n }, (_, i) => ({ id: `badge_1st`, horseId, at: i }));
 
-describe('厳選の権利（活躍に応じて最大10回）', () => {
-  it('何も持っていなければベースの3回', () => {
-    expect(rerollRights(0, 0)).toBe(REROLL_BASE);
+describe('厳選の権利（ベースは1〜3回のランダム、活躍で最大10回）', () => {
+  const base = rerollBase('h1');
+
+  it('ベースはウマごとに1〜3回で、同じIDなら必ず同じ値', () => {
+    expect(base).toBeGreaterThanOrEqual(REROLL_BASE_MIN);
+    expect(base).toBeLessThanOrEqual(REROLL_BASE_MAX);
+    expect(rerollBase('h1')).toBe(base); // 何度呼んでも同じ（振り直しで増やせない）
+  });
+
+  it('ベースは1〜3回に散らばる（全部同じ値にならない）', () => {
+    const seen = new Set<number>();
+    for (let i = 0; i < 300; i++) {
+      const b = rerollBase(`horse-${i}`);
+      expect(b).toBeGreaterThanOrEqual(REROLL_BASE_MIN);
+      expect(b).toBeLessThanOrEqual(REROLL_BASE_MAX);
+      seen.add(b);
+    }
+    expect(seen).toEqual(new Set([1, 2, 3]));
+  });
+
+  it('何も持っていなければベースのまま', () => {
+    expect(rerollRights('h1', 0, 0)).toBe(base);
   });
 
   it('指定どおりに積み上がる', () => {
-    expect(rerollRights(1, 0)).toBe(3 + 2); // トロフィー所持
-    expect(rerollRights(5, 0)).toBe(3 + 2 + 1); // 5個以上
-    expect(rerollRights(0, 1)).toBe(3 + 1); // バッジ所持
-    expect(rerollRights(0, 10)).toBe(3 + 1 + 1);
-    expect(rerollRights(0, 50)).toBe(3 + 1 + 1 + 1);
-    expect(rerollRights(0, 100)).toBe(3 + 1 + 1 + 1 + 1);
+    expect(rerollRights('h1', 1, 0)).toBe(base + 2); // トロフィー所持
+    expect(rerollRights('h1', 5, 0)).toBe(base + 2 + 1); // 5個以上
+    expect(rerollRights('h1', 0, 1)).toBe(base + 1); // バッジ所持
+    expect(rerollRights('h1', 0, 10)).toBe(base + 1 + 1);
+    expect(rerollRights('h1', 0, 50)).toBe(base + 1 + 1 + 1);
+    expect(rerollRights('h1', 0, 100)).toBe(base + 1 + 1 + 1 + 1);
   });
 
-  it('全部そろうとちょうど10回（上限）', () => {
-    expect(rerollRights(5, 100)).toBe(10);
+  it('全部そろうとベース+7、上限10回を超えない', () => {
+    expect(rerollRights('h1', 5, 100)).toBe(Math.min(REROLL_MAX, base + 7));
+    expect(rerollRights('h1', 999, 9999)).toBeLessThanOrEqual(REROLL_MAX);
     expect(REROLL_MAX).toBe(10);
   });
 
-  it('上限を超えない', () => {
-    expect(rerollRights(999, 9999)).toBe(REROLL_MAX);
+  it('ベース3回のウマは全部そろうとちょうど10回', () => {
+    const id = Array.from({ length: 500 }, (_, i) => `x${i}`).find((x) => rerollBase(x) === 3)!;
+    expect(rerollRights(id, 5, 100)).toBe(10);
   });
 
-  it('内訳は7項目で、合計するとちょうど10回', () => {
-    const bd = rightsBreakdown(5, 100);
+  it('内訳は7項目で、合計は権利の合計と一致する', () => {
+    const bd = rightsBreakdown('h1', 5, 100);
     expect(bd).toHaveLength(7);
     expect(bd.every((b) => b.got)).toBe(true);
-    expect(bd.reduce((n, b) => n + b.plus, 0)).toBe(10);
+    expect(bd.reduce((n, b) => n + b.plus, 0)).toBe(base + 7);
   });
 
   it('内訳は達成状況を正しく反映する', () => {
-    const bd = rightsBreakdown(0, 12);
+    const bd = rightsBreakdown('h1', 0, 12);
+    expect(bd.find((b) => b.label.startsWith('ベース'))!.plus).toBe(base);
     expect(bd.find((b) => b.label === 'トロフィーを持っている')!.got).toBe(false);
     expect(bd.find((b) => b.label === 'バッジ10枚以上')!.got).toBe(true);
     expect(bd.find((b) => b.label === 'バッジ50枚以上')!.got).toBe(false);
@@ -71,8 +93,9 @@ describe('対象は既存ウマだけ', () => {
 
 describe('rerollState（残り回数）', () => {
   it('使った分だけ減り、0未満にならない', () => {
-    expect(rerollState(H(), [], []).left).toBe(3);
-    expect(rerollState(H({ rerollsUsed: 2 }), [], []).left).toBe(1);
+    const base = rerollBase('h1');
+    expect(rerollState(H(), [], []).left).toBe(base);
+    expect(rerollState(H({ rerollsUsed: 1 }), [], []).left).toBe(Math.max(0, base - 1));
     expect(rerollState(H({ rerollsUsed: 99 }), [], []).left).toBe(0);
   });
 
@@ -80,12 +103,13 @@ describe('rerollState（残り回数）', () => {
     const st = rerollState(H(), T(3, 'other'), B(20, 'other'));
     expect(st.trophyCount).toBe(0);
     expect(st.badgeCount).toBe(0);
-    expect(st.rights).toBe(REROLL_BASE);
+    expect(st.rights).toBe(rerollBase('h1'));
   });
 
   it('活躍したウマは回数が増える', () => {
     const st = rerollState(H(), T(5), B(100));
-    expect(st.rights).toBe(10);
+    expect(st.rights).toBe(Math.min(REROLL_MAX, rerollBase('h1') + 7));
+    expect(st.rights).toBeGreaterThan(rerollState(H(), [], []).rights);
   });
 });
 

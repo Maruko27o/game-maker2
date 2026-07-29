@@ -25,12 +25,14 @@ describe('addHorse：新しく作ったウマは新世代(gen2)', () => {
     expect(made?.gen2).toBe(true);
   });
 
-  // 新世代の制限を撤廃したので、空き枠があれば新ウマもそのまま入る（満員なら入らない）。
-  it('チームに空きがあれば、新ウマは自動でチームに入る', () => {
+  // チーム編成は手動。空き枠があっても、増えたウマが勝手に入り込まない
+  // （草むらで厳選しているときに枠を取られないため）。
+  it('チームに1頭でも居れば、空きがあっても新ウマは自動で入らない', () => {
     const legacy = seedLegacy(2);
-    useStore.setState({ team: [legacy[0].id] });
+    useStore.setState({ team: [legacy[0].id] }); // 空きは5枠ある
     const made = useStore.getState().addHorse(look, { ...STATS })!;
-    expect(useStore.getState().team).toEqual([legacy[0].id, made.id]);
+    expect(useStore.getState().team).toEqual([legacy[0].id]);
+    expect(useStore.getState().team).not.toContain(made.id);
   });
 
   it('チームが満員なら、新ウマはボックス止まりでチーム編成は変わらない', () => {

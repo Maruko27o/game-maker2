@@ -11,6 +11,9 @@ export const ARENA_ENTRY_FEE = 1000; // コイン: 1回の参加費
 export const ARENA_FIELD = 8; // 1レースの頭数（全ラウンド8頭）
 export const ARENA_ADVANCE = 4; // 予選で通過する上位頭数
 export const ARENA_MODE = 60 as const; // レース時間（2周相当）
+// 対戦は「固有スキル・コース適性・能力値の勝負」にしたいので、調子や運のブレを弱める。
+// 0 にすると毎回まったく同じ顔ぶれが勝って読み合いが消えるため、通常の 1/3 程度に残す。
+export const ARENA_FORM_SCALE = 0.33;
 
 // 1日2回開催：12時間ごとに新しい「部」。境界はローカルの 0:00 と 12:00。
 export const ARENA_PERIOD_MS = 12 * 3600 * 1000;

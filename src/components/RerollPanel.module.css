@@ -333,6 +333,14 @@
   line-height: 1.6;
   text-align: center;
 }
+.confirmCost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-weight: 900;
+  color: #96702c;
+}
 .confirmActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
