@@ -234,8 +234,16 @@ describe('fmtOdds（表示）', () => {
       expect(parseFloat(fmtOdds(x))).toBeLessThanOrEqual(x + 1e-9);
     }
   });
-  it('1000倍以上は小数を出さず桁区切りにする', () => {
-    expect(fmtOdds(1000)).toBe('1,000');
-    expect(fmtOdds(32050.7)).toBe('32,050');
+  it('1001倍と100.1倍を見間違えない（点の有無で桁が分かる）', () => {
+    expect(fmtOdds(100.1)).toBe('100.1'); // 3桁＋小数点
+    expect(fmtOdds(1001)).toBe('1001'); // 4桁・小数点なし
+    expect(fmtOdds(1000)).toBe('1000');
+    expect(fmtOdds(9999.9)).toBe('9999');
+  });
+
+  it('10000倍以上は「万」でまとめる', () => {
+    expect(fmtOdds(10000)).toBe('1.0万');
+    expect(fmtOdds(32050)).toBe('3.2万');
+    expect(fmtOdds(100000)).toBe('10.0万');
   });
 });

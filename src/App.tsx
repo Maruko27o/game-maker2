@@ -36,6 +36,8 @@ export default function App() {
   const migrated = useStore((s) => s.migrated);
   const clearMigrated = useStore((s) => s.clearMigrated);
   const screen = screenOf(useLocation().pathname);
+  const raceBusy = useStore((s) => s.raceBusy);
+
   // Show the title once per session (a calm entry point, ACCOUNT.md §3).
   const [showTitle, setShowTitle] = useState(() => {
     try {
@@ -73,6 +75,9 @@ export default function App() {
           </button>
         </div>
       )}
+      {raceBusy && (
+        <div className={styles.busyNote} role="status">レース中はほかの画面に移動できません</div>
+      )}
       <main className={styles.main} data-screen={screen}>
         <Outlet />
       </main>
@@ -82,7 +87,11 @@ export default function App() {
             key={item.to}
             to={item.to}
             end={item.end}
-            className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ''}`}
+            // レース進行中はタブ移動を止める。賭け金を預けたまま他の画面へ行くと
+            // コインだけ減って馬券が消えるため（グランプリのパドックで発生していた）。
+            onClick={(e) => { if (raceBusy) e.preventDefault(); }}
+            aria-disabled={raceBusy || undefined}
+            className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ''} ${raceBusy ? styles.tabLocked : ''}`}
           >
             <span className={styles.icon} aria-hidden>
               <Icon name={item.icon} size={24} />

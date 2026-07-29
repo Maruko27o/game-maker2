@@ -32,6 +32,7 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
   const [picked, setPicked] = useState<Set<string>>(new Set()); // 「更新する」と選んだ枠
   const [changed, setChanged] = useState<Set<string>>(new Set()); // 直前の振り直しで変わった枠
   const [showRights, setShowRights] = useState(false);
+  const [confirm, setConfirm] = useState<'reroll' | 'finish' | null>(null);
 
   const st = rerollState(horse, trophies, badges);
   const skill = skillOf(horse);
@@ -129,8 +130,8 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
         )}
 
         <p className={styles.lead}>
-          いまの内容は<strong>すべて確定</strong>しています。引き直したい枠だけ「更新する」を
-          選んで、まとめて振り直してください。選ばなかった枠はそのまま残ります。
+          引き直したい枠を<strong>タップして「✓振り直す」</strong>にしてください。
+          「このまま」の枠は動きません。選び終えたら下のボタンでまとめて振り直します。
         </p>
 
         <ul className={styles.rows}>
@@ -147,7 +148,8 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
                   disabled={st.left <= 0}
                   aria-pressed={on}
                 >
-                  {on ? '更新する' : '確定'}
+                  <span className={styles.pickBox}>{on ? '✓' : ''}</span>
+                  {on ? '振り直す' : 'このまま'}
                 </button>
               </li>
             );
@@ -156,20 +158,63 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
 
         {changed.size > 0 && <p className={styles.changedNote}>光っている枠が今回変わったところです。</p>}
 
-        <button className={styles.go} disabled={picked.size === 0 || st.left <= 0} onClick={doReroll}>
+        <button className={styles.go} disabled={picked.size === 0 || st.left <= 0} onClick={() => setConfirm('reroll')}>
           {st.left <= 0
             ? '回数を使いきりました'
             : picked.size === 0
-              ? '更新する枠を選んでね'
+              ? '振り直す枠を選んでね'
               : `${picked.size}枠を振り直す（のこり${st.left}回）`}
         </button>
 
-        <button
-          className={styles.finish}
-          onClick={() => { finishReroll(horse.id); onClose(); }}
-        >
+        <button className={styles.finish} onClick={() => setConfirm('finish')}>
           この内容で確定する{st.left > 0 ? `（のこり${st.left}回は使わない）` : ''}
         </button>
+
+        {/* 確認ダイアログ：何がどうなるかを出してから実行する */}
+        {confirm && (
+          <div className={styles.confirmWrap} onClick={() => setConfirm(null)}>
+            <div className={styles.confirmCard} onClick={(e) => e.stopPropagation()}>
+              {confirm === 'reroll' ? (
+                <>
+                  <p className={styles.confirmTitle}>この{picked.size}枠を振り直します</p>
+                  <ul className={styles.confirmList}>
+                    {rows.filter((r) => picked.has(r.slot)).map((r) => (
+                      <li key={r.slot} className={styles.confirmItem}>
+                        <span className={styles.confirmLabel}>{r.label}</span>
+                        <span className={styles.confirmNow}>いま</span>
+                        <span className={styles.rowValue}>{r.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className={styles.confirmWarn}>
+                    今の内容には<strong>戻せません</strong>。悪くなることもあります。
+                    <br />のこり回数：{st.left} → {st.left - 1}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className={styles.confirmTitle}>この内容で確定します</p>
+                  <p className={styles.confirmWarn}>
+                    確定すると、のこり<strong>{st.left}回</strong>があっても
+                    <strong>もう振り直せません</strong>。
+                  </p>
+                </>
+              )}
+              <div className={styles.confirmActions}>
+                <button className={styles.confirmNo} onClick={() => setConfirm(null)}>やめる</button>
+                <button
+                  className={styles.confirmYes}
+                  onClick={() => {
+                    if (confirm === 'reroll') { doReroll(); setConfirm(null); }
+                    else { finishReroll(horse.id); setConfirm(null); onClose(); }
+                  }}
+                >
+                  {confirm === 'reroll' ? '振り直す' : '確定する'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <p className={styles.note}>
           ※ 振り直すと前の内容には戻せません。確定すると、回数が残っていても

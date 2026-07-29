@@ -236,6 +236,7 @@ export default function Race() {
   const raceSession = useStore((s) => s.raceSession);
   const setRaceSession = useStore((s) => s.setRaceSession);
   const patchRaceSession = useStore((s) => s.patchRaceSession);
+  const setRaceBusy = useStore((s) => s.setRaceBusy);
 
   const [screen, setScreen] = useState<'menu' | 'setup' | 'course' | 'gp' | 'arena' | 'roulette' | 'paddock' | 'race' | 'result'>('menu');
   const [grade, setGrade] = useState<'normal' | 'gp'>('normal');
@@ -254,6 +255,20 @@ export default function Race() {
   // 出走中のウマは所持ウマ全体から解決する（レース中にチームを編成し直しても壊れない）。
   // 「ウマを選ぶ」の一覧だけがチーム限定（horses）。
   const player = allHorses.find((h) => h.id === horseId) ?? null;
+
+  // パドックに入ってから結果を見るまでは、賭け金を預けている状態。ここで他のタブへ
+  // 移動されるとコインだけ減って馬券が消えるので、タブ移動を止める。
+  const busy = screen === 'paddock' || screen === 'race' || screen === 'roulette' || screen === 'gp' || screen === 'arena';
+  useEffect(() => {
+    setRaceBusy(busy);
+    return () => setRaceBusy(false);
+  }, [busy, setRaceBusy]);
+
+  // 画面が切り替わったら本文を一番上に戻す。たくさん賭けて伝票が伸びていると、
+  // そのままの位置ではレース画面が見えないまま始まってしまうため。
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [screen]);
 
   // Price the race off the *real* simulation: run it many times and read the actual
   // win rates, so the odds match the true chances (RACE §odds整合性). Kicked off as

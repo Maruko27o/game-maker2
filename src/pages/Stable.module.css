@@ -135,7 +135,7 @@
   background: var(--paper);
   border: 4px solid var(--border-dark);
   border-radius: 20px;
-  padding: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1149,6 +1149,97 @@
   border-radius: 11px;
   padding: 8px 11px;
   font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* ===== 詳細モーダルの小さめボタン ===== */
+.smallBtn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 8px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.smallPrimary {
+  background: var(--blue);
+  border-color: var(--blue-dark);
+  color: #fff;
+  box-shadow: 0 2px 0 var(--blue-dark);
+}
+.smallDanger {
+  background: #d9534f;
+  border-color: #a33b37;
+  color: #fff;
+  box-shadow: 0 2px 0 #a33b37;
+}
+.smallBtn:disabled {
+  background: var(--panel);
+  border-color: var(--border);
+  color: var(--ink-soft);
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+/* ===== ボックスの絞り込み・並び替え ===== */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0 2px 7px;
+}
+.starFilter {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.filterLabel {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.starChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.starChipOn {
+  background: var(--gold);
+  border-color: #b8871f;
+  color: #4a3000;
+}
+.clearChip {
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  text-decoration: underline;
+}
+.sortSelect {
+  margin-left: auto;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 3px 6px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--ink);
 }

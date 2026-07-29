@@ -21,8 +21,8 @@ function Stars({ n }: { n: SkillStar }) {
 }
 
 export default function SkillBook({ onClose }: { onClose: () => void }) {
-  // 最初はレアな段（星5・星4）だけ開いておく。
-  const [open, setOpen] = useState<Record<string, boolean>>({ 5: true, 4: true, apt: true });
+  // 最初はすべて閉じた状態で開く（一覧性を優先。見たい段だけ ▼ で開く）。
+  const [open, setOpen] = useState<Record<string, boolean>>({});
 
   return (
     <div className={styles.overlay} onClick={onClose}>
