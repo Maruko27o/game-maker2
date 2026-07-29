@@ -29,6 +29,7 @@ import { spawn as gachaSpawn } from './logic/gacha';
 import { ENERGY_CAP, spendEnergy } from './logic/energy';
 import { rescaleTo40, mulberry32, hashString } from './logic/stats';
 import { rollSkill, skillForHorseId } from './logic/skill';
+import { rollAptitude, aptitudeForHorseId } from './logic/aptitude';
 import { applyTraining } from './logic/training';
 import { evaluateBadges } from './logic/badges';
 import {
@@ -289,6 +290,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   // またいでも必ず同じものになる（＝クラウド突合でブレない）。
   for (let i = 0; i < horses.length; i++) {
     if (!horses[i]?.skill) horses[i] = { ...horses[i], skill: skillForHorseId(horses[i].id).id };
+    if (!horses[i]?.apt) horses[i] = { ...horses[i], apt: aptitudeForHorseId(horses[i].id) };
   }
 
   const energy = typeof d.energy === 'number' ? d.energy : ENERGY_CAP;
@@ -710,6 +712,7 @@ export const useStore = create<Store>((set, get) => {
       const horse: Horse = {
         ...h, id, stats, createdAt: Date.now(), gen2: true,
         skill: rollSkill(mulberry32(hashString(`skill:${id}`))).id,
+        apt: rollAptitude(mulberry32(hashString(`apt:${id}`))),
         ...(free ? { free: true } : {}),
       };
       const horses = [...s.horses, horse];

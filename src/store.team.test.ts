@@ -73,3 +73,21 @@ describe('migrate: 既存ウマにも固有スキルを付与（置いていか�
     expect(res!.data.horses[0].skill).toBe('sky_legs');
   });
 });
+
+describe('migrate: 既存ウマにもコース適性を付与', () => {
+  it('適性未設定の既存ウマに6コースぶん入り、IDから決まる固定値になる', () => {
+    const res = migrate(baseSave());
+    for (const h of res!.data.horses) {
+      expect(Object.keys(h.apt ?? {})).toHaveLength(6);
+      for (const g of Object.values(h.apt ?? {})) expect(['C', 'B', 'A', 'S']).toContain(g);
+    }
+    const again = migrate(baseSave());
+    expect(again!.data.horses.map((h) => h.apt)).toEqual(res!.data.horses.map((h) => h.apt));
+  });
+
+  it('すでに適性を持つウマは上書きしない（厳選の結果を壊さない）', () => {
+    const hs = [{ ...(horse('h1') as object), apt: { green: 'S' } }];
+    const res = migrate(baseSave({ horses: hs }));
+    expect(res!.data.horses[0].apt).toEqual({ green: 'S' });
+  });
+});

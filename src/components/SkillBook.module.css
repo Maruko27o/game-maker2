@@ -119,3 +119,41 @@
   color: var(--ink-soft);
   line-height: 1.6;
 }
+
+.sectionTitle {
+  margin: 4px 0 7px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.aptHeadTitle {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.gradeItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 5px 9px;
+}
+.gradeChip {
+  min-width: 24px;
+  text-align: center;
+  border: 1.5px solid;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.6;
+  padding: 0 4px;
+}
+.aptNote {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}

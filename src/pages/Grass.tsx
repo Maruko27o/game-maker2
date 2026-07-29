@@ -172,7 +172,7 @@ export default function Grass() {
 
       <div className={styles.footRow}>
         <span className={styles.footNote}>マイウマ {horseCount}/{maxHorses}</span>
-        <button className={styles.skillBookBtn} onClick={() => setBookOpen(true)} aria-label="固有スキル図鑑を見る">
+        <button className={styles.skillBookBtn} onClick={() => setBookOpen(true)} aria-label="ウマのとくちょう図鑑を見る">
           i
         </button>
         {stock < ENERGY_CAP && (
