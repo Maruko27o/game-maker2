@@ -8,6 +8,9 @@ import { RENAME_COST, TEAM_SIZE } from '../data/coins';
 import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRateOf, teamHorses } from '../logic/farm';
 import { canJoinTeam, type JoinCheck } from '../logic/team';
 import { skillOf } from '../logic/skill';
+import { aptitudeOf } from '../logic/aptitude';
+import { GRADE_STYLE } from '../data/aptitude';
+import { COURSES } from '../data/courses';
 import { trustedNow } from '../logic/trustedClock';
 import { STAT_KEYS, STAT_LABEL, STAT_CAP, STAT_TOTAL_CAP, RUN_STYLE_LABEL } from '../types';
 import type { Horse, Trophy, Badge, TrainingItem, StatKey } from '../types';
@@ -165,6 +168,7 @@ export default function Stable() {
       : `あと${Math.floor(farmToFull / 3600000)}時間${Math.floor((farmToFull % 3600000) / 60000)}分で満タン`;
   const retireVal = selected ? retireValueOf(selected, trophies, badges) : 0;
   const selectedSkill = skillOf(selected ?? { id: '' });
+  const selectedApt = aptitudeOf(selected ?? { id: '' });
   const teamIndex = selected ? (team ?? []).indexOf(selected.id) : -1;
   const joinCheck: JoinCheck = selected
     ? canJoinTeam(selected, team ?? [], horses, TEAM_SIZE)
@@ -353,6 +357,29 @@ export default function Stable() {
                     ))}
                   </span>
                   <span className={styles.skillEffect}>{selectedSkill.effect}</span>
+                </div>
+
+                {/* コース適性（2×3表・銅/銀/金/虹。いまは表示のみ・レースには未反映） */}
+                <div className={styles.aptBlock}>
+                  <span className={styles.aptTitle}>コース適性</span>
+                  <div className={styles.aptGrid}>
+                    {COURSES.map((c) => {
+                      const g = selectedApt[c.id];
+                      const st = GRADE_STYLE[g];
+                      return (
+                        <div key={c.id} className={styles.aptCell}>
+                          <span className={styles.aptCourse}>{c.name}</span>
+                          <span
+                            className={styles.aptGrade}
+                            style={{ background: st.background, color: st.ink, borderColor: st.border }}
+                            title={`${g}（${st.label}）`}
+                          >
+                            {g}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className={styles.earnRow}>
