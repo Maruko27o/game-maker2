@@ -9,6 +9,8 @@ import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRat
 import { canJoinTeam, type JoinCheck } from '../logic/team';
 import { skillOf } from '../logic/skill';
 import { aptitudeOf } from '../logic/aptitude';
+import { rerollState, canReroll } from '../logic/reroll';
+import RerollPanel from '../components/RerollPanel';
 import { GRADE_STYLE } from '../data/aptitude';
 import { COURSES } from '../data/courses';
 import { trustedNow } from '../logic/trustedClock';
@@ -122,6 +124,7 @@ export default function Stable() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [view, setView] = useState<View>('detail');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [rerollOpen, setRerollOpen] = useState(false);
   const [draftName, setDraftName] = useState('');
   const selected = horses.find((h) => h.id === openId) ?? null;
 
@@ -133,6 +136,7 @@ export default function Stable() {
   function close() {
     setOpenId(null);
     setConfirmDelete(false);
+    setRerollOpen(false);
     setView('detail');
   }
 
@@ -169,6 +173,7 @@ export default function Stable() {
   const retireVal = selected ? retireValueOf(selected, trophies, badges) : 0;
   const selectedSkill = skillOf(selected ?? { id: '' });
   const selectedApt = aptitudeOf(selected ?? { id: '' });
+  const rr = selected ? rerollState(selected, trophies, badges) : null;
   const teamIndex = selected ? (team ?? []).indexOf(selected.id) : -1;
   const joinCheck: JoinCheck = selected
     ? canJoinTeam(selected, team ?? [], horses, TEAM_SIZE)
@@ -299,6 +304,10 @@ export default function Stable() {
         </>
       )}
 
+      {selected && rerollOpen && (
+        <RerollPanel horse={selected} onClose={() => setRerollOpen(false)} />
+      )}
+
       {selected && (
         <div className={styles.overlay} onClick={close}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -381,6 +390,13 @@ export default function Stable() {
                     })}
                   </div>
                 </div>
+
+                {/* 厳選：既存ウマだけ。活躍に応じて最大10回まで枠を振り直せる。 */}
+                {selected && canReroll(selected) && rr && (
+                  <button className={styles.rerollBtn} onClick={() => setRerollOpen(true)}>
+                    <Icon name="sparkle" size={14} /> 厳選する（のこり{rr.left}／{rr.rights}回）
+                  </button>
+                )}
 
                 <div className={styles.earnRow}>
                   {teamSet.has(selected.id) ? (

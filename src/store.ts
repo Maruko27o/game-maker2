@@ -30,6 +30,7 @@ import { ENERGY_CAP, spendEnergy } from './logic/energy';
 import { rescaleTo40, mulberry32, hashString } from './logic/stats';
 import { rollSkill, skillForHorseId } from './logic/skill';
 import { rollAptitude, aptitudeForHorseId } from './logic/aptitude';
+import { applyReroll, rerollState, canReroll } from './logic/reroll';
 import { applyTraining } from './logic/training';
 import { evaluateBadges } from './logic/badges';
 import {
@@ -543,6 +544,8 @@ type Store = SaveData & {
   retireHorse: (id: string) => number;
   /** お気に入りロックを切り替える。ロック中のウマは引退できない。戻り値は切替後の状態。 */
   toggleLock: (id: string) => boolean;
+  /** 厳選：選んだ枠だけを振り直す（権利を1消費）。既存ウマのみ。成功したら true。 */
+  rerollHorse: (id: string, slots: string[]) => boolean;
   /** チーム（出走・牧場収入の対象／最大 TEAM_SIZE 頭）に入れる。入れられなければ false。 */
   joinTeam: (id: string) => boolean;
   /** チームから外してボックスに戻す。 */
@@ -1122,6 +1125,23 @@ export const useStore = create<Store>((set, get) => {
         avatarHorseId: s.avatarHorseId === id ? null : s.avatarHorseId,
       });
       return value;
+    },
+
+    rerollHorse: (id, slots) => {
+      const s = get();
+      const horse = s.horses.find((h) => h.id === id);
+      if (!horse || !canReroll(horse)) return false; // 新世代は厳選の対象外
+      if (!slots || slots.length === 0) return false; // 更新する枠が無い
+      const { left } = rerollState(horse, s.trophies, s.badges);
+      if (left <= 0) return false; // 権利を使い切っている
+      const rng = mulberry32((Math.random() * 2 ** 31) >>> 0);
+      const { skill, apt } = applyReroll(horse, slots, rng);
+      commit({
+        horses: s.horses.map((h) =>
+          h.id === id ? { ...h, skill, apt, rerollsUsed: (h.rerollsUsed ?? 0) + 1 } : h,
+        ),
+      });
+      return true;
     },
 
     toggleLock: (id) => {
