@@ -34,7 +34,7 @@ import BetResult from '../components/BetResult';
 import HorseStatsPopup from '../components/HorseStatsPopup';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import { normalRaceCoins, BADGE_COINS, MAX_BETS_PER_RACE } from '../data/coins';
-import { usePrefersReducedMotion } from '../hooks';
+import { usePrefersReducedMotion, useScrollTopOnChange } from '../hooks';
 import styles from './Race.module.css';
 
 // A short celebratory cut-in for achievement badges (ACCOUNT.md §2, 1.2s, skippable).
@@ -284,11 +284,7 @@ export default function Race() {
     return () => setRaceBusy(false);
   }, [busy, setRaceBusy]);
 
-  // 画面が切り替わったら本文を一番上に戻す。たくさん賭けて伝票が伸びていると、
-  // そのままの位置ではレース画面が見えないまま始まってしまうため。
-  useEffect(() => {
-    document.querySelector('main')?.scrollTo({ top: 0, behavior: 'auto' });
-  }, [screen]);
+  useScrollTopOnChange(screen);
 
   // Price the race off the *real* simulation: run it many times and read the actual
   // win rates, so the odds match the true chances (RACE §odds整合性). Kicked off as

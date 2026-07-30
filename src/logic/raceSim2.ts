@@ -340,14 +340,17 @@ export function simulate2(
       if (progress < 0.4) vMax *= 1 + (r.mods.early - 1) * (1 - progress / 0.4);
       if (progress > 0.6) vMax *= 1 + (r.mods.late - 1) * ((progress - 0.6) / 0.4);
       vMax *= 1 - Math.max(0, course.drag - ef.pwr * 0.015);
-      if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.03) / r.mods.corner;
+      // コーナーはパワー（踏ん張り）とジャンプ（身のこなし）の両方で曲がる。
+      // ジャンプは障害コース専用だと6コース中1つでしか価値が無く、そこに振った
+      // ウマが引き損になるので、全コースにある「コーナー」に出番を作る。
+      if (onCorner) vMax *= 1 - CORNER_PEN * (1 - ef.pwr * 0.015 - ef.jmp * 0.02) / r.mods.corner;
       // Graduated fatigue: as the tank runs low the top speed sags, so stamina
       // bites *continuously* (a small tank fades late on any course) rather than
       // only at empty. Big-tank builds (high sta) and closers hold their speed.
       const tired = r.sp <= 0;
       const spFrac = Math.max(0, r.sp / r.spMax);
       if (spFrac < 0.35) vMax *= 0.53 + (spFrac / 0.35) * 0.47; // 0.53x empty → 1.0x at 35%
-      if (progress >= 0.7) vMax *= 1 + ef.gut * 0.019; // gut = a strong late kick
+      if (progress >= 0.7) vMax *= 1 + ef.gut * 0.024; // gut = a strong late kick
       const boosting = t < r.boostUntil;
       if (boosting) vMax *= 1.25;
       // Slipstream vs clean-air: a horse leading its line cuts the air and is a
@@ -372,7 +375,7 @@ export function simulate2(
       // early empty out and fade; gut ("こんじょう") rarely buys a second wind, so
       // only genuinely gutsy (closer) horses can keep striking on empty.
       const sandMul = course.surface === 'sand' ? 1.15 : 1;
-      const drain = DT * Math.pow(r.v / 13, 2.2) * 4.0 * (1 - ef.wit * 0.012) * sandMul * r.mods.drain;
+      const drain = DT * Math.pow(r.v / 13, 2.2) * 4.0 * (1 - ef.wit * 0.020) * sandMul * r.mods.drain;
       r.sp = Math.max(0, r.sp - drain);
       if (r.sp <= 0 && rng() < ef.gut * 0.0045) r.sp = r.spMax * 0.15;
 

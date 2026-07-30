@@ -14,3 +14,13 @@ export function usePrefersReducedMotion(): boolean {
   }, []);
   return reduced;
 }
+
+/** 画面が切り替わったら本文を一番上に戻す。
+ *  レース系の画面はどれも縦に長く、前の画面でスクロールした位置のままだと
+ *  レースやパドックが見えないまま始まってしまう。1人でレース・グランプリ・対戦の
+ *  すべてで同じ挙動にしたいので、各画面に書かず共通のフックにしている。 */
+export function useScrollTopOnChange(key: unknown): void {
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [key]);
+}

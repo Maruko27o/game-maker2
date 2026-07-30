@@ -24,7 +24,8 @@ import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import RaceTrack2 from '../components/RaceTrack2';
-import { usePrefersReducedMotion } from '../hooks';
+import HorseStatsPopup from '../components/HorseStatsPopup';
+import { usePrefersReducedMotion, useScrollTopOnChange } from '../hooks';
 import styles from './Race.module.css';
 import a from './Arena.module.css';
 
@@ -51,8 +52,8 @@ function outcomeMedal(r: ArenaResult): string {
 }
 
 // The finishing rows of one round, sorted by rank (for the summary board).
-function RoundBoard({ rr }: { rr: ArenaRoundResult }) {
-  const rows = rr.field.map((s, i) => ({ s, rank: rr.ranks[i] })).sort((x, y) => x.rank - y.rank);
+function RoundBoard({ rr, onPick }: { rr: ArenaRoundResult; onPick: (fieldIdx: number) => void }) {
+  const rows = rr.field.map((s, i) => ({ s, i, rank: rr.ranks[i] })).sort((x, y) => x.rank - y.rank);
   const passLabel = rr.round === 2 ? (n: number) => (n === 1 ? '優勝' : '') : (n: number) => (n <= ARENA_ADVANCE ? '通過' : '');
   return (
     <div className={a.board}>
@@ -60,12 +61,15 @@ function RoundBoard({ rr }: { rr: ArenaRoundResult }) {
         <span className={a.boardName}>{ARENA_ROUND_NAMES[rr.round]}</span>
         <span className={a.boardSub}>{rr.round === 2 ? '着順で賞金' : `上位${ARENA_ADVANCE}通過`}</span>
       </div>
-      {rows.map(({ s, rank }) => {
+      {rows.map(({ s, i, rank }) => {
         const label = passLabel(rank);
         return (
           <div key={s.horseId} className={`${a.brow} ${s.isPlayer ? a.bmine : ''}`}>
             <span className={a.bmedal}>{rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</span>
-            <div className={a.bface}><HorseView horse={s} size={30} /></div>
+            {/* ウマをタップ → 能力ポップアップ（他のレースモードと同じ） */}
+            <button className={a.bface} onClick={() => onPick(i)} aria-label={`${s.isPlayer ? 'あなた' : s.name}の能力を見る`}>
+              <HorseView horse={s} size={30} />
+            </button>
             <span className={a.bname}>
               {s.isPlayer ? 'あなた' : s.name}
               {s.isCom && <span className={a.tagCom}>COM</span>}
@@ -107,7 +111,10 @@ export default function Arena({ onExit }: { onExit: () => void }) {
   const [round, setRound] = useState(0);
   const [note, setNote] = useState<string | null>(null);
   const [changing, setChanging] = useState(false); // エントリー済みのウマを差し替え中
+  const [boardStats, setBoardStats] = useState<{ round: number; i: number } | null>(null); // 結果表で能力を見ているウマ
   const [, setTick] = useState(0);
+
+  useScrollTopOnChange(screen);
 
   const selected: Horse | undefined = horses.find((h) => h.id === horseId) ?? horses[0];
   // 自動エントリー中のウマは所持ウマ全体から解決（チーム編成を変えても表示が消えない）。
@@ -276,8 +283,15 @@ export default function Arena({ onExit }: { onExit: () => void }) {
           </div>
         </div>
         {view.rounds.map((rr) => (
-          <RoundBoard key={rr.round} rr={rr} />
+          <RoundBoard key={rr.round} rr={rr} onPick={(i) => setBoardStats({ round: rr.round, i })} />
         ))}
+        {boardStats && view.rounds[boardStats.round]?.field[boardStats.i] && (
+          <HorseStatsPopup
+            entrant={snapToEntrant(view.rounds[boardStats.round].field[boardStats.i])}
+            gate={boardStats.i + 1}
+            onClose={() => setBoardStats(null)}
+          />
+        )}
         <div className={a.poolNote}>足りない分はCOMが自動で参加しているよ</div>
         <div className={styles.setupActions}>
           <button className="btn neutral" onClick={() => { setView(null); setScreen('home'); }}>閉じる</button>

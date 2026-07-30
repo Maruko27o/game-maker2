@@ -22,6 +22,7 @@ import { mcWinProbsAsync } from '../logic/odds';
 import { submitBestOdds } from '../cloud';
 import { ENABLE_RANKING } from '../config';
 import Paddock from '../components/Paddock';
+import HorseStatsPopup from '../components/HorseStatsPopup';
 import BetResult from '../components/BetResult';
 import { GP_DAILY_LIMIT, MAX_BETS_GP, gpFinalCoins } from '../data/coins';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
@@ -31,7 +32,7 @@ import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import RaceTrack2 from '../components/RaceTrack2';
-import { usePrefersReducedMotion } from '../hooks';
+import { usePrefersReducedMotion, useScrollTopOnChange } from '../hooks';
 import styles from './Race.module.css';
 import gp from './GrandPrix.module.css';
 
@@ -130,6 +131,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const [screen, setScreen] = useState<'grade' | 'card' | 'odds' | 'heat' | 'qualify' | 'finalPaddock' | 'final' | 'podium'>('grade');
   const [state, setState] = useState<GpState | null>(null);
   const [heatResults, setHeatResults] = useState<SimResult[] | null>(null);
+  const [podiumStats, setPodiumStats] = useState<number | null>(null); // 表彰台で能力を見ているウマ
   const [qualifiers, setQualifiers] = useState<Qualifier[] | null>(null);
   const [finalResult, setFinalResult] = useState<SimResult | null>(null);
   const [reward, setReward] = useState<{ trophy: Trophy | null; items: TrainingItem[]; rank: number; qualified: boolean; coins: number } | null>(null);
@@ -253,6 +255,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useScrollTopOnChange(screen);
 
   // 予選パドックに入ったら、その組・その周回数でモンテカルロ倍率を計算する。
   useEffect(() => {
@@ -600,13 +604,27 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
               return (
                 <li key={idx} className={`${styles.rankRow} ${e.isPlayer ? styles.rankMe : ''}`}>
                   <span className={styles.rankNo} style={{ background: rc.bg, borderColor: rc.bd, color: rc.fg }}>{rank}</span>
-                  <div className={styles.rankHorse}><HorseView horse={state.looks[e.horseId]} size={34} /></div>
+                  {/* ウマをタップ → 能力ポップアップ（1人でレースの払戻画面と同じ） */}
+                  <button
+                    className={styles.rankHorse}
+                    onClick={() => setPodiumStats(idx)}
+                    aria-label={`${e.isPlayer ? 'あなた' : e.name}の能力を見る`}
+                  >
+                    <HorseView horse={state.looks[e.horseId]} size={34} />
+                  </button>
                   <span className={styles.rankName}>{e.isPlayer ? 'あなた' : e.name} <span className={styles.rankStyle}>{RUN_STYLE_LABEL[e.style]}</span></span>
                   <span className={styles.rankTime}>{time.toFixed(1)}s</span>
                 </li>
               );
             })}
           </ol>
+          {podiumStats !== null && finalists[podiumStats] && (
+            <HorseStatsPopup
+              entrant={finalists[podiumStats]}
+              gate={finalResult.gate[podiumStats]}
+              onClose={() => setPodiumStats(null)}
+            />
+          )}
           <div className={styles.raceActions}>
             <button className="btn neutral" onClick={exitGp}>レースメニューへ</button>
             <button className="btn" onClick={() => { setRaceSession(null); setScreen('grade'); }}>もう一度</button>

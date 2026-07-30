@@ -125,7 +125,20 @@ describe('runTournament', () => {
       if (runTournament(snap(WEAK), s, [], 60, 1).outcome === 'champion') weakWins++;
     }
     expect(strongWins).toBeGreaterThan(weakWins);
-    // The jackpot stays rare even for a strong horse (balance guardrail).
-    expect(strongWins).toBeLessThan(40); // < ~66% of runs
+    expect(weakWins).toBe(0); // 合計17のウマは勝ち上がれない
+  });
+
+  // 賞金12,000コインの蛇口にならないためのガード。
+  // STRONG（合計53）は上限級なので、対戦が「能力の勝負」である以上ほぼ勝つのが正しい。
+  // 見るべきは「現実的に到達する強さ」で、実際に育てた合計48のウマが確定で勝たないこと。
+  // 以前は本戦のCOMが上限44しかおらず、合計48のウマの優勝率が68.7%あった。
+  it('a realistic top horse does not auto-win the jackpot', () => {
+    const G48: Stats = { spd: 9, sta: 9, pwr: 8, jmp: 6, gut: 8, wit: 8 }; // 合計48
+    let wins = 0;
+    for (let s = 0; s < 60; s++) {
+      if (runTournament(snap(G48), s, [], 60, 1).outcome === 'champion') wins++;
+    }
+    expect(wins / 60).toBeLessThan(0.6); // 実測 38.7%
+    expect(wins).toBeGreaterThan(0); // かといって勝てないわけでもない
   });
 });
