@@ -4,7 +4,7 @@
 -- Supabase ダッシュボード → SQL Editor に全文を貼って Run するだけ。
 -- user_id を書き換えれば他のプレイヤーにもそのまま使えます。
 --
--- やること（1トランザクションで全部）
+-- やること（1文＝1トランザクションで全部）
 --   1. saves_backup から「一番良い行」を自動で選ぶ
 --      （ウマの数 → コイン → 新しさ の順に強い行が勝つ。id を探す必要なし）
 --   2. いまの本体を saves_backup へ退避（やり直せるように）
@@ -18,6 +18,10 @@
 --     何もしません。結果が 0 行なら「復旧の必要なし」です。
 --   ・戻せるバックアップが1件も無いときも 0 行（＝何も壊しません）。
 --   ・何度実行しても安全です（2回目以降は 0 行になります）。
+--   ・対象は where の user_id 1人だけ。他のプレイヤーの行には触れません。
+--   ・中身が壊れている行（horses が配列でない等）は「0頭」とみなして除外します。
+--     jsonb_typeof で型を確かめてから数えているのは、そういう行があっても
+--     エラーで止まらない（＝他人の壊れた行に巻き込まれない）ようにするためです。
 --
 -- 実行前に本人へ：「アプリを完全に閉じて、レースもガチャもしないで」。
 --   開いたままだと端末の空データが自動保存で上がり、復旧をまた消します。
@@ -33,18 +37,22 @@ now_ms as (
 ),
 cur as (  -- いまの本体（更新前のスナップショット）
   select s.user_id,
-         jsonb_array_length(coalesce(s.data->'horses', '[]'::jsonb)) as horses
+         case when jsonb_typeof(s.data->'horses') = 'array'
+              then jsonb_array_length(s.data->'horses') else 0 end as horses
   from public.saves s, t
   where s.user_id = t.uid
 ),
 best as (  -- 復旧元：ウマが一番多い行（同数ならコインが多い方 → 新しい方）
   select b.id, b.data, b.backed_up_at,
-         jsonb_array_length(coalesce(b.data->'horses', '[]'::jsonb)) as horses
+         case when jsonb_typeof(b.data->'horses') = 'array'
+              then jsonb_array_length(b.data->'horses') else 0 end as horses
   from public.saves_backup b, t
   where b.user_id = t.uid
-    and jsonb_array_length(coalesce(b.data->'horses', '[]'::jsonb)) > 0
+    and case when jsonb_typeof(b.data->'horses') = 'array'
+             then jsonb_array_length(b.data->'horses') else 0 end > 0
   order by horses desc,
-           coalesce((b.data->>'coins')::numeric, 0) desc,
+           case when jsonb_typeof(b.data->'coins') = 'number'
+                then (b.data->>'coins')::numeric else 0 end desc,
            b.backed_up_at desc
   limit 1
 ),
@@ -66,7 +74,8 @@ restored as (  -- 本体を上書き（行が無ければ作成）。savedAt は
   select t.uid,
          jsonb_set(go.data, '{savedAt}', to_jsonb(now_ms.ms)),
          1,
-         nullif(go.data->>'version', '')::int,
+         case when jsonb_typeof(go.data->'version') = 'number'
+              then (go.data->>'version')::int else null end,
          'recover',
          now()
   from t, go, now_ms
@@ -79,15 +88,20 @@ restored as (  -- 本体を上書き（行が無ければ作成）。savedAt は
   returning user_id, data, rev
 )
 select
-  (select id from go)                                                  as restored_from_backup_id,
-  (select backed_up_at from go)                                        as backup_taken_at,
-  (select count(*) from stash)                                         as stashed_current_rows,
-  jsonb_array_length(coalesce(r.data->'horses', '[]'::jsonb))          as horses,
-  coalesce((r.data->>'coins')::numeric, 0)                             as coins,
-  jsonb_array_length(coalesce(r.data->'trophies', '[]'::jsonb))        as trophies,
-  jsonb_array_length(coalesce(r.data->'badges',   '[]'::jsonb))        as badges,
-  (select count(*) from jsonb_object_keys(coalesce(r.data->'owned', '{}'::jsonb))) as owned_parts,
-  to_timestamp(((r.data->>'savedAt')::bigint) / 1000.0)                as saved_at_now,
+  (select id from go)                                          as restored_from_backup_id,
+  (select backed_up_at from go)                                as backup_taken_at,
+  (select count(*) from stash)                                 as stashed_current_rows,
+  case when jsonb_typeof(r.data->'horses') = 'array'
+       then jsonb_array_length(r.data->'horses') else 0 end    as horses,
+  case when jsonb_typeof(r.data->'coins') = 'number'
+       then (r.data->>'coins')::numeric else 0 end             as coins,
+  case when jsonb_typeof(r.data->'trophies') = 'array'
+       then jsonb_array_length(r.data->'trophies') else 0 end  as trophies,
+  case when jsonb_typeof(r.data->'badges') = 'array'
+       then jsonb_array_length(r.data->'badges') else 0 end    as badges,
+  case when jsonb_typeof(r.data->'owned') = 'object'
+       then (select count(*) from jsonb_object_keys(r.data->'owned')) else 0 end as owned_parts,
+  to_timestamp(((r.data->>'savedAt')::bigint) / 1000.0)        as saved_at_now,
   r.rev
 from restored r;
 
