@@ -54,6 +54,39 @@
   padding: 8px 12px;
   line-height: 1.4;
 }
+/* 未ログインのままデータを育てている人への注意（消失は元に戻せないので赤）。
+   上部は固定アイコン（z-30）と木目バンド（z-25）の領域なので、下ナビのすぐ上に出す。 */
+.guestNotice {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 6px);
+  width: calc(100% - 16px);
+  max-width: 464px;
+  z-index: 35;
+  background: #6e211d;
+  color: #ffdedb;
+  border: 2px solid #ffdedb;
+  border-radius: 12px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+.guestNotice .noticeClose {
+  color: #ffdedb;
+  margin-left: 0;
+}
+.guestAction {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 900;
+  border-radius: 7px;
+  padding: 4px 9px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 .noticeClose {
   margin-left: auto;
   background: rgba(255, 255, 255, 0.15);

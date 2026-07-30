@@ -12,6 +12,7 @@ import EquippedFrame from './EquippedFrame';
 import TrophyIcon from './TrophyIcon';
 import CoinIcon from './CoinIcon';
 import AccountPanel from './AccountPanel';
+import BackupPanel from './BackupPanel';
 import styles from './ProfileModal.module.css';
 
 // アイコンに装備できるフレーム同士の同一判定。
@@ -204,7 +205,13 @@ export default function ProfileModal({
         </div>
 
         <div className={styles.body}>
-          {tab === 'profile' ? null : <AccountPanel />}
+          {tab === 'profile' ? null : (
+            <>
+              <AccountPanel />
+              {/* クラウドが第一の守り、手元バックアップが第二の守り。 */}
+              <BackupPanel />
+            </>
+          )}
         </div>
 
         <button className={styles.closeLink} onClick={onClose}>閉じる</button>
