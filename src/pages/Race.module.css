@@ -389,10 +389,25 @@
   font-weight: 800;
   color: var(--ink);
 }
+.modeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.25;
+}
+.modeBtnSub {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
 .modeBtnSel {
   border-color: var(--blue);
   background: var(--blue);
   color: #fff;
+}
+.modeBtnSel .modeBtnSub {
+  color: #dce9ff;
 }
 .setupActions {
   display: flex;

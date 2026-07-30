@@ -35,18 +35,49 @@ const clampOdds = (o: number) =>
 
 export type Bet = { kind: BetKind; sel: number[]; amount: number; odds: number };
 
-// Harville top-3 orderings: P((a,b,c) finish 1st/2nd/3rd). Σ ≈ 1. n=8 → 336 terms.
-function top3(p: number[]): { a: number; b: number; c: number; prob: number }[] {
-  const n = p.length;
+// ── 2着・3着の確率モデル ────────────────────────────────────────────────
+// 素の Harville（1着を決め、残りから2着…と順に引く）だと「本命が勝てないなら
+// 次の人気馬が2着」という形に確率が集中しすぎる。実際のレース（このゲームのシムも）
+// 2着・3着はもっとばらけるので、それ以外の組み合わせの確率を低く見積もり過ぎ、
+// 馬連・ワイド・3連単の倍率が跳ね上がっていた。
+//
+// 実測（各設定120レース。「その馬券を1点買い続けたときの1コインあたり期待払戻」で、
+// 本来は TAKEOUT=0.80 になるはず）：
+//   通常8頭2周   複勝1.37 馬連2.08 ワイド4.93 3連単4.48（3連単の最高当選 60,144倍）
+//   GP本戦8頭3周 複勝1.44 馬連1.44 ワイド3.20 3連単4.60（同 68,842倍）
+// つまり倍率が数倍高すぎ、当たるはずのない万馬券が普通に当たる状態だった。
+//
+// 対策は競馬のオッズ理論で標準的な Henery 型の割引。2着・3着の条件付き確率を
+// p^λ（λ<1）でなだらかにする。各段で分母を取り直すので Σ=1 は保たれ、確率分布と
+// しては正しいまま。あわせてモンテカルロ推定のゆらぎ（1/p は凸なので薄い確率ほど
+// 倍率が跳ねる）を抑えるため、この中だけで確率をわずかに一様へ寄せる。
+//
+// 単勝は生の p をそのまま使う（raceOddsFromProbs）ので、「単勝の倍率＝実際の勝率」
+// という今のバランスは一切動かない。
+// 補正後（同じ120レース）：
+//   通常8頭2周   複勝0.80 馬連1.00 ワイド0.85 3連単0.94（最高 5,949倍）
+//   GP本戦8頭3周 複勝0.89 馬連0.93 ワイド1.03 3連単1.06（最高 3,588倍）
+export const LAMBDA_2ND = 0.85; // 2着の条件付き確率をなだらかにする指数
+export const LAMBDA_3RD = 0.55; // 3着はさらになだらか（1着の順位との相関が薄い）
+export const TOP3_MIX = 0.08; // 一様分布へ寄せる割合（推定ノイズの増幅止め）
+
+// Top-3 orderings: P((a,b,c) finish 1st/2nd/3rd). Σ = 1. n=8 → 336 terms.
+function top3(p0: number[]): { a: number; b: number; c: number; prob: number }[] {
+  const n = p0.length;
+  const p = p0.map((x) => (1 - TOP3_MIX) * x + TOP3_MIX / n);
+  const q2 = p.map((x) => Math.pow(Math.max(x, 1e-12), LAMBDA_2ND));
+  const q3 = p.map((x) => Math.pow(Math.max(x, 1e-12), LAMBDA_3RD));
   const out: { a: number; b: number; c: number; prob: number }[] = [];
   for (let a = 0; a < n; a++) {
-    const da = 1 - p[a];
+    let d2 = 0;
+    for (let k = 0; k < n; k++) if (k !== a) d2 += q2[k];
     for (let b = 0; b < n; b++) {
       if (b === a) continue;
-      const dab = da - p[b];
+      let d3 = 0;
+      for (let k = 0; k < n; k++) if (k !== a && k !== b) d3 += q3[k];
       for (let c = 0; c < n; c++) {
         if (c === a || c === b) continue;
-        out.push({ a, b, c, prob: p[a] * (p[b] / (da || 1e-9)) * (p[c] / (dab || 1e-9)) });
+        out.push({ a, b, c, prob: p[a] * (q2[b] / (d2 || 1e-12)) * (q3[c] / (d3 || 1e-12)) });
       }
     }
   }

@@ -158,6 +158,7 @@ export type SingleRaceSession = {
   pickMode: boolean; // chosen-course practice (no betting) vs. the betting single race
   seed: number;
   mode: 30 | 60;
+  laps?: number; // 周回数（1/2/3）。未指定は従来どおりコース既定（60秒=2周）
   courseId: string; // the resolved course
   player: Horse; // snapshot at race start (for an identical deterministic rebuild)
   bets: SavedBet[];
