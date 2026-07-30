@@ -35,28 +35,70 @@ const clampOdds = (o: number) =>
 
 export type Bet = { kind: BetKind; sel: number[]; amount: number; odds: number };
 
-// Harville top-3 orderings: P((a,b,c) finish 1st/2nd/3rd). Σ ≈ 1. n=8 → 336 terms.
-function top3(p: number[]): { a: number; b: number; c: number; prob: number }[] {
-  const n = p.length;
+// ── 2着・3着の確率モデル ────────────────────────────────────────────────
+// 素の Harville（1着を決め、残りから2着…と順に引く）だと「本命が勝てないなら
+// 次の人気馬が2着」という形に確率が集中しすぎる。実際のレース（このゲームのシムも）
+// 2着・3着はもっとばらけるので、それ以外の組み合わせの確率を低く見積もり過ぎ、
+// 馬連・ワイド・3連単の倍率が跳ね上がっていた。
+//
+// 実測（各設定120レース。「その馬券を1点買い続けたときの1コインあたり期待払戻」で、
+// 本来は TAKEOUT=0.80 になるはず）：
+//   通常8頭2周   複勝1.37 馬連2.08 ワイド4.93 3連単4.48（3連単の最高当選 60,144倍）
+//   GP本戦8頭3周 複勝1.44 馬連1.44 ワイド3.20 3連単4.60（同 68,842倍）
+// つまり倍率が数倍高すぎ、当たるはずのない万馬券が普通に当たる状態だった。
+//
+// 対策は競馬のオッズ理論で標準的な Henery 型の割引。2着・3着の条件付き確率を
+// p^λ（λ<1）でなだらかにする。各段で分母を取り直すので Σ=1 は保たれ、確率分布と
+// しては正しいまま。あわせてモンテカルロ推定のゆらぎ（1/p は凸なので薄い確率ほど
+// 倍率が跳ねる）を抑えるため、この中だけで確率をわずかに一様へ寄せる。
+//
+// 単勝は生の p をそのまま使う（raceOddsFromProbs）ので、「単勝の倍率＝実際の勝率」
+// という今のバランスは一切動かない。
+// 補正後（同じ120レース）：
+//   通常8頭2周   複勝0.79 馬連0.87 ワイド0.81 3連単0.82（最高 4,042倍）
+//   GP本戦8頭3周 複勝0.81 馬連0.77 ワイド0.83 3連単0.77（最高 1,507倍）
+//   通常8頭1周   複勝0.80 馬連0.84 ワイド0.83 3連単0.80（最高 4,261倍）
+// 補正の強さは周回数で変える。長いレースほど道中で順位が入れ替わり、2着3着が
+// 1着の勝率から離れていくので、強く割り引く必要がある。実測（各設定120レース）で
+// 周回ごとに最適値を探し、直線で結んだもの：
+//   1周 λ2=1.00 λ3=0.90 ε=0.08 ／ 2周 0.88/0.65/0.14 ／ 3周 0.75/0.40/0.20
+// これで 1周〜3周・6頭〜8頭のどれでも期待払戻が 0.77〜0.97 に収まる
+// （固定値だと1周が 0.58 まで落ちていた）。
+export const DEFAULT_LAPS = 2;
+export function top3Params(laps: number): { l2: number; l3: number; mix: number } {
+  const L = Math.max(1, Math.min(3, laps || DEFAULT_LAPS));
+  return { l2: 1.125 - 0.125 * L, l3: 1.15 - 0.25 * L, mix: 0.08 + 0.06 * (L - 1) };
+}
+
+// Top-3 orderings: P((a,b,c) finish 1st/2nd/3rd). Σ = 1. n=8 → 336 terms.
+function top3(p0: number[], laps: number): { a: number; b: number; c: number; prob: number }[] {
+  const { l2, l3, mix } = top3Params(laps);
+  const n = p0.length;
+  const p = p0.map((x) => (1 - mix) * x + mix / n);
+  const q2 = p.map((x) => Math.pow(Math.max(x, 1e-12), l2));
+  const q3 = p.map((x) => Math.pow(Math.max(x, 1e-12), l3));
   const out: { a: number; b: number; c: number; prob: number }[] = [];
   for (let a = 0; a < n; a++) {
-    const da = 1 - p[a];
+    let d2 = 0;
+    for (let k = 0; k < n; k++) if (k !== a) d2 += q2[k];
     for (let b = 0; b < n; b++) {
       if (b === a) continue;
-      const dab = da - p[b];
+      let d3 = 0;
+      for (let k = 0; k < n; k++) if (k !== a && k !== b) d3 += q3[k];
       for (let c = 0; c < n; c++) {
         if (c === a || c === b) continue;
-        out.push({ a, b, c, prob: p[a] * (p[b] / (da || 1e-9)) * (p[c] / (dab || 1e-9)) });
+        out.push({ a, b, c, prob: p[a] * (q2[b] / (d2 || 1e-12)) * (q3[c] / (d3 || 1e-12)) });
       }
     }
   }
   return out;
 }
 
-/** Probability that a selection hits, by market. `sel` are entrant indices. */
-export function selProb(kind: BetKind, sel: number[], p: number[]): number {
+/** Probability that a selection hits, by market. `sel` are entrant indices.
+ *  `laps` は2着3着モデルの補正の強さに効く（周回数が多いほど強く割り引く）。 */
+export function selProb(kind: BetKind, sel: number[], p: number[], laps = DEFAULT_LAPS): number {
   if (kind === 'win') return p[sel[0]] ?? 0;
-  const tr = top3(p);
+  const tr = top3(p, laps);
   if (kind === 'place') return tr.reduce((s, t) => s + (t.a === sel[0] || t.b === sel[0] || t.c === sel[0] ? t.prob : 0), 0);
   if (kind === 'trifecta') return tr.reduce((s, t) => s + (t.a === sel[0] && t.b === sel[1] && t.c === sel[2] ? t.prob : 0), 0);
   const [i, j] = sel;
@@ -66,8 +108,8 @@ export function selProb(kind: BetKind, sel: number[], p: number[]): number {
 }
 
 /** Decimal odds for a selection (with takeout, clamped). */
-export function oddsFor(kind: BetKind, sel: number[], p: number[]): number {
-  const prob = selProb(kind, sel, p);
+export function oddsFor(kind: BetKind, sel: number[], p: number[], laps = DEFAULT_LAPS): number {
+  const prob = selProb(kind, sel, p, laps);
   return prob > 0 ? clampOdds((1 / prob) * TAKEOUT) : MAX_ODDS;
 }
 

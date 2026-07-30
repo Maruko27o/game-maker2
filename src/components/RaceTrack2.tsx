@@ -425,7 +425,9 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
         {skippable && phaseEff === 'run' && !done && (
           <button
             className={styles.skip}
-            disabled={travelled / result.distanceS < 0.5}
+            /* 1周を走り終えたらスキップ可（1周レースだけは半分まで走ったら）。
+               3周レースで最後まで見ないと飛ばせない、とならないようにする。 */
+            disabled={travelled < Math.min(lap, result.distanceS * 0.5)}
             onClick={() => { elapsed.current = result.duration + LINGER; if (!handedOff.current) { handedOff.current = true; onFinish(result); } }}
           >
             スキップ

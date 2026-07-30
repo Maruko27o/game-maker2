@@ -18,6 +18,7 @@ import {
 } from '../logic/grandprix';
 import { makeTrophy, rollItems } from '../logic/raceReward';
 import { settle, type Bet } from '../logic/betting';
+import { mcWinProbsAsync } from '../logic/odds';
 import { submitBestOdds } from '../cloud';
 import { ENABLE_RANKING } from '../config';
 import Paddock from '../components/Paddock';
@@ -103,6 +104,12 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   // Betting (改修：グランプリでも馬券。予選＋本戦の2回・各最大 MAX_BETS_GP 通り・コイン使用)。
   const [heatBets, setHeatBets] = useState<Bet[]>([]);
   const [finalBets, setFinalBets] = useState<Bet[]>([]);
+  // 倍率はモンテカルロ（本番と同じレースを何度も回した実際の勝率）で出す。
+  // 以前は解析モデルのままで、しかも周回数を渡していなかったため、予選（1〜2周）と
+  // 本戦（2〜3周）の実際の決着と噛み合わず、3連単などが桁違いの倍率になっていた。
+  const [heatOdds, setHeatOdds] = useState<number[] | null>(null);
+  const [finalOdds, setFinalOdds] = useState<number[] | null>(null);
+  const [oddsPct, setOddsPct] = useState(0);
 
   // Settle a round's bets against its finishing order: pay out and push the best
   // winning odds to the ranking (same as a single race).
@@ -247,6 +254,34 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 予選パドックに入ったら、その組・その周回数でモンテカルロ倍率を計算する。
+  useEffect(() => {
+    if (screen !== 'odds' || !state) return;
+    const heat = state.heats[state.playerHeat];
+    let alive = true;
+    setHeatOdds(null);
+    setOddsPct(0);
+    mcWinProbsAsync(heat, state.course, mode, {
+      laps: heatLaps(mode),
+      onProgress: (f) => { if (alive) setOddsPct(f); },
+    }).then((p) => { if (alive) setHeatOdds(p); });
+    return () => { alive = false; };
+  }, [screen, state, mode]);
+
+  // 本戦パドックも同じ。周回数が予選と違う（本戦は1周多い）ので必ず渡す。
+  useEffect(() => {
+    if (screen !== 'finalPaddock' || !state || !qualifiers) return;
+    const finalists = qualifiers.map((q) => q.entrant);
+    let alive = true;
+    setFinalOdds(null);
+    setOddsPct(0);
+    mcWinProbsAsync(finalists, state.course, mode, {
+      laps: finalLaps(mode),
+      onProgress: (f) => { if (alive) setOddsPct(f); },
+    }).then((p) => { if (alive) setFinalOdds(p); });
+    return () => { alive = false; };
+  }, [screen, state, qualifiers, mode]);
+
   // ---- grade select ----
   if (screen === 'grade') {
     const rows: { g: GpGrade; locked: boolean; cond: string }[] = [
@@ -334,6 +369,19 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   // ---- qualifier paddock (bet on your heat, then start) ----
   if (screen === 'odds') {
     const heat = state.heats[state.playerHeat];
+    if (!heatOdds) {
+      return (
+        <div className={styles.page}>
+          <h1 className={styles.title}>予選パドック（{state.playerHeat + 1}組）</h1>
+        <div className={styles.oddsLoading}>
+          <div className={styles.oddsSpinner} aria-hidden />
+          <p className={styles.oddsLoadingText}>オッズを計算中…</p>
+          <div className={styles.oddsBar}><div className={styles.oddsBarFill} style={{ width: `${Math.round(oddsPct * 100)}%` }} /></div>
+          <p className={styles.oddsLoadingSub}>本番と同じレースを何度も試して、実際の勝率からオッズを算出しています</p>
+        </div>
+        </div>
+      );
+    }
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>予選パドック（{state.playerHeat + 1}組）</h1>
@@ -343,6 +391,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           course={state.course}
           coins={coins}
           bets={heatBets}
+          probs={heatOdds}
+          laps={heatLaps(mode)}
           maxBets={MAX_BETS_GP}
           startLabel="予選スタート"
           onAdd={(b) => {
@@ -433,6 +483,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
             order={heatResults[state.playerHeat].order}
             bets={heatBets}
             course={state.course}
+            probs={heatOdds ?? undefined}
+            laps={heatLaps(mode)}
           />
         )}
         <div className={styles.setupActions}>
@@ -446,6 +498,19 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   // ---- final paddock (bet on the 8 finalists) ----
   if (screen === 'finalPaddock' && qualifiers) {
     const finalists = qualifiers.map((q) => q.entrant);
+    if (!finalOdds) {
+      return (
+        <div className={styles.page}>
+          <h1 className={styles.title}>本戦パドック（決勝8頭）</h1>
+        <div className={styles.oddsLoading}>
+          <div className={styles.oddsSpinner} aria-hidden />
+          <p className={styles.oddsLoadingText}>オッズを計算中…</p>
+          <div className={styles.oddsBar}><div className={styles.oddsBarFill} style={{ width: `${Math.round(oddsPct * 100)}%` }} /></div>
+          <p className={styles.oddsLoadingSub}>本番と同じレースを何度も試して、実際の勝率からオッズを算出しています</p>
+        </div>
+        </div>
+      );
+    }
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>本戦パドック（決勝8頭）</h1>
@@ -455,6 +520,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           course={state.course}
           coins={coins}
           bets={finalBets}
+          probs={finalOdds}
+          laps={finalLaps(mode)}
           maxBets={MAX_BETS_GP}
           startLabel="本戦スタート"
           onAdd={(b) => { if (finalBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) { const nb = [...finalBets, b]; setFinalBets(nb); patchRaceSession({ finalBets: nb.map(toSaved) }); } }}
@@ -522,6 +589,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
               order={finalResult.order}
               bets={finalBets}
               course={state.course}
+              probs={finalOdds ?? undefined}
+              laps={finalLaps(mode)}
             />
           )}
           <ol className={styles.ranking}>

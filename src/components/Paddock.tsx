@@ -26,6 +26,7 @@ type Props = {
   maxBets?: number; // slip cap (default MAX_BETS_PER_RACE); grand-prix passes MAX_BETS_GP
   startLabel?: string; // override the start button label (e.g. "予選スタート")
   probs?: number[]; // pre-computed win probabilities (Monte-Carlo); falls back to the heuristic
+  laps?: number; // 周回数。2着3着モデルの補正の強さに効く（長いほど強く割り引く）
   moods?: MoodLevel[]; // per-entrant mood for this race (shown as a face; already priced in)
 };
 
@@ -34,7 +35,7 @@ const KIND_LABEL: Record<BetKind, string> = { win: '単勝', place: '複勝', qu
 // Paddock: pick a market, select the horse(s), stake, and add to the bet slip —
 // as many bets as you like (RACE_V4 改修①). Odds come from the same model as the
 // popularity, with the 0.80 takeout. Bet on your own horse is allowed.
-export default function Paddock({ entrants, looks, course, coins, bets, onAdd, onRemove, onStart, maxBets = MAX_BETS_PER_RACE, startLabel, probs, moods }: Props) {
+export default function Paddock({ entrants, looks, course, coins, bets, onAdd, onRemove, onStart, maxBets = MAX_BETS_PER_RACE, startLabel, probs, laps, moods }: Props) {
   const p = useMemo(() => probs ?? winProbs(entrants, course), [probs, entrants, course]);
   const rows = useMemo(() => raceOddsFromProbs(p).slice().sort((a, b) => a.pop - b.pop), [p]);
 
@@ -47,7 +48,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
   useEffect(() => setSel([]), [kind]); // reset selection when switching market
 
   const complete = sel.length === spec.pick;
-  const curOdds = complete ? oddsFor(kind, sel, p) : 0;
+  const curOdds = complete ? oddsFor(kind, sel, p, laps) : 0;
   const staked = bets.reduce((s, b) => s + b.amount, 0);
   const full = bets.length >= maxBets; // slip cap reached
 
@@ -81,7 +82,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       const picks = shuffled.slice(0, spec.pick);
-      const odds = oddsFor(kind, picks, p);
+      const odds = oddsFor(kind, picks, p, laps);
       if (odds > 0 && odds <= OMAKASE_MAX_ODDS) {
         onAdd({ kind, sel: picks, amount, odds });
         return;
@@ -89,7 +90,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
     }
     // fallback: the most-favoured horses give the lowest odds for this market
     const favPicks = rows.slice(0, spec.pick).map((r) => r.idx);
-    onAdd({ kind, sel: favPicks, amount, odds: oddsFor(kind, favPicks, p) });
+    onAdd({ kind, sel: favPicks, amount, odds: oddsFor(kind, favPicks, p, laps) });
   }
 
   return (
