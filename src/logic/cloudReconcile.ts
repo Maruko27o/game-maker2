@@ -17,6 +17,13 @@ function hasProgress(s: SaveData): boolean {
   return s.horses.length > 0;
 }
 
+// 同じアカウントの続きなら、手持ちのウマIDが1頭くらいは重なるはず。1頭も
+// 重ならない＝別系統のセーブ（ゲスト枠を掴んでいる、owner の取り違え等）。
+function sameLineage(a: SaveData, b: SaveData): boolean {
+  const ids = new Set(b.horses.map((h) => h.id));
+  return a.horses.some((h) => ids.has(h.id));
+}
+
 /**
  * @param cloud  the account's cloud save, or null if it has none yet
  * @param local  this device's current save
@@ -40,6 +47,17 @@ export function reconcile(
     // the cloud here can't lose data — a genuine local reset is rare and can be
     // redone, whereas an accidental wipe is unrecoverable.
     if (!hasProgress(local) && hasProgress(cloud)) return { action: 'loadCloud' };
+    // 逆向きも同じ理屈で守る：クラウドが空で端末に中身があるなら、たとえ
+    // クラウドの時計が新しくても空を採用しない（＝端末の手持ちが消える）。
+    // 押し上げれば空だったクラウドも埋まるので、どちらにも損が無い。
+    if (hasProgress(local) && !hasProgress(cloud)) return { action: 'keepLocalPushCloud' };
+    // 二の矢：同じアカウントのはずなのに手持ちのウマが1頭も重ならないなら、
+    // それは続きではなく別系統のセーブ（ゲスト枠を掴んでいる／owner の取り違え）。
+    // 時計だけで決めて黙って上書きすると、こちらが新しいというだけで本物が消える。
+    // 破棄はせず、どちらを使うかを本人に聞く。
+    if (hasProgress(local) && hasProgress(cloud) && !sameLineage(local, cloud)) {
+      return { action: 'conflict' };
+    }
     return (cloud.savedAt ?? 0) >= (local.savedAt ?? 0)
       ? { action: 'loadCloud' }
       : { action: 'keepLocalPushCloud' };

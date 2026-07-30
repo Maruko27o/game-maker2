@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { reconcile, resolvePushConflict, guardEmptyPush } from './cloudReconcile';
 import type { SaveData } from '../types';
 
-function save(savedAt: number, horses = 0): SaveData {
+function save(savedAt: number, horses = 0, prefix = 'h'): SaveData {
   return {
     version: 6,
     owned: {},
     horses: Array.from({ length: horses }, (_, i) => ({
-      id: 'h' + i,
+      id: prefix + i,
       name: 'h',
       colors: { body: 'b', mane: 'm', hoof: 'h' },
       decos: {},
@@ -110,5 +110,41 @@ describe('guardEmptyPush (空の端末セーブでクラウドを潰さない)',
   });
   it('クラウドがまだ無ければ押し上げる（アカウント作成直後）', () => {
     expect(guardEmptyPush(save(900, 0), null)).toBe('push');
+  });
+});
+
+// ぎっつまさんのデータが2度消えた経路の再現。
+//
+// 起動直後のストアは activeKey（＝ゲスト枠）から初期化される。bindSaveKey が
+// 呼ばれるのは突合のあとなので、突合に渡る「端末のセーブ」はアカウントの枠では
+// なくゲスト枠の中身になる。owner は前回ログイン時のまま user.id なので、
+// reconcile はそれを同じアカウントの続きだと信じて last-write-wins に入る。
+// 草むらのログインボーナス等が起動時に commit してゲスト枠の savedAt を
+// 「いま」に更新するため、ゲスト枠がほぼ必ず新しい方になり、中身の少ない
+// ゲストデータでアカウントのクラウドを上書きしていた。
+describe('ゲスト枠でアカウントを上書きしてしまう事故', () => {
+  const UID = 'user-A';
+
+  it('【事故の形】同じ owner でも、ウマが1頭も重ならないなら黙って上書きしない', () => {
+    const cloud = save(1000, 27, 'real'); // アカウントの本物（27頭）
+    const guest = save(9999, 2, 'guest'); // ゲスト枠（2頭・起動時commitで時計だけ新しい）
+    // 以前はここが keepLocalPushCloud ＝ 本物がゲストデータで消えていた
+    expect(reconcile(cloud, guest, UID, UID)).toEqual({ action: 'conflict' });
+  });
+
+  it('ゲスト枠が空なら従来どおりクラウドを採用（安全網は健在）', () => {
+    expect(reconcile(save(1000, 27, 'real'), save(9999, 0), UID, UID)).toEqual({ action: 'loadCloud' });
+  });
+
+  it('本当に同じ端末の続き（ウマが重なる）なら、これまでどおり新しい方を採用', () => {
+    const cloud = save(1000, 5);
+    const localNewer = save(2000, 6); // h0..h4 が重なる＝同じ系統
+    expect(reconcile(cloud, localNewer, UID, UID)).toEqual({ action: 'keepLocalPushCloud' });
+    expect(reconcile(save(3000, 5), save(2000, 6), UID, UID)).toEqual({ action: 'loadCloud' });
+  });
+
+  it('クラウドが空なら、系統が違っても押し上げる（新規アカウントを止めない）', () => {
+    expect(reconcile(null, save(2000, 3, 'guest'), UID, UID)).toEqual({ action: 'pushLocal' });
+    expect(reconcile(save(3000, 0), save(2000, 3, 'guest'), UID, UID)).toEqual({ action: 'keepLocalPushCloud' });
   });
 });

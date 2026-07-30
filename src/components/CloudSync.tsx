@@ -123,8 +123,24 @@ export default function CloudSync() {
       }
 
       const cloud = loaded.status === 'ok' ? loaded.save : null;
+
+      // 突合の前に、端末の保存先をこのアカウントの枠へ向け直す。
+      //
+      // ストアはモジュール読み込み時に activeKey（＝起動直後は必ずゲスト枠）から
+      // 初期化される。bindSaveKey が呼ばれるのはこの突合のあとなので、ここで
+      // snapshot() を取ると「アカウントの端末データ」ではなく“ゲスト枠の中身”を
+      // 見てしまう。owner は前回ログイン時のまま user.id なので、reconcile は
+      // それを同じアカウントのデータだと信じて last-write-wins に入る。
+      // 草むらのログインボーナスなど起動時の commit がゲスト枠の savedAt を
+      // 「いま」に更新するため、ゲスト枠がほぼ必ず“新しい方”になり、
+      // 中身の少ないゲストデータでアカウントのクラウドを上書きしてしまっていた
+      // （＝ぎっつまさんのデータが消えた経路。バックアップは取られるので
+      //   saves_backup には上書き前の本物が残る）。
+      const owner = getOwner();
+      if (owner === user.id) useStore.getState().reloadFromKey(user.id);
+
       const local = snapshot();
-      const decision = reconcile(cloud ? cloud.data : null, local, getOwner(), user.id);
+      const decision = reconcile(cloud ? cloud.data : null, local, owner, user.id);
 
       if (decision.action === 'conflict' && cloud) {
         // Let the player choose which save wins; do not touch anything yet.
