@@ -465,7 +465,7 @@ export default function Race() {
           <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>一人でレース</span>
-            <span className={styles.modeDesc}>8頭立て・2周・馬券あり・3位以内でメダル</span>
+            <span className={styles.modeDesc}>8頭立て・1〜3周・馬券あり・3位以内でメダル</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
