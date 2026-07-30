@@ -30,9 +30,9 @@ export const STAT_LABEL: Record<StatKey, string> = {
   spd: 'スピード',
   sta: 'スタミナ',
   pwr: 'パワー',
-  jmp: 'ジャンプ',
-  gut: 'こんじょう',
-  wit: 'かしこさ',
+  jmp: '脚力',
+  gut: '根性',
+  wit: '賢さ',
 };
 export const STAT_CAP = 10; // per-stat max
 export const STAT_TOTAL_CAP = 48; // sum hard cap via training
