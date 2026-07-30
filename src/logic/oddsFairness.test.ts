@@ -38,7 +38,7 @@ function measure(races: number, laps: number | undefined, size: number): Res {
     const n = entrants.length;
     const M2 = (n * (n - 1)) / 2;
     const M3 = n * (n - 1) * (n - 2);
-    const odds = (kind: BetKind, sel: number[]) => TAKEOUT / Math.max(selProb(kind, sel, p), 1e-12);
+    const odds = (kind: BetKind, sel: number[]) => TAKEOUT / Math.max(selProb(kind, sel, p, laps ?? 2), 1e-12);
 
     acc.win += odds('win', [a]) / n;
     // 的中する選択をすべて数える（複勝=上位3頭・ワイド=その3組）
@@ -72,6 +72,15 @@ describe('倍率の期待払戻（0.80 が適正）', () => {
     }
     // 「当たってしまう万馬券」の上限。修正前は 60,144倍。
     expect(r.maxTrifecta).toBeLessThan(20_000);
+  }, 600_000);
+
+  it('1周でも同じ帯に収まる（周回数ごとに補正を変えている）', () => {
+    const r = measure(30, 1, 8);
+    console.log(`通常8頭1周: 3連単=${r.trifecta.toFixed(2)} ワイド=${r.wide.toFixed(2)} 馬連=${r.quinella.toFixed(2)} 複勝=${r.place.toFixed(2)} / 最高 ${Math.round(r.maxTrifecta).toLocaleString()}倍`);
+    for (const k of ['place', 'quinella', 'wide', 'trifecta'] as BetKind[]) {
+      expect(r[k]).toBeGreaterThan(0.45);
+      expect(r[k]).toBeLessThan(1.6);
+    }
   }, 600_000);
 
   it('3周でも同じ帯に収まる（周回数を変えても壊れない）', () => {

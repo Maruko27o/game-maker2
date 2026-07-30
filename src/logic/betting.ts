@@ -55,18 +55,28 @@ export type Bet = { kind: BetKind; sel: number[]; amount: number; odds: number }
 // 単勝は生の p をそのまま使う（raceOddsFromProbs）ので、「単勝の倍率＝実際の勝率」
 // という今のバランスは一切動かない。
 // 補正後（同じ120レース）：
-//   通常8頭2周   複勝0.80 馬連1.00 ワイド0.85 3連単0.94（最高 5,949倍）
-//   GP本戦8頭3周 複勝0.89 馬連0.93 ワイド1.03 3連単1.06（最高 3,588倍）
-export const LAMBDA_2ND = 0.85; // 2着の条件付き確率をなだらかにする指数
-export const LAMBDA_3RD = 0.55; // 3着はさらになだらか（1着の順位との相関が薄い）
-export const TOP3_MIX = 0.08; // 一様分布へ寄せる割合（推定ノイズの増幅止め）
+//   通常8頭2周   複勝0.79 馬連0.87 ワイド0.81 3連単0.82（最高 4,042倍）
+//   GP本戦8頭3周 複勝0.81 馬連0.77 ワイド0.83 3連単0.77（最高 1,507倍）
+//   通常8頭1周   複勝0.80 馬連0.84 ワイド0.83 3連単0.80（最高 4,261倍）
+// 補正の強さは周回数で変える。長いレースほど道中で順位が入れ替わり、2着3着が
+// 1着の勝率から離れていくので、強く割り引く必要がある。実測（各設定120レース）で
+// 周回ごとに最適値を探し、直線で結んだもの：
+//   1周 λ2=1.00 λ3=0.90 ε=0.08 ／ 2周 0.88/0.65/0.14 ／ 3周 0.75/0.40/0.20
+// これで 1周〜3周・6頭〜8頭のどれでも期待払戻が 0.77〜0.97 に収まる
+// （固定値だと1周が 0.58 まで落ちていた）。
+export const DEFAULT_LAPS = 2;
+export function top3Params(laps: number): { l2: number; l3: number; mix: number } {
+  const L = Math.max(1, Math.min(3, laps || DEFAULT_LAPS));
+  return { l2: 1.125 - 0.125 * L, l3: 1.15 - 0.25 * L, mix: 0.08 + 0.06 * (L - 1) };
+}
 
 // Top-3 orderings: P((a,b,c) finish 1st/2nd/3rd). Σ = 1. n=8 → 336 terms.
-function top3(p0: number[]): { a: number; b: number; c: number; prob: number }[] {
+function top3(p0: number[], laps: number): { a: number; b: number; c: number; prob: number }[] {
+  const { l2, l3, mix } = top3Params(laps);
   const n = p0.length;
-  const p = p0.map((x) => (1 - TOP3_MIX) * x + TOP3_MIX / n);
-  const q2 = p.map((x) => Math.pow(Math.max(x, 1e-12), LAMBDA_2ND));
-  const q3 = p.map((x) => Math.pow(Math.max(x, 1e-12), LAMBDA_3RD));
+  const p = p0.map((x) => (1 - mix) * x + mix / n);
+  const q2 = p.map((x) => Math.pow(Math.max(x, 1e-12), l2));
+  const q3 = p.map((x) => Math.pow(Math.max(x, 1e-12), l3));
   const out: { a: number; b: number; c: number; prob: number }[] = [];
   for (let a = 0; a < n; a++) {
     let d2 = 0;
@@ -84,10 +94,11 @@ function top3(p0: number[]): { a: number; b: number; c: number; prob: number }[]
   return out;
 }
 
-/** Probability that a selection hits, by market. `sel` are entrant indices. */
-export function selProb(kind: BetKind, sel: number[], p: number[]): number {
+/** Probability that a selection hits, by market. `sel` are entrant indices.
+ *  `laps` は2着3着モデルの補正の強さに効く（周回数が多いほど強く割り引く）。 */
+export function selProb(kind: BetKind, sel: number[], p: number[], laps = DEFAULT_LAPS): number {
   if (kind === 'win') return p[sel[0]] ?? 0;
-  const tr = top3(p);
+  const tr = top3(p, laps);
   if (kind === 'place') return tr.reduce((s, t) => s + (t.a === sel[0] || t.b === sel[0] || t.c === sel[0] ? t.prob : 0), 0);
   if (kind === 'trifecta') return tr.reduce((s, t) => s + (t.a === sel[0] && t.b === sel[1] && t.c === sel[2] ? t.prob : 0), 0);
   const [i, j] = sel;
@@ -97,8 +108,8 @@ export function selProb(kind: BetKind, sel: number[], p: number[]): number {
 }
 
 /** Decimal odds for a selection (with takeout, clamped). */
-export function oddsFor(kind: BetKind, sel: number[], p: number[]): number {
-  const prob = selProb(kind, sel, p);
+export function oddsFor(kind: BetKind, sel: number[], p: number[], laps = DEFAULT_LAPS): number {
+  const prob = selProb(kind, sel, p, laps);
   return prob > 0 ? clampOdds((1 / prob) * TAKEOUT) : MAX_ODDS;
 }
 

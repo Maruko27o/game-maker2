@@ -80,9 +80,12 @@ type RaceSetup = {
 // Rebuild the exact single-race field from its seed (改修：レース継続). Mirrors the
 // generation in begin() so a resumed race is byte-for-byte identical. When the
 // course was chosen (pickMode), pass it so the RNG isn't consumed for the draw.
-function buildSingleSetup(seed: number, player: Horse, mode: 30 | 60, laps: number, chosenCourse?: Course): RaceSetup {
+// `chosenLaps` を渡さないとき（1人でレース）は、コースと同じ抽選で周回数も決める。
+// seed から決まるので、中断して戻ってきても同じレースが再現される。
+function buildSingleSetup(seed: number, player: Horse, mode: 30 | 60, chosenLaps?: number, chosenCourse?: Course): RaceSetup {
   const rng = mulberry32(seed ^ 0x77);
   const course = chosenCourse ?? COURSES[Math.floor(rng() * COURSES.length)];
+  const laps = chosenLaps ?? LAP_CHOICES[Math.floor(rng() * LAP_CHOICES.length)];
   const pt = statTotal(player.stats);
   const band: [number, number] = [Math.max(34, pt - 4), Math.min(48, pt + 4)];
   const looks: Record<string, HorseLook> = { [player.id]: player };
@@ -114,12 +117,9 @@ function raceDoneAt(anchorMs: number, durationS: number, reduced: boolean): numb
   return anchorMs + cdMs + ((durationS + linger) / speed) * 1000;
 }
 
-// 1人でレース／コースを選ぶ で選べる周回数。おおよその走破時間も添える。
-const LAP_CHOICES: { laps: number; label: string; sub: string }[] = [
-  { laps: 1, label: '1周', sub: 'みじかい' },
-  { laps: 2, label: '2周', sub: 'ふつう' },
-  { laps: 3, label: '3周', sub: 'ながい' },
-];
+// レースの周回数。1人でレースではコースと同じく抽選で決まる。
+// 「コースを選ぶ」（練習）だけは自分で選べる。
+export const LAP_CHOICES = [1, 2, 3] as const;
 
 function surfaceLabel(s: string): string {
   return { turf: '芝', dirt: 'ダート', sand: '砂', steeple: '障害', circuit: 'ナイター', trail: '山道' }[s] ?? s;
@@ -158,7 +158,7 @@ const STEP = TILE_W + TILE_GAP;
 const REEL_LOOPS = 6; // 6周ぶんのタイルを流す
 const SPIN_MS = 3200; // 決まるまで（<5秒）
 
-function Roulette({ course, player, reduced, onDone }: { course: Course; player: Horse; reduced: boolean; onDone: () => void }) {
+function Roulette({ course, laps, player, reduced, onDone }: { course: Course; laps: number; player: Horse; reduced: boolean; onDone: () => void }) {
   const winRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(0);
   const [go, setGo] = useState(false);
@@ -216,6 +216,8 @@ function Roulette({ course, player, reduced, onDone }: { course: Course; player:
         <div className={`${styles.result} ${reduced ? '' : styles.resultIn}`}>
           <div className={styles.resultChips}>
             <span className={styles.chipSurface}>{THEME_LABEL[courseTheme(course)]}コース</span>
+            {/* 周回数もコースと一緒に抽選される */}
+            <span className={styles.chipLaps}>{laps}周</span>
             <span className={`${styles.chipApt} ${styles[`apt_${apt.tone}` as 'apt_good']}`}>{apt.text} {apt.mark}</span>
           </div>
           <div className={styles.resultDesc}>{course.desc}</div>
@@ -308,7 +310,8 @@ export default function Race() {
     if (!player) return;
     setRaceSession(null); // drop any previous (finished/abandoned) session
     const seed = (Math.random() * 2 ** 31) >>> 0;
-    const setup0 = buildSingleSetup(seed, player, mode, laps, chosenCourse);
+    // 賭けありの1人でレースは抽選任せ。コースを選ぶ練習だけ選んだ周回数を使う。
+    const setup0 = buildSingleSetup(seed, player, mode, chosenCourse ? laps : undefined, chosenCourse);
     setSetup(setup0);
     rewardApplied.current = false;
     setReward(null);
@@ -421,7 +424,7 @@ export default function Race() {
     if (s.kind !== 'single') return;
     const course = COURSES.find((c) => c.id === s.courseId);
     if (!course) { setRaceSession(null); return; }
-    const setup0 = buildSingleSetup(s.seed, s.player, s.mode, s.laps ?? 2, s.pickMode ? course : undefined);
+    const setup0 = buildSingleSetup(s.seed, s.player, s.mode, s.laps, s.pickMode ? course : undefined);
     const bets0 = s.bets as unknown as Bet[];
     setHorseId(s.player.id);
     setPickMode(s.pickMode);
@@ -538,24 +541,24 @@ export default function Race() {
                   ))}
                 </div>
               </>
-            ) : (
+            ) : pickMode ? (
               <>
-                {/* 周回数を選ぶ。長いほど道中の駆け引きとスタミナが効く。
-                    どれも1周を走り終えたらスキップできる。 */}
+                {/* 練習は自分で選ぶ。どれも1周を走り終えたらスキップできる。 */}
                 <h2 className={styles.h2}>レースの長さ</h2>
                 <div className={styles.modeSwitch}>
                   {LAP_CHOICES.map((l) => (
                     <button
-                      key={l.laps}
-                      className={`${styles.modeBtn} ${laps === l.laps ? styles.modeBtnSel : ''}`}
-                      onClick={() => setLaps(l.laps)}
+                      key={l}
+                      className={`${styles.modeBtn} ${laps === l ? styles.modeBtnSel : ''}`}
+                      onClick={() => setLaps(l)}
                     >
-                      {l.label}
-                      <span className={styles.modeBtnSub}>{l.sub}</span>
+                      {l}周
                     </button>
                   ))}
                 </div>
               </>
+            ) : (
+              <p className={styles.h2}>コースと周回数は抽選で決まります</p>
             )}
             <div className={styles.setupActions}>
               <button className="btn neutral" onClick={() => setScreen('menu')}>戻る</button>
@@ -608,7 +611,7 @@ export default function Race() {
   if (screen === 'roulette' && setup && player) {
     return (
       <div className={styles.page}>
-        <Roulette course={setup.course} player={player} reduced={reduced} onDone={() => setScreen('paddock')} />
+        <Roulette course={setup.course} laps={setup.laps} player={player} reduced={reduced} onDone={() => setScreen('paddock')} />
       </div>
     );
   }
@@ -636,6 +639,7 @@ export default function Race() {
           coins={coins}
           bets={bets}
           probs={odds}
+          laps={setup.laps}
           moods={setup.moods}
           onAdd={(b) => { if (bets.length >= MAX_BETS_PER_RACE) return; if (spendCoins(b.amount)) setBets((prev) => [...prev, b]); }}
           onRemove={(i) => { addCoins(bets[i].amount); setBets((prev) => prev.filter((_, k) => k !== i)); }}
@@ -707,7 +711,7 @@ export default function Race() {
           </div>
           <button className={styles.exitLink} onClick={() => { setRaceSession(null); setScreen('setup'); }}>ウマ・時間を変える</button>
           {/* くわしい払戻・着順は下に */}
-          <BetResult entrants={setup.entrants} gate={result.gate} order={result.order} bets={bets} course={setup.course} probs={odds ?? undefined} />
+          <BetResult entrants={setup.entrants} gate={result.gate} order={result.order} bets={bets} course={setup.course} probs={odds ?? undefined} laps={setup.laps} />
           <ol className={styles.ranking}>
             {order.map(({ idx, rank, time }) => {
               const rc = rankColor(rank, setup.entrants.length);

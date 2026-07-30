@@ -15,6 +15,7 @@ type Props = {
   bets: Bet[];
   course: Course;
   probs?: number[]; // pre-computed win probabilities (Monte-Carlo); falls back to the heuristic
+  laps?: number; // 周回数（2着3着モデルの補正の強さ）。パドックと同じ値を渡すこと
 };
 
 type BoardLine = { combo: number[]; mult: number; ordered: boolean };
@@ -36,7 +37,7 @@ function Combo({ combo, ordered }: { combo: number[]; ordered: boolean }) {
 // Official-style payout board (払戻金) computed from the actual finishing order,
 // plus the player's own slip with per-bet hit/miss and the net result. Modelled on
 // a real 競馬 payout screen: 収支プラスは赤、マイナスは青。
-export default function BetResult({ entrants, gate, order, bets, course, probs }: Props) {
+export default function BetResult({ entrants, gate, order, bets, course, probs, laps }: Props) {
   const p = probs ?? winProbs(entrants, course);
   const g = (idx: number) => gate[idx];
   const top = order.slice(0, 3);
@@ -45,18 +46,18 @@ export default function BetResult({ entrants, gate, order, bets, course, probs }
 
   // Winning payouts for every market, from the result.
   const board: { kind: BetKind; lines: BoardLine[] }[] = [
-    { kind: 'win', lines: [{ combo: [g(order[0])], mult: oddsFor('win', [order[0]], p), ordered: false }] },
-    { kind: 'place', lines: top.map((idx) => ({ combo: [g(idx)], mult: oddsFor('place', [idx], p), ordered: false })) },
-    { kind: 'quinella', lines: [{ combo: [g(order[0]), g(order[1])].sort((a, b) => a - b), mult: oddsFor('quinella', [order[0], order[1]], p), ordered: false }] },
+    { kind: 'win', lines: [{ combo: [g(order[0])], mult: oddsFor('win', [order[0]], p, laps), ordered: false }] },
+    { kind: 'place', lines: top.map((idx) => ({ combo: [g(idx)], mult: oddsFor('place', [idx], p, laps), ordered: false })) },
+    { kind: 'quinella', lines: [{ combo: [g(order[0]), g(order[1])].sort((a, b) => a - b), mult: oddsFor('quinella', [order[0], order[1]], p, laps), ordered: false }] },
     {
       kind: 'wide',
       lines: [[0, 1], [0, 2], [1, 2]].map(([a, b]) => ({
         combo: [g(order[a]), g(order[b])].sort((x, y) => x - y),
-        mult: oddsFor('wide', [order[a], order[b]], p),
+        mult: oddsFor('wide', [order[a], order[b]], p, laps),
         ordered: false,
       })),
     },
-    { kind: 'trifecta', lines: [{ combo: [g(order[0]), g(order[1]), g(order[2])], mult: oddsFor('trifecta', [order[0], order[1], order[2]], p), ordered: true }] },
+    { kind: 'trifecta', lines: [{ combo: [g(order[0]), g(order[1]), g(order[2])], mult: oddsFor('trifecta', [order[0], order[1], order[2]], p, laps), ordered: true }] },
   ];
 
   // The player's own slip.

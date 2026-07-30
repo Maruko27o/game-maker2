@@ -181,6 +181,12 @@ export function simulate2(
   // 小さい値を渡す。0 にすると完全な能力順になって面白くないので、呼び出し側で加減する。
   const form = Math.max(0, opts.formScale ?? 1);
   const wobbleAmp = WOBBLE * form;
+  // スタミナのタンクは「そのレースの距離ぶん」で用意する。
+  // タンクを絶対量で固定すると、1周では誰も使い切らない（脚質の差が出ず、前で
+  // 行った者勝ちになる）／3周では逃げが一方的に潰れる、と距離ごとに別のゲームに
+  // なってしまう。2周を基準に距離比でスケールし、どの距離でも「タンクの何割を
+  // 使うか」がだいたい同じになるようにする（2周では係数1.0＝従来と完全に同一）。
+  const staminaScale = laps / 2;
   // Start AND finish at the centre of the home (bottom) straight (RACE_V4 §2):
   // the field breaks from the start/finish line, runs N full laps and finishes
   // back down the home straight. s0 is the absolute start offset; the finish is
@@ -256,12 +262,12 @@ export function simulate2(
       moodDelta,
       vMax0: (9 + ef.spd * 0.6) * mods.vMax,
       accel0: (1.8 + ef.pwr * 0.26) * mods.accel,
-      spMax: (44 + ef.sta * 13) * mods.spMax,
+      spMax: (44 + ef.sta * 13) * mods.spMax * staminaScale,
       s: s0,
       d: startD,
       v: 0,
       vd: 0,
-      sp: (44 + ef.sta * 13) * mods.spMax, // start with a full tank (== spMax)
+      sp: (44 + ef.sta * 13) * mods.spMax * staminaScale, // start with a full tank (== spMax)
       state: 'gate',
       boostUntil: 0,
       jumpUntil: 0,

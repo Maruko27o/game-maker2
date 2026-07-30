@@ -392,6 +392,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           coins={coins}
           bets={heatBets}
           probs={heatOdds}
+          laps={heatLaps(mode)}
           maxBets={MAX_BETS_GP}
           startLabel="予選スタート"
           onAdd={(b) => {
@@ -482,6 +483,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
             order={heatResults[state.playerHeat].order}
             bets={heatBets}
             course={state.course}
+            probs={heatOdds ?? undefined}
+            laps={heatLaps(mode)}
           />
         )}
         <div className={styles.setupActions}>
@@ -518,6 +521,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           coins={coins}
           bets={finalBets}
           probs={finalOdds}
+          laps={finalLaps(mode)}
           maxBets={MAX_BETS_GP}
           startLabel="本戦スタート"
           onAdd={(b) => { if (finalBets.length >= MAX_BETS_GP) return; if (spendCoins(b.amount)) { const nb = [...finalBets, b]; setFinalBets(nb); patchRaceSession({ finalBets: nb.map(toSaved) }); } }}
@@ -585,6 +589,8 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
               order={finalResult.order}
               bets={finalBets}
               course={state.course}
+              probs={finalOdds ?? undefined}
+              laps={finalLaps(mode)}
             />
           )}
           <ol className={styles.ranking}>
