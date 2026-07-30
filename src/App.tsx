@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useStore } from './store';
+import { useAuth } from './cloud';
 import CloudSync from './components/CloudSync';
 import SyncConflictModal from './components/SyncConflictModal';
 import ProfileButton from './components/ProfileButton';
@@ -38,6 +39,33 @@ export default function App() {
   const screen = screenOf(useLocation().pathname);
   const raceBusy = useStore((s) => s.raceBusy);
 
+  // 未ログインのまま育てていると、端末のブラウザからデータが消えた時に戻す手段が
+  // 何も無い（iOS Safari はホーム画面に追加していないサイトの保存領域を消す）。
+  // ある程度ウマが増えてから、失うと痛い人にだけ一度知らせる。
+  const authReady = useAuth((s) => s.ready);
+  const cloudConfigured = useAuth((s) => s.configured);
+  const signedIn = useAuth((s) => !!s.user);
+  const setWantAccount = useAuth((s) => s.setWantAccount);
+  const horseCount = useStore((s) => s.horses.length);
+  const [guestSeen, setGuestSeen] = useState(() => {
+    try {
+      return !!sessionStorage.getItem('seenGuestWarn');
+    } catch {
+      return false;
+    }
+  });
+  function dismissGuest() {
+    try {
+      sessionStorage.setItem('seenGuestWarn', '1');
+    } catch {
+      /* ignore */
+    }
+    setGuestSeen(true);
+  }
+  // レース中は同じ位置に別の告知が出るので出さない（重ならないように）。
+  const showGuestWarn =
+    cloudConfigured && authReady && !signedIn && horseCount >= 3 && !guestSeen && !raceBusy;
+
   // Show the title once per session (a calm entry point, ACCOUNT.md §3).
   const [showTitle, setShowTitle] = useState(() => {
     try {
@@ -71,6 +99,20 @@ export default function App() {
         <div className={styles.notice} role="status">
           <span>ステータスの仕組みが変わりました（合計40の割り振り制）。マイウマから1回だけ無料で振り直せます。</span>
           <button className={styles.noticeClose} onClick={clearMigrated} aria-label="閉じる">
+            ✕
+          </button>
+        </div>
+      )}
+      {showGuestWarn && (
+        <div className={`${styles.notice} ${styles.guestNotice}`} role="status">
+          <span>未ログインです。この端末からデータが消えると戻せません。</span>
+          <button
+            className={styles.guestAction}
+            onClick={() => { setWantAccount(true); dismissGuest(); }}
+          >
+            アカウントを作る
+          </button>
+          <button className={styles.noticeClose} onClick={dismissGuest} aria-label="閉じる">
             ✕
           </button>
         </div>
