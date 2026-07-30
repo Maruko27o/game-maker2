@@ -94,8 +94,12 @@ limit 50;
 -- select user_id, data, rev from public.saves where user_id = '<USER_ID>';
 --
 -- -- 4b: バックアップで本体を上書き
+-- --     ★ data の savedAt を「いま」に進める。復旧データは消える前のものなので
+-- --       savedAt が古く、そのまま戻すと端末に残っている空セーブのほうが新しいと
+-- --       判定され、次の同期でまた上書きされてしまう（last-write-wins）。
 -- update public.saves s
---    set data       = b.data,
+--    set data       = jsonb_set(b.data, '{savedAt}',
+--                       to_jsonb((extract(epoch from now()) * 1000)::bigint)),
 --        rev        = s.rev + 1,
 --        updated_at = now(),
 --        updated_by = 'recover'
