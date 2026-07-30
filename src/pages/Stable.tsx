@@ -411,7 +411,7 @@ export default function Stable() {
               ) : (
                 <>
                   <span className={styles.bulkText}>
-                    {picked.size}頭を選択中 ・ 受け取り <CoinIcon size={13} />{' '}
+                    {picked.size}頭 ・ <CoinIcon size={12} />{' '}
                     {[...picked]
                       .map((id) => horses.find((h) => h.id === id))
                       .filter((h): h is Horse => !!h)
@@ -419,12 +419,14 @@ export default function Stable() {
                       .toLocaleString()}
                   </span>
                   <button className="btn secondary" onClick={() => setBulkConfirm(true)}>
-                    まとめて引退
+                    引退させる
                   </button>
                 </>
               )}
             </div>
           )}
+          {/* バーが浮いているぶんの逃げ場。最下段のウマもバーの上に出せるようにする。 */}
+          {pickMode && picked.size > 0 && <div className={styles.bulkSpacer} aria-hidden />}
           {bulkNote && (
             <div className={styles.bulkNote} role="status" onClick={() => setBulkNote(null)}>
               {bulkNote}
@@ -440,6 +442,16 @@ export default function Stable() {
       {selected && (
         <div className={styles.overlay} onClick={close}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            {/* 常に見えている閉じ口。中身が長いので、下まで送らないと閉じられない
+                状態を無くす。左は今どの画面を見ているかの表示。 */}
+            <div className={styles.modalBar}>
+              <span className={styles.modalBarTitle}>
+                {view === 'detail' ? selected.name : `${selected.name}を育てる`}
+              </span>
+              <button className={styles.modalClose} onClick={close} aria-label="閉じる">
+                ✕
+              </button>
+            </div>
             {view === 'detail' ? (
               <>
                 {/* 左：ウマ全体像／右上：名前＋能力図（高さを揃える）。数値6マスは廃止し合計だけ下に。 */}
