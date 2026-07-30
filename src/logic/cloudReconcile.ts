@@ -53,6 +53,22 @@ export function reconcile(
 }
 
 /**
+ * ログイン中の定期保存（デバウンス push）にも、サインイン時と同じ安全網をかける。
+ *
+ * reconcile は「空になった端末のセーブで、中身のあるクラウドを潰さない」を守っているが、
+ * それはサインインの瞬間だけの判定だった。ログインしたまま端末側が空になった状態で
+ * 保存が走ると、push はバックアップも取らずに本体を上書きしてしまう（＝実際に
+ * 「ログインと最高倍率は残っているのにコインとウマだけ消えた」形で発生した）。
+ *
+ * ウマを手放す操作はゲームに無いので、「ウマ0頭」は正常な状態ではなく端末側の異常。
+ * その場合はクラウドを正としてこちらを直す（＝押し上げない）。
+ */
+export function guardEmptyPush(local: SaveData, cloud: SaveData | null): 'push' | 'adoptCloud' {
+  if (cloud && !hasProgress(local) && hasProgress(cloud)) return 'adoptCloud';
+  return 'push';
+}
+
+/**
  * A debounced push was rejected because the server `rev` advanced since we read it
  * — i.e. another tab / another device / a reload of the SAME signed-in account
  * wrote in the meantime. Both saves belong to this account, so resolve silently by

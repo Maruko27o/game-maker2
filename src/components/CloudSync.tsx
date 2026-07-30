@@ -19,7 +19,7 @@ import {
   setRankingFrame,
   syncServerClock,
 } from '../cloud';
-import { reconcile, resolvePushConflict } from '../logic/cloudReconcile';
+import { reconcile, resolvePushConflict, guardEmptyPush } from '../logic/cloudReconcile';
 import { randomUsername } from '../logic/username';
 
 // Extract the persisted shape from the live store state.
@@ -197,6 +197,22 @@ export default function CloudSync() {
       clearTimeout(timer);
       timer = setTimeout(async () => {
         if (getRev() === null) return; // re-check after the debounce
+        // 端末側が空（ウマ0頭）になっているときは、そのまま押し上げるとバックアップも
+        // 取らずに本体を消してしまう。ウマを手放す操作は無いので、これは端末側の異常。
+        // クラウドに中身が残っていればそれを正として端末を直す（自己修復）。
+        if (snapshot().horses.length === 0) {
+          const loaded = await cloudLoad(user.id);
+          if (loaded.status === 'error') {
+            useAuth.getState().setSync('error'); // 読めない＝上書きしない
+            return;
+          }
+          if (loaded.status === 'ok' && guardEmptyPush(snapshot(), loaded.save.data) === 'adoptCloud') {
+            useStore.getState().hydrate(loaded.save.data);
+            setRev(loaded.save.rev);
+            useAuth.getState().setSync('saved');
+            return;
+          }
+        }
         const res = await cloudSave(user.id, snapshot(), getRev());
         if (res.ok) {
           setRev(res.rev);

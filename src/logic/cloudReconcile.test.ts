@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { reconcile, resolvePushConflict } from './cloudReconcile';
+import { reconcile, resolvePushConflict, guardEmptyPush } from './cloudReconcile';
 import type { SaveData } from '../types';
 
 function save(savedAt: number, horses = 0): SaveData {
@@ -89,5 +89,26 @@ describe('resolvePushConflict (同一アカウントの push 競合は自動解�
   });
   it('re-pushes local on a tie (avoid a needless extra round-trip toward cloud)', () => {
     expect(resolvePushConflict(500, 500)).toBe('repushLocal');
+  });
+});
+
+// ログイン中の定期保存にも同じ安全網をかける。サインイン時の reconcile だけでは、
+// 「ログインしたまま端末側が空になった」ケースで push がバックアップ無しに本体を
+// 消してしまう（実際にコインとウマだけ消える事故が起きた経路）。
+describe('guardEmptyPush (空の端末セーブでクラウドを潰さない)', () => {
+  it('端末が空・クラウドに中身 → 押し上げずクラウドを採用（自己修復）', () => {
+    expect(guardEmptyPush(save(900, 0), save(100, 12))).toBe('adoptCloud');
+  });
+  it('端末の時計が新しくても、空なら押し上げない（last-write-wins に頼らない）', () => {
+    expect(guardEmptyPush(save(999_999, 0), save(1, 3))).toBe('adoptCloud');
+  });
+  it('端末に中身があれば普通に押し上げる', () => {
+    expect(guardEmptyPush(save(900, 5), save(100, 12))).toBe('push');
+  });
+  it('両方が空なら押し上げる（初回・まだ何もしていない人を止めない）', () => {
+    expect(guardEmptyPush(save(900, 0), save(100, 0))).toBe('push');
+  });
+  it('クラウドがまだ無ければ押し上げる（アカウント作成直後）', () => {
+    expect(guardEmptyPush(save(900, 0), null)).toBe('push');
   });
 });
