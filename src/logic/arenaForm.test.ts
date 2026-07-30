@@ -20,9 +20,11 @@ function mkField(seed: number): Entrant[] {
 }
 
 /** 最強馬（idx 7）の勝率(%)。 */
+// サンプルは多めに取る。効き幅が10ポイント前後なので、少ないと当たり外れで
+// 逆転して落ちる（実際 66レースだと 33.3% 対 34.8% と噛み合わなかった）。
 function strongestWinRate(form: number): number {
-  const courses = COURSES.slice(0, 3);
-  const seeds = 22;
+  const courses = COURSES;
+  const seeds = 45;
   let wins = 0;
   let n = 0;
   for (const course of courses) {
@@ -39,8 +41,9 @@ describe('対戦の調子ブレ（ARENA_FORM_SCALE）', () => {
   it('通常より能力どおりに決まりやすいが、番狂わせの余地は残る', () => {
     const normal = strongestWinRate(1);
     const arena = strongestWinRate(ARENA_FORM_SCALE);
-    // 能力勝負に寄る
-    expect(arena).toBeGreaterThan(normal);
+    console.log(`最強馬の勝率: 通常 ${normal.toFixed(1)}% → 対戦 ${arena.toFixed(1)}%`);
+    // 能力勝負に寄る（実測 26.3% → 35.0%。ノイズを見て 3ポイント以上の差を要求）
+    expect(arena).toBeGreaterThan(normal + 3);
     // ただし一強ではない（強い馬でも半分近くは取りこぼす＝読み合いが残る）
     expect(arena).toBeLessThan(80);
     expect(ARENA_FORM_SCALE).toBeGreaterThan(0); // 完全な能力順にはしない
