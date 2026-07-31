@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
-import { colorsBySlot, decosBySlot, COLOR_SLOTS, DECO_SLOTS } from '../data/parts';
+import { colorsBySlot, decosBySlot, COLOR_SLOTS, DECO_SLOTS, colorById, colorSlotById } from '../data/parts';
 import { predictStyle } from '../logic/runStyle';
 import type { ColorSlot, DecoSlot, HorseLook, Stats, StatKey } from '../types';
 import {
@@ -16,6 +16,7 @@ import HorseView from '../components/HorseView';
 import styles from './Create.module.css';
 
 const DECO_LABEL: Record<DecoSlot, string> = { head: '頭', face: '顔', back: '背中', tail: 'しっぽ' };
+const COLOR_LABEL: Record<ColorSlot, string> = { body: 'からだ', mane: 'たてがみ', hoof: 'ひづめ' };
 
 // Where each slot's decorations live on the horse — so the picker can show the part
 // itself (no horse), cropped to its region, instead of just a text label.
@@ -68,6 +69,8 @@ export default function Create() {
   const rebalanceHorse = useStore((s) => s.rebalanceHorse);
   const freeRebalance = useStore((s) => s.freeRebalance);
   const maxHorses = useStore((s) => s.maxHorses);
+  const dyes = useStore((s) => s.dyes);
+  const useDye = useStore((s) => s.useDye);
 
   const editing = editId ? horses.find((h) => h.id === editId) ?? null : null;
   const rebalancing = rebalanceId ? horses.find((h) => h.id === rebalanceId) ?? null : null;
@@ -80,7 +83,7 @@ export default function Create() {
   // Whether the player owns at least one color in every color slot.
   const canBuild = COLOR_SLOTS.every((s) => colorsBySlot[s].some((c) => (owned[c.id] ?? 0) > 0));
 
-  const [colors] = useState<Record<ColorSlot, string>>(() =>
+  const [colors, setColors] = useState<Record<ColorSlot, string>>(() =>
     editing
       ? { ...editing.colors }
       : {
@@ -89,9 +92,20 @@ export default function Create() {
           hoof: firstOwnedColor(owned, 'hoof'),
         },
   );
+  const [dyePick, setDyePick] = useState<string | null>(null); // 使おうとしている染料
   const [decos, setDecos] = useState<Partial<Record<DecoSlot, string>>>(() =>
     editing ? { ...editing.decos } : {},
   );
+  // 持っている染料（色パーツID -> 個数）を一覧に。塗れる場所は色そのものが持っている。
+  const myDyes = useMemo(
+    () =>
+      Object.entries(dyes ?? {})
+        .filter(([id, n]) => n > 0 && colorById[id] && colorSlotById[id])
+        .map(([id, n]) => ({ part: colorById[id], slot: colorSlotById[id], count: n }))
+        .sort((a, b) => a.slot.localeCompare(b.slot) || a.part.name.localeCompare(b.part.name, 'ja')),
+    [dyes],
+  );
+
   const name = editing?.name ?? ''; // 名前はここでは変えない（改名はマイウマの詳細から）
 
   // Stat allocation state. Seeded from the horse when rebalancing, else the
@@ -189,9 +203,78 @@ export default function Create() {
         <>
           {/* 色（からだ・たてがみ・ひづめ）は生まれつきで変えられないため、ここでは
               出さない。着せ替えできるのは飾り（頭・顔・背中・しっぽ）だけ。 */}
-          <p className={styles.lockedNote}>
-            からだ・たてがみ・ひづめの色は生まれつきで、変えられません。
-          </p>
+          {editing ? (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>染料でいろを変える</h2>
+              {myDyes.length === 0 ? (
+                <p className={styles.lockedNote}>
+                  からだ・たてがみ・ひづめの色は生まれつきです。
+                  <br />ログインボーナス（土・日）でもらえる<strong>染料</strong>があると、塗り替えられます。
+                </p>
+              ) : (
+                <>
+                  <p className={styles.lockedNote}>
+                    使いたい染料をタップすると、その色の場所（{COLOR_LABEL.body}／{COLOR_LABEL.mane}／{COLOR_LABEL.hoof}）が塗り替わります。
+                  </p>
+                  <div className={styles.dyeGrid}>
+                    {myDyes.map(({ part, slot, count }) => {
+                      const cur = colors[slot] === part.id;
+                      return (
+                        <button
+                          key={part.id}
+                          type="button"
+                          className={`${styles.dye} ${cur ? styles.dyeCur : ''}`}
+                          disabled={cur}
+                          onClick={() => setDyePick(part.id)}
+                        >
+                          <span className={styles.dyeSwatch} style={{ background: part.swatch ?? part.value }} />
+                          <span className={styles.dyeName}>{part.name}</span>
+                          <span className={styles.dyeSlot}>{COLOR_LABEL[slot]}</span>
+                          <span className={styles.dyeCount}>×{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </section>
+          ) : (
+            <p className={styles.lockedNote}>
+              からだ・たてがみ・ひづめの色は生まれつきで、ここでは選べません。
+            </p>
+          )}
+
+          {/* 染料を使う確認（1つ消費して色が変わる） */}
+          {dyePick && editing && (() => {
+            const part = colorById[dyePick];
+            const slot = colorSlotById[dyePick];
+            if (!part || !slot) return null;
+            return (
+              <div className={styles.dyeConfirmWrap} onClick={() => setDyePick(null)}>
+                <div className={styles.dyeConfirm} onClick={(e) => e.stopPropagation()}>
+                  <p className={styles.dyeConfirmTitle}>
+                    {editing.name}の{COLOR_LABEL[slot]}を
+                    <br />「{part.name}」にします
+                  </p>
+                  <span className={styles.dyeBig} style={{ background: part.swatch ?? part.value }} />
+                  <p className={styles.dyeConfirmNote}>染料を1つつかいます。元の色には戻せません。</p>
+                  <div className={styles.dyeConfirmRow}>
+                    <button type="button" className="btn neutral" onClick={() => setDyePick(null)}>やめる</button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        if (useDye(editing.id, dyePick)) setColors((c) => ({ ...c, [slot]: dyePick }));
+                        setDyePick(null);
+                      }}
+                    >
+                      染める
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {DECO_SLOTS.map((slot) => {
             const isOpen = openSlots[slot] ?? false;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lookFromParts, rollWildStats, rollName, makeWildHorse } from './wild';
+import { lookFromParts, rollWildStats, WILD_NAME, makeWildHorse } from './wild';
 import { mulberry32, statTotal } from './stats';
 import { COLOR_SLOTS, colorsBySlot, colorSlotById, decoById, isColorId } from '../data/parts';
 import { STAT_ALLOC_TOTAL, STAT_CAP, STAT_ALLOC_MIN, STAT_KEYS } from '../types';
@@ -69,15 +69,14 @@ describe('rollWildStats（ランダムなステータス）', () => {
   });
 });
 
-describe('rollName', () => {
-  it('空でない名前が出て、何種類もある', () => {
-    const seen = new Set<string>();
+describe('名前', () => {
+  // 名前はプレイヤーが付けるもの。草むらから来たウマは必ず名無しで出す
+  // （ランダム名だと「もう名前がある」ように見えて改名されないまま埋もれる）。
+  it('どのシードでも必ず (名無し) で出てくる', () => {
     for (let seed = 0; seed < 300; seed++) {
-      const n = rollName(mulberry32(seed));
-      expect(n.length).toBeGreaterThan(0);
-      seen.add(n);
+      expect(makeWildHorse(['body_bay'], mulberry32(seed)).name).toBe(WILD_NAME);
     }
-    expect(seen.size).toBeGreaterThan(20);
+    expect(WILD_NAME).toBe('(名無し)');
   });
 });
 

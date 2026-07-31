@@ -16,21 +16,11 @@ import { rollStatsForStyle, type RNG } from './stats';
 
 const STYLES: RunStyle[] = ['nige', 'senko', 'sashi', 'oikomi'];
 
-/** ひらがな・カタカナの2語を組み合わせた、やさしい名前。あとから改名できる。 */
-const NAME_HEAD = [
-  'ハル', 'ナツ', 'アキ', 'フユ', 'ソラ', 'ホシ', 'ツキ', 'ユキ', 'カゼ', 'ウミ',
-  'モリ', 'ハナ', 'ヒカリ', 'ミドリ', 'コハク', 'シロ', 'クロ', 'アカ', 'アオ', 'キラ',
-];
-const NAME_TAIL = [
-  'カゼ', 'ノス', 'マル', 'ホープ', 'ダッシュ', 'ライト', 'ムーン', 'スター', 'ラン', 'クイン',
-  'キング', 'ボーイ',
-];
-
-export function rollName(rng: RNG): string {
-  const a = NAME_HEAD[Math.floor(rng() * NAME_HEAD.length) % NAME_HEAD.length];
-  const b = NAME_TAIL[Math.floor(rng() * NAME_TAIL.length) % NAME_TAIL.length];
-  return a + b;
-}
+/** 草むらから来たばかりのウマの名前。
+ *  以前はランダムな名前を付けていたが、それだと「もう名前がある」ように見えて
+ *  改名されないまま埋もれてしまう。名無しで出すことで、名前を付ける行為が
+ *  プレイヤーの手に残る（改名はマイウマの詳細からいつでもできる）。 */
+export const WILD_NAME = '(名無し)';
 
 /** 引いたパーツから見た目を組む。色の空きはレア度どおりに抽選して埋める。 */
 export function lookFromParts(partIds: string[], rng: RNG): HorseLook {
@@ -66,5 +56,5 @@ export function makeWildHorse(partIds: string[], rng: RNG): {
   stats: Stats;
 } {
   const look = lookFromParts(partIds, rng);
-  return { name: rollName(rng), colors: look.colors, decos: look.decos, stats: rollWildStats(rng) };
+  return { name: WILD_NAME, colors: look.colors, decos: look.decos, stats: rollWildStats(rng) };
 }

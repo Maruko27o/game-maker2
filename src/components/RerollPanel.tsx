@@ -1,18 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useStore } from '../store';
 import { COURSES } from '../data/courses';
 import { GRADE_STYLE, type Grade } from '../data/aptitude';
 import { skillOf } from '../logic/skill';
 import { aptitudeOf } from '../logic/aptitude';
-import { rerollState, rightsBreakdown, SKILL_SLOT, REROLL_COST } from '../logic/reroll';
+import { SKILL_SLOT } from '../logic/reroll';
+import { refineState, REFINE_MAX, REFINE_TICKET_COST } from '../logic/refine';
 import type { Horse } from '../types';
 import Icon from './Icon';
-import CoinIcon from './CoinIcon';
 import styles from './RerollPanel.module.css';
 
 // 厳選：固有スキル1枠＋コース6枠のうち、「更新する」と選んだ枠だけをまとめて引き直す。
 // 選ばなかった枠は確定のまま動かないので、良い枠を残しながら回数を使える。
-// 対象は既存ウマだけ（新世代は草むらで何頭でも召喚できること自体が厳選になるため）。
+//
+// 全ウマ共通で最大3回・1回につき厳選チケット1枚。チケットは対戦の入賞でだけ増える
+// （優勝3・準優勝2・3位1）ので、対戦を勝つほど良い個体に寄せていける。
+// 旧仕様（コイン払い・活躍で最大10回）を使ったウマは使い切り扱いで、この画面に来ない。
 
 function Stars({ n }: { n: number }) {
   return (
@@ -25,25 +28,17 @@ function Stars({ n }: { n: number }) {
 }
 
 export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose: () => void }) {
-  const trophies = useStore((s) => s.trophies);
-  const badges = useStore((s) => s.badges);
-  const coins = useStore((s) => s.coins);
+  const tickets = useStore((s) => s.refineTickets ?? 0);
   const rerollHorse = useStore((s) => s.rerollHorse);
-  const finishReroll = useStore((s) => s.finishReroll);
 
   const [picked, setPicked] = useState<Set<string>>(new Set()); // 「更新する」と選んだ枠
   const [changed, setChanged] = useState<Set<string>>(new Set()); // 直前の振り直しで変わった枠
-  const [showRights, setShowRights] = useState(false);
-  const [confirm, setConfirm] = useState<'reroll' | 'finish' | null>(null);
+  const [confirm, setConfirm] = useState<'reroll' | null>(null);
 
-  const st = rerollState(horse, trophies, badges);
+  const st = refineState(horse);
   const skill = skillOf(horse);
   const apt = aptitudeOf(horse);
-  const breakdown = useMemo(
-    () => rightsBreakdown(horse.id, st.trophyCount, st.badgeCount),
-    [horse.id, st.trophyCount, st.badgeCount],
-  );
-  const poor = coins < REROLL_COST; // コインが足りないと振り直せない
+  const poor = tickets < REFINE_TICKET_COST; // チケットが無いと振り直せない
 
   function toggle(slot: string) {
     setPicked((p) => {
@@ -111,32 +106,17 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
         <div className={styles.countRow}>
           <span className={styles.countLabel}>のこり</span>
           <span className={styles.countBig}>{st.left}</span>
-          <span className={styles.countSub}>/ {st.rights}回</span>
-          <button className={styles.rightsBtn} onClick={() => setShowRights((v) => !v)} aria-expanded={showRights}>
-            回数のふえ方
-          </button>
+          <span className={styles.countSub}>/ {REFINE_MAX}回</span>
+          <span className={styles.ticketHave}>
+            <Icon name="ticket" size={15} /> 厳選チケット {tickets}枚
+          </span>
         </div>
-
-        {showRights && (
-          <ul className={styles.rightsList}>
-            {breakdown.map((b) => (
-              <li key={b.label} className={b.got ? styles.rightGot : styles.rightMiss}>
-                <span>{b.got ? '✓' : '−'}</span>
-                <span className={styles.rightLabel}>{b.label}</span>
-                <span className={styles.rightPlus}>＋{b.plus}回</span>
-              </li>
-            ))}
-            <li className={styles.rightsNote}>
-              いまのトロフィー {st.trophyCount}個 ・ バッジ {st.badgeCount}枚
-            </li>
-          </ul>
-        )}
 
         <p className={styles.lead}>
           引き直したい枠を<strong>タップして「✓振り直す」</strong>にしてください。
           「このまま」の枠は動きません。選び終えたら下のボタンでまとめて振り直します。
-          <br />1回振り直すごとに <strong>{REROLL_COST.toLocaleString()}コイン</strong> かかります
-          （いまの持ちコイン {coins.toLocaleString()}）。
+          <br />1回振り直すごとに <strong>厳選チケット1枚</strong> つかいます。
+          チケットは<strong>対戦の入賞</strong>でもらえます（優勝3枚・準優勝2枚・3位1枚）。
         </p>
 
         <ul className={styles.rows}>
@@ -171,21 +151,17 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
           {st.left <= 0
             ? '回数を使いきりました'
             : poor
-              ? `コインが足りません（${REROLL_COST.toLocaleString()}コイン必要）`
+              ? '厳選チケットがありません（対戦の入賞でもらえます）'
               : picked.size === 0
                 ? '振り直す枠を選んでね'
-                : `${picked.size}枠を振り直す（${REROLL_COST.toLocaleString()}コイン・のこり${st.left}回）`}
-        </button>
-
-        <button className={styles.finish} onClick={() => setConfirm('finish')}>
-          この内容で確定する{st.left > 0 ? `（のこり${st.left}回は使わない）` : ''}
+                : `${picked.size}枠を振り直す（チケット1枚・のこり${st.left}回）`}
         </button>
 
         {/* 確認ダイアログ：何がどうなるかを出してから実行する */}
         {confirm && (
           <div className={styles.confirmWrap} onClick={() => setConfirm(null)}>
             <div className={styles.confirmCard} onClick={(e) => e.stopPropagation()}>
-              {confirm === 'reroll' ? (
+              {(
                 <>
                   <p className={styles.confirmTitle}>この{picked.size}枠を振り直します</p>
                   <ul className={styles.confirmList}>
@@ -202,17 +178,8 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
                     <br />のこり回数：{st.left} → {st.left - 1}
                     <br />
                     <span className={styles.confirmCost}>
-                      <CoinIcon size={14} /> {REROLL_COST.toLocaleString()} つかいます（{coins.toLocaleString()} →{' '}
-                      {(coins - REROLL_COST).toLocaleString()}）
+                      <Icon name="ticket" size={14} /> 厳選チケット 1枚つかいます（{tickets} → {tickets - 1}枚）
                     </span>
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className={styles.confirmTitle}>この内容で確定します</p>
-                  <p className={styles.confirmWarn}>
-                    確定すると、のこり<strong>{st.left}回</strong>があっても
-                    <strong>もう振り直せません</strong>。
                   </p>
                 </>
               )}
@@ -220,12 +187,9 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
                 <button className={styles.confirmNo} onClick={() => setConfirm(null)}>やめる</button>
                 <button
                   className={styles.confirmYes}
-                  onClick={() => {
-                    if (confirm === 'reroll') { doReroll(); setConfirm(null); }
-                    else { finishReroll(horse.id); setConfirm(null); onClose(); }
-                  }}
+                  onClick={() => { doReroll(); setConfirm(null); }}
                 >
-                  {confirm === 'reroll' ? '振り直す' : '確定する'}
+                  振り直す
                 </button>
               </div>
             </div>
@@ -233,8 +197,8 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
         )}
 
         <p className={styles.note}>
-          ※ 振り直すと前の内容には戻せません。確定すると、回数が残っていても
-          もう振り直せなくなります。ベース回数はウマごとに1〜3回で決まっています。
+          ※ 振り直すと前の内容には戻せません（悪くなることもあります）。
+          回数はどのウマも3回まで。使わずに閉じてもチケットは減りません。
         </p>
       </div>
     </div>

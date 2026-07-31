@@ -115,7 +115,7 @@ export default function TaskButton() {
             {/* Tabs */}
             <div className={styles.tabs}>
               <button className={`${styles.tab} ${tab === 'normal' ? styles.tabOn : ''}`} onClick={() => setTab('normal')}>
-                タスク{bankPending > 0 && <span className={styles.tabDot} aria-hidden>{bankPending}</span>}
+                ノーマル{bankPending > 0 && <span className={styles.tabDot} aria-hidden>{bankPending}</span>}
               </button>
               <button className={`${styles.tab} ${tab === 'special' ? styles.tabOn : ''}`} onClick={() => setTab('special')}>
                 スペシャル{specialPending > 0 && <span className={styles.tabDot} aria-hidden>{specialPending}</span>}

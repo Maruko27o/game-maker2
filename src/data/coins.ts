@@ -20,8 +20,6 @@ export function gpFinalCoins(rank: number): number {
 }
 export const GP_DAILY_LIMIT = 3; // 1日の挑戦回数。G1 のみに適用（G2/G3 は無制限）
 export const BADGE_COINS = 100; // per achievement badge earned
-export const GRASS_DAILY_BONUS = 20; // grass first-visit bonus…
-export const GRASS_DAILY_BONUS_MAX = 2; // …up to this many times a day
 
 // ---- spending (§4.3) ----------------------------------------------------------
 export const BET_AMOUNTS = [10, 100, 500, 1000] as const;

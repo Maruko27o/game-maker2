@@ -7,6 +7,7 @@ import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
 import { playerSnapshot, snapToEntrant, fieldLooks } from '../logic/arena';
 import { teamHorses } from '../logic/farm';
+import { arenaTickets } from '../logic/refine';
 import { TEAM_SIZE } from '../data/coins';
 import {
   ARENA_ENTRY_FEE,
@@ -281,6 +282,11 @@ export default function Arena({ onExit }: { onExit: () => void }) {
           <div className={a.resultPay}>
             <CoinIcon size={18} /> 賞金 ＋{view.payout.toLocaleString()}
           </div>
+          {arenaTickets(view.outcome, view.finalRank) > 0 && (
+            <div className={a.resultTicket}>
+              <Icon name="ticket" size={17} /> 厳選チケット ＋{arenaTickets(view.outcome, view.finalRank)}枚
+            </div>
+          )}
         </div>
         {view.rounds.map((rr) => (
           <RoundBoard key={rr.round} rr={rr} onPick={(i) => setBoardStats({ round: rr.round, i })} />
@@ -409,13 +415,25 @@ export default function Arena({ onExit }: { onExit: () => void }) {
       <div className={a.section}>
         <div className={a.sectionTitle}>本戦の賞金（8頭立て）</div>
         <div className={a.prizes}>
-          <div className={`${a.prize} ${a.prizeTop}`}><b>🥇 優勝</b><b className={a.prizeAmt}>＋12,000</b></div>
-          <div className={a.prize}><b>🥈 準優勝</b><b className={a.prizeAmt}>＋5,000</b></div>
-          <div className={a.prize}><b>🥉 3位</b><b className={a.prizeAmt}>＋1,000</b></div>
+          <div className={`${a.prize} ${a.prizeTop}`}>
+            <b>🥇 優勝</b>
+            <b className={a.prizeAmt}>＋12,000<span className={a.prizeTicket}><Icon name="ticket" size={13} />3</span></b>
+          </div>
+          <div className={a.prize}>
+            <b>🥈 準優勝</b>
+            <b className={a.prizeAmt}>＋5,000<span className={a.prizeTicket}><Icon name="ticket" size={13} />2</span></b>
+          </div>
+          <div className={a.prize}>
+            <b>🥉 3位</b>
+            <b className={a.prizeAmt}>＋1,000<span className={a.prizeTicket}><Icon name="ticket" size={13} />1</span></b>
+          </div>
           <div className={a.prize}><b>4〜8位（本戦出場）</b><b className={a.prizeAmt}>＋500</b></div>
           <div className={a.prize}><b>予選で敗退</b><b className={a.prizeAmt}>±0</b></div>
         </div>
-        <div className={a.balanceNote}>参加費1,000／1日2回開催。予選2連戦を勝ち抜いて優勝すると大金！</div>
+        <div className={a.balanceNote}>
+          参加費1,000／1日2回開催。予選2連戦を勝ち抜いて優勝すると大金！
+          <br />入賞でもらえる<b>厳選チケット</b>は、マイウマの「厳選」でつかえます。
+        </div>
       </div>
 
       <button className={styles.exitLink} onClick={onExit}>戻る</button>
