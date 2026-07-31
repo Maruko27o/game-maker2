@@ -2,8 +2,15 @@
 // 全プレイヤーで境界を揃えるため、端末のタイムゾーンに依らず日本時間(JST, UTC+9)の
 // 暦月を正とする。サーバ側も to_char((now() at time zone 'Asia/Tokyo'),'YYYY-MM') で
 // 同じ 'YYYY-MM' を持つので、クライアントの monthKey と必ず一致する。
-
-import { trustedNow } from './trustedClock';
+//
+// 時刻は端末の時計（Date.now）を使う。ここは「見せる」ためだけの計算で、
+// スコアがどの月に入るかはサーバの current_period() が決めるため、端末時計を
+// 進められても不正の余地が無い。
+// 逆に trustedNow()（不正対策の時計）を使うと、こちらが実時刻より遅れることが
+// ある——performance.now() 起点で進むので、端末がスリープしている間ぶんが
+// 抜け落ち、オンラインでサーバ時刻に取り直すまで戻らない——ので、
+// 「日付が変わったのにランキングの更新が来ない」というズレになっていた。
+// コインや放置収入など“配る”処理は今までどおり trustedNow() のまま。
 
 const JST_OFFSET_MS = 9 * 3600 * 1000;
 
@@ -12,14 +19,14 @@ function jstParts(now: number): { y: number; m0: number } {
   return { y: d.getUTCFullYear(), m0: d.getUTCMonth() }; // m0: 0-11
 }
 
-/** 現在の対象月キー 'YYYY-MM'（JST）。端末時計ではなく信頼できる時刻を使う。 */
-export function monthKey(now = trustedNow()): string {
+/** 現在の対象月キー 'YYYY-MM'（JST）。 */
+export function monthKey(now = Date.now()): string {
   const { y, m0 } = jstParts(now);
   return `${y}-${String(m0 + 1).padStart(2, '0')}`;
 }
 
 /** 次の月替わり（翌月1日 0:00 JST）までの残りミリ秒。 */
-export function msToNextMonth(now = trustedNow()): number {
+export function msToNextMonth(now = Date.now()): number {
   const { y, m0 } = jstParts(now);
   const nextY = m0 === 11 ? y + 1 : y;
   const nextM0 = (m0 + 1) % 12;
