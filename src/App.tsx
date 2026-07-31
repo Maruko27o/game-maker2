@@ -7,6 +7,7 @@ import SyncConflictModal from './components/SyncConflictModal';
 import ProfileButton from './components/ProfileButton';
 import TaskButton from './components/TaskButton';
 import MailButton from './components/MailButton';
+import LoginBonus from './components/LoginBonus';
 import UpdateGate from './components/UpdateGate';
 import CoinBalance from './components/CoinBalance';
 import Title from './components/Title';
@@ -94,6 +95,7 @@ export default function App() {
       <ProfileButton />
       <TaskButton />
       <MailButton />
+      <LoginBonus />
       <CoinBalance />
       {migrated && (
         <div className={styles.notice} role="status">

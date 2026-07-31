@@ -1,32 +1,101 @@
 /* ログインボーナス（曜日制）。theme 変数は global.css。 */
 
-.wrap {
-  /* 草むらは部屋の絵（GrassRoom）が position:absolute で敷かれている。
-     位置指定の無い要素はその下に描かれてしまうので、明示的に前面へ出す。 */
-  position: relative;
-  z-index: 1;
-  background: var(--panel);
-  border: 3px solid var(--border);
-  border-radius: 16px;
-  padding: 10px 11px 11px;
-  margin-bottom: 12px;
+/* 上のバーのアイコン（メールの右）。他のFABと同じ大きさ・並びに合わせる。 */
+.fab {
+  position: fixed;
+  top: 10px;
+  left: calc(50% - 240px + 12px + 162px); /* profile+task+mail のぶん右へ */
+  z-index: 30;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid var(--border-dark);
+  background: var(--panel-inner);
+  box-shadow: 0 3px 0 var(--border);
+  padding: 0;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
 }
+@media (max-width: 520px) {
+  .fab {
+    left: 174px; /* 12 + 46 + 8 + 46 + 8 + 46 + 8 */
+  }
+}
+/* 受け取れる日は光る点で知らせる。 */
+.fabDot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid #fff;
+  animation: dot 1.4s ease-in-out infinite;
+}
+@keyframes dot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fabDot { animation: none; }
+}
+
+/* 中身（モーダル） */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 28, 14, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 24px 18px;
+  z-index: 55;
+}
+.sheet {
+  width: 100%;
+  max-width: 340px;
+  background: var(--paper);
+  border: 4px solid var(--border-dark);
+  border-radius: 20px;
+  padding: 12px;
+}
+.close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  background: var(--panel-inner);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+.note {
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 9px 0 0;
+}
+
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 .title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 900;
   color: var(--ink);
 }
 .sub {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--ink-soft);
+  margin: 0 0 9px;
 }
 
 /* 7日ぶんを横一列。狭い画面でも折り返さないよう均等割り＋文字は小さめ。 */
