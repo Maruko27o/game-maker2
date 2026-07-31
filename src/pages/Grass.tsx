@@ -7,6 +7,7 @@ import type { Horse } from '../types';
 import HorseView from '../components/HorseView';
 import GrassScene from '../components/GrassScene';
 import GrassRoom from '../components/GrassRoom';
+import LoginBonus from '../components/LoginBonus';
 import { sampleDayNight, clockPhase, lightPool, horseGlowFilter } from '../logic/daynight';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
@@ -37,7 +38,6 @@ export default function Grass() {
   const horseCount = useStore((s) => s.horses.length);
   const maxHorses = useStore((s) => s.maxHorses);
   const coins = useStore((s) => s.coins);
-  const claimGrassBonus = useStore((s) => s.claimGrassBonus);
   const buyOkawari = useStore((s) => s.buyOkawari);
 
   const reduced = usePrefersReducedMotion();
@@ -47,22 +47,11 @@ export default function Grass() {
   const [wild, setWild] = useState<Horse | null>(null); // 仲間になったウマ
   const [revealed, setRevealed] = useState(false); // 登場演出が終わってから確認欄を出す
   const [bookOpen, setBookOpen] = useState(false); // 固有スキル図鑑
-  const [bonus, setBonus] = useState(0); // grass first-of-day coin bonus toast
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-
-  // First couple of grass visits each day pay a small coin bonus (RACE_V4 §4.2).
-  useEffect(() => {
-    const got = claimGrassBonus();
-    if (got > 0) {
-      setBonus(got);
-      const t = setTimeout(() => setBonus(0), 2600);
-      return () => clearTimeout(t);
-    }
-  }, [claimGrassBonus]);
 
   const state = { energy, energyUpdatedAt };
   const stock = normalizeEnergy(state, now).energy;
@@ -125,6 +114,9 @@ export default function Grass() {
         </div>
       </header>
 
+      {/* ログインボーナス（曜日制）。草むらは毎日必ず開く画面なので、ここに置く。 */}
+      <LoginBonus />
+
       <button
         className={`${styles.field} ${available ? styles.fieldReady : ''} ${
           phase === 'searching' ? styles.searching : ''
@@ -182,12 +174,6 @@ export default function Grass() {
       </div>
 
       {bookOpen && <SkillBook onClose={() => setBookOpen(false)} />}
-
-      {bonus > 0 && (
-        <div className={styles.bonusToast} role="status">
-          <CoinIcon size={18} /> ログインボーナス ＋{bonus}
-        </div>
-      )}
 
       {phase === 'reveal' && revealed && (
         // 馬の登場演出を見終えてから、下の方に小さめの「確認欄」として表示。

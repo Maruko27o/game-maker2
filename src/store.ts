@@ -33,11 +33,11 @@ import { rollAptitude, aptitudeForHorseId } from './logic/aptitude';
 import { makeWildHorse } from './logic/wild';
 import { applyReroll } from './logic/reroll';
 import { canRefine, refineState, REFINE_TICKET_COST, arenaTickets } from './logic/refine';
+import { rewardForDow, loginDayKey, dowOf, canClaim, rollDye, type LoginReward } from './logic/loginBonus';
+import { colorSlotById } from './data/parts';
 import { applyTraining } from './logic/training';
 import { evaluateBadges } from './logic/badges';
 import {
-  GRASS_DAILY_BONUS,
-  GRASS_DAILY_BONUS_MAX,
   GRASS_OKAWARI_COST,
   GP_DAILY_LIMIT,
   TEAM_SIZE,
@@ -308,6 +308,19 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   // v6 (RACE_V4 §4) economy fields — default sensibly for older saves.
   const coins = typeof d.coins === 'number' ? d.coins : 0;
   // 厳選チケット（対戦の入賞でのみ増える）。旧セーブには無いので0から。
+  // 染料（色パーツID -> 個数）とログインボーナスの受け取り日。旧セーブには無い。
+  const dyes: Record<string, number> = {};
+  if (d.dyes && typeof d.dyes === 'object') {
+    for (const [k, v] of Object.entries(d.dyes as Record<string, unknown>)) {
+      const n = typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : 0;
+      if (n > 0) dyes[k] = n;
+    }
+  }
+  const loginRaw = (d.login ?? null) as { day?: unknown; at?: unknown } | null;
+  const login =
+    loginRaw && typeof loginRaw.day === 'string'
+      ? { day: loginRaw.day, at: typeof loginRaw.at === 'number' ? loginRaw.at : 0 }
+      : undefined;
   const refineTickets =
     typeof d.refineTickets === 'number' && Number.isFinite(d.refineTickets) && d.refineTickets > 0
       ? Math.floor(d.refineTickets)
@@ -357,6 +370,8 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         freeRename: typeof d.freeRename === 'boolean' ? d.freeRename : true,
         coins,
         refineTickets,
+        dyes,
+        login,
         bets,
         maxHorses,
         team,
@@ -399,6 +414,8 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       freeRename: typeof d.freeRename === 'boolean' ? d.freeRename : true,
       coins,
       refineTickets,
+      dyes,
+      login,
       bets,
       maxHorses,
       team,
@@ -493,8 +510,10 @@ type Store = SaveData & {
   spendCoins: (n: number) => boolean;
   /** Record a settled bet (payout already added via addCoins by the caller). */
   recordBet: (bet: BetRecord) => void;
-  /** Grass first-visits-of-day bonus (up to GRASS_DAILY_BONUS_MAX). Returns coins granted. */
-  claimGrassBonus: () => number;
+  /** ログインボーナス（曜日制）。受け取れたらその中身を返す。今日ぶん受け取り済みなら null。 */
+  claimLoginBonus: () => LoginReward | null;
+  /** 染料をウマに使う。色の属する枠（からだ/たてがみ/ひづめ）が塗り替わる。 */
+  useDye: (horseId: string, colorId: string) => boolean;
   /** Buy an extra grass charge (300, repeatable). Returns true on success. */
   buyOkawari: () => boolean;
   /** Begin a grand-prix attempt, consuming one of the day's plays (max
@@ -611,6 +630,8 @@ export const useStore = create<Store>((set, get) => {
       freeRename: next.freeRename ?? true,
       coins: next.coins,
       refineTickets: next.refineTickets ?? 0,
+      dyes: next.dyes ?? {},
+      login: next.login,
       bets: next.bets,
       maxHorses: next.maxHorses,
       team: next.team ?? [],
@@ -633,6 +654,7 @@ export const useStore = create<Store>((set, get) => {
   return {
     ...initial,
     refineTickets: initial.refineTickets ?? 0,
+    dyes: initial.dyes ?? {},
     raceSession: initial.raceSession ?? null,
     arena: initial.arena ?? freshArena(),
     farmClaimedAt: initial.farmClaimedAt ?? trustedNow(),
@@ -680,6 +702,8 @@ export const useStore = create<Store>((set, get) => {
         freeRename: s.freeRename,
         coins: s.coins,
         refineTickets: s.refineTickets ?? 0,
+        dyes: s.dyes ?? {},
+        login: s.login,
         bets: s.bets,
         maxHorses: s.maxHorses,
         team: s.team ?? [],
@@ -905,19 +929,44 @@ export const useStore = create<Store>((set, get) => {
       commit({ bets: [bet, ...get().bets].slice(0, BETS_CAP) });
     },
 
-    claimGrassBonus: () => {
+    claimLoginBonus: () => {
       const s = get();
-      const today = dayKey();
-      const daily = s.daily.day === today ? s.daily : freshDaily();
-      if (daily.grassBonus >= GRASS_DAILY_BONUS_MAX) {
-        if (s.daily.day !== today) commit({ daily });
-        return 0;
+      // 時計いじり対策：日付は必ず trustedNow() 由来（巻き戻しは単調フロア、
+      // 進めるのはサーバ時刻アンカーで無効化される）。
+      const now = trustedNow();
+      if (!canClaim(s.login?.day, now)) return null;
+      const reward = rewardForDow(dowOf(now));
+      const patch: Partial<SaveData> = { login: { day: loginDayKey(now), at: now } };
+      if (reward.kind === 'coins') {
+        patch.coins = s.coins + reward.amount;
+      } else if (reward.kind === 'ticket') {
+        patch.refineTickets = (s.refineTickets ?? 0) + reward.amount;
+      } else {
+        const colorId = rollDye(mulberry32((Math.random() * 2 ** 31) >>> 0));
+        patch.dyes = { ...(s.dyes ?? {}), [colorId]: ((s.dyes ?? {})[colorId] ?? 0) + 1 };
+        reward.colorId = colorId;
       }
+      commit(patch);
+      return reward;
+    },
+
+    useDye: (horseId, colorId) => {
+      const s = get();
+      const have = (s.dyes ?? {})[colorId] ?? 0;
+      if (have <= 0) return false;
+      const slot = colorSlotById[colorId];
+      if (!slot) return false; // 色パーツではない
+      const horse = s.horses.find((h) => h.id === horseId);
+      if (!horse) return false;
+      if (horse.colors[slot] === colorId) return false; // すでにその色（無駄づかい防止）
+      const dyes = { ...(s.dyes ?? {}) };
+      if (have <= 1) delete dyes[colorId];
+      else dyes[colorId] = have - 1;
       commit({
-        coins: s.coins + GRASS_DAILY_BONUS,
-        daily: { ...daily, grassBonus: daily.grassBonus + 1 },
+        dyes,
+        horses: s.horses.map((h) => (h.id === horseId ? { ...h, colors: { ...h.colors, [slot]: colorId } } : h)),
       });
-      return GRASS_DAILY_BONUS;
+      return true;
     },
 
     buyOkawari: () => {

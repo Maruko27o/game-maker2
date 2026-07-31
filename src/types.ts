@@ -290,7 +290,9 @@ export type SaveData = {
   freeRebalance: boolean; // one free stat re-allocation after the v4 migration (RACE_V3 §3.6)
   freeRename?: boolean; // 初回の改名は無料（1回だけ）。既定 true、使うと false
   coins: number; // soft currency (RACE_V4 §4)
-  refineTickets?: number; // 厳選チケット。対戦の入賞でのみ増える（優勝3・準優勝2・3位1）
+  refineTickets?: number; // 厳選チケット。対戦の入賞とログインボーナス（水曜）で増える
+  dyes?: Record<string, number>; // 染料：色パーツID -> 個数。ウマの色を塗り替えられる
+  login?: { day: string; at: number }; // ログインボーナスを最後に受け取った日（trustedNow 由来）
   bets: BetRecord[]; // recent settled bets (capped)
   maxHorses: number; // stable slot cap (10, expandable to 15)
   team?: string[]; // 出走・牧場収入の対象となるチーム（最大 maxHorses 頭。horse id の並び）

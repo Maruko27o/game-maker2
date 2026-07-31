@@ -14,11 +14,24 @@ describe('fillPicks（おまかせの買い目）', () => {
     }
   });
 
-  it('3連単は選んだ順がそのまま着順（先頭に残る）', () => {
-    const picks = fillPicks([5, 2], ALL, 3, mulberry32(1));
-    expect(picks[0]).toBe(5);
-    expect(picks[1]).toBe(2);
-    expect(picks).toHaveLength(3);
+  it('3連単は選んだウマの着順もランダム（1着固定にならない）', () => {
+    const posOf5 = new Set<number>();
+    for (let seed = 0; seed < 200; seed++) {
+      const picks = fillPicks([5], ALL, 3, mulberry32(seed));
+      expect(picks).toContain(5);
+      posOf5.add(picks.indexOf(5));
+    }
+    expect(posOf5).toEqual(new Set([0, 1, 2])); // 1着も2着も3着もあり得る
+  });
+
+  it('2頭選んだら、その2頭が必ず入った3連単になる（並びはランダム）', () => {
+    for (let seed = 0; seed < 200; seed++) {
+      const picks = fillPicks([5, 2], ALL, 3, mulberry32(seed));
+      expect(picks).toHaveLength(3);
+      expect(picks).toContain(5);
+      expect(picks).toContain(2);
+      expect(new Set(picks).size).toBe(3);
+    }
   });
 
   it('単勝で1頭選んでいれば、そのウマの単勝で確定する', () => {
@@ -31,8 +44,8 @@ describe('fillPicks（おまかせの買い目）', () => {
     for (let seed = 0; seed < 100; seed++) {
       const picks = fillPicks([7], ALL, 2, mulberry32(seed));
       expect(picks).toHaveLength(2);
-      expect(picks[0]).toBe(7);
-      expect(picks[1]).not.toBe(7);
+      expect(picks).toContain(7);
+      expect(new Set(picks).size).toBe(2);
     }
   });
 
@@ -47,17 +60,19 @@ describe('fillPicks（おまかせの買い目）', () => {
     expect(seen.size).toBeGreaterThan(20);
   });
 
-  it('必要数ぶん選び終えていれば、そのまま買い目になる', () => {
-    expect(fillPicks([1, 2, 3], ALL, 3, mulberry32(9))).toEqual([1, 2, 3]);
+  it('必要数ぶん選び終えていれば、その3頭だけの買い目になる（並びは入れ替わり得る）', () => {
+    const picks = fillPicks([1, 2, 3], ALL, 3, mulberry32(9));
+    expect([...picks].sort()).toEqual([1, 2, 3]);
   });
 
   it('出走していない番号は無視して埋め直す', () => {
     const picks = fillPicks([99, 4], ALL, 2, mulberry32(3));
-    expect(picks[0]).toBe(4);
-    expect(ALL).toContain(picks[1]);
+    expect(picks).toContain(4);
+    expect(picks).toHaveLength(2);
+    for (const i of picks) expect(ALL).toContain(i);
   });
 
   it('選びすぎていても必要数で切る', () => {
-    expect(fillPicks([1, 2, 3], ALL, 2, mulberry32(0))).toEqual([1, 2]);
+    expect([...fillPicks([1, 2, 3], ALL, 2, mulberry32(0))].sort()).toEqual([1, 2]);
   });
 });

@@ -45,6 +45,8 @@ function snapshot(): SaveData {
     freeRename: s.freeRename,
     coins: s.coins,
     refineTickets: s.refineTickets ?? 0,
+    dyes: s.dyes ?? {},
+    login: s.login,
     bets: s.bets,
     maxHorses: s.maxHorses,
     team: s.team ?? [],
