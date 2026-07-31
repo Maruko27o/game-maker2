@@ -10,7 +10,8 @@ import Icon from './Icon';
 import CoinIcon from './CoinIcon';
 import styles from './LoginBonus.module.css';
 
-// ログインボーナス（曜日制）。1週間ぶんを横に並べ、きょうの曜日が光る。
+// ログインボーナス（曜日制）。上のバー（メールの右）のアイコンから開く。
+// 草むらの本文に置くと、マイウマ・おかわり・部屋の絵を押し下げてしまうため。
 // 受け取りは1日1回。日付は trustedNow() 由来なので、端末の時計を進めても
 // 戻しても二度取りはできない（trustedClock の単調フロア＋サーバ時刻アンカー）。
 
@@ -37,9 +38,10 @@ export default function LoginBonus() {
     return () => clearInterval(t);
   }, []);
 
+  const [open, setOpen] = useState(false);
   const [got, setGot] = useState<LoginReward | null>(null);
   const today = dowOf(now);
-  const open = canClaim(login?.day, now);
+  const canGet = canClaim(login?.day, now);
 
   function claim() {
     const r = claimLoginBonus();
@@ -48,44 +50,60 @@ export default function LoginBonus() {
   }
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.head}>
-        <span className={styles.title}>ログインボーナス</span>
-        <span className={styles.sub}>{open ? 'きょうのぶんを受け取れます' : 'また明日！'}</span>
-      </div>
-
-      <ul className={styles.week}>
-        {WEEK_ORDER.map((d) => {
-          const r = rewardForDow(d);
-          const isToday = d === today;
-          const done = isToday && !open;
-          return (
-            <li
-              key={d}
-              className={`${styles.day} ${isToday ? styles.dayToday : ''} ${done ? styles.dayDone : ''}`}
-            >
-              <span className={styles.dow}>{DOW_LABEL[d]}</span>
-              <span className={styles.icon}><RewardIcon r={r} size={17} /></span>
-              <span className={styles.amt}>{shortLabel(r)}</span>
-              {done && <span className={styles.check} aria-label="受け取り済み">✓</span>}
-            </li>
-          );
-        })}
-      </ul>
-
-      <button className={styles.claim} disabled={!open} onClick={claim}>
-        {open ? (
-          <>
-            <RewardIcon r={rewardForDow(today)} size={17} />
-            {rewardLabel(rewardForDow(today))}を受け取る
-          </>
-        ) : (
-          '受け取り済み'
-        )}
+    <>
+      <button
+        className={styles.fab}
+        onClick={() => setOpen(true)}
+        aria-label={canGet ? 'ログインボーナス（受け取れます）' : 'ログインボーナス'}
+      >
+        <Icon name="gift" size={22} />
+        {canGet && <span className={styles.fabDot} aria-hidden />}
       </button>
 
-      {/* 受け取り演出は body 直下へ出す。草むらの部屋の絵より前面に確実に出すため
-          （この枠自体が z-index を持つと、その中の z-index は外に効かない）。 */}
+      {open && createPortal(
+        <div className={styles.overlay} onClick={() => setOpen(false)}>
+          <div className={styles.sheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="ログインボーナス">
+            <div className={styles.head}>
+              <span className={styles.title}>ログインボーナス</span>
+              <button className={styles.close} onClick={() => setOpen(false)} aria-label="閉じる">✕</button>
+            </div>
+            <p className={styles.sub}>{canGet ? 'きょうのぶんを受け取れます' : 'また明日！'}</p>
+
+            <ul className={styles.week}>
+              {WEEK_ORDER.map((d) => {
+                const r = rewardForDow(d);
+                const isToday = d === today;
+                const done = isToday && !canGet;
+                return (
+                  <li
+                    key={d}
+                    className={`${styles.day} ${isToday ? styles.dayToday : ''} ${done ? styles.dayDone : ''}`}
+                  >
+                    <span className={styles.dow}>{DOW_LABEL[d]}</span>
+                    <span className={styles.icon}><RewardIcon r={r} size={17} /></span>
+                    <span className={styles.amt}>{shortLabel(r)}</span>
+                    {done && <span className={styles.check} aria-label="受け取り済み">✓</span>}
+                  </li>
+                );
+              })}
+            </ul>
+
+            <button className={styles.claim} disabled={!canGet} onClick={claim}>
+              {canGet ? (
+                <>
+                  <RewardIcon r={rewardForDow(today)} size={17} />
+                  {rewardLabel(rewardForDow(today))}を受け取る
+                </>
+              ) : (
+                '受け取り済み'
+              )}
+            </button>
+            <p className={styles.note}>毎日1回、その曜日のごほうびがもらえます。</p>
+          </div>
+        </div>,
+        document.body,
+      )}
+
       {got && createPortal(
         <div className={styles.gotOverlay} onClick={() => setGot(null)}>
           <div className={styles.gotCard} onClick={(e) => e.stopPropagation()}>
@@ -104,6 +122,6 @@ export default function LoginBonus() {
         </div>,
         document.body,
       )}
-    </div>
+    </>
   );
 }

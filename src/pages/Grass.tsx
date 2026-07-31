@@ -7,7 +7,6 @@ import type { Horse } from '../types';
 import HorseView from '../components/HorseView';
 import GrassScene from '../components/GrassScene';
 import GrassRoom from '../components/GrassRoom';
-import LoginBonus from '../components/LoginBonus';
 import { sampleDayNight, clockPhase, lightPool, horseGlowFilter } from '../logic/daynight';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
@@ -113,9 +112,6 @@ export default function Grass() {
           <span className={styles.statValue}>{stock >= ENERGY_CAP ? '✓' : countdown}</span>
         </div>
       </header>
-
-      {/* ログインボーナス（曜日制）。草むらは毎日必ず開く画面なので、ここに置く。 */}
-      <LoginBonus />
 
       <button
         className={`${styles.field} ${available ? styles.fieldReady : ''} ${
