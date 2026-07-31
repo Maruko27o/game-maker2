@@ -22,7 +22,7 @@ export const GP_DAILY_LIMIT = 3; // 1日の挑戦回数。G1 のみに適用（G
 export const BADGE_COINS = 100; // per achievement badge earned
 
 // ---- spending (§4.3) ----------------------------------------------------------
-export const BET_AMOUNTS = [10, 100, 500, 1000] as const;
+export const BET_AMOUNTS = [100, 500, 1000, 5000] as const;
 export const MAX_BETS_PER_RACE = 10; // bet-slip cap per single race
 export const MAX_BETS_GP = 20; // bet-slip cap per grand-prix round (heat / final)
 export const GRASS_OKAWARI_COST = 300; // an extra grass charge (repeatable)
