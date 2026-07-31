@@ -274,10 +274,11 @@ export default function Race() {
   // ロックするのはコインを預ける「1人でレース」の賭け導線と「グランプリ」だけ。
   // 対戦（arena）とコースを選ぶレース（pickMode）は馬券が絡まないので、
   // レース中でも他のタブへ自由に移動できる。
+  // グランプリ（screen==='gp'）はロックの範囲を自分で持つ。G1〜G3の選択と出走表は
+  // まだコインを預けていないので自由に移動でき、パドック以降だけ止まる（GrandPrix.tsx）。
   const busy =
     screen === 'paddock' ||
     screen === 'roulette' ||
-    screen === 'gp' ||
     (screen === 'race' && !pickMode);
   useEffect(() => {
     setRaceBusy(busy);

@@ -31,7 +31,8 @@ import { rescaleTo40, mulberry32, hashString } from './logic/stats';
 import { rollSkill, skillForHorseId } from './logic/skill';
 import { rollAptitude, aptitudeForHorseId } from './logic/aptitude';
 import { makeWildHorse } from './logic/wild';
-import { applyReroll, rerollState, canReroll, REROLL_COST } from './logic/reroll';
+import { applyReroll } from './logic/reroll';
+import { canRefine, refineState, REFINE_TICKET_COST, arenaTickets } from './logic/refine';
 import { applyTraining } from './logic/training';
 import { evaluateBadges } from './logic/badges';
 import {
@@ -306,6 +307,11 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   const savedAt = typeof d.savedAt === 'number' ? d.savedAt : 0;
   // v6 (RACE_V4 §4) economy fields — default sensibly for older saves.
   const coins = typeof d.coins === 'number' ? d.coins : 0;
+  // 厳選チケット（対戦の入賞でのみ増える）。旧セーブには無いので0から。
+  const refineTickets =
+    typeof d.refineTickets === 'number' && Number.isFinite(d.refineTickets) && d.refineTickets > 0
+      ? Math.floor(d.refineTickets)
+      : 0;
   const bets = Array.isArray(d.bets) ? (d.bets as SaveData['bets']) : [];
   // 所持上限は全プレイヤー共通で MAX_HORSES（5×6ボックス）に開放。旧セーブの maxHorses
   // （6 や旧10/15）に関わらず一律で引き上げる。既存の馬は当然そのまま残る。
@@ -350,6 +356,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         freeRebalance: !!d.freeRebalance,
         freeRename: typeof d.freeRename === 'boolean' ? d.freeRename : true,
         coins,
+        refineTickets,
         bets,
         maxHorses,
         team,
@@ -391,6 +398,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       freeRebalance: isPreV4 ? horses.length > 0 : !!d.freeRebalance,
       freeRename: typeof d.freeRename === 'boolean' ? d.freeRename : true,
       coins,
+      refineTickets,
       bets,
       maxHorses,
       team,
@@ -557,7 +565,6 @@ type Store = SaveData & {
   /** 厳選：選んだ枠だけを振り直す（権利を1消費）。既存ウマのみ。成功したら true。 */
   rerollHorse: (id: string, slots: string[]) => boolean;
   /** 厳選を確定する。回数が余っていても、もう振り直せなくなる。 */
-  finishReroll: (id: string) => boolean;
   /** 複数のウマをまとめて引退させる。ロック中のウマは飛ばす。受け取った合計コインを返す。 */
   retireMany: (ids: string[]) => { coins: number; retired: number; skipped: number };
   /** チーム（出走・牧場収入の対象／最大 TEAM_SIZE 頭）に入れる。入れられなければ false。 */
@@ -603,6 +610,7 @@ export const useStore = create<Store>((set, get) => {
       freeRebalance: next.freeRebalance,
       freeRename: next.freeRename ?? true,
       coins: next.coins,
+      refineTickets: next.refineTickets ?? 0,
       bets: next.bets,
       maxHorses: next.maxHorses,
       team: next.team ?? [],
@@ -624,6 +632,7 @@ export const useStore = create<Store>((set, get) => {
 
   return {
     ...initial,
+    refineTickets: initial.refineTickets ?? 0,
     raceSession: initial.raceSession ?? null,
     arena: initial.arena ?? freshArena(),
     farmClaimedAt: initial.farmClaimedAt ?? trustedNow(),
@@ -670,6 +679,7 @@ export const useStore = create<Store>((set, get) => {
         freeRebalance: s.freeRebalance,
         freeRename: s.freeRename,
         coins: s.coins,
+        refineTickets: s.refineTickets ?? 0,
         bets: s.bets,
         maxHorses: s.maxHorses,
         team: s.team ?? [],
@@ -1090,9 +1100,12 @@ export const useStore = create<Store>((set, get) => {
       const results = st.results.slice();
       const horses = get().horses;
 
+      // 賞金と一緒に厳選チケットも配る（優勝3・準優勝2・3位1）。
+      let tickets = get().refineTickets ?? 0;
       const resolve = (entry: ArenaEntry) => {
         const r = runTournament(entry.snapshot, entry.seed, pool, ARENA_MODE, entry.period);
         coins += r.payout;
+        tickets += arenaTickets(r.outcome, r.finalRank);
         results.unshift({ ...r, awarded: true, seen: false });
       };
 
@@ -1125,7 +1138,11 @@ export const useStore = create<Store>((set, get) => {
         }
       }
 
-      commit({ coins: Math.max(0, coins), arena: { auto, pending, lastPeriod, results: results.slice(0, ARENA_RESULTS_CAP) } });
+      commit({
+        coins: Math.max(0, coins),
+        refineTickets: tickets,
+        arena: { auto, pending, lastPeriod, results: results.slice(0, ARENA_RESULTS_CAP) },
+      });
     },
 
     arenaMarkSeen: (period) => {
@@ -1181,27 +1198,19 @@ export const useStore = create<Store>((set, get) => {
     rerollHorse: (id, slots) => {
       const s = get();
       const horse = s.horses.find((h) => h.id === id);
-      if (!horse || !canReroll(horse)) return false; // 新世代は厳選の対象外
+      // 旧厳選を使ったウマは「使い切り」扱い（中身はそのまま・導線を出さない）。
+      if (!horse || !canRefine(horse)) return false;
       if (!slots || slots.length === 0) return false; // 更新する枠が無い
-      const { left } = rerollState(horse, s.trophies, s.badges);
-      if (left <= 0) return false; // 権利を使い切っている
-      if (s.coins < REROLL_COST) return false; // 1回につきコインもかかる
+      if (refineState(horse).left <= 0) return false; // 3回を使い切っている
+      if ((s.refineTickets ?? 0) < REFINE_TICKET_COST) return false; // チケットが無い
       const rng = mulberry32((Math.random() * 2 ** 31) >>> 0);
       const { skill, apt } = applyReroll(horse, slots, rng);
       commit({
-        coins: s.coins - REROLL_COST,
+        refineTickets: (s.refineTickets ?? 0) - REFINE_TICKET_COST,
         horses: s.horses.map((h) =>
-          h.id === id ? { ...h, skill, apt, rerollsUsed: (h.rerollsUsed ?? 0) + 1 } : h,
+          h.id === id ? { ...h, skill, apt, refineUsed: (h.refineUsed ?? 0) + 1 } : h,
         ),
       });
-      return true;
-    },
-
-    finishReroll: (id) => {
-      const s = get();
-      const horse = s.horses.find((h) => h.id === id);
-      if (!horse || horse.rerollDone) return false;
-      commit({ horses: s.horses.map((h) => (h.id === id ? { ...h, rerollDone: true } : h)) });
       return true;
     },
 

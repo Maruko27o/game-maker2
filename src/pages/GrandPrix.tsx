@@ -258,6 +258,16 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
 
   useScrollTopOnChange(screen);
 
+  // タブ移動のロックはグランプリ自身が持つ。止めたいのは「コインを預けてから」で、
+  // G1〜G3を選ぶ画面と出走表はまだ何も預けていない（どちらも「やめる」で戻れる）ので
+  // 自由に他のタブへ行ける。パドック以降だけロックする。
+  const setRaceBusy = useStore((s) => s.setRaceBusy);
+  const gpBusy = screen !== 'grade' && screen !== 'card';
+  useEffect(() => {
+    setRaceBusy(gpBusy);
+    return () => setRaceBusy(false);
+  }, [gpBusy, setRaceBusy]);
+
   // 予選パドックに入ったら、その組・その周回数でモンテカルロ倍率を計算する。
   useEffect(() => {
     if (screen !== 'odds' || !state) return;

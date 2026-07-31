@@ -1,88 +1,15 @@
-// 厳選（振り直し）の権利計算と適用。
-//
-// 対象は「既存ウマ」だけ。新世代(gen2)のウマは、草むらから何頭でも召喚して選べること
-// 自体が厳選になるので、振り直しの権利は持たない。
-// 既存ウマは召喚し直せない代わりに、これまでの活躍に応じた回数だけ振り直せる。
-//
-// 権利（最大10回）：
-//   ベース                 1〜3回（ウマごとにランダム。IDから決まるので常に同じ値）
-//   トロフィーを持っている  +2回
-//   トロフィー5個以上       +1回
-//   バッジ（メダル）を持っている +1回
-//   バッジ10枚以上          +1回
-//   バッジ50枚以上          +1回
-//   バッジ100枚以上         +1回
-// 1回振り直すたびに REROLL_COST コインかかる。
+// 厳選（振り直し）の適用そのもの。回数やコストの制度は logic/refine.ts が持つ。
 //
 // 振り直しは「固有スキル1枠＋コース6枠」のうち、プレイヤーが“更新する”と選んだ枠だけを
 // まとめて引き直す。選ばなかった枠は確定のまま動かない（＝良い枠を残していける）。
-import type { Horse, Trophy, Badge } from '../types';
+import type { Horse } from '../types';
 import type { RNG } from './stats';
-import { mulberry32, hashString } from './stats';
 import { rollSkill } from './skill';
 import { rollGrade } from './aptitude';
 import { COURSES } from '../data/courses';
 import type { Grade } from '../data/aptitude';
 
-export const REROLL_BASE_MIN = 1;
-export const REROLL_BASE_MAX = 3;
-export const REROLL_MAX = 10;
-export const REROLL_COST = 1000; // 1回振り直すのにかかるコイン
 export const SKILL_SLOT = 'skill'; // 枠のID：スキルはこれ、コースはコースID
-
-/** そのウマのベース回数（1〜3回）。ウマIDから決めるので、保存に持たせなくても
- *  端末やクラウド同期をまたいで必ず同じ値になる（＝引き直しで増やせない）。 */
-export function rerollBase(horseId: string): number {
-  const rng = mulberry32(hashString(`rerollBase:${horseId}`));
-  return REROLL_BASE_MIN + Math.floor(rng() * (REROLL_BASE_MAX - REROLL_BASE_MIN + 1));
-}
-
-/** 振り直しの権利（総数）。活躍したウマほど多い。 */
-export function rerollRights(horseId: string, trophyCount: number, badgeCount: number): number {
-  let n = rerollBase(horseId);
-  if (trophyCount >= 1) n += 2;
-  if (trophyCount >= 5) n += 1;
-  if (badgeCount >= 1) n += 1;
-  if (badgeCount >= 10) n += 1;
-  if (badgeCount >= 50) n += 1;
-  if (badgeCount >= 100) n += 1;
-  return Math.min(REROLL_MAX, n);
-}
-
-/** 権利の内訳（UIでどこまで伸ばせるか見せるため）。 */
-export type RightsBreakdown = { label: string; got: boolean; plus: number }[];
-export function rightsBreakdown(horseId: string, trophyCount: number, badgeCount: number): RightsBreakdown {
-  return [
-    { label: 'ベース（ウマごとに1〜3回）', got: true, plus: rerollBase(horseId) },
-    { label: 'トロフィーを持っている', got: trophyCount >= 1, plus: 2 },
-    { label: 'トロフィー5個以上', got: trophyCount >= 5, plus: 1 },
-    { label: 'バッジを持っている', got: badgeCount >= 1, plus: 1 },
-    { label: 'バッジ10枚以上', got: badgeCount >= 10, plus: 1 },
-    { label: 'バッジ50枚以上', got: badgeCount >= 50, plus: 1 },
-    { label: 'バッジ100枚以上', got: badgeCount >= 100, plus: 1 },
-  ];
-}
-
-/** そのウマが厳選できるか（新世代は対象外／確定済みも対象外）。 */
-export function canReroll(horse: Horse): boolean {
-  return !horse.gen2 && !horse.rerollDone;
-}
-
-/** そのウマの権利・使用済み・残り。 */
-export function rerollState(horse: Horse, trophies: Trophy[], badges: Badge[]): {
-  rights: number;
-  used: number;
-  left: number;
-  trophyCount: number;
-  badgeCount: number;
-} {
-  const trophyCount = trophies.filter((t) => t.horseId === horse.id).length;
-  const badgeCount = badges.filter((b) => b.horseId === horse.id).length;
-  // 確定済み・新世代は権利0として扱う（＝厳選ボタンを出さない）。
-  const rights = canReroll(horse) ? rerollRights(horse.id, trophyCount, badgeCount) : 0;
-  const used = Math.max(0, Math.floor(horse.rerollsUsed ?? 0));
-  return { rights, used, left: Math.max(0, rights - used), trophyCount, badgeCount };
-}
 
 /** 有効な枠IDの一覧（スキル1つ＋コース6つ）。 */
 export function allSlots(): string[] {

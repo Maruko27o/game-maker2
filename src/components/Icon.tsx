@@ -5,7 +5,7 @@ export type IconName =
   | 'leaf' | 'horse' | 'palette' | 'book' | 'flag' | 'trophy'
   | 'star' | 'account' | 'cloud' | 'gear' | 'lock' | 'gift'
   | 'refresh' | 'bolt' | 'skip' | 'medal' | 'crown' | 'clipboard' | 'sparkle' | 'swords'
-  | 'dice' | 'eye' | 'eyeOff' | 'mail';
+  | 'dice' | 'eye' | 'eyeOff' | 'mail' | 'ticket';
 
 const P: Record<IconName, JSX.Element> = {
   // 草むら
@@ -60,6 +60,7 @@ const P: Record<IconName, JSX.Element> = {
   // サイコロ（5の目・目は穴として抜く）
   dice: <path d="M7 3h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4V7a4 4 0 014-4zM8 6.5a1.5 1.5 0 100 3 1.5 1.5 0 100-3zM16 6.5a1.5 1.5 0 100 3 1.5 1.5 0 100-3zM12 10.5a1.5 1.5 0 100 3 1.5 1.5 0 100-3zM8 14.5a1.5 1.5 0 100 3 1.5 1.5 0 100-3zM16 14.5a1.5 1.5 0 100 3 1.5 1.5 0 100-3z" fillRule="evenodd" />,
   // パスワード表示トグル（目）
+  ticket: <path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v2.2a2.8 2.8 0 000 5.6V17a2 2 0 01-2 2H5a2 2 0 01-2-2v-2.2a2.8 2.8 0 000-5.6V7zm11 0v2h1.6V7H14zm0 4v2h1.6v-2H14zm0 4v2h1.6v-2H14z" fillRule="evenodd" />,
   eye: <path d="M12 5C6.5 5 2.7 9 1.5 12 2.7 15 6.5 19 12 19s9.3-4 10.5-7C21.3 9 17.5 5 12 5zm0 3a4 4 0 110 8 4 4 0 010-8zm0 2a2 2 0 100 4 2 2 0 000-4z" fillRule="evenodd" />,
   eyeOff: <path d="M3.3 2L2 3.3l3.2 3.2C3.4 7.8 2.2 9.7 1.5 12 2.7 15 6.5 19 12 19c1.7 0 3.3-.4 4.7-1.1l4 4L22 20.7 3.3 2zM12 16a4 4 0 01-3.7-5.6l1.6 1.6a2 2 0 002.1 2.1l1.6 1.6c-.5.2-1 .3-1.6.3zm0-11c5.5 0 9.3 4 10.5 7-.5 1.2-1.4 2.6-2.7 3.8l-2.9-2.9A4 4 0 0012 8c-.4 0-.8 0-1.1.1L8.6 5.8C9.7 5.3 10.8 5 12 5z" fillRule="evenodd" />,
 };

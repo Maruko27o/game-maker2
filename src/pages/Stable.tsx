@@ -9,7 +9,7 @@ import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRat
 import { canJoinTeam, type JoinCheck } from '../logic/team';
 import { skillOf } from '../logic/skill';
 import { aptitudeOf } from '../logic/aptitude';
-import { rerollState, canReroll } from '../logic/reroll';
+import { refineState, canRefine, REFINE_MAX } from '../logic/refine';
 import RerollPanel from '../components/RerollPanel';
 import { GRADE_STYLE } from '../data/aptitude';
 import { COURSES } from '../data/courses';
@@ -192,7 +192,8 @@ export default function Stable() {
   const retireVal = selected ? retireValueOf(selected, trophies, badges) : 0;
   const selectedSkill = skillOf(selected ?? { id: '' });
   const selectedApt = aptitudeOf(selected ?? { id: '' });
-  const rr = selected ? rerollState(selected, trophies, badges) : null;
+  const refineTickets = useStore((s) => s.refineTickets ?? 0);
+  const rr = selected ? refineState(selected) : null;
   const teamIndex = selected ? (team ?? []).indexOf(selected.id) : -1;
   const joinCheck: JoinCheck = selected
     ? canJoinTeam(selected, team ?? [], horses, TEAM_SIZE)
@@ -532,10 +533,12 @@ export default function Stable() {
                   </div>
                 </div>
 
-                {/* 厳選：既存ウマだけ。活躍に応じて最大10回まで枠を振り直せる。 */}
-                {selected && canReroll(selected) && rr && rr.left > 0 && (
+                {/* 厳選：全ウマ最大3回。1回につき厳選チケット1枚（対戦の入賞でもらえる）。
+                    旧仕様で振り直したことがあるウマは使い切り扱いで出さない。 */}
+                {selected && canRefine(selected) && rr && rr.left > 0 && (
                   <button className={styles.rerollBtn} onClick={() => setRerollOpen(true)}>
-                    <Icon name="sparkle" size={14} /> 厳選する（のこり{rr.left}／{rr.rights}回）
+                    <Icon name="sparkle" size={14} /> 厳選する（のこり{rr.left}／{REFINE_MAX}回・
+                    <Icon name="ticket" size={13} />{refineTickets}枚）
                   </button>
                 )}
 

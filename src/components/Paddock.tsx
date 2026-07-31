@@ -3,6 +3,7 @@ import type { Entrant } from '../logic/raceSim2';
 import type { Course } from '../data/courses';
 import type { HorseLook } from '../types';
 import { raceOddsFromProbs, oddsFor, fmtOdds, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
+import { fillPicks } from '../logic/omakase';
 import { statTotal } from '../logic/stats';
 import { winProbs } from '../logic/grandprix';
 import { BET_AMOUNTS, MAX_BETS_PER_RACE } from '../data/coins';
@@ -71,25 +72,28 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
   // number(s) for us at the current stake, keeping only bets at 9000倍 or below.
   // Retries until a low-enough combo is found, then falls back to the most-favoured
   // horses for that same market (always the lowest odds — never switches the type).
+  //
+  // 選んでいるウマがあれば、それは必ず買い目に残して残りだけを任せる
+  // （「このウマは入れたい、あとはおまかせ」）。単勝で1頭選んでいれば、
+  // そのまま そのウマの単勝で確定する。
   const OMAKASE_MAX_ODDS = 9000;
   function omakase() {
     if (coins < amount || full) return;
     const idxs = Array.from({ length: entrants.length }, (_, i) => i);
     for (let tries = 0; tries < 120; tries++) {
-      const shuffled = idxs.slice();
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      const picks = shuffled.slice(0, spec.pick);
+      const picks = fillPicks(sel, idxs, spec.pick, Math.random);
       const odds = oddsFor(kind, picks, p, laps);
       if (odds > 0 && odds <= OMAKASE_MAX_ODDS) {
         onAdd({ kind, sel: picks, amount, odds });
         return;
       }
     }
-    // fallback: the most-favoured horses give the lowest odds for this market
-    const favPicks = rows.slice(0, spec.pick).map((r) => r.idx);
+    // fallback: 選んだウマは残したまま、残りを人気順で埋める（この馬券で一番低い倍率）
+    const favPicks = sel.slice(0, spec.pick);
+    for (const r of rows) {
+      if (favPicks.length >= spec.pick) break;
+      if (!favPicks.includes(r.idx)) favPicks.push(r.idx);
+    }
     onAdd({ kind, sel: favPicks, amount, odds: oddsFor(kind, favPicks, p, laps) });
   }
 
@@ -158,7 +162,10 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
           (odds cap is internal — not shown). The market name is on the button so
           it's clear which 馬券 will be bought. */}
       <button className={styles.omakase} disabled={coins < amount || full} onClick={omakase}>
-        <Icon name="dice" size={18} /> {KIND_LABEL[kind]}をおまかせ（{amount}コインで1点）
+        <Icon name="dice" size={18} />{' '}
+        {sel.length > 0
+          ? `選んだウマ入りの${KIND_LABEL[kind]}をおまかせ（${amount}コインで1点）`
+          : `${KIND_LABEL[kind]}をおまかせ（${amount}コインで1点）`}
       </button>
 
       {/* stake + add */}

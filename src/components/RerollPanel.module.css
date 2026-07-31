@@ -60,6 +60,19 @@
   font-weight: 800;
   color: var(--ink-soft);
 }
+.ticketHave {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 9px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink);
+}
 .rightsBtn {
   margin-left: auto;
   background: var(--panel-inner);

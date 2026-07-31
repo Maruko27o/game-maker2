@@ -307,6 +307,25 @@
   justify-content: center;
   gap: 6px;
 }
+.prizeTicket {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  color: var(--blue-dark);
+}
+.resultTicket {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 900;
+  border-radius: 10px;
+  padding: 5px 14px;
+  font-size: 14px;
+}
 .resultPay {
   display: inline-flex;
   align-items: center;

@@ -64,6 +64,7 @@ export type Horse = {
   apt?: Record<string, string>; // コース適性（コースID -> 'C'|'B'|'A'|'S'）。未設定はIDから決まる固定値。
   rerollsUsed?: number; // 厳選（振り直し）を使った回数。権利は活躍に応じて最大10回。
   rerollDone?: boolean; // 厳選を「確定」した。回数が余っていても、もう振り直せない。
+  refineUsed?: number; // チケット厳選を使った回数（0..REFINE_MAX）。旧 rerollsUsed とは別勘定。
   locked?: boolean; // お気に入りロック。引退（＝削除）を防ぐ。大切に育てたウマの誤タップ対策。
   gen2?: boolean; // 個体値厳選アップデート後に生まれた「新世代」のウマ。既存ウマには付かない。
   //   調整期間中は チーム/レースに入れない（既存ウマが6頭に満たない分だけ埋められる）。
@@ -289,6 +290,7 @@ export type SaveData = {
   freeRebalance: boolean; // one free stat re-allocation after the v4 migration (RACE_V3 §3.6)
   freeRename?: boolean; // 初回の改名は無料（1回だけ）。既定 true、使うと false
   coins: number; // soft currency (RACE_V4 §4)
+  refineTickets?: number; // 厳選チケット。対戦の入賞でのみ増える（優勝3・準優勝2・3位1）
   bets: BetRecord[]; // recent settled bets (capped)
   maxHorses: number; // stable slot cap (10, expandable to 15)
   team?: string[]; // 出走・牧場収入の対象となるチーム（最大 maxHorses 頭。horse id の並び）
