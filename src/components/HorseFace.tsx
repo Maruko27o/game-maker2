@@ -3,6 +3,7 @@ import type { HorseLook } from '../types';
 import { colorById, decoById } from '../data/parts';
 import { HORSE_BASE_INNER } from '../data/horseBase';
 import HorseDefs from './HorseDefs';
+import HorseEffect from './HorseEffect';
 
 // A round, cropped portrait of a horse's head + mane crest (RACE_V3 §1.4).
 // Reused by the race rank panel and anywhere a compact "which horse" chip helps.
@@ -66,6 +67,8 @@ function HorseFace({
       <HorseDefs />
       <g clipPath={`url(#${clip})`}>
         <rect x={VB.x} y={VB.y} width={VB.s} height={VB.s} fill={tint(body)} />
+        {/* エフェクトは顔の後ろ（かぶりもの・顔まわりの装備を隠さない） */}
+        <HorseEffect id={horse.decos.tail} view="face" />
         <g dangerouslySetInnerHTML={{ __html: HORSE_BASE_INNER }} />
         {/* head gear, then face gear on top — matches the full-body draw order */}
         {headDeco && <g dangerouslySetInnerHTML={{ __html: headDeco }} />}

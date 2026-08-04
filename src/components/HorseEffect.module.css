@@ -1,0 +1,78 @@
+/* エフェクトの動き。レアリティで強さを変える（N=静止 / R=ゆっくり / SR=はっきり）。
+   端末の「視差効果を減らす」設定では全部止める。 */
+
+.wrap {
+  pointer-events: none;
+}
+
+.halo {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.halo.slow {
+  animation: breathe 5.2s ease-in-out infinite;
+}
+.halo.fast {
+  animation: breathe 3.2s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.75; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+.mote {
+  transform-box: view-box;
+}
+
+/* 漂う粒：その場でゆっくり上下 */
+.motes.slow { animation: float 4.6s ease-in-out infinite; }
+.motes.fast { animation: float 3s ease-in-out infinite; }
+@keyframes float {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+/* 舞い落ちる／昇る：透明度でふわっと */
+.petals.slow, .bubbles.slow { animation: drift 5.4s ease-in-out infinite; }
+.petals.fast, .bubbles.fast { animation: drift 3.4s ease-in-out infinite; }
+@keyframes drift {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* 炎：チラチラ */
+.flames.slow { animation: flicker 1.6s ease-in-out infinite; }
+.flames.fast { animation: flicker 1s ease-in-out infinite; }
+@keyframes flicker {
+  0%, 100% { opacity: 0.8; }
+  40% { opacity: 1; }
+  70% { opacity: 0.88; }
+}
+
+/* 放射・周回：きらめきの明滅 */
+.rays.slow, .orbit.slow { animation: twinkle 3.6s ease-in-out infinite; }
+.rays.fast, .orbit.fast { animation: twinkle 2.2s ease-in-out infinite; }
+@keyframes twinkle {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* 半分の粒は逆位相にして、全部が同時に光らないようにする */
+.alt {
+  animation-direction: reverse;
+}
+
+.aurora.slow { animation: shift 6.5s ease-in-out infinite; }
+.aurora.fast { animation: shift 4s ease-in-out infinite; }
+@keyframes shift {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo,
+  .mote,
+  .aurora {
+    animation: none !important;
+  }
+}
