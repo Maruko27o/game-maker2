@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRankingFrame } from '../cloud';
+import { TITLES, TIER_INFO, titleCtx, activeTitle, type TitleDef } from '../data/titles';
+import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRankingFrame, setRankingTitle } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
 import type { HorseLook, EquipFrame } from '../types';
@@ -14,6 +15,7 @@ import CoinIcon from './CoinIcon';
 import AccountPanel from './AccountPanel';
 import styles from './ProfileModal.module.css';
 import CloseButton from './CloseButton';
+import TitleBanner from './TitleBanner';
 
 // アイコンに装備できるフレーム同士の同一判定。
 function sameFrame(a: EquipFrame | null, b: EquipFrame | null): boolean {
@@ -96,6 +98,17 @@ export default function ProfileModal({
     return Math.round((distinct / TOTAL_PARTS) * 100);
   }, [owned]);
   const recoveryPct = pstats.betsPlaced > 0 ? pstats.maxRecoveryPct : null;
+
+  // 称号：いま達成しているものと、装備中のもの。
+  const equippedTitle = useStore((s) => s.equippedTitle);
+  const equipTitle = useStore((s) => s.equipTitle);
+  const ctx = useMemo(() => titleCtx(useStore.getState(), dexPct), [dexPct, horses, trophies, pstats, owned]);
+  const active = activeTitle(equippedTitle, ctx);
+  function pickTitle(t: TitleDef) {
+    if (!t.check(ctx)) return;
+    equipTitle(t.id);
+    void setRankingTitle(t.id);
+  }
 
   const shelf = displayTrophies;
   const usedOf = (r: 1 | 2 | 3) => shelf.filter((x) => x === r).length;
@@ -194,6 +207,37 @@ export default function ProfileModal({
             <span className={styles.statValue}><CoinIcon size={14} /> {pstats.maxPayout.toLocaleString()}</span>
           </div>
         </div>
+
+        {/* 称号：達成したものから好きなものを選ぶ。ランキングの個人ページに出る。 */}
+        <div className={styles.titleHead}>
+          <span className={styles.titleLead}>称号</span>
+          <span className={styles.titleNow} style={{ ['--c1' as string]: active.colors[0] }}>{active.name}</span>
+        </div>
+        <ul className={styles.titleList}>
+          {TITLES.map((t) => {
+            const got = t.check(ctx);
+            const on = active.id === t.id;
+            return (
+              <li key={t.id}>
+                <button
+                  className={`${styles.titleCard} ${on ? styles.titleOn : ''} ${got ? '' : styles.titleLocked}`}
+                  onClick={() => pickTitle(t)}
+                  disabled={!got}
+                >
+                  <TitleBanner title={t} className={styles.titleArt} />
+                  <span className={styles.titleBody}>
+                    <span className={styles.titleName}>{t.name}</span>
+                    <span className={styles.titleDesc}>{t.desc}</span>
+                    <span className={styles.titleTier}>
+                      {'★'.repeat(t.tier)}<span className={styles.titleShare}>{TIER_INFO[t.tier].share}</span>
+                    </span>
+                  </span>
+                  {on && <span className={styles.titleCheck}>✓</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
 
         {/* Tabs */}
         <div className={styles.tabs}>

@@ -8,24 +8,17 @@ import CoinIcon from './CoinIcon';
 import Icon from './Icon';
 import { fmtOdds } from '../logic/betting';
 import { courseById } from '../data/courses';
+import { titleById } from '../data/titles';
+import TitleBanner from './TitleBanner';
 import styles from './RankingProfileCard.module.css';
 import CloseButton from './CloseButton';
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 
-// 称号：通算の最高的中倍率で決まる肩書き。数字だけだと味気ないので、見た人が
-// 一目で「この人すごい」と分かる名前と色を付ける。名札とカードの帯に反映する。
-const TITLES: { min: number; name: string; tone: string }[] = [
-  { min: 10000, name: '伝説の的中王', tone: '#b06bff' },
-  { min: 3000, name: '万馬券ハンター', tone: '#e0485f' },
-  { min: 1000, name: '大穴の目利き', tone: '#e0a92e' },
-  { min: 300, name: 'ベテラン予想家', tone: '#3f7fd6' },
-  { min: 100, name: '穴党', tone: '#37b98a' },
-  { min: 30, name: '見習い予想家', tone: '#8a6a3f' },
-  { min: 0, name: 'かけだし', tone: '#8a7a5c' },
-];
-function titleOf(odds: number) {
-  return TITLES.find((t) => odds >= t.min) ?? TITLES[TITLES.length - 1];
+// 称号はプロフィールで本人が選んだものをそのまま出す（未設定なら「かけだし」）。
+// 背景も称号の段に合わせて変わる ＝ 難しさと見た目の格が揃う。
+function titleOf(id: string | null) {
+  return (id ? titleById[id] : undefined) ?? titleById.rookie;
 }
 
 // Read-only profile shown when tapping a ranking row: the player's icon horse,
@@ -47,15 +40,15 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
 
   const bestOdds = Math.max(row.bestOdds, life?.bestOdds ?? 0);
   const bestPayout = Math.max(row.bestPayout, life?.bestPayout ?? 0);
-  const title = titleOf(bestOdds);
+  const title = titleOf(row.title);
   const course = row.courseId ? courseById(row.courseId) : null;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.card} onClick={(e) => e.stopPropagation()} style={{ ['--tone' as string]: title.tone }}>
+      <div className={styles.card} onClick={(e) => e.stopPropagation()} style={{ ['--tone' as string]: title.colors[0] }}>
         <CloseButton onClick={onClose} />
-        {/* 上の色帯。称号の色で塗って、アイコンが主役に見えるようにする。 */}
-        <div className={styles.banner} aria-hidden><span className={styles.bannerGlow} /></div>
+        {/* 上の帯は称号の背景そのもの（段が上がるほど作り込みが増える）。 */}
+        <div className={styles.banner}><TitleBanner title={title} /></div>
         <div className={`${styles.avatarBox} ${row.equippedFrame ? styles.avatarBoxFramed : ''}`}>
           {row.equippedFrame ? (
             <EquippedFrame frame={row.equippedFrame} look={look} size={100} />

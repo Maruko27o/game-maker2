@@ -199,6 +199,7 @@ function freshSave(): SaveData {
     displayTrophies: [],
     mailbox: [],
     equippedFrame: null,
+    equippedTitle: null,
     raceSession: null,
     arena: freshArena(),
     farmClaimedAt: trustedNow(),
@@ -226,6 +227,7 @@ function normProfile(d: Record<string, unknown>): {
   displayTrophies: number[];
   mailbox: MailItem[];
   equippedFrame: EquipFrame | null;
+  equippedTitle: string | null;
 } {
   const avatarHorseId = typeof d.avatarHorseId === 'string' ? d.avatarHorseId : null;
   const displayTrophies = Array.isArray(d.displayTrophies)
@@ -236,7 +238,8 @@ function normProfile(d: Record<string, unknown>): {
         (m): m is MailItem => !!m && typeof m === 'object' && typeof (m as MailItem).id === 'string',
       )
     : [];
-  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame) };
+  const equippedTitle = typeof d.equippedTitle === 'string' ? d.equippedTitle : null;
+  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), equippedTitle };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -544,6 +547,8 @@ type Store = SaveData & {
   markAllMailRead: () => void;
   /** アイコンに装備するフレーム（殿堂 or 連勝、null で外す）。 */
   equipFrame: (frame: EquipFrame | null) => void;
+  /** 称号を付け替える（未達成のIDは無視される）。 */
+  equipTitle: (id: string | null) => void;
   // スペシャルタスク（連勝チャレンジ）.
   /** 1人でレース・馬券ありの結果を折り込む。win=払戻>賭け。負けで連勝リセット。
    *  馬券なし／コース選択レースでは呼ばない（何も変えない）。 */
@@ -644,6 +649,7 @@ export const useStore = create<Store>((set, get) => {
       displayTrophies: next.displayTrophies,
       mailbox: next.mailbox ?? [],
       equippedFrame: next.equippedFrame ?? null,
+      equippedTitle: next.equippedTitle ?? null,
       raceSession: next.raceSession ?? null,
       arena: next.arena ?? freshArena(),
       farmClaimedAt: next.farmClaimedAt ?? trustedNow(),
@@ -1030,6 +1036,7 @@ export const useStore = create<Store>((set, get) => {
       if (box.some((m) => !m.read)) commit({ mailbox: box.map((m) => ({ ...m, read: true })) });
     },
     equipFrame: (frame) => commit({ equippedFrame: frame }),
+    equipTitle: (id) => commit({ equippedTitle: id }),
 
     recordSoloStreak: (win) => {
       const s = get();

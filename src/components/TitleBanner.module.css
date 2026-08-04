@@ -1,0 +1,132 @@
+/* 称号の背景。段が上がるほど層が増える。 */
+.banner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--c1);
+}
+.stripes,
+.rays,
+.sheen,
+.aurora,
+.sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 2段：二色＋斜めの帯 */
+.t2 {
+  background: linear-gradient(160deg, var(--c1) 0%, var(--c2) 100%);
+}
+.t2 .stripes {
+  background: repeating-linear-gradient(
+    118deg,
+    rgba(255, 255, 255, 0.14) 0 12px,
+    rgba(255, 255, 255, 0) 12px 34px
+  );
+}
+
+/* 3段：グラデ＋細かいストライプ */
+.t3 {
+  background: linear-gradient(165deg, var(--c1) 0%, var(--c2) 105%);
+}
+.t3 .stripes {
+  background: repeating-linear-gradient(
+    112deg,
+    rgba(255, 255, 255, 0.18) 0 5px,
+    rgba(255, 255, 255, 0) 5px 16px
+  );
+}
+
+/* 4段：グラデ＋放射 */
+.t4 {
+  background: radial-gradient(120% 150% at 50% 120%, var(--c2) 0%, var(--c1) 70%);
+}
+.t4 .stripes {
+  background: repeating-linear-gradient(
+    112deg,
+    rgba(255, 255, 255, 0.12) 0 5px,
+    rgba(255, 255, 255, 0) 5px 16px
+  );
+}
+.rays {
+  background: repeating-conic-gradient(
+    from 0deg at 50% 118%,
+    rgba(255, 255, 255, 0.22) 0deg 5deg,
+    rgba(255, 255, 255, 0) 5deg 15deg
+  );
+}
+
+/* 5段：放射＋流れる光 */
+.t5 {
+  background: radial-gradient(120% 150% at 50% 120%, var(--c2) 0%, var(--c1) 68%);
+}
+.t5 .stripes {
+  background: repeating-linear-gradient(
+    112deg,
+    rgba(255, 255, 255, 0.1) 0 4px,
+    rgba(255, 255, 255, 0) 4px 14px
+  );
+}
+.sheen {
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0) 35%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0) 65%
+  );
+  transform: translateX(-60%);
+  animation: sweep 3.6s ease-in-out infinite;
+}
+@keyframes sweep {
+  0% { transform: translateX(-70%); }
+  60%, 100% { transform: translateX(80%); }
+}
+
+/* 6段：オーロラ＋きらめき */
+.t6 {
+  background: linear-gradient(150deg, var(--c1) 0%, var(--c2) 55%, var(--c1) 100%);
+}
+.t6 .rays {
+  background: repeating-conic-gradient(
+    from 0deg at 50% 122%,
+    rgba(255, 255, 255, 0.3) 0deg 4deg,
+    rgba(255, 255, 255, 0) 4deg 13deg
+  );
+}
+.aurora {
+  background:
+    radial-gradient(60% 90% at 20% 30%, rgba(255, 120, 200, 0.5), transparent 70%),
+    radial-gradient(60% 90% at 78% 25%, rgba(90, 200, 255, 0.5), transparent 70%),
+    radial-gradient(70% 100% at 50% 95%, rgba(255, 235, 130, 0.45), transparent 70%);
+  animation: drift 7s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  from { transform: translateX(-5%) scale(1.02); }
+  to { transform: translateX(5%) scale(1.08); }
+}
+.sparks span {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: #fff;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0;
+  animation: pop 2.4s ease-in-out infinite;
+}
+@keyframes pop {
+  0%, 70%, 100% { opacity: 0; transform: scale(0.5); }
+  20% { opacity: 1; transform: scale(1.15); }
+  40% { opacity: 0.4; transform: scale(0.85); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheen,
+  .aurora,
+  .sparks span {
+    animation: none;
+  }
+  .sheen { opacity: 0.25; transform: none; }
+}
