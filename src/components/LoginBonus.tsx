@@ -9,6 +9,7 @@ import { colorById } from '../data/parts';
 import Icon from './Icon';
 import CoinIcon from './CoinIcon';
 import styles from './LoginBonus.module.css';
+import CloseButton from './CloseButton';
 
 // ログインボーナス（曜日制）。上のバー（メールの右）のアイコンから開く。
 // 草むらの本文に置くと、マイウマ・おかわり・部屋の絵を押し下げてしまうため。
@@ -63,9 +64,9 @@ export default function LoginBonus() {
       {open && createPortal(
         <div className={styles.overlay} onClick={() => setOpen(false)}>
           <div className={styles.sheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="ログインボーナス">
+            <CloseButton onClick={() => setOpen(false)} />
             <div className={styles.head}>
               <span className={styles.title}>ログインボーナス</span>
-              <button className={styles.close} onClick={() => setOpen(false)} aria-label="閉じる">✕</button>
             </div>
             <p className={styles.sub}>{canGet ? 'きょうのぶんを受け取れます' : 'また明日！'}</p>
 

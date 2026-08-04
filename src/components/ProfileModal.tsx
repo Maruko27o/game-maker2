@@ -13,6 +13,7 @@ import TrophyIcon from './TrophyIcon';
 import CoinIcon from './CoinIcon';
 import AccountPanel from './AccountPanel';
 import styles from './ProfileModal.module.css';
+import CloseButton from './CloseButton';
 
 // アイコンに装備できるフレーム同士の同一判定。
 function sameFrame(a: EquipFrame | null, b: EquipFrame | null): boolean {
@@ -126,6 +127,7 @@ export default function ProfileModal({
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <CloseButton onClick={onClose} />
         {/* Header: tap the avatar to change the icon, tap the shelf to edit trophies */}
         <div className={styles.head}>
           <button className={styles.avatarBtn} onClick={() => { setIconMode('horse'); setEditing('icon'); }} aria-label="アイコンを変更">
@@ -207,16 +209,15 @@ export default function ProfileModal({
           {tab === 'profile' ? null : <AccountPanel />}
         </div>
 
-        <button className={styles.closeLink} onClick={onClose}>閉じる</button>
       </div>
 
       {/* Icon editor (opened by tapping the avatar) */}
       {editing === 'icon' && (
         <div className={styles.editorOverlay} onClick={() => setEditing(null)}>
           <div className={styles.editorCard} onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={() => setEditing(null)} />
             <div className={styles.editorHead}>
               <h3 className={styles.editorTitle}>アイコン設定</h3>
-              <button className={styles.close} onClick={() => setEditing(null)} aria-label="閉じる">✕</button>
             </div>
             <div className={styles.seg}>
               <button className={`${styles.segBtn} ${iconMode === 'horse' ? styles.segOn : ''}`} onClick={() => setIconMode('horse')}>ウマ</button>
@@ -285,9 +286,9 @@ export default function ProfileModal({
       {editing === 'trophy' && (
         <div className={styles.editorOverlay} onClick={() => setEditing(null)}>
           <div className={styles.editorCard} onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={() => setEditing(null)} />
             <div className={styles.editorHead}>
               <h3 className={styles.editorTitle}>トロフィーを飾る（{shelf.length}/{SLOTS}）</h3>
-              <button className={styles.close} onClick={() => setEditing(null)} aria-label="閉じる">✕</button>
             </div>
             {/* current shelf — tap a trophy to remove it */}
             <div className={styles.shelfEdit2}>

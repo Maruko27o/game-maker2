@@ -9,6 +9,7 @@ import StatRadar from './StatRadar';
 import MoodFace from './MoodFace';
 import Icon from './Icon';
 import styles from './HorseStatsPopup.module.css';
+import CloseButton from './CloseButton';
 
 type Props = {
   entrant: Entrant;
@@ -25,10 +26,10 @@ export default function HorseStatsPopup({ entrant: e, gate, mood, onClose }: Pro
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.card} onClick={(ev) => ev.stopPropagation()} role="dialog" aria-label="能力">
+        <CloseButton onClick={onClose} />
         <div className={styles.head}>
           <span className={styles.gate}>{gate}</span>
           <span className={styles.title}>{e.isPlayer ? 'あなた' : e.name}</span>
-          <button className={styles.close} onClick={onClose} aria-label="閉じる">✕</button>
         </div>
 
         <div className={styles.body}>

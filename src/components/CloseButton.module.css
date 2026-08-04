@@ -1,0 +1,43 @@
+/* 共通の「閉じる」ボタン（右上の丸い✕）。theme 変数は global.css。 */
+.close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  z-index: 5;
+  /* 当たり判定は 44px（指で押しやすい最小サイズ）。見た目の丸はその内側。 */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  /* iOS で長押ししたときの選択・コンテキストメニューを出さない */
+  -webkit-touch-callout: none;
+}
+.mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  /* 木目の地色に沈まないよう、白に近い面＋濃い縁＋落ち影ではっきり浮かせる。 */
+  background: var(--panel-inner);
+  border: 3px solid var(--border-dark);
+  box-shadow: 0 3px 0 var(--border), 0 3px 8px rgba(0, 0, 0, 0.3);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.close:active .mark {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border), 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* シートの角が画面端に近く、はみ出させたくないときは内側に置く。 */
+.inside {
+  top: -6px;
+  right: -6px;
+}

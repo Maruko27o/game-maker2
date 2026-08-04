@@ -253,20 +253,20 @@
 /* 右上の丸に✕の閉じるボタン。 */
 .rewardClose {
   position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 26px;
-  height: 26px;
+  top: -12px;
+  right: -8px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  border: 2px solid var(--border-dark);
+  border: 3px solid var(--border-dark);
   background: var(--panel-inner);
   color: var(--ink);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 900;
   line-height: 1;
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 0 var(--border), 0 3px 8px rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
 .rewardClose:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15); }
@@ -464,4 +464,50 @@
   font-size: 11px;
   font-weight: 900;
   line-height: 1.5;
+}
+
+/* 仲間になった直後に「引退」か「このコにする」をその場で選べる行。
+   ウマの見た目を隠したくないので、1行・高さ36pxに抑える。 */
+.wildActions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+}
+.wildRetire,
+.wildKeep {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border-radius: 11px;
+  border: 3px solid var(--border-dark);
+  font-size: 13px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.wildRetire {
+  background: var(--panel-inner);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--border);
+}
+.wildRetirePay {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.wildKeep {
+  background: var(--grass-dark);
+  color: #fff;
+  box-shadow: 0 3px 0 #5c8a34;
+}
+.wildRetire:active,
+.wildKeep:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border);
 }

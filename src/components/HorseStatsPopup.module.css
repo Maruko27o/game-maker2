@@ -11,10 +11,13 @@
   z-index: 90;
 }
 .card {
+  position: relative; /* 右上の閉じるボタンの基準 */
   width: 100%;
   max-width: 360px;
   max-height: 84vh;
   overflow-y: auto;
+  overflow-x: hidden; /* 横には動かせない（縦スクロールだけ） */
+  overscroll-behavior-x: contain;
   overscroll-behavior: contain;
   background: var(--panel);
   border: 3px solid var(--border);

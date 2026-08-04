@@ -6,10 +6,13 @@
   place-items: start center;
   padding: 20px 16px;
   overflow-y: auto;
+  overflow-x: hidden; /* 横には動かせない（縦スクロールだけ） */
+  overscroll-behavior-x: contain;
   z-index: 60;
 }
 /* P1-A「木札スタイル（ハニーウッド）」: 木の板のカード。 */
 .modal {
+  position: relative; /* 右上の閉じるボタンの基準 */
   width: 100%;
   max-width: 380px;
   margin: auto 0;
@@ -466,9 +469,12 @@
   place-items: center;
   padding: 20px 16px;
   overflow-y: auto;
+  overflow-x: hidden; /* 横には動かせない（縦スクロールだけ） */
+  overscroll-behavior-x: contain;
   z-index: 70;
 }
 .editorCard {
+  position: relative; /* 右上の閉じるボタンの基準 */
   width: 100%;
   max-width: 360px;
   background: var(--paper);

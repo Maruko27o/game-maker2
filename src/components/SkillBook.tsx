@@ -5,6 +5,7 @@ import { COURSES } from '../data/courses';
 import { skillEffectLines, aptitudeEffectText } from '../logic/skillEffect';
 import Icon from './Icon';
 import styles from './SkillBook.module.css';
+import CloseButton from './CloseButton';
 
 // ウマの特徴図鑑（固有スキル＋コース適性）。段ごとに ▼ で開閉する。
 // 草むらの i ボタンから開く。効果の文言は「予定」——レースの挙動にはまだ
@@ -27,9 +28,9 @@ export default function SkillBook({ onClose }: { onClose: () => void }) {
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="ウマの特徴図鑑">
+        <CloseButton onClick={onClose} />
         <div className={styles.head}>
           <h2 className={styles.title}>ウマの特徴図鑑</h2>
-          <button className={styles.close} onClick={onClose} aria-label="閉じる">✕</button>
         </div>
         <p className={styles.lead}>
           ウマは生まれたときに、固有スキルを1つと、6コースぶんの適性を持っています。

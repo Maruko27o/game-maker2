@@ -68,6 +68,8 @@
 /* ---- entry ---- */
 .pickRow {
   display: flex;
+  /* 横に流せるのはこの列の中だけ。画面ごと横に動くのは禁止。 */
+  overscroll-behavior-x: contain;
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 4px;
@@ -475,6 +477,8 @@
   gap: 7px;
   max-height: 320px;
   overflow-y: auto;
+  overflow-x: hidden; /* 横には動かせない（縦スクロールだけ） */
+  overscroll-behavior-x: contain;
 }
 .resultRow {
   display: flex;

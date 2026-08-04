@@ -20,6 +20,7 @@ import Icon from './Icon';
 import CoinIcon from './CoinIcon';
 import StreakFrame from './StreakFrame';
 import styles from './TaskButton.module.css';
+import CloseButton from './CloseButton';
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 
@@ -107,9 +108,9 @@ export default function TaskButton() {
       {open && (
         <div className={styles.overlay} onClick={() => setOpen(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={() => setOpen(false)} />
             <div className={styles.head}>
               <h2 className={styles.h2}><Icon name="clipboard" size={20} /> タスク</h2>
-              <button className={styles.close} onClick={() => setOpen(false)} aria-label="閉じる">✕</button>
             </div>
 
             {/* Tabs */}

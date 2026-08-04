@@ -15,6 +15,7 @@ import { trustedNow } from '../logic/trustedClock';
 import { usePrefersReducedMotion } from '../hooks';
 import SkillBook from '../components/SkillBook';
 import { skillOf } from '../logic/skill';
+import { retireValueOf } from '../logic/farm';
 import { aptitudeOf } from '../logic/aptitude';
 import { GRADE_STYLE } from '../data/aptitude';
 import { COURSES } from '../data/courses';
@@ -39,6 +40,9 @@ export default function Grass() {
   const maxHorses = useStore((s) => s.maxHorses);
   const coins = useStore((s) => s.coins);
   const buyOkawari = useStore((s) => s.buyOkawari);
+  const retireHorse = useStore((s) => s.retireHorse);
+  const trophies = useStore((s) => s.trophies);
+  const badges = useStore((s) => s.badges);
 
   const reduced = usePrefersReducedMotion();
   const [now, setNow] = useState(() => trustedNow());
@@ -89,6 +93,13 @@ export default function Grass() {
     setWild(null);
     setRevealed(false);
     setNow(trustedNow());
+  }
+
+  // その場で引退させる。ここまで来たウマはもう手持ちに入っているので、引退＝手放す。
+  // 箱がすぐ埋まる問題を「マイウマまで戻って選ぶ」ことなく片付けられるようにする。
+  function retireNow() {
+    if (wild) retireHorse(wild.id);
+    close();
   }
 
   return (
@@ -208,6 +219,18 @@ export default function Grass() {
                   </span>
                 );
               })}
+            </div>
+          )}
+          {wild && (
+            <div className={styles.wildActions}>
+              <button className={styles.wildRetire} onClick={retireNow}>
+                引退
+                <span className={styles.wildRetirePay}>
+                  <CoinIcon size={12} />
+                  {retireValueOf(wild, trophies, badges).toLocaleString()}
+                </span>
+              </button>
+              <button className={styles.wildKeep} onClick={close}>このコにする</button>
             </div>
           )}
           <div className={styles.rewardParts}>パーツ {reward.length}個 ゲット</div>

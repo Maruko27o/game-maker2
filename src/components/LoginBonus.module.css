@@ -53,6 +53,7 @@
   z-index: 55;
 }
 .sheet {
+  position: relative; /* 右上の閉じるボタンの基準 */
   width: 100%;
   max-width: 340px;
   background: var(--paper);

@@ -9,6 +9,7 @@ import { refineState, REFINE_MAX, REFINE_TICKET_COST } from '../logic/refine';
 import type { Horse } from '../types';
 import Icon from './Icon';
 import styles from './RerollPanel.module.css';
+import CloseButton from './CloseButton';
 
 // 厳選：固有スキル1枠＋コース6枠のうち、「更新する」と選んだ枠だけをまとめて引き直す。
 // 選ばなかった枠は確定のまま動かないので、良い枠を残しながら回数を使える。
@@ -98,9 +99,9 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="厳選">
+        <CloseButton onClick={onClose} />
         <div className={styles.head}>
           <h2 className={styles.title}>厳選</h2>
-          <button className={styles.close} onClick={onClose} aria-label="閉じる">✕</button>
         </div>
 
         <div className={styles.countRow}>
