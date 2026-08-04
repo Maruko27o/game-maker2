@@ -172,13 +172,15 @@ export async function submitBetScore(
   trophies: number[] | null,
   payout = 0,
   frame: EquipFrame | null = null,
+  title: string | null = null,
 ): Promise<void> {
   if (!supabase) return;
   const base = { p_odds: odds, p_course: courseId, p_username: username };
   try {
     // Try newest signature first, then progressively older ones so the score
     // still records even if only an earlier version of the SQL is applied.
-    let { error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies, p_payout: payout, p_frame: frame });
+    let { error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies, p_payout: payout, p_frame: frame, p_title: title });
+    if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies, p_payout: payout, p_frame: frame }));
     if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies, p_payout: payout }));
     if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar, p_trophies: trophies }));
     if (error) ({ error } = await supabase.rpc('submit_bet_score', { ...base, p_avatar: avatar }));
@@ -200,7 +202,7 @@ export async function submitBestOdds(odds: number, courseId: string, payout = 0)
   const st = useStore.getState();
   const av = st.avatarHorseId ? st.horses.find((h) => h.id === st.avatarHorseId) : st.horses[0];
   const avatar = av ? { colors: av.colors, decos: av.decos } : null;
-  await submitBetScore(odds, courseId, name, avatar, st.displayTrophies ?? null, payout, st.equippedFrame ?? null);
+  await submitBetScore(odds, courseId, name, avatar, st.displayTrophies ?? null, payout, st.equippedFrame ?? null, st.equippedTitle ?? null);
 }
 
 /** Update just the ranking avatar for the signed-in account (no-op if no row yet). */
@@ -218,6 +220,16 @@ export async function setRankingTrophies(trophies: number[] | null): Promise<voi
   if (!supabase) return;
   try {
     await supabase.rpc('set_bet_trophies', { p_trophies: trophies });
+  } catch {
+    /* DB not set up / offline — non-fatal */
+  }
+}
+
+/** 称号だけを更新する（当月の行が対象。列が未適用なら何も起きない）。 */
+export async function setRankingTitle(title: string | null): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.rpc('set_bet_title', { p_title: title });
   } catch {
     /* DB not set up / offline — non-fatal */
   }
@@ -243,6 +255,7 @@ export type ScoreRow = {
   avatar: AvatarLook | null;
   displayTrophies: number[];
   equippedFrame: EquipFrame | null;
+  title: string | null; // 装備中の称号ID（列が未適用なら null）
 };
 
 /** Read the signed-in player's own ranking row (best odds/payout), to backfill
@@ -310,6 +323,7 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
     // isn't applied yet, then to fewer columns for older schemas. The equipped_frame
     // column is newest, so it leads and drops off first when not yet applied.
     const attempts: [string, boolean][] = [
+      ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies, equipped_frame, title', true],
       ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies, equipped_frame', true],
       ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies', true],
       ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies', false],
@@ -330,6 +344,7 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
         avatar?: AvatarLook | null;
         display_trophies?: number[] | null;
         equipped_frame?: unknown;
+        title?: string | null;
       }[]
     ).map((r) => ({
       userId: r.user_id,
@@ -340,6 +355,7 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
       avatar: r.avatar ?? null,
       displayTrophies: Array.isArray(r.display_trophies) ? r.display_trophies : [],
       equippedFrame: normFrameAward(r.equipped_frame),
+      title: typeof r.title === 'string' ? r.title : null,
     }));
   } catch {
     return [];

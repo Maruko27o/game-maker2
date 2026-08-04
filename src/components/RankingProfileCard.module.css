@@ -28,9 +28,8 @@
 .banner {
   position: relative;
   align-self: stretch;
-  height: 74px;
+  height: 82px;
   margin: 0 -16px 0;
-  background: linear-gradient(180deg, var(--tone) 0%, color-mix(in srgb, var(--tone) 55%, var(--paper)) 100%);
   border-bottom: 3px solid var(--border-dark);
   overflow: hidden;
 }
