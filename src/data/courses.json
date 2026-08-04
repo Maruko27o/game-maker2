@@ -151,11 +151,11 @@
     "surface": "turf",
     "ground": "#5a6b8c",
     "weights": {
-      "spd": 1.4,
+      "spd": 1.5,
       "sta": 0.9,
       "pwr": 0.9,
       "jmp": 0.9,
-      "gut": 0.8,
+      "gut": 0.7,
       "wit": 1.6
     },
     "obstacleDensity": 0,

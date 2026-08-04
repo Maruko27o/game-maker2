@@ -48,10 +48,15 @@ export function allocate(weights: Record<StatKey, number>, total: number): Stats
   if (pool <= 0) return s;
 
   const wsum = STAT_KEYS.reduce((n, k) => n + Math.max(0, weights[k]), 0) || 1;
+  // 理想値は「配る前の総量」で決める。ここで pool（残り）を使ってしまうと、
+  // ループの途中で pool が減るぶん後ろの能力ほど取り分が小さくなり、
+  // STAT_KEYS の並び順（spd→sta→pwr→jmp→gut→wit）がそのまま強さの順になっていた。
+  // 実測でも 同じ重み分布なのに spd 8.18 / wit 5.38 と単調に減っていた。
+  const pool0 = pool;
   const ideal: Record<StatKey, number> = { spd: 0, sta: 0, pwr: 0, jmp: 0, gut: 0, wit: 0 };
   const rema: { k: StatKey; frac: number }[] = [];
   for (const k of STAT_KEYS) {
-    ideal[k] = (Math.max(0, weights[k]) / wsum) * pool;
+    ideal[k] = (Math.max(0, weights[k]) / wsum) * pool0;
     const whole = Math.min(Math.floor(ideal[k]), STAT_CAP - STAT_ALLOC_MIN);
     s[k] += whole;
     pool -= whole;

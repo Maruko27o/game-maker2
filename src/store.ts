@@ -87,8 +87,11 @@ function starterOwned(): Record<string, number> {
   return Object.fromEntries(STARTER_PARTS.map((id) => [id, 1]));
 }
 
-/** Local date key (YYYY-MM-DD) for per-day counters. */
-export function dayKey(now = Date.now()): string {
+/** Local date key (YYYY-MM-DD) for per-day counters.
+ *  端末の時計ではなく trustedNow() を既定にする。Date.now() だと、日付を
+ *  進めるだけで「1日1回」の制限（グランプリG1の回数など）をいくらでも
+ *  リセットできてしまうため。 */
+export function dayKey(now = trustedNow()): string {
   const d = new Date(now);
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
@@ -472,10 +475,9 @@ type Store = SaveData & {
   hydrate: (data: SaveData) => void;
   /** Re-read state from an account's local slot (null = guest). Used on logout. */
   reloadFromKey: (uid: string | null) => void;
-  /** Serialize the current save to a JSON string (backup export). */
-  exportSave: () => string;
-  /** Replace the save from an exported JSON string. Returns success. */
-  importSave: (json: string) => boolean;
+  // バックアップの書き出し／読み込み（exportSave / importSave）は撤去した。
+  // 手元でセーブを編集して戻せると、コインもウマも好きなだけ増やせてしまうため。
+  // 端末が壊れたときの備えはクラウド同期（アカウント作成）が担う。
   doSpawn: (rng?: () => number) => SpawnResult;
   addHorse: (h: Omit<Horse, 'id' | 'createdAt' | 'stats' | 'free'>, stats: Stats, free?: boolean) => Horse | null;
   updateHorse: (id: string, patch: Partial<Pick<Horse, 'name' | 'colors' | 'decos'>>) => void;
@@ -680,62 +682,10 @@ export const useStore = create<Store>((set, get) => {
       set({ ...data, migrated: false });
     },
 
-    exportSave: () => {
-      const s = get();
-      const data: SaveData = {
-        version: 6,
-        owned: s.owned,
-        horses: s.horses,
-        energy: s.energy,
-        energyUpdatedAt: s.energyUpdatedAt,
-        trophies: s.trophies,
-        badges: s.badges,
-        winStreaks: s.winStreaks,
-        soloStreak: s.soloStreak ?? 0,
-        streakBest: s.streakBest ?? 0,
-        streakClaimed: s.streakClaimed ?? 0,
-        streakRuleResetDone: s.streakRuleResetDone ?? false,
-        items: s.items,
-        raceRecords: s.raceRecords,
-        gpUnlocked: s.gpUnlocked,
-        freeRebalance: s.freeRebalance,
-        freeRename: s.freeRename,
-        coins: s.coins,
-        refineTickets: s.refineTickets ?? 0,
-        dyes: s.dyes ?? {},
-        login: s.login,
-        bets: s.bets,
-        maxHorses: s.maxHorses,
-        team: s.team ?? [],
-        daily: s.daily,
-        tasks: s.tasks,
-        stats: s.stats,
-        avatarHorseId: s.avatarHorseId,
-        displayTrophies: s.displayTrophies,
-        mailbox: s.mailbox,
-        equippedFrame: s.equippedFrame,
-        arena: s.arena,
-        farmClaimedAt: s.farmClaimedAt,
-        savedAt: s.savedAt,
-      };
-      return JSON.stringify(data);
-    },
-
-    importSave: (json) => {
-      try {
-        const parsed = migrate(JSON.parse(json));
-        if (!parsed) return false;
-        const data = { ...parsed.data, savedAt: Date.now() }; // treat import as newest
-        persist(data);
-        set({ ...data, migrated: false });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-
     doSpawn: (rng = Math.random) => {
-      const now = Date.now();
+      // ストックの回復時間も trustedNow()。Date.now() だと端末の時計を進めるだけで
+      // 何度でも引けてしまう（＝パーツもウマも無限に増やせる）。
+      const now = trustedNow();
       // ボックスが満杯なら召喚できない（ストックも消費しない）。
       if (get().horses.length >= get().maxHorses) return null;
       const spent = spendEnergy({ energy: get().energy, energyUpdatedAt: get().energyUpdatedAt }, now);

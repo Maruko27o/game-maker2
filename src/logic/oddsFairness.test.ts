@@ -25,10 +25,16 @@ function field(seed: number, size = 8): { entrants: Entrant[]; course: Course } 
   return { entrants, course };
 }
 
-type Res = Record<BetKind, number> & { maxTrifecta: number };
+// R は「1/確率」の平均なので裾がとても重い。万馬券が1回当たるだけで平均が跳ねる
+// （実測：同じ設定でも顔ぶれを変えると 3連単 0.95〜1.84 まで動く）。平均だけを
+// 狭く縛るとテストが運で落ちるので、平均は広めに・中央値は狭く見る。系統的なズレ
+// （倍率がぜんぶ高すぎる／低すぎる）は中央値のほうにはっきり出る。
+type Res = Record<BetKind, number> & { med: Record<BetKind, number>; maxTrifecta: number };
+
+const KINDS: BetKind[] = ['win', 'place', 'quinella', 'wide', 'trifecta'];
 
 function measure(races: number, laps: number | undefined, size: number): Res {
-  const acc: Record<string, number> = { win: 0, place: 0, quinella: 0, wide: 0, trifecta: 0 };
+  const per: Record<string, number[]> = { win: [], place: [], quinella: [], wide: [], trifecta: [] };
   let maxTrifecta = 0;
   for (let r = 0; r < races; r++) {
     const { entrants, course } = field(r * 7919 + 13, size);
@@ -40,65 +46,60 @@ function measure(races: number, laps: number | undefined, size: number): Res {
     const M3 = n * (n - 1) * (n - 2);
     const odds = (kind: BetKind, sel: number[]) => TAKEOUT / Math.max(selProb(kind, sel, p, laps ?? 2), 1e-12);
 
-    acc.win += odds('win', [a]) / n;
+    per.win.push(odds('win', [a]) / n);
     // 的中する選択をすべて数える（複勝=上位3頭・ワイド=その3組）
-    for (const i of [a, b, c]) acc.place += odds('place', [i]) / n;
-    acc.quinella += odds('quinella', [a, b]) / M2;
-    for (const [i, j] of [[a, b], [a, c], [b, c]]) acc.wide += odds('wide', [i, j]) / M2;
+    per.place.push([a, b, c].reduce((s, i) => s + odds('place', [i]) / n, 0));
+    per.quinella.push(odds('quinella', [a, b]) / M2);
+    per.wide.push(([[a, b], [a, c], [b, c]] as number[][]).reduce((s, [i, j]) => s + odds('wide', [i, j]) / M2, 0));
     const tri = odds('trifecta', [a, b, c]);
-    acc.trifecta += tri / M3;
+    per.trifecta.push(tri / M3);
     maxTrifecta = Math.max(maxTrifecta, tri);
   }
-  const out = {} as Res;
-  for (const k of ['win', 'place', 'quinella', 'wide', 'trifecta'] as BetKind[]) out[k] = acc[k] / races;
+  const out = { med: {} } as Res;
+  for (const k of KINDS) {
+    const v = per[k];
+    out[k] = v.reduce((a, b) => a + b, 0) / v.length;
+    const sorted = [...v].sort((x, y) => x - y);
+    out.med[k] = sorted[Math.floor(sorted.length / 2)];
+  }
   out.maxTrifecta = maxTrifecta;
   return out;
 }
 
+/** 共通のチェック。平均は裾で跳ねるので広め、中央値は狭く見る。 */
+function expectBand(r: Res, label: string, maxTri: number) {
+  const line = KINDS.map((k) => `${k}=${r[k].toFixed(2)}(中央${r.med[k].toFixed(2)})`).join(' ');
+  console.log(`${label}: ${line} / 3連単の最高当選 ${Math.round(r.maxTrifecta).toLocaleString()}倍`);
+  for (const k of KINDS) {
+    // 平均：修正前は ワイド4.93 / 3連単4.48 だった。ここは「桁で壊れていないか」。
+    expect(r[k]).toBeGreaterThan(0.35);
+    expect(r[k]).toBeLessThan(2.0);
+    // 中央値：ふつうの1点買いは必ず持っていかれる（=胴元の取り分がある）。
+    // 1.0 を超えたら「買えば買うほど増える」なので絶対に許さない。
+    expect(r.med[k]).toBeGreaterThan(0.15);
+    expect(r.med[k]).toBeLessThan(1.0);
+  }
+  // 「当たってしまう万馬券」の上限。修正前は 60,144倍。
+  expect(r.maxTrifecta).toBeLessThan(maxTri);
+}
+
 describe('倍率の期待払戻（0.80 が適正）', () => {
   it('どの馬券も 0.80 から大きく外れない（万馬券が当たり続けない）', () => {
-    const r = measure(40, undefined, 8); // 通常レース 8頭 2周
-    const line = (['win', 'place', 'quinella', 'wide', 'trifecta'] as BetKind[])
-      .map((k) => `${k}=${r[k].toFixed(2)}`).join(' ');
-    console.log(`通常8頭2周: ${line} / 3連単の最高当選 ${Math.round(r.maxTrifecta).toLocaleString()}倍`);
-
-    // 単勝は生の勝率そのまま（ここが崩れると倍率バランスの前提が壊れる）
-    expect(r.win).toBeGreaterThan(0.55);
-    expect(r.win).toBeLessThan(1.15);
-    // 派生マーケットも同じ帯に収める。修正前は ワイド4.93 / 3連単4.48 だった。
-    for (const k of ['place', 'quinella', 'wide', 'trifecta'] as BetKind[]) {
-      expect(r[k]).toBeGreaterThan(0.45);
-      expect(r[k]).toBeLessThan(1.6);
-    }
-    // 「当たってしまう万馬券」の上限。修正前は 60,144倍。
-    expect(r.maxTrifecta).toBeLessThan(20_000);
+    expectBand(measure(40, undefined, 8), '通常8頭2周', 20_000); // 通常レース 8頭 2周
   }, 600_000);
 
   it('1周でも同じ帯に収まる（周回数ごとに補正を変えている）', () => {
-    const r = measure(30, 1, 8);
-    console.log(`通常8頭1周: 3連単=${r.trifecta.toFixed(2)} ワイド=${r.wide.toFixed(2)} 馬連=${r.quinella.toFixed(2)} 複勝=${r.place.toFixed(2)} / 最高 ${Math.round(r.maxTrifecta).toLocaleString()}倍`);
-    for (const k of ['place', 'quinella', 'wide', 'trifecta'] as BetKind[]) {
-      expect(r[k]).toBeGreaterThan(0.45);
-      expect(r[k]).toBeLessThan(1.6);
-    }
+    // 1周は距離が短く決着が付ききらないぶん、いちばん荒れる＝倍率がいちばん
+    // 外れやすい。補正を周回ごとの表にして合わせ直す前は、的中した3連単の最高が
+    // 1万5千倍まで伸びていた（合わせ直して約5千倍）。
+    expectBand(measure(40, 1, 8), '通常8頭1周', 12_000);
   }, 600_000);
 
   it('3周でも同じ帯に収まる（周回数を変えても壊れない）', () => {
-    const r = measure(30, 3, 8);
-    console.log(`通常8頭3周: 3連単=${r.trifecta.toFixed(2)} ワイド=${r.wide.toFixed(2)} 馬連=${r.quinella.toFixed(2)} / 最高 ${Math.round(r.maxTrifecta).toLocaleString()}倍`);
-    for (const k of ['place', 'quinella', 'wide', 'trifecta'] as BetKind[]) {
-      expect(r[k]).toBeGreaterThan(0.4);
-      expect(r[k]).toBeLessThan(1.8);
-    }
-    expect(r.maxTrifecta).toBeLessThan(25_000);
+    expectBand(measure(30, 3, 8), '通常8頭3周', 25_000);
   }, 600_000);
 
   it('6頭立て（GP予選）でも同じ帯に収まる', () => {
-    const r = measure(30, 2, 6);
-    console.log(`6頭2周: 3連単=${r.trifecta.toFixed(2)} ワイド=${r.wide.toFixed(2)} 馬連=${r.quinella.toFixed(2)} / 最高 ${Math.round(r.maxTrifecta).toLocaleString()}倍`);
-    for (const k of ['place', 'quinella', 'wide', 'trifecta'] as BetKind[]) {
-      expect(r[k]).toBeGreaterThan(0.4);
-      expect(r[k]).toBeLessThan(1.8);
-    }
+    expectBand(measure(30, 2, 6), '6頭2周', 20_000);
   }, 600_000);
 });

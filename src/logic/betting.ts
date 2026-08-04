@@ -65,9 +65,19 @@ export type Bet = { kind: BetKind; sel: number[]; amount: number; odds: number }
 // これで 1周〜3周・6頭〜8頭のどれでも期待払戻が 0.77〜0.97 に収まる
 // （固定値だと1周が 0.58 まで落ちていた）。
 export const DEFAULT_LAPS = 2;
+// 周回ごとの実測値（1設定150レース×4通りの顔ぶれ）。直線1本で結んでいた頃は
+// 1周だけ補正が弱く、期待払戻が 3連単1.0〜1.8・的中した最高倍率が1万5千倍まで
+// 伸びていた。1周は距離が短いぶん道中の駆け引きが決着せず、2着3着が「勝率どおり」
+// から一番遠い——つまり最も強く割り引くべきだったのに、一番弱く割り引いていた。
+// 直線をやめて周回ごとの表にし、1周だけ合わせ直す。
+const TOP3_BY_LAPS: Record<number, { l2: number; l3: number; mix: number }> = {
+  1: { l2: 0.95, l3: 0.78, mix: 0.16 },
+  2: { l2: 0.875, l3: 0.65, mix: 0.14 },
+  3: { l2: 0.75, l3: 0.4, mix: 0.2 },
+};
 export function top3Params(laps: number): { l2: number; l3: number; mix: number } {
-  const L = Math.max(1, Math.min(3, laps || DEFAULT_LAPS));
-  return { l2: 1.125 - 0.125 * L, l3: 1.15 - 0.25 * L, mix: 0.08 + 0.06 * (L - 1) };
+  const L = Math.max(1, Math.min(3, Math.round(laps || DEFAULT_LAPS)));
+  return TOP3_BY_LAPS[L];
 }
 
 // Top-3 orderings: P((a,b,c) finish 1st/2nd/3rd). Σ = 1. n=8 → 336 terms.
