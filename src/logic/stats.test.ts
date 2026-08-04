@@ -27,6 +27,31 @@ describe('allocate', () => {
     expect(s.spd).toBeGreaterThan(s.sta);
     expect(s.spd).toBeGreaterThan(s.jmp);
   });
+
+  it('能力の並び順で有利不利が出ない（重みを入れ替えたら結果も入れ替わる）', () => {
+    // 以前は理想値を「配る前の総量」ではなく「残り」で計算していたため、
+    // ループの途中で残りが減るぶん後ろの能力ほど取り分が小さくなり、
+    // STAT_KEYS の並び（spd→sta→pwr→jmp→gut→wit）がそのまま強さの順に
+    // なっていた（同じ重み分布なのに実測 spd 8.18 対 wit 5.38）。
+    const w = { spd: 3, sta: 2.5, pwr: 2, jmp: 1.5, gut: 1, wit: 0.5 };
+    const a = allocate(w, 40);
+    const rev = { spd: 0.5, sta: 1, pwr: 1.5, jmp: 2, gut: 2.5, wit: 3 };
+    const b = allocate(rev, 40);
+    expect([b.wit, b.gut, b.jmp, b.pwr, b.sta, b.spd]).toEqual([a.spd, a.sta, a.pwr, a.jmp, a.gut, a.wit]);
+
+    // ランダムな重みを大量に振っても、6能力の平均は横並びになる。
+    const rng = mulberry32(20260801);
+    const sum: Record<StatKey, number> = { spd: 0, sta: 0, pwr: 0, jmp: 0, gut: 0, wit: 0 };
+    const N = 4000;
+    for (let i = 0; i < N; i++) {
+      const rw = {} as Record<StatKey, number>;
+      for (const k of STAT_KEYS) rw[k] = 0.5 + rng() * 1.5;
+      const s = allocate(rw, 40);
+      for (const k of STAT_KEYS) sum[k] += s[k];
+    }
+    const means = STAT_KEYS.map((k) => sum[k] / N);
+    expect(Math.max(...means) - Math.min(...means)).toBeLessThan(0.25); // 修正前は 2.8 開いていた
+  });
 });
 
 describe('rescaleTo40 (v3→v4 migration)', () => {

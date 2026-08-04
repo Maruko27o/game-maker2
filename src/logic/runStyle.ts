@@ -37,16 +37,26 @@ function normalizePace(p: [number, number, number]): [number, number, number] {
 
 // 調和平均を揃えても、曲線の「形」そのものにコストが残る。速さは v^2.2 でスタミナを
 // 食うので、前半で飛ばす形ほど同じ平均速度でも消費が大きく、勝負どころで垂れる。
-// その分を埋める脚質ごとの水準。4脚質が同じくらい勝てるところへ実測で合わせ込んだ
-// （8頭・各脚質2頭・全コース270レースでの勝率。均等なら25%）：
-//   修正前 逃げ 2.9% ／ 先行39.6% ／ 差し18.3% ／ 追込39.2%
-//   修正後 逃げ25.9% ／ 先行24.1% ／ 差し30.0% ／ 追込20.0%
+// その分を埋める脚質ごとの水準。
+//
+// 合わせ込みは「実際に遊ぶときとまったく同じ分布」で行う。ここを取り違えると
+// いくら回しても合わない：草むらのウマも対戦相手のCPUも
+//   ① 脚質テンプレで能力を振り ② その能力から脚質を引き直す
+// という手順なので、テンプレと実際の脚質は 34.9% しか一致しない。テンプレどおりの
+// 8頭（各脚質2頭）で測ると、実戦とは逆向きの結果が出る。
+//
+// 全6コース × 1〜3周 × 各250レース、1頭あたりの勝率（均等なら12.5%）：
+//   いちばん最初  逃げ 2.9% ／ 先行39.6% ／ 差し18.3% ／ 追込39.2%（各脚質2頭・均等25%）
+//   合わせ込み前  逃げ13.0% ／ 先行13.1% ／ 差し11.4% ／ 追込12.4%
+//   合わせ込み後  逃げ12.4% ／ 先行12.6% ／ 差し12.6% ／ 追込12.4%
+// コース・周回ごとの得意不得意はそのまま残っている（例：ナイトサーキットは差しが
+// 17%台で逃げが10%前後、やまみちトレイルはその逆）。
 // 4つの平均は 1.0 に正規化してあるので、レース全体が速く／遅くなることはない。
 const STYLE_LEVEL: Record<RunStyle, number> = {
-  nige: 1.0252,
-  senko: 0.9655,
-  sashi: 1.0308,
-  oikomi: 0.9786,
+  nige: 1.0007,
+  senko: 0.9580,
+  sashi: 1.0518,
+  oikomi: 0.9896,
 };
 
 const PACE: Record<RunStyle, [number, number, number]> = Object.fromEntries(
@@ -99,17 +109,28 @@ function styleWeights(stats: Stats): Record<RunStyle, number> {
   };
 }
 
-export function styleFor(id: string, stats: Stats): RunStyle {
+/** 能力から脚質を1つ引く。u は 0..1 の一様乱数。
+ *
+ *  プレイヤーのウマは「脚質テンプレで能力を振る → その能力から脚質を引き直す」ので、
+ *  テンプレどおりの脚質で走るのは実測 34.9% だけ（例：追込テンプレのウマが逃げで
+ *  走るのが12.3%）。CPU だけがテンプレと100%一致していたため、同じ合計値でも
+ *  プレイヤーが構造的に不利だった（実戦計測で勝率10.7%。均等なら12.5%）。
+ *  CPU 側もこの関数を通すことで、両者の「脚質と能力のかみ合い方」を揃える。 */
+export function pickStyle(stats: Stats, u: number): RunStyle {
   const w = styleWeights(stats);
   const styles: RunStyle[] = ['nige', 'senko', 'sashi', 'oikomi'];
   const total = styles.reduce((n, s) => n + w[s], 0);
-  const rng: RNG = rngFromId(id + ':style');
-  let r = rng() * total;
+  let r = u * total;
   for (const s of styles) {
     r -= w[s];
     if (r < 0) return s;
   }
   return 'senko';
+}
+
+export function styleFor(id: string, stats: Stats): RunStyle {
+  const rng: RNG = rngFromId(id + ':style');
+  return pickStyle(stats, rng());
 }
 
 /** The most likely style for a stat spread, with no RNG — used to preview the

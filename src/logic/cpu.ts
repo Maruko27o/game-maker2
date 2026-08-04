@@ -3,6 +3,7 @@ import { colorsBySlot, decosBySlot, DECO_SLOTS } from '../data/parts';
 import { rollStatsForStyle, type RNG } from './stats';
 import { rollSkill } from './skill';
 import { rollGrade } from './aptitude';
+import { pickStyle } from './runStyle';
 import type { Entrant } from './raceSim2';
 import type { HorseLook, DecoSlot, RunStyle } from '../types';
 
@@ -62,9 +63,12 @@ export function makeCpu(
   name = cpuName(rng),
   avoidBody?: string, // player's body colour value (#hex) to steer clear of
 ): { entrant: Entrant; look: HorseLook } {
-  const style = pick(STYLES, rng);
   const total = band[0] + Math.floor(rng() * (band[1] - band[0] + 1));
-  const stats = rollStatsForStyle(rng, total, style);
+  // 能力はテンプレどおりに振るが、実際に走る脚質はプレイヤーのウマとまったく同じ
+  // 手順（能力から引き直す）で決める。CPU だけテンプレと100%一致していると、
+  // 一致率34.9%のプレイヤーが同じ合計値でも構造的に不利になるため。
+  const stats = rollStatsForStyle(rng, total, pick(STYLES, rng));
+  const style = pickStyle(stats, rng());
   const decos: Partial<Record<DecoSlot, string>> = {};
   let chance = decoChance;
   for (const slot of DECO_SLOTS) {

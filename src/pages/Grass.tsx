@@ -11,6 +11,7 @@ import { sampleDayNight, clockPhase, lightPool, horseGlowFilter } from '../logic
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import PartThumb from '../components/PartThumb';
+import { trustedNow } from '../logic/trustedClock';
 import { usePrefersReducedMotion } from '../hooks';
 import SkillBook from '../components/SkillBook';
 import { skillOf } from '../logic/skill';
@@ -40,7 +41,7 @@ export default function Grass() {
   const buyOkawari = useStore((s) => s.buyOkawari);
 
   const reduced = usePrefersReducedMotion();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => trustedNow());
   const [phase, setPhase] = useState<Phase>('ready');
   const [reward, setReward] = useState<SpawnedPart[]>([]);
   const [wild, setWild] = useState<Horse | null>(null); // 仲間になったウマ
@@ -48,7 +49,7 @@ export default function Grass() {
   const [bookOpen, setBookOpen] = useState(false); // 固有スキル図鑑
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => setNow(trustedNow()), 1000);
     return () => clearInterval(t);
   }, []);
 
@@ -87,7 +88,7 @@ export default function Grass() {
     setReward([]);
     setWild(null);
     setRevealed(false);
-    setNow(Date.now());
+    setNow(trustedNow());
   }
 
   return (
@@ -160,7 +161,7 @@ export default function Grass() {
         {stock < ENERGY_CAP && (
           <button
             className={styles.okawari}
-            onClick={() => { if (buyOkawari()) setNow(Date.now()); }}
+            onClick={() => { if (buyOkawari()) setNow(trustedNow()); }}
             disabled={coins < GRASS_OKAWARI_COST}
             title={`${GRASS_OKAWARI_COST}コインでストック+1（何回でもOK）`}
           >
