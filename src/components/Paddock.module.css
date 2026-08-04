@@ -526,6 +526,8 @@
   max-width: 360px;
   max-height: 84vh;
   overflow-y: auto;
+  overflow-x: hidden; /* 横には動かせない（縦スクロールだけ） */
+  overscroll-behavior-x: contain;
   background: var(--panel);
   border: 3px solid var(--border);
   border-radius: 16px;

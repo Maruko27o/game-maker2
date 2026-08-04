@@ -36,6 +36,7 @@ import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import { normalRaceCoins, BADGE_COINS, MAX_BETS_PER_RACE } from '../data/coins';
 import { usePrefersReducedMotion, useScrollTopOnChange } from '../hooks';
 import styles from './Race.module.css';
+import CourseMark from '../components/CourseMark';
 
 // A short celebratory cut-in for achievement badges (ACCOUNT.md §2, 1.2s, skippable).
 function BadgeCutin({ badges, onDone }: { badges: Badge[]; onDone: () => void }) {
@@ -651,7 +652,7 @@ export default function Race() {
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>
-          <span className={styles.courseDot} style={{ background: setup.course.ground }} aria-hidden /> {setup.course.name}
+          <CourseMark course={setup.course} size={24} /> {setup.course.name}
         </h1>
         <RaceTrack2
           entrants={setup.entrants}

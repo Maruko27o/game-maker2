@@ -9,6 +9,7 @@ import AvatarFrame from './AvatarFrame';
 import EquippedFrame from './EquippedFrame';
 import HorseFace from './HorseFace';
 import styles from './MailButton.module.css';
+import CloseButton from './CloseButton';
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 const metricLabel = (m: FrameAward['metric']) => (m === 'payout' ? '最大獲得賞金' : '最大オッズ');
@@ -56,9 +57,9 @@ export default function MailButton() {
       {open && (
         <div className={styles.overlay} onClick={() => { setOpen(false); setDetail(null); }}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={() => { setOpen(false); setDetail(null); }} />
             <div className={styles.head}>
               <h2 className={styles.h2}><Icon name="mail" size={20} /> メールボックス</h2>
-              <button className={styles.close} onClick={() => { setOpen(false); setDetail(null); }} aria-label="閉じる">✕</button>
             </div>
 
             {mailbox.length === 0 ? (

@@ -66,6 +66,8 @@
 
 .tabs {
   display: flex;
+  /* 横に流せるのはこの列の中だけ。画面ごと横に動くのは禁止。 */
+  overscroll-behavior-x: contain;
   gap: 6px;
   overflow-x: auto;
   /* 横スクロールを画面端まで見せるため左右に負マージン＋同量パディング。 */

@@ -8,10 +8,13 @@
   z-index: 60;
 }
 .sheet {
+  position: relative; /* 右上の閉じるボタンの基準 */
   width: 100%;
   max-width: 460px;
   max-height: 86vh;
   overflow-y: auto;
+  overflow-x: hidden; /* 横には動かせない（縦スクロールだけ） */
+  overscroll-behavior-x: contain;
   background: var(--panel);
   border: 3px solid var(--border);
   border-radius: 18px 18px 0 0;

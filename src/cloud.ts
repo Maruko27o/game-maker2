@@ -269,6 +269,28 @@ export async function loadMyBetScore(): Promise<{ bestOdds: number; bestPayout: 
   }
 }
 
+/** 任意のプレイヤーの「通算」の自己ベスト（最高的中倍率・最大獲得賞金）。
+ *  ランキングの行は月ごと（period）なので、そのままだと今月の記録しか出せない。
+ *  個人のプロフィールは「今まで全部」を見せたいので、その人の全期間の行を
+ *  読んでいちばん大きい値を返す。読めなければ null（＝呼び側は月の値のまま）。 */
+export async function loadLifetimeBest(userId: string): Promise<{ bestOdds: number; bestPayout: number } | null> {
+  if (!supabase || !userId) return null;
+  try {
+    let res = await supabase.from('bet_scores').select('best_odds, best_payout').eq('user_id', userId);
+    if (res.error) res = (await supabase.from('bet_scores').select('best_odds').eq('user_id', userId)) as typeof res;
+    if (res.error || !res.data) return null;
+    let bestOdds = 0;
+    let bestPayout = 0;
+    for (const d of res.data as { best_odds?: number | null; best_payout?: number | null }[]) {
+      bestOdds = Math.max(bestOdds, Number(d.best_odds ?? 0));
+      bestPayout = Math.max(bestPayout, Number(d.best_payout ?? 0));
+    }
+    return { bestOdds, bestPayout };
+  } catch {
+    return null;
+  }
+}
+
 export type RankBy = 'odds' | 'payout';
 
 /** Top scores for a month (one row per user), ordered by best hit odds or biggest
