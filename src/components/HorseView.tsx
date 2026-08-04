@@ -3,12 +3,14 @@ import type { HorseLook, DecoSlot } from '../types';
 import { colorById, decoById } from '../data/parts';
 import { HORSE_BASE_INNER, VIEWBOX } from '../data/horseBase';
 import HorseDefs from './HorseDefs';
+import HorseEffect from './HorseEffect';
 
 // Draw order (bottom -> top). Per CLAUDE.md §3.2 ("後 = 手前": decos drawn after
 // the base sit in front, face is frontmost). Verified by rendering: the back-slot
 // items are mostly worn ON the body (saddle/backpack/armor/jetpack), so all decos
 // render in front of the base, in this slot order.
-const FRONT: DecoSlot[] = ['back', 'tail', 'head', 'face'];
+// 'tail' はエフェクト枠になったので前面には出さない（ウマの後ろに敷く）。
+const FRONT: DecoSlot[] = ['back', 'head', 'face'];
 
 type Props = {
   horse: HorseLook;
@@ -49,6 +51,8 @@ export default function HorseView({ horse, size = 240, className, shadow }: Prop
       xmlns="http://www.w3.org/2000/svg"
     >
       <HorseDefs />
+      {/* エフェクトはウマの後ろ（コスチュームを隠さない） */}
+      <HorseEffect id={horse.decos.tail} view="body" />
       {shadow && <ellipse cx="250" cy="470" rx="150" ry="22" fill="rgba(58,44,28,0.18)" />}
       <g dangerouslySetInnerHTML={{ __html: HORSE_BASE_INNER }} />
       {front && <g dangerouslySetInnerHTML={{ __html: front }} />}

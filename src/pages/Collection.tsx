@@ -20,7 +20,7 @@ const SECTIONS: { title: string; tab: string; entries: Entry[] }[] = [
   { title: '頭', tab: '頭', entries: decosBySlot.head },
   { title: '顔', tab: '顔', entries: decosBySlot.face },
   { title: '背中', tab: '背中', entries: decosBySlot.back },
-  { title: 'しっぽ', tab: 'しっぽ', entries: decosBySlot.tail },
+  { title: 'エフェクト', tab: 'エフェクト', entries: decosBySlot.tail },
 ].map((s) => ({
   ...s,
   entries: (s.entries as (ColorPart | DecoPart)[])

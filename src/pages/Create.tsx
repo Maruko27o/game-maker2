@@ -15,7 +15,7 @@ import {
 import HorseView from '../components/HorseView';
 import styles from './Create.module.css';
 
-const DECO_LABEL: Record<DecoSlot, string> = { head: '頭', face: '顔', back: '背中', tail: 'しっぽ' };
+const DECO_LABEL: Record<DecoSlot, string> = { head: '頭', face: '顔', back: '背中', tail: 'エフェクト' };
 const COLOR_LABEL: Record<ColorSlot, string> = { body: 'からだ', mane: 'たてがみ', hoof: 'ひづめ' };
 
 // Where each slot's decorations live on the horse — so the picker can show the part
@@ -202,7 +202,7 @@ export default function Create() {
       {!rebalancing && (
         <>
           {/* 色（からだ・たてがみ・ひづめ）は生まれつきで変えられないため、ここでは
-              出さない。着せ替えできるのは飾り（頭・顔・背中・しっぽ）だけ。 */}
+              出さない。着せ替えできるのは飾り（頭・顔・背中・エフェクト）だけ。 */}
           {editing ? (
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>染料でいろを変える</h2>
