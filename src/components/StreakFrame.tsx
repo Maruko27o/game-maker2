@@ -29,7 +29,7 @@ type Tier = {
 };
 
 const TIERS: Record<number, Tier> = {
-  1: { base: '#c88f5e', hi: '#efc59a', lo: '#8a5a30', gem: '#e6b98a', numFill: '#fff4e6', numLine: '#8a5a30', ribbon: '#c88f5e', ribbonHi: '#e7b98c', ribbonInk: '#5a3618', studs: 0, gems: false, laurel: false, glow: false, sparkles: false, crown: false, jewels: false },
+  1: { base: '#c88f5e', hi: '#efc59a', lo: '#8a5a30', gem: '#e6b98a', numFill: '#fff4e6', numLine: '#8a5a30', ribbon: '#c88f5e', ribbonHi: '#e7b98c', ribbonInk: '#5a3618', studs: 6, gems: false, laurel: false, glow: false, sparkles: false, crown: false, jewels: false },
   2: { base: '#c07b45', hi: '#e9b483', lo: '#7c4a22', gem: '#f0c79a', numFill: '#fff1df', numLine: '#7c4a22', ribbon: '#c07b45', ribbonHi: '#e4a877', ribbonInk: '#4f2f14', studs: 8, gems: false, laurel: false, glow: false, sparkles: false, crown: false, jewels: false },
   3: { base: '#cf9f2f', hi: '#f6dd83', lo: '#8a661a', gem: '#ffe9a6', numFill: '#fff6d6', numLine: '#8a661a', ribbon: '#d8a72f', ribbonHi: '#f0d074', ribbonInk: '#5a410c', studs: 10, gems: false, laurel: false, glow: false, sparkles: false, crown: false, jewels: false },
   4: { base: '#b9c4cf', hi: '#ffffff', lo: '#7d8894', gem: '#eaf1f7', numFill: '#ffffff', numLine: '#6b7784', ribbon: '#9fb0bf', ribbonHi: '#d6e2ec', ribbonInk: '#33404b', studs: 12, gems: false, laurel: false, glow: false, sparkles: false, crown: false, jewels: false },
@@ -93,6 +93,10 @@ export default function StreakFrame({ level, look, size = 104, variant = 'emblem
   const t = tierOf(level);
   const off = `${-SPILL * 100}%`;
   const span = `${(1 + SPILL * 2) * 100}%`;
+  // 主リングの太さ。Lv が上がるほど少しずつ厚くなる（Lv1 6.2 … Lv10 8.2）。
+  const ringW = 6 + level * 0.22;
+  const RING_OUT = R + 5; // いちばん外の縁取り
+  const RING_IN = R - 3.9; // 顔との境
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
@@ -114,55 +118,73 @@ export default function StreakFrame({ level, look, size = 104, variant = 'emblem
             <stop offset="100%" stopColor={t.ribbon} />
           </linearGradient>
           <radialGradient id={`glow-${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="55%" stopColor={t.hi} stopOpacity="0" />
-            <stop offset="82%" stopColor={t.hi} stopOpacity="0.5" />
+            <stop offset="62%" stopColor={t.hi} stopOpacity="0" />
+            <stop offset="88%" stopColor={t.hi} stopOpacity="0.55" />
             <stop offset="100%" stopColor={t.hi} stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        {/* 外周オーラ */}
-        {t.glow && <circle cx={CX} cy={CY} r={R + 5} fill={`url(#glow-${uid})`} />}
+        {/* 外周オーラ（リングが太くなったぶん外へ。リングの下に隠れないように） */}
+        {t.glow && <circle cx={CX} cy={CY} r={R + 9} fill={`url(#glow-${uid})`} />}
 
-        {/* 左右の月桂樹 */}
+        {/* リング本体。
+            以前は主リングが Lv1 で太さ3.5しかなく、殿堂フレーム（主リング7.5＋
+            前後の層で帯の幅12.5）と並ぶと線のように細く見えていた。殿堂と同じ
+            「暗い縁取り→面→主リング→ハイライト→内側の締め」の重ね方にして、
+            帯の幅を 7 → 10.6 に。殿堂の 12.5 は超えないので、格の上下は保たれる。 */}
+        <circle cx={CX} cy={CY} r={RING_OUT} fill="none" stroke={t.lo} strokeWidth="1.8" />
+        <circle cx={CX} cy={CY} r={R + 3} fill="none" stroke={t.lo} strokeWidth="3.2" />
+        <circle cx={CX} cy={CY} r={R} fill="none" stroke={`url(#ring-${uid})`} strokeWidth={ringW} />
+        <circle cx={CX} cy={CY} r={R + 2} fill="none" stroke={t.hi} strokeOpacity="0.7" strokeWidth="1.1" />
+        <circle cx={CX} cy={CY} r={R - 2.6} fill="none" stroke={t.hi} strokeOpacity="0.55" strokeWidth="0.9" />
+        {/* 顔との境。ここで締めないと、太いリングが顔ににじんで見える */}
+        <circle cx={CX} cy={CY} r={RING_IN} fill="none" stroke={t.lo} strokeWidth="1.6" />
+
+        {/* 左右の月桂樹。リングを太くしたら完全に隠れてしまったので、リングの「上」に
+            描いて外周に沿わせる（順番を入れ替えただけで、意匠は元のまま）。 */}
         {t.laurel && [-1, 1].map((s) => (
-          <g key={s} transform={`translate(${CX + s * (R + 1)}, ${CY}) scale(${s}, 1)`}>
+          <g key={s} transform={`translate(${CX + s * (R + 2.6)}, ${CY}) scale(${s}, 1)`}>
             {Array.from({ length: 5 }).map((_, i) => {
-              const yy = 10 - i * 5;
-              const xx = -2.5 - i * 1.6;
-              return <ellipse key={i} cx={xx} cy={yy} rx="3.2" ry="1.8" fill={t.hi} stroke={t.lo} strokeWidth="0.5" transform={`rotate(${-50 - i * 5} ${xx} ${yy})`} opacity="0.95" />;
+              const yy = 11 - i * 5.4;
+              const xx = -1.2 - i * 1.2;
+              return <ellipse key={i} cx={xx} cy={yy} rx="3.6" ry="2" fill={t.hi} stroke={t.lo} strokeWidth="0.6" transform={`rotate(${-50 - i * 5} ${xx} ${yy})`} />;
             })}
           </g>
         ))}
 
-        {/* リング本体 */}
-        <circle cx={CX} cy={CY} r={R + 2} fill="none" stroke={t.lo} strokeOpacity="0.4" strokeWidth={2 + level * 0.3} />
-        <circle cx={CX} cy={CY} r={R} fill="none" stroke={`url(#ring-${uid})`} strokeWidth={3 + level * 0.5} />
-        <circle cx={CX} cy={CY} r={R - 2.4 - level * 0.15} fill="none" stroke={t.hi} strokeOpacity="0.85" strokeWidth="1" />
-
-        {/* スタッド */}
+        {/* スタッド（リングが太くなったぶん粒も大きく。埋もれて見えなくなるため） */}
         {t.studs > 0 && Array.from({ length: t.studs }).map((_, i) => {
           const [x, y] = pt((i / t.studs) * 360 - 90, R);
-          return <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 1.8 : 1.1} fill={t.gem} stroke={t.lo} strokeWidth="0.5" />;
+          const big = i % 3 === 0;
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r={big ? 2.4 : 1.5} fill={t.gem} stroke={t.lo} strokeWidth="0.55" />
+              {big && <circle cx={x - 0.7} cy={y - 0.7} r={0.7} fill="#fff" opacity="0.7" />}
+            </g>
+          );
         })}
 
-        {/* 四方の宝石 */}
+        {/* 四方の宝石。台座（ベゼル）を足して、厚いリングの上でも浮き上がらせる */}
         {t.gems && [0, 1, 2, 3].map((i) => {
           const [x, y] = pt(i * 90 - 90, R);
           const col = GEM_COLORS[i % GEM_COLORS.length];
           return (
             <g key={i}>
-              <circle cx={x} cy={y} r={3.2} fill={col} stroke={t.lo} strokeWidth="0.8" />
-              <circle cx={x - 0.9} cy={y - 0.9} r={0.9} fill="#fff" opacity="0.85" />
+              <circle cx={x} cy={y} r={5.1} fill={`url(#ring-${uid})`} stroke={t.lo} strokeWidth="0.8" />
+              <circle cx={x} cy={y} r={3.5} fill={col} stroke={t.lo} strokeWidth="0.8" />
+              <circle cx={x - 1} cy={y - 1} r={1} fill="#fff" opacity="0.85" />
             </g>
           );
         })}
 
-        {/* 下部の星／クリスタル（最上位・旧放射光の置き換え） */}
-        {t.jewels && [128, 110, 90, 70, 52].map((ang, i) => {
-          const [x, y] = pt(ang, R + 0.5);
-          const r = i === 2 ? 3.4 : i % 2 ? 2.2 : 2.8;
-          const col = i === 2 ? '#ffd24a' : GEM_COLORS[i % GEM_COLORS.length];
-          return <Star key={i} x={x} y={y} r={r} fill={col} line={t.lo} />;
+        {/* 下部の星／クリスタル（最上位・旧放射光の置き換え）。
+            以前は真下（90°）にも置いていたが、リングを太くして数字を少し外へ出したら
+            ちょうど「N WINS」と重なったので、左右に振り分けて数字の居場所を空ける。 */}
+        {t.jewels && [152, 136, 44, 28].map((ang, i) => {
+          const [x, y] = pt(ang, R + 1.2);
+          const mid = i === 1 || i === 2;
+          const col = mid ? '#ffd24a' : GEM_COLORS[i % GEM_COLORS.length];
+          return <Star key={i} x={x} y={y} r={mid ? 3.6 : 2.7} fill={col} line={t.lo} />;
         })}
 
         {/* きらめき */}
@@ -170,18 +192,18 @@ export default function StreakFrame({ level, look, size = 104, variant = 'emblem
           <path key={i} d="M0 -3.2 L0.7 -0.7 L3.2 0 L0.7 0.7 L0 3.2 L-0.7 0.7 L-3.2 0 L-0.7 -0.7 Z" fill="#fff" transform={`translate(${x} ${y})`} opacity="0.95" />
         ))}
 
-        {/* 王冠（上部中央） */}
+        {/* 王冠（上部中央）。厚いリングに乗り上げないよう少し外へ＋一回り大きく */}
         {t.crown && (
-          <g transform={`translate(${CX} ${CY - R - 4})`}>
-            <path d="M-8 3 L-8 -3.5 L-4 0 L0 -5.5 L4 0 L8 -3.5 L8 3 Z" fill={`url(#ring-${uid})`} stroke={t.lo} strokeWidth="0.7" strokeLinejoin="round" />
-            {[-5, 0, 5].map((x, i) => <circle key={i} cx={x} cy={-4 + (i === 1 ? -1.3 : 0)} r="1.3" fill={GEM_COLORS[i % GEM_COLORS.length]} stroke={t.lo} strokeWidth="0.4" />)}
+          <g transform={`translate(${CX} ${CY - R - 6.5})`}>
+            <path d="M-9 3.4 L-9 -4 L-4.5 0 L0 -6.3 L4.5 0 L9 -4 L9 3.4 Z" fill={`url(#ring-${uid})`} stroke={t.lo} strokeWidth="0.8" strokeLinejoin="round" />
+            {[-5.6, 0, 5.6].map((x, i) => <circle key={i} cx={x} cy={-4.6 + (i === 1 ? -1.5 : 0)} r="1.45" fill={GEM_COLORS[i % GEM_COLORS.length]} stroke={t.lo} strokeWidth="0.4" />)}
           </g>
         )}
 
         {/* ===== 数字の配置パターン ===== */}
         {variant === 'corner' && <CornerNumber t={t} level={level} uid={uid} />}
         {variant === 'ribbon' && <RibbonNumber t={t} level={level} uid={uid} />}
-        {variant === 'emblem' && <EmblemNumber t={t} level={level} />}
+        {variant === 'emblem' && <EmblemNumber t={t} level={level} ringW={ringW} />}
       </svg>
     </div>
   );
@@ -212,9 +234,9 @@ function CornerNumber({ t, level, uid }: { t: Tier; level: number; uid: string }
   return (
     <g>
       {/* 下部リボン（弧に沿う帯） */}
-      <path d={arcPath(140, 40, R + 1)} fill="none" stroke={t.lo} strokeOpacity="0.4" strokeWidth="9" strokeLinecap="round" />
-      <path d={arcPath(140, 40, R + 1)} fill="none" stroke={`url(#rib-${uid})`} strokeWidth="8" strokeLinecap="round" />
-      <path id={`rp-${uid}`} d={arcPath(136, 44, R - 0.4)} fill="none" />
+      <path d={arcPath(140, 40, R + 2)} fill="none" stroke={t.lo} strokeOpacity="0.4" strokeWidth="10" strokeLinecap="round" />
+      <path d={arcPath(140, 40, R + 2)} fill="none" stroke={`url(#rib-${uid})`} strokeWidth="9" strokeLinecap="round" />
+      <path id={`rp-${uid}`} d={arcPath(136, 44, R + 0.6)} fill="none" />
       <text fontSize="6.4" fontWeight="900" fill={t.ribbonInk} fontFamily="'Arial Black','Arial',sans-serif" style={{ letterSpacing: '0.4px' }}>
         <textPath href={`#rp-${uid}`} startOffset="50%" textAnchor="middle">WIN STREAK</textPath>
       </text>
@@ -232,10 +254,10 @@ function CornerNumber({ t, level, uid }: { t: Tier; level: number; uid: string }
 function RibbonNumber({ t, level, uid }: { t: Tier; level: number; uid: string }) {
   return (
     <g>
-      <path d={arcPath(146, 34, R + 1)} fill="none" stroke={`url(#rib-${uid})`} strokeWidth="12" strokeLinecap="round" />
-      <path d={arcPath(146, 34, R + 1)} fill="none" stroke={t.ribbonHi} strokeWidth="1" strokeLinecap="round" opacity="0.6" transform="translate(0 -3.4)" />
+      <path d={arcPath(146, 34, R + 2)} fill="none" stroke={`url(#rib-${uid})`} strokeWidth="13" strokeLinecap="round" />
+      <path d={arcPath(146, 34, R + 2)} fill="none" stroke={t.ribbonHi} strokeWidth="1" strokeLinecap="round" opacity="0.6" transform="translate(0 -3.8)" />
       {/* 数字（大）＋WINS を帯の中央下に */}
-      <g transform={`translate(${CX} ${CY + R + 3})`}>
+      <g transform={`translate(${CX} ${CY + R + 4})`}>
         <ShapedNumber n={level} x={-4} y={0} size={17} fill={t.numFill} line={t.numLine} lineW={2.2} anchor="middle" />
         <text x={level >= 10 ? 10 : 8} y={0.5} textAnchor="start" dominantBaseline="central" fontSize="7.2" fontWeight="900" fill={t.ribbonInk} fontFamily="'Arial Black','Arial',sans-serif" style={{ letterSpacing: '0.4px' }}>WINS</text>
       </g>
@@ -245,25 +267,37 @@ function RibbonNumber({ t, level, uid }: { t: Tier; level: number; uid: string }
 
 // パターン③：下中央に大きな数字（縁取りのみ）＋右下に小さな「WINS」タグ、星を添える。
 // 「N WINS」を一つの塊として見せ、リングの下端にポップさせる。
-function EmblemNumber({ t, level }: { t: Tier; level: number }) {
+function EmblemNumber({ t, level, ringW }: { t: Tier; level: number; ringW: number }) {
   const two = level >= 10;
   const numSize = 19;
   const numX = two ? -5 : -3; // 数字中心（WINS 側に少し寄せて全体を中央寄せ）
   const winsX = two ? 10 : 7;
-  // リングの下端に載せる（箱の下へはみ出しすぎると各画面で下の文字と被るため、
-  // 枠の内側〜縁に収める）。
   return (
-    <g transform={`translate(${CX} ${CY + R - 4})`}>
-      {/* 高Lv：数字の左右に星を添える */}
-      {level >= 6 && [-1, 1].map((s) => (
-        <Star key={s} x={s * (two ? 22 : 18)} y={1} r={level >= 9 ? 2.8 : 2.3} fill={t.gem} line={t.numLine} />
-      ))}
-      {/* ドロップシャドウで浮き上がらせる */}
-      <ShapedNumber n={level} x={numX} y={2} size={numSize} fill="rgba(60,36,10,0.25)" line="rgba(60,36,10,0.25)" lineW={3.2} anchor="middle" />
-      {/* 本体（数字の形に沿った縁取り） */}
-      <ShapedNumber n={level} x={numX} y={0} size={numSize} fill={t.numFill} line={t.numLine} lineW={3.2} anchor="middle" />
-      {/* WINS タグ（anniversary 風・イタリック・縁取りで視認性確保） */}
-      <text x={winsX} y={4.5} textAnchor="start" dominantBaseline="central" fontSize="6.6" fontWeight="900" fontStyle="italic" fill={t.numFill} stroke={t.numLine} strokeWidth="1" paintOrder="stroke" strokeLinejoin="round" fontFamily="'Arial Black','Arial',sans-serif" style={{ letterSpacing: '0.2px' }}>WINS</text>
+    <g>
+      {/* 数字の下だけリングをわずかに沈ませる。太いリングの明るい地色（例：Lv5 は金）に
+          クリーム色の数字が乗ると読みづらいため。切れ目に見えないよう薄めに。 */}
+      <path
+        d={arcPath(two ? 122 : 115, two ? 58 : 65, R + 0.6)}
+        fill="none"
+        stroke={t.lo}
+        strokeOpacity="0.3"
+        strokeWidth={ringW * 0.8}
+        strokeLinecap="round"
+      />
+      {/* リングの下端に載せる（箱の下へはみ出しすぎると各画面で下の文字と被るため、
+          枠の内側〜縁に収める）。 */}
+      <g transform={`translate(${CX} ${CY + R - 3})`}>
+        {/* 高Lv：数字の左右に星を添える */}
+        {level >= 6 && [-1, 1].map((s) => (
+          <Star key={s} x={s * (two ? 23 : 19)} y={1} r={level >= 9 ? 2.8 : 2.3} fill={t.gem} line={t.numLine} />
+        ))}
+        {/* ドロップシャドウで浮き上がらせる */}
+        <ShapedNumber n={level} x={numX} y={2} size={numSize} fill="rgba(40,24,6,0.35)" line="rgba(40,24,6,0.35)" lineW={3.4} anchor="middle" />
+        {/* 本体（数字の形に沿った縁取り） */}
+        <ShapedNumber n={level} x={numX} y={0} size={numSize} fill={t.numFill} line={t.numLine} lineW={3.4} anchor="middle" />
+        {/* WINS タグ（anniversary 風・イタリック・縁取りで視認性確保） */}
+        <text x={winsX} y={4.5} textAnchor="start" dominantBaseline="central" fontSize="6.6" fontWeight="900" fontStyle="italic" fill={t.numFill} stroke={t.numLine} strokeWidth="1" paintOrder="stroke" strokeLinejoin="round" fontFamily="'Arial Black','Arial',sans-serif" style={{ letterSpacing: '0.2px' }}>WINS</text>
+      </g>
     </g>
   );
 }
