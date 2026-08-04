@@ -466,7 +466,8 @@
   line-height: 1.5;
 }
 
-/* 仲間になった直後に「引退」か「このコにする」をその場で選べる行。
+/* 仲間になった直後に「引退」か「獲得」をその場で選べる行。
+   色はマイウマと同じ意味づけ（引退＝赤・前向きな操作＝青）。
    ウマの見た目を隠したくないので、1行・高さ36pxに抑える。 */
 .wildActions {
   display: flex;
@@ -490,24 +491,27 @@
   cursor: pointer;
 }
 .wildRetire {
-  background: var(--panel-inner);
-  color: var(--ink);
-  box-shadow: 0 3px 0 var(--border);
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--red-dark);
 }
 .wildRetirePay {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   font-size: 12px;
-  color: var(--ink-soft);
+  color: #ffe9a8;
 }
 .wildKeep {
-  background: var(--grass-dark);
+  background: var(--blue);
   color: #fff;
-  box-shadow: 0 3px 0 #5c8a34;
+  box-shadow: 0 3px 0 var(--blue-dark);
 }
-.wildRetire:active,
+.wildRetire:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--red-dark);
+}
 .wildKeep:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--border);
+  box-shadow: 0 1px 0 var(--blue-dark);
 }

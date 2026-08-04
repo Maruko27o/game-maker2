@@ -230,7 +230,7 @@ export default function Grass() {
                   {retireValueOf(wild, trophies, badges).toLocaleString()}
                 </span>
               </button>
-              <button className={styles.wildKeep} onClick={close}>このコにする</button>
+              <button className={styles.wildKeep} onClick={close}>獲得</button>
             </div>
           )}
           <div className={styles.rewardParts}>パーツ {reward.length}個 ゲット</div>
