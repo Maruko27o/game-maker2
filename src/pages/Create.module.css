@@ -457,3 +457,26 @@
   font-size: 14px;
   padding: 10px 8px;
 }
+
+/* 染料を塗る部位を選ぶ（3部位のどこにでも塗れる） */
+.dyeSlots {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 2px;
+}
+.dyeSlotBtn {
+  flex: 1;
+  padding: 7px 4px;
+  border: 3px solid var(--border);
+  border-radius: 11px;
+  background: var(--panel-inner);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.dyeSlotOn {
+  border-color: var(--blue-dark);
+  background: var(--blue);
+  color: #fff;
+}

@@ -7,7 +7,6 @@ import TrophyIcon from './TrophyIcon';
 import CoinIcon from './CoinIcon';
 import Icon from './Icon';
 import { fmtOdds } from '../logic/betting';
-import { courseById } from '../data/courses';
 import { titleById } from '../data/titles';
 import TitleBanner from './TitleBanner';
 import styles from './RankingProfileCard.module.css';
@@ -41,7 +40,6 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
   const bestOdds = Math.max(row.bestOdds, life?.bestOdds ?? 0);
   const bestPayout = Math.max(row.bestPayout, life?.bestPayout ?? 0);
   const title = titleOf(row.title);
-  const course = row.courseId ? courseById(row.courseId) : null;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -58,16 +56,18 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
         </div>
         <div className={styles.name}>{row.username}</div>
         <div className={styles.title}>
-          <Icon name="star" size={12} />
+          <span className={styles.titleStars} aria-hidden>{'★'.repeat(title.tier)}</span>
           {title.name}
         </div>
 
-        <div className={styles.recordLabel}>通算の自己ベスト</div>
+        <div className={styles.recordLabel}>
+          <Icon name="star" size={11} />
+          通算の自己ベスト
+        </div>
         <div className={styles.stats}>
           <div className={styles.stat}>
             <span className={styles.statLabel}>最高的中</span>
             <span className={styles.statVal}>{fmtOdds(bestOdds)}<small>倍</small></span>
-            {course && <span className={styles.statNote}>{course.name}</span>}
           </div>
           {bestPayout > 0 && (
             <div className={styles.stat}>

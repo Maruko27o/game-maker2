@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { TITLES, TIER_INFO, titleCtx, activeTitle, type TitleDef } from '../data/titles';
+import { TITLES, titleCtx, activeTitle, type TitleDef } from '../data/titles';
 import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRankingFrame, setRankingTitle } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
@@ -55,7 +55,7 @@ export default function ProfileModal({
   const setDisplayName = useAuth((s) => s.setDisplayName);
 
   const [tab, setTab] = useState<'profile' | 'account'>(initialTab);
-  const [editing, setEditing] = useState<null | 'icon' | 'trophy'>(null); // tap a header box to open
+  const [editing, setEditing] = useState<null | 'icon' | 'trophy' | 'title'>(null); // tap a header box to open
   const [iconMode, setIconMode] = useState<'horse' | 'frame'>('horse');
 
   const avatar = useMemo<HorseLook>(() => {
@@ -97,7 +97,6 @@ export default function ProfileModal({
     const distinct = Math.min(TOTAL_PARTS, Object.values(owned).filter((n) => n > 0).length);
     return Math.round((distinct / TOTAL_PARTS) * 100);
   }, [owned]);
-  const recoveryPct = pstats.betsPlaced > 0 ? pstats.maxRecoveryPct : null;
 
   // 称号：いま達成しているものと、装備中のもの。
   const equippedTitle = useStore((s) => s.equippedTitle);
@@ -108,6 +107,7 @@ export default function ProfileModal({
     if (!t.check(ctx)) return;
     equipTitle(t.id);
     void setRankingTitle(t.id);
+    setEditing(null);
   }
 
   const shelf = displayTrophies;
@@ -144,10 +144,25 @@ export default function ProfileModal({
         {/* Header: tap the avatar to change the icon, tap the shelf to edit trophies */}
         <div className={styles.head}>
           <button className={styles.avatarBtn} onClick={() => { setIconMode('horse'); setEditing('icon'); }} aria-label="アイコンを変更">
-            <HorseFace horse={avatar} size={76} />
+            {equippedFrame ? (
+              <EquippedFrame frame={equippedFrame} look={avatar} size={72} />
+            ) : (
+              <HorseFace horse={avatar} size={76} />
+            )}
             <span className={styles.avatarEdit} aria-hidden>✎</span>
           </button>
           <div className={styles.headInfo}>
+            {/* 称号は名前の上。右下のペンで付け替える（アイコンと同じ操作）。 */}
+            <button
+              className={styles.titleChipBtn}
+              onClick={() => setEditing('title')}
+              aria-label="称号を変更"
+            >
+              <TitleBanner title={active} className={styles.titleChipArt} />
+              <span className={styles.titleChipStar} aria-hidden>{'★'.repeat(active.tier)}</span>
+              <span className={styles.titleChipName}>{active.name}</span>
+              <span className={styles.titleChipEdit} aria-hidden>✎</span>
+            </button>
             {user ? (
               <>
                 <div className={styles.nameRow}>
@@ -163,7 +178,6 @@ export default function ProfileModal({
                     {nameBusy ? '…' : '保存'}
                   </button>
                 </div>
-                <div className={styles.nameHint}>なまえは{NAME_MAX}文字まで</div>
               </>
             ) : (
               <div className={styles.headName}>{displayName || 'ゲスト'}</div>
@@ -177,7 +191,7 @@ export default function ProfileModal({
             const r = shelf[i] as 1 | 2 | 3 | undefined;
             return (
               <span key={i} className={styles.shelfSlot}>
-                {r ? <TrophyIcon rank={r} size={60} /> : null}
+                {r ? <TrophyIcon rank={r} size={78} /> : null}
               </span>
             );
           })}
@@ -195,49 +209,18 @@ export default function ProfileModal({
             <span className={styles.statValue}>{pstats.maxOdds > 0 ? <>{fmtOdds(pstats.maxOdds)}<small>倍</small></> : '—'}</span>
           </div>
           <div className={styles.statCell}>
-            <span className={styles.statLabel}>最高回収率</span>
-            <span className={styles.statValue}>{recoveryPct === null ? '—' : <>{recoveryPct.toLocaleString()}<small>%</small></>}</span>
+            <span className={styles.statLabel}>最大獲得賞金</span>
+            <span className={styles.statValue}><CoinIcon size={14} /> {pstats.maxPayout.toLocaleString()}</span>
           </div>
           <div className={styles.statCell}>
             <span className={styles.statLabel}>図鑑コンプリート率</span>
             <span className={styles.statValue}>{dexPct}<small>%</small></span>
           </div>
           <div className={`${styles.statCell} ${styles.statWide}`}>
-            <span className={styles.statLabel}>最大獲得賞金</span>
-            <span className={styles.statValue}><CoinIcon size={14} /> {pstats.maxPayout.toLocaleString()}</span>
+            <span className={styles.statLabel}>総獲得賞金</span>
+            <span className={styles.statValue}><CoinIcon size={14} /> {(pstats.totalEarned ?? 0).toLocaleString()}</span>
           </div>
         </div>
-
-        {/* 称号：達成したものから好きなものを選ぶ。ランキングの個人ページに出る。 */}
-        <div className={styles.titleHead}>
-          <span className={styles.titleLead}>称号</span>
-          <span className={styles.titleNow} style={{ ['--c1' as string]: active.colors[0] }}>{active.name}</span>
-        </div>
-        <ul className={styles.titleList}>
-          {TITLES.map((t) => {
-            const got = t.check(ctx);
-            const on = active.id === t.id;
-            return (
-              <li key={t.id}>
-                <button
-                  className={`${styles.titleCard} ${on ? styles.titleOn : ''} ${got ? '' : styles.titleLocked}`}
-                  onClick={() => pickTitle(t)}
-                  disabled={!got}
-                >
-                  <TitleBanner title={t} className={styles.titleArt} />
-                  <span className={styles.titleBody}>
-                    <span className={styles.titleName}>{t.name}</span>
-                    <span className={styles.titleDesc}>{t.desc}</span>
-                    <span className={styles.titleTier}>
-                      {'★'.repeat(t.tier)}<span className={styles.titleShare}>{TIER_INFO[t.tier].share}</span>
-                    </span>
-                  </span>
-                  {on && <span className={styles.titleCheck}>✓</span>}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
 
         {/* Tabs */}
         <div className={styles.tabs}>
@@ -322,6 +305,41 @@ export default function ProfileModal({
                 <p className={styles.hint}>タップでアイコンに装備できます。</p>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 称号エディタ（名前の上のバッジをタップ） */}
+      {editing === 'title' && (
+        <div className={styles.editorOverlay} onClick={() => setEditing(null)}>
+          <div className={styles.editorCard} onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={() => setEditing(null)} />
+            <div className={styles.editorHead}>
+              <h3 className={styles.editorTitle}>称号をえらぶ</h3>
+            </div>
+        <ul className={styles.titleList}>
+              {TITLES.map((t) => {
+                const got = t.check(ctx);
+                const on = active.id === t.id;
+                return (
+                  <li key={t.id}>
+                    <button
+                      className={`${styles.titleCard} ${on ? styles.titleOn : ''} ${got ? '' : styles.titleLocked}`}
+                      onClick={() => pickTitle(t)}
+                      disabled={!got}
+                    >
+                      <TitleBanner title={t} className={styles.titleArt} />
+                      <span className={styles.titleBody}>
+                        <span className={styles.titleName}>{t.name}</span>
+                        <span className={styles.titleDesc}>{t.desc}</span>
+                        <span className={styles.titleTier}>{'★'.repeat(t.tier)}</span>
+                      </span>
+                      {on && <span className={styles.titleCheck}>✓</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
       )}

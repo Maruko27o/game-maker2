@@ -16,6 +16,7 @@
   border-radius: 20px;
   /* 上の色帯を角まで見せたいので、上のパディングは帯のぶんだけ空ける。 */
   padding: 0 16px 18px;
+  /* 閉じるボタンは枠の内側（右上）。帯の上に重なるので、そこは何も置かない。 */
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -52,21 +53,34 @@
   align-items: center;
   gap: 4px;
   margin-top: -2px;
-  padding: 3px 12px;
+  padding: 4px 14px;
   border-radius: 999px;
-  border: 2px solid var(--border-dark);
+  border: 3px solid var(--border-dark);
   background: var(--tone);
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
+}
+.titleStars {
+  font-size: 10px;
+  color: #ffe9a8;
+  letter-spacing: -1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 .recordLabel {
-  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 2px solid var(--border);
   font-size: 11px;
-  font-weight: 800;
-  color: var(--ink-soft);
+  font-weight: 900;
+  color: #4a3410;
   letter-spacing: 0.04em;
 }
 .statNote {
@@ -99,7 +113,7 @@
   margin-bottom: 13px;
 }
 .name {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 900;
   color: var(--ink);
   text-align: center;
@@ -107,6 +121,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* 木目の上でも沈まないよう淡いハローで持ち上げる */
+  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.9), 0 1px 6px rgba(255, 248, 235, 0.6);
 }
 .stats {
   display: flex;
@@ -122,24 +138,26 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
-  background: var(--panel-2);
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 6px 8px;
+  gap: 2px;
+  background: var(--panel-inner);
+  border: 3px solid var(--border-dark);
+  border-radius: 13px;
+  padding: 7px 8px 8px;
+  box-shadow: 0 3px 0 var(--border);
 }
 .statLabel {
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 900;
+  color: #6b4f2c;
 }
 .statVal {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 900;
   color: var(--ink);
+  white-space: nowrap;
 }
 .statVal small {
   font-size: 10px;
@@ -148,10 +166,10 @@
   margin-left: 1px;
 }
 .trophyLabel {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 12px;
-  font-weight: 800;
-  color: var(--ink-soft);
+  font-weight: 900;
+  color: #6b4f2c;
 }
 .empty {
   font-size: 13px;
@@ -168,10 +186,11 @@
 }
 .slot {
   flex: 0 0 auto;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel-2);
-  padding: 3px;
+  border: 3px solid var(--border-dark);
+  border-radius: 11px;
+  background: var(--panel-inner);
+  padding: 4px;
   display: grid;
   place-items: center;
+  box-shadow: 0 2px 0 var(--border);
 }

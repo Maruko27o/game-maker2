@@ -14,6 +14,7 @@ import {
 } from '../types';
 import HorseView from '../components/HorseView';
 import styles from './Create.module.css';
+import EffectGlyph from '../components/EffectGlyph';
 
 const DECO_LABEL: Record<DecoSlot, string> = { head: '頭', face: '顔', back: '背中', tail: 'エフェクト' };
 const COLOR_LABEL: Record<ColorSlot, string> = { body: 'からだ', mane: 'たてがみ', hoof: 'ひづめ' };
@@ -31,7 +32,9 @@ const GLYPH_VARS = { ['--body']: '#e8e2d6', ['--mane']: '#8a6b4a', ['--hoof']: '
 // A small standalone illustration of a decoration (改修：部品を絵で選ぶ). Renders the
 // deco's own SVG cropped to its slot region; --body/--mane let body-matched parts
 // (ねこみみ等) show in a neutral colour.
-function DecoGlyph({ slot, svg, className }: { slot: DecoSlot; svg: string; className?: string }) {
+function DecoGlyph({ slot, id, svg, className }: { slot: DecoSlot; id: string; svg: string; className?: string }) {
+  // エフェクト枠はウマ本体に描くものが無い（生SVGが空）ので、専用の見本を出す。
+  if (slot === 'tail') return <EffectGlyph id={id} className={className ?? styles.decoGlyph} />;
   return (
     <svg className={className ?? styles.decoGlyph} viewBox={DECO_VIEWBOX[slot]} style={GLYPH_VARS} aria-hidden>
       <g dangerouslySetInnerHTML={{ __html: svg }} />
@@ -93,6 +96,7 @@ export default function Create() {
         },
   );
   const [dyePick, setDyePick] = useState<string | null>(null); // 使おうとしている染料
+  const [dyeSlot, setDyeSlot] = useState<ColorSlot | null>(null); // 塗る部位（既定は染料の元の部位）
   const [decos, setDecos] = useState<Partial<Record<DecoSlot, string>>>(() =>
     editing ? { ...editing.decos } : {},
   );
@@ -244,28 +248,42 @@ export default function Create() {
             </p>
           )}
 
-          {/* 染料を使う確認（1つ消費して色が変わる） */}
+          {/* 染料を使う確認（1つ消費して色が変わる）。塗る部位は3つから選べる。 */}
           {dyePick && editing && (() => {
             const part = colorById[dyePick];
-            const slot = colorSlotById[dyePick];
+            const slot = dyeSlot ?? colorSlotById[dyePick];
             if (!part || !slot) return null;
             return (
-              <div className={styles.dyeConfirmWrap} onClick={() => setDyePick(null)}>
+              <div className={styles.dyeConfirmWrap} onClick={() => { setDyePick(null); setDyeSlot(null); }}>
                 <div className={styles.dyeConfirm} onClick={(e) => e.stopPropagation()}>
                   <p className={styles.dyeConfirmTitle}>
                     {editing.name}の{COLOR_LABEL[slot]}を
                     <br />「{part.name}」にします
                   </p>
                   <span className={styles.dyeBig} style={{ background: part.swatch ?? part.value }} />
+                  {/* 塗る部位を選ぶ（染料の色は3部位のどこにでも塗れる） */}
+                  <div className={styles.dyeSlots}>
+                    {(['body', 'mane', 'hoof'] as ColorSlot[]).map((sl) => (
+                      <button
+                        key={sl}
+                        type="button"
+                        className={`${styles.dyeSlotBtn} ${sl === slot ? styles.dyeSlotOn : ''}`}
+                        onClick={() => setDyeSlot(sl)}
+                      >
+                        {COLOR_LABEL[sl]}
+                      </button>
+                    ))}
+                  </div>
                   <p className={styles.dyeConfirmNote}>染料を1つつかいます。元の色には戻せません。</p>
                   <div className={styles.dyeConfirmRow}>
-                    <button type="button" className="btn neutral" onClick={() => setDyePick(null)}>やめる</button>
+                    <button type="button" className="btn neutral" onClick={() => { setDyePick(null); setDyeSlot(null); }}>やめる</button>
                     <button
                       type="button"
                       className="btn"
                       onClick={() => {
-                        if (useDye(editing.id, dyePick)) setColors((c) => ({ ...c, [slot]: dyePick }));
+                        if (useDye(editing.id, dyePick, slot)) setColors((c) => ({ ...c, [slot]: dyePick }));
                         setDyePick(null);
+                        setDyeSlot(null);
                       }}
                     >
                       染める
@@ -291,7 +309,7 @@ export default function Create() {
                   <h2 className={styles.sectionTitle}>{DECO_LABEL[slot]}</h2>
                   <span className={styles.sectionPreview}>
                     {selDeco && selOwned ? (
-                      <DecoGlyph slot={slot} svg={selDeco.svg} className={styles.previewGlyph} />
+                      <DecoGlyph slot={slot} id={selDeco.id} svg={selDeco.svg} className={styles.previewGlyph} />
                     ) : (
                       <span>なし</span>
                     )}
@@ -322,7 +340,7 @@ export default function Create() {
                             title={has ? d.name : 'シークレット（未所持）'}
                             aria-label={has ? d.name : 'シークレット'}
                           >
-                            {has ? <DecoGlyph slot={slot} svg={d.svg} /> : <span className={styles.secretMark}>？</span>}
+                            {has ? <DecoGlyph slot={slot} id={d.id} svg={d.svg} /> : <span className={styles.secretMark}>？</span>}
                           </button>
                         );
                       })}

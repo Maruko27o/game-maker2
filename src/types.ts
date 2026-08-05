@@ -146,6 +146,10 @@ export type PlayerStats = {
   maxPayout: number; // best single-race total payout (最大獲得賞金)
   maxRecoveryPct: number; // best single-race 回収率 = payout ÷ staked, as a % (最高回収率)
   maxOdds: number; // highest odds of a winning bet (最大オッズ)
+  /** 通算で手に入れた賞金の合計（1人でレース・グランプリ・対戦の払戻と賞金）。
+   *  この項目より前から遊んでいる人には過去分の記録が残っていないので、
+   *  分かっている値（対戦の払戻合計＋最大獲得賞金）で埋めてから積み上げる。 */
+  totalEarned?: number;
 };
 
 // An in-progress race kept in the save so it survives tab switches / reloads and

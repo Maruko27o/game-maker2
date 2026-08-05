@@ -57,6 +57,7 @@ function snapshot(): SaveData {
     displayTrophies: s.displayTrophies,
     mailbox: s.mailbox ?? [],
     equippedFrame: s.equippedFrame ?? null,
+    equippedTitle: s.equippedTitle ?? null,
     raceSession: s.raceSession ?? null,
     arena: s.arena ?? null,
     farmClaimedAt: s.farmClaimedAt, // 牧場の放置収入アンカー（クラウドでも保持しオフライン加算を保つ）
@@ -68,6 +69,19 @@ function snapshot(): SaveData {
 // locking by `rev`; a real conflict is surfaced to <SyncConflictModal> instead
 // of silently overwriting (ACCOUNT.md §1.6).
 export default function CloudSync() {
+  // 「総獲得賞金」を後から足したので、それ以前の記録は残っていない。
+  // 事情を一度だけ受信箱で説明する（配布は id で重複しない）。
+  const receiveNoticeOnce = useStore((st) => st.receiveNoticeOnce);
+  useEffect(() => {
+    receiveNoticeOnce(
+      'notice-total-earned',
+      'お詫び',
+      'プロフィールに「総獲得賞金」を追加しました。ただ、この項目より前のレースは記録が残っていないため、'
+        + '分かっているぶん（対戦の賞金と、1レースの最大獲得賞金）だけを入れた状態から始まります。'
+        + 'これから稼いだぶんは正しく積み上がります。数字が実際より少なくなってしまい申し訳ありません。',
+    );
+  }, [receiveNoticeOnce]);
+
   const user = useAuth((s) => s.user);
   const configured = useAuth((s) => s.configured);
 

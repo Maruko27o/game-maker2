@@ -84,7 +84,7 @@ export const EFFECTS: EffectDef[] = [
   { id: 'tail_bell', name: 'すずのね', kind: 'motes', shape: 'bell', colors: ['#e8b73a', '#ffe9a8'], count: 7 },
   { id: 'tail_puff', name: 'ふわふわ', kind: 'glow', shape: 'dot', colors: ['#f0d9a4', '#fff2d8'], count: 6 },
   { id: 'tail_paint', name: 'ペイントしぶき', kind: 'motes', shape: 'splash', colors: ['#4fb0ff', '#ff8ac4'], count: 9 },
-  { id: 'tail_rainbow', name: 'にじのアーチ', kind: 'aurora', shape: 'dot', colors: ['#ff6f6f', '#4fb0ff'] },
+  { id: 'tail_rainbow', name: 'にじのアーチ', kind: 'aurora', shape: 'moon', colors: ['#ff6f6f', '#4fb0ff'] },
   { id: 'tail_candy', name: 'あまいかおり', kind: 'motes', shape: 'candy', colors: ['#ff7fb0', '#ffe1ee'], count: 8 },
   { id: 'tail_feather', name: 'はねふわり', kind: 'petals', shape: 'feather', colors: ['#b9d2ea', '#ffffff'], count: 8 },
   { id: 'tail_moon', name: 'つきあかり', kind: 'glow', shape: 'moon', colors: ['#8fa8ff', '#e6ecff'], count: 5 },

@@ -5,6 +5,7 @@ import type { ColorPart, DecoPart, Rarity } from '../types';
 import PartThumb from '../components/PartThumb';
 import HorseView from '../components/HorseView';
 import Icon from '../components/Icon';
+import CloseButton from '../components/CloseButton';
 import styles from './Collection.module.css';
 
 type Entry = { id: string; name: string; rarity: Rarity };
@@ -36,6 +37,8 @@ const BLANK = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 export default function Collection() {
   const owned = useStore((s) => s.owned);
   const [tab, setTab] = useState(0);
+  // タップしたパーツを大きく見る（所持しているものだけ）。
+  const [zoom, setZoom] = useState<Entry | null>(null);
 
   const ownedIn = (entries: Entry[]) => entries.filter((e) => (owned[e.id] ?? 0) > 0).length;
   const ownedTotal = SECTIONS.reduce((n, s) => n + ownedIn(s.entries), 0);
@@ -90,7 +93,13 @@ export default function Collection() {
             const cnt = owned[e.id] ?? 0;
             const has = cnt > 0;
             return (
-              <div key={e.id} className={`${styles.cell} ${has ? '' : styles.locked}`}>
+              <div
+                key={e.id}
+                className={`${styles.cell} ${has ? '' : styles.locked}`}
+                onClick={() => { if (has) setZoom(e); }}
+                role={has ? 'button' : undefined}
+                tabIndex={has ? 0 : undefined}
+              >
                 <div className={styles.thumb}>
                   {has ? (
                     <PartThumb id={e.id} size={78} />
@@ -117,6 +126,18 @@ export default function Collection() {
           })}
         </div>
       </section>
+
+      {/* パーツを大きく見る。枠外タップか右上の✕で閉じる。 */}
+      {zoom && (
+        <div className={styles.zoomOverlay} onClick={() => setZoom(null)}>
+          <div className={styles.zoomCard} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={zoom.name}>
+            <CloseButton onClick={() => setZoom(null)} />
+            <PartThumb id={zoom.id} size={210} />
+            <div className={styles.zoomName}>{zoom.name}</div>
+            <span className={`rarity rarity-${zoom.rarity}`}>{zoom.rarity}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -155,10 +155,10 @@
   z-index: 1;
   flex: 1;
   min-width: 0;
-  height: 78px;
+  height: 96px;
   display: grid;
   place-items: end center;
-  padding-bottom: 22px;
+  padding-bottom: 20px;
 }
 /* 棚の上に立っている接地影（飾ってあるスロットだけ） */
 .shelfSlot:not(:empty)::after {
@@ -640,4 +640,63 @@
 .titleLocked {
   filter: grayscale(0.85) brightness(0.72);
   cursor: default;
+}
+
+
+/* 称号バッジ：名前の上。右下のペンで付け替える（アイコンと同じ操作）。 */
+.titleChipBtn {
+  position: relative;
+  align-self: flex-start;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 5px 30px 5px 12px;
+  border: 3px solid #5c4326;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #b99a6b;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.titleChipArt {
+  border-radius: 999px;
+}
+.titleChipName {
+  position: relative;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.titleChipStar {
+  position: relative;
+  flex: none;
+  font-size: 8px;
+  font-weight: 900;
+  color: #ffe9a8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  letter-spacing: -1px;
+}
+.titleChipEdit {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  border: 2px solid #fff;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+}
+/* 称号エディタの一覧は、ポップアップの高さに収める */
+.editorCard .titleList {
+  max-height: min(58vh, 400px);
 }

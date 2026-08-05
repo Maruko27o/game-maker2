@@ -1,9 +1,11 @@
 /* 共通の「閉じる」ボタン（右上の丸い✕）。theme 変数は global.css。 */
 .close {
   position: absolute;
-  top: -14px;
-  right: -14px;
-  z-index: 5;
+  /* 枠の「内側」に置く。外へ出すと右にはみ出して画面が横に広がったり、
+     アイコンのフレームの下に潜り込んで押せなくなる。 */
+  top: 4px;
+  right: 4px;
+  z-index: 20;
   /* 当たり判定は 44px（指で押しやすい最小サイズ）。見た目の丸はその内側。 */
   width: 44px;
   height: 44px;
@@ -36,8 +38,8 @@
   box-shadow: 0 1px 0 var(--border), 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* シートの角が画面端に近く、はみ出させたくないときは内側に置く。 */
+/* 中身が角まで詰まっていて、もう少し内側に置きたいとき。 */
 .inside {
-  top: -6px;
-  right: -6px;
+  top: 8px;
+  right: 8px;
 }
