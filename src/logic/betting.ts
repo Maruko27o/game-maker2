@@ -117,6 +117,57 @@ export function selProb(kind: BetKind, sel: number[], p: number[], laps = DEFAUL
   return 0;
 }
 
+
+// ── カスタムベット用：買える買い目をぜんぶ数え上げる ──────────────────
+// 「倍率3〜4倍のどれか」を選ぶために、その時のレースで実際に組める買い目を
+// 全部作って倍率を付ける。top3() は1回だけ計算して使い回す（毎回呼ぶと
+// 8頭で 408通り × 336項 になって重い）。
+export type Candidate = { kind: BetKind; sel: number[]; odds: number };
+
+export function allCandidates(p: number[], laps = DEFAULT_LAPS): Candidate[] {
+  const n = p.length;
+  const tr = top3(p, laps);
+  const out: Candidate[] = [];
+  // 単勝：生の勝率そのまま
+  for (let i = 0; i < n; i++) out.push({ kind: 'win', sel: [i], odds: clampOdds((1 / Math.max(p[i], 1e-12)) * TAKEOUT) });
+  // 複勝・馬連・ワイド・3連単は top3 の分布から足し上げる
+  const place = new Array(n).fill(0);
+  const quin: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+  const wide: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (const t of tr) {
+    place[t.a] += t.prob; place[t.b] += t.prob; place[t.c] += t.prob;
+    quin[t.a][t.b] += t.prob; quin[t.b][t.a] += t.prob;
+    const top = [t.a, t.b, t.c];
+    for (let x = 0; x < 3; x++) {
+      for (let y = x + 1; y < 3; y++) {
+        wide[top[x]][top[y]] += t.prob; wide[top[y]][top[x]] += t.prob;
+      }
+    }
+    out.push({ kind: 'trifecta', sel: [t.a, t.b, t.c], odds: clampOdds((1 / Math.max(t.prob, 1e-12)) * TAKEOUT) });
+  }
+  for (let i = 0; i < n; i++) out.push({ kind: 'place', sel: [i], odds: clampOdds((1 / Math.max(place[i], 1e-12)) * TAKEOUT) });
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      out.push({ kind: 'quinella', sel: [i, j], odds: clampOdds((1 / Math.max(quin[i][j], 1e-12)) * TAKEOUT) });
+      out.push({ kind: 'wide', sel: [i, j], odds: clampOdds((1 / Math.max(wide[i][j], 1e-12)) * TAKEOUT) });
+    }
+  }
+  return out;
+}
+
+/** 指定した倍率の範囲に入る買い目から1つをランダムに選ぶ。無ければ null。 */
+export function pickInOddsRange(
+  p: number[],
+  laps: number,
+  minOdds: number,
+  maxOdds: number,
+  rng: () => number = Math.random,
+): Candidate | null {
+  const hit = allCandidates(p, laps).filter((c) => c.odds >= minOdds && c.odds <= maxOdds);
+  if (hit.length === 0) return null;
+  return hit[Math.floor(rng() * hit.length) % hit.length];
+}
+
 /** Decimal odds for a selection (with takeout, clamped). */
 export function oddsFor(kind: BetKind, sel: number[], p: number[], laps = DEFAULT_LAPS): number {
   const prob = selProb(kind, sel, p, laps);

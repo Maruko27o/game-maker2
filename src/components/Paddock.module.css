@@ -555,3 +555,181 @@
   font-weight: 900;
   color: var(--ink-soft);
 }
+
+/* ── カスタムベット ───────────────────────────────────────────
+   倍率と金額を決めておいて、ワンタップでその条件の馬券を買う。 */
+.customRow {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.custom {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  border: 3px solid var(--border-dark);
+  border-radius: 13px;
+  background: var(--panel-inner);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 3px 0 var(--border);
+  cursor: pointer;
+  padding: 0 10px;
+}
+.custom:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border);
+}
+.custom:disabled {
+  opacity: 0.6;
+}
+.customEdit {
+  flex: none;
+  width: 44px;
+  min-height: 44px;
+  border: 3px solid var(--border-dark);
+  border-radius: 13px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 900;
+  box-shadow: 0 3px 0 var(--border);
+  cursor: pointer;
+}
+.customError {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #f6dcd9;
+  border: 2px solid var(--red-dark);
+  color: #7d211d;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+/* 設定シート */
+.cbOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 28, 14, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 24px 18px;
+  z-index: 70;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.cbSheet {
+  position: relative; /* 右上の閉じるボタンの基準 */
+  width: 100%;
+  max-width: 330px;
+  background: var(--paper);
+  border: 4px solid var(--border-dark);
+  border-radius: 20px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+}
+.cbTitle {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.cbLabel {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.cbStepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+}
+.cbStep {
+  flex: none;
+  width: 44px;
+  height: 40px;
+  border: 3px solid var(--border-dark);
+  border-radius: 12px;
+  background: var(--panel-inner);
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.cbStep:disabled {
+  opacity: 0.45;
+}
+.cbValue {
+  flex: 1;
+  text-align: center;
+  font-size: 21px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.cbValue small {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  margin-left: 3px;
+}
+.cbRange {
+  width: 100%;
+  margin-top: 6px;
+  accent-color: var(--blue);
+}
+.cbOddsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+.cbNum {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 3px solid var(--border-dark);
+  border-radius: 12px;
+  background: var(--panel-inner);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 900;
+  text-align: center;
+  font-family: inherit;
+}
+.cbTilde,
+.cbUnit {
+  flex: none;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.cbNote {
+  margin: 8px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.cbOk {
+  width: 100%;
+  margin-top: 12px;
+  min-height: 46px;
+  border: 3px solid var(--border-dark);
+  border-radius: 13px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  box-shadow: 0 4px 0 var(--blue-dark);
+  cursor: pointer;
+}
+.cbOk:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--blue-dark);
+}

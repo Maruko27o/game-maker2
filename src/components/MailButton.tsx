@@ -97,6 +97,20 @@ export default function MailButton() {
             <p className={styles.foot}>受信箱は今後、補填やお知らせにも使われます。</p>
           </div>
 
+          {/* おしらせ（お詫び・補填など）は全文を読める形で開く */}
+          {detail && detail.kind !== 'frame' && (
+            <div className={styles.detailOverlay} onClick={() => setDetail(null)}>
+              <div className={`${styles.detailCard} ${styles.noticeCard}`} onClick={(e) => e.stopPropagation()}>
+                <CloseButton onClick={() => setDetail(null)} />
+                <div className={styles.noticeTitle}>{detail.title ?? 'おしらせ'}</div>
+                <p className={styles.noticeBody}>{detail.body ?? ''}</p>
+                <div className={styles.detailActions}>
+                  <button className="btn neutral" onClick={() => setDetail(null)}>とじる</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {detail && detail.kind === 'frame' && detail.frame && (
             <div className={styles.detailOverlay} onClick={() => setDetail(null)}>
               <div className={styles.detailCard} onClick={(e) => e.stopPropagation()}>
