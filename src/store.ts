@@ -140,7 +140,7 @@ function normTasks(v: unknown): SaveData['tasks'] {
 }
 
 function freshStats(): SaveData['stats'] {
-  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0, totalEarned: 0 };
+  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0, totalEarned: 0, horsesFound: 0 };
 }
 // Reconstruct profile stats from a player's saved bet history, so existing users
 // see their past 最大オッズ / 回収率 / 獲得賞金 rather than starting at zero. Recovery
@@ -157,7 +157,7 @@ function deriveStatsFromBets(bets: SaveData['bets']): SaveData['stats'] {
       if (rec > maxRecoveryPct) maxRecoveryPct = rec;
     }
   }
-  return { betsPlaced: bets.length, maxPayout, maxRecoveryPct, maxOdds, totalEarned: 0 };
+  return { betsPlaced: bets.length, maxPayout, maxRecoveryPct, maxOdds, totalEarned: 0, horsesFound: 0 };
 }
 // Default any missing profile stat (older saves predate the profile-stats feature).
 function normStats(v: unknown): SaveData['stats'] {
@@ -168,6 +168,7 @@ function normStats(v: unknown): SaveData['stats'] {
     maxRecoveryPct: typeof s.maxRecoveryPct === 'number' ? s.maxRecoveryPct : 0,
     maxOdds: typeof s.maxOdds === 'number' ? s.maxOdds : 0,
     totalEarned: typeof s.totalEarned === 'number' ? s.totalEarned : 0,
+    horsesFound: typeof s.horsesFound === 'number' ? s.horsesFound : 0,
   };
 }
 
@@ -357,6 +358,13 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
     const arenaPaid = (ar?.results ?? []).reduce((n, r) => n + Math.max(0, r.payout ?? 0), 0);
     const seed = arenaPaid + stats.maxPayout;
     if (seed > 0) stats = { ...stats, totalEarned: seed };
+  }
+  // 見つけたウマの通算数も後から足した項目。草むらの回数（grassSpawns）は 1回引くと
+  // 必ず1頭出るので通算数そのものだが、もっと古いセーブでは 0 に潰れている。
+  // その場合に備えて「今いるウマの数」とくらべて多い方を下駄にする。
+  if (!stats.horsesFound) {
+    const seed = Math.max(tasks.grassSpawns, Array.isArray(d.horses) ? d.horses.length : 0);
+    if (seed > 0) stats = { ...stats, horsesFound: seed };
   }
   // スペシャルタスク（連勝チャレンジ）の進捗。タスキル→再読込でも失われないよう保存値から復元。
   const nnum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
@@ -759,7 +767,10 @@ export const useStore = create<Store>((set, get) => {
       };
       const horses = [...get().horses, horse];
       const team = autoJoinTeam(horse, get().team ?? [], horses);
-      commit({ owned, energy: spent.energy, energyUpdatedAt: spent.energyUpdatedAt, tasks, horses, team });
+      // 「何頭見つけたか」の通算。引退させても減らない（称号の条件に使う）。
+      const st = get().stats;
+      const stats = { ...st, horsesFound: (st.horsesFound ?? 0) + 1 };
+      commit({ owned, energy: spent.energy, energyUpdatedAt: spent.energyUpdatedAt, tasks, horses, team, stats });
       return { parts, horse, energyLeft: spent.energy };
     },
 
@@ -1030,12 +1041,15 @@ export const useStore = create<Store>((set, get) => {
         maxRecoveryPct: Math.max(s.maxRecoveryPct, p.maxRecoveryPct ?? 0),
         maxOdds: Math.max(s.maxOdds, p.maxOdds ?? 0),
         totalEarned: Math.max(s.totalEarned ?? 0, p.totalEarned ?? 0),
+        horsesFound: Math.max(s.horsesFound ?? 0, p.horsesFound ?? 0),
       };
       if (
         next.betsPlaced !== s.betsPlaced ||
         next.maxPayout !== s.maxPayout ||
         next.maxRecoveryPct !== s.maxRecoveryPct ||
-        next.maxOdds !== s.maxOdds
+        next.maxOdds !== s.maxOdds ||
+        next.totalEarned !== (s.totalEarned ?? 0) ||
+        next.horsesFound !== (s.horsesFound ?? 0)
       ) {
         commit({ stats: next });
       }

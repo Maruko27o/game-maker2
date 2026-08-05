@@ -150,6 +150,9 @@ export type PlayerStats = {
    *  この項目より前から遊んでいる人には過去分の記録が残っていないので、
    *  分かっている値（対戦の払戻合計＋最大獲得賞金）で埋めてから積み上げる。 */
   totalEarned?: number;
+  /** 草むらで見つけたウマの通算数（引退させても減らない）。マイウマの所持数とは別物。
+   *  この項目より前から遊んでいる人は記録が無いので、今いるウマの数から積み上げる。 */
+  horsesFound?: number;
 };
 
 // An in-progress race kept in the save so it survives tab switches / reloads and

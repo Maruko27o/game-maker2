@@ -55,6 +55,20 @@
   border-radius: 10px;
   overflow: hidden;
 }
+/* フレームを着けているときは、四角い額縁を出さない。
+   額縁の中にフレームが入った二重枠になって、どちらが装備品なのか分からなくなるため。
+   出すのはフレームそのものと、右下の青いペンだけ。 */
+.avatarBare {
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+}
+.avatarBare > :first-child {
+  border-radius: 0;
+  overflow: visible;
+}
 .avatarEdit {
   position: absolute;
   right: -6px;
@@ -109,9 +123,10 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-around;
-  gap: 2px;
+  gap: 0;
   width: 100%;
-  padding: 18px 14px 26px;
+  /* 5つ並べたときに1マスでも広くとれるよう、左右の余白は最小限に。 */
+  padding: 18px 6px 26px;
   border: none;
   border-radius: 12px;
   /* 奥板：上から暖色のスポットライト＋うっすら縦の板目＋木の色（陳列棚の照明風） */
@@ -174,8 +189,15 @@
   filter: blur(2px);
   z-index: -1;
 }
+/* トロフィーは棚1マスより少し大きい（5つ並べると1マス約60pxに対して78px）。
+   grid の place-items だと、はみ出す中身は中央ではなく左端そろえに落ちるため、
+   5つ飾ったときだけ全体が右にずれて見えていた。1マスの真ん中に絶対配置して、
+   飾る数に関係なく必ずマスの中心に立つようにする。 */
 .shelfSlot svg {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
   z-index: 1;
 }
 .shelfEdit {
@@ -649,10 +671,14 @@
   align-self: flex-start;
   max-width: 100%;
   min-height: 30px;
-  padding: 5px 30px 5px 12px;
+  /* 右下のペンは枠の「外」に出すので、中身の余白は左右そろえてよい。
+     ここで overflow: hidden にするとペンが枠の内側に切り取られてしまう。
+     背景（TitleBanner）は自前で inset:0 + overflow:hidden なので、はみ出さない。 */
+  padding: 5px 14px;
+  margin-right: 8px;
   border: 3px solid #5c4326;
   border-radius: 999px;
-  overflow: hidden;
+  overflow: visible;
   background: #b99a6b;
   display: inline-flex;
   align-items: center;
@@ -683,8 +709,9 @@
 }
 .titleChipEdit {
   position: absolute;
-  right: -2px;
-  bottom: -2px;
+  /* アイコンと同じで、枠の外に半分かかる位置。 */
+  right: -8px;
+  bottom: -6px;
   width: 20px;
   height: 20px;
   border-radius: 50%;

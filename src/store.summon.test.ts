@@ -83,6 +83,25 @@ describe('doSpawn：草むらのウマがそのまま仲間になる', () => {
     expect(useStore.getState().team).not.toContain(res.horse.id);
   });
 
+  it('見つけた通算数（称号の条件）が1回ごとに増え、引退させても減らない', () => {
+    useStore.setState({ horses: [], team: [], energy: ENERGY_CAP, energyUpdatedAt: Date.now() });
+    const before = useStore.getState().stats.horsesFound ?? 0;
+    const r1 = useStore.getState().doSpawn()!;
+    const r2 = useStore.getState().doSpawn()!;
+    expect(useStore.getState().stats.horsesFound).toBe(before + 2);
+    // 引退はボックスの話。見つけた数は「出会った回数」なので戻らない。
+    useStore.getState().retireHorse(r1.horse.id);
+    useStore.getState().retireHorse(r2.horse.id);
+    expect(useStore.getState().stats.horsesFound).toBe(before + 2);
+  });
+
+  it('ボックスが満杯で召喚できなかった回は、見つけた数も増えない', () => {
+    fill(MAX_HORSES);
+    const before = useStore.getState().stats.horsesFound ?? 0;
+    expect(useStore.getState().doSpawn()).toBeNull();
+    expect(useStore.getState().stats.horsesFound ?? 0).toBe(before);
+  });
+
   it('何度召喚しても、もらえるウマは毎回ちがう', () => {
     useStore.setState({ horses: [], team: [], energy: ENERGY_CAP, energyUpdatedAt: Date.now() });
     const ids = new Set<string>();

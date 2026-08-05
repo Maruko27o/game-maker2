@@ -143,9 +143,13 @@ export default function ProfileModal({
         <CloseButton onClick={onClose} />
         {/* Header: tap the avatar to change the icon, tap the shelf to edit trophies */}
         <div className={styles.head}>
-          <button className={styles.avatarBtn} onClick={() => { setIconMode('horse'); setEditing('icon'); }} aria-label="アイコンを変更">
+          <button
+            className={`${styles.avatarBtn} ${equippedFrame ? styles.avatarBare : ''}`}
+            onClick={() => { setIconMode('horse'); setEditing('icon'); }}
+            aria-label="アイコンを変更"
+          >
             {equippedFrame ? (
-              <EquippedFrame frame={equippedFrame} look={avatar} size={72} />
+              <EquippedFrame frame={equippedFrame} look={avatar} size={86} />
             ) : (
               <HorseFace horse={avatar} size={76} />
             )}
