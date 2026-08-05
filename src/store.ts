@@ -53,6 +53,7 @@ import { periodId, ARENA_ENTRY_FEE, ARENA_MODE, ARENA_CATCHUP_MAX, ARENA_RESULTS
 import { farmRatePerHour, farmAccrued, retireValueOf, teamHorses } from './logic/farm';
 import { addToTeam, removeFromTeam, moveInTeam, normalizeTeam } from './logic/team';
 import { trustedNow } from './logic/trustedClock';
+import { normalizeCustomBet } from './data/customBet';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 30; // 所持できるマイウマの上限（5×6ボックス）。全プレイヤー共通・無料開放
@@ -201,6 +202,7 @@ function freshSave(): SaveData {
     mailbox: [],
     equippedFrame: null,
     equippedTitle: null,
+    customBet: null,
     raceSession: null,
     arena: freshArena(),
     farmClaimedAt: trustedNow(),
@@ -229,6 +231,7 @@ function normProfile(d: Record<string, unknown>): {
   mailbox: MailItem[];
   equippedFrame: EquipFrame | null;
   equippedTitle: string | null;
+  customBet: SaveData['customBet'];
 } {
   const avatarHorseId = typeof d.avatarHorseId === 'string' ? d.avatarHorseId : null;
   const displayTrophies = Array.isArray(d.displayTrophies)
@@ -240,7 +243,9 @@ function normProfile(d: Record<string, unknown>): {
       )
     : [];
   const equippedTitle = typeof d.equippedTitle === 'string' ? d.equippedTitle : null;
-  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), equippedTitle };
+  const cb = d.customBet as SaveData['customBet'];
+  const customBet = cb && typeof cb === 'object' && typeof cb.amount === 'number' ? normalizeCustomBet(cb) : null;
+  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), equippedTitle, customBet };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -566,6 +571,8 @@ type Store = SaveData & {
   equipFrame: (frame: EquipFrame | null) => void;
   /** 称号を付け替える（未達成のIDは無視される）。 */
   equipTitle: (id: string | null) => void;
+  /** カスタムベットの設定を保存する（100きざみ・整数の倍率に丸めて入る）。 */
+  setCustomBet: (spec: { amount: number; minOdds: number; maxOdds: number } | null) => void;
   // スペシャルタスク（連勝チャレンジ）.
   /** 1人でレース・馬券ありの結果を折り込む。win=払戻>賭け。負けで連勝リセット。
    *  馬券なし／コース選択レースでは呼ばない（何も変えない）。 */
@@ -667,6 +674,7 @@ export const useStore = create<Store>((set, get) => {
       mailbox: next.mailbox ?? [],
       equippedFrame: next.equippedFrame ?? null,
       equippedTitle: next.equippedTitle ?? null,
+      customBet: next.customBet ?? null,
       raceSession: next.raceSession ?? null,
       arena: next.arena ?? freshArena(),
       farmClaimedAt: next.farmClaimedAt ?? trustedNow(),
@@ -1067,6 +1075,7 @@ export const useStore = create<Store>((set, get) => {
     },
     equipFrame: (frame) => commit({ equippedFrame: frame }),
     equipTitle: (id) => commit({ equippedTitle: id }),
+    setCustomBet: (spec) => commit({ customBet: spec ? normalizeCustomBet(spec) : null }),
 
     recordSoloStreak: (win) => {
       const s = get();

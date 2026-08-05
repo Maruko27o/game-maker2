@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Entrant } from '../logic/raceSim2';
 import type { Course } from '../data/courses';
 import type { HorseLook } from '../types';
-import { raceOddsFromProbs, oddsFor, fmtOdds, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
+import { raceOddsFromProbs, oddsFor, fmtOdds, pickInOddsRange, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
+import { CUSTOM_BET, DEFAULT_CUSTOM_BET, normalizeCustomBet, type CustomBetSpec } from '../data/customBet';
+import { useStore } from '../store';
+import CloseButton from './CloseButton';
 import { fillPicks } from '../logic/omakase';
 import { statTotal } from '../logic/stats';
 import { winProbs } from '../logic/grandprix';
@@ -43,6 +46,12 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
   const [kind, setKind] = useState<BetKind>('win');
   const [sel, setSel] = useState<number[]>([]); // entrant indices, in tap order
   const [amount, setAmount] = useState<number>(BET_AMOUNTS[0]);
+  // カスタムベット：倍率と金額を決めておいて、ワンタップでその条件の馬券を買う。
+  const customBet = useStore((st) => st.customBet);
+  const setCustomBet = useStore((st) => st.setCustomBet);
+  const [cbOpen, setCbOpen] = useState(false);
+  const [cbDraft, setCbDraft] = useState<CustomBetSpec>(customBet ?? DEFAULT_CUSTOM_BET);
+  const [cbError, setCbError] = useState<string | null>(null);
   const [openStats, setOpenStats] = useState<number | null>(null); // entrant idx whose 能力 panel is open
   const spec = BET_KINDS.find((k) => k.kind === kind)!;
 
@@ -95,6 +104,18 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
       if (!favPicks.includes(r.idx)) favPicks.push(r.idx);
     }
     onAdd({ kind, sel: favPicks, amount, odds: oddsFor(kind, favPicks, p, laps) });
+  }
+
+  // 設定した倍率の範囲に入る買い目を、その時のレースの倍率から探して1点買う。
+  // 候補が複数あればランダムに1つ（例：3〜4倍で単勝3.2倍と3.5倍があればどちらか）。
+  function placeCustom() {
+    if (!customBet) { setCbDraft(DEFAULT_CUSTOM_BET); setCbOpen(true); return; }
+    setCbError(null);
+    if (full) { setCbError(`馬券は${maxBets}パターンまでです`); return; }
+    if (coins < customBet.amount) { setCbError('コインが不足しています'); return; }
+    const hit = pickInOddsRange(p, laps ?? 2, customBet.minOdds, customBet.maxOdds, Math.random);
+    if (!hit) { setCbError('その倍率は組めません'); return; }
+    onAdd({ kind: hit.kind, sel: hit.sel, amount: customBet.amount, odds: hit.odds });
   }
 
   return (
@@ -168,6 +189,25 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
           : `${KIND_LABEL[kind]}をおまかせ（${amount}コインで1点）`}
       </button>
 
+      {/* カスタムベット：設定してあれば1タップで買う。ペンで設定し直せる。 */}
+      <div className={styles.customRow}>
+        <button className={styles.custom} disabled={full} onClick={placeCustom}>
+          {customBet
+            ? `カスタム ${customBet.minOdds}〜${customBet.maxOdds}倍・${customBet.amount.toLocaleString()}コイン`
+            : 'カスタムベットを設定'}
+        </button>
+        {customBet && (
+          <button
+            className={styles.customEdit}
+            aria-label="カスタムベットの設定"
+            onClick={() => { setCbDraft(customBet); setCbOpen(true); }}
+          >
+            ✎
+          </button>
+        )}
+      </div>
+      {cbError && <div className={styles.customError} role="alert">{cbError}</div>}
+
       {/* stake + add */}
       <div className={styles.stakeRow}>
         {BET_AMOUNTS.map((a) => (
@@ -209,6 +249,82 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
       <div className={styles.actions}>
         <button className={styles.start} onClick={onStart}>{startLabel ?? '出走'}</button>
       </div>
+
+      {/* カスタムベットの設定 */}
+      {cbOpen && (
+        <div className={styles.cbOverlay} onClick={() => setCbOpen(false)}>
+          <div className={styles.cbSheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="カスタムベットの設定">
+            <CloseButton onClick={() => setCbOpen(false)} />
+            <h3 className={styles.cbTitle}>カスタムベット</h3>
+
+            <div className={styles.cbLabel}>賭ける金額</div>
+            <div className={styles.cbStepper}>
+              <button
+                className={styles.cbStep}
+                onClick={() => setCbDraft((d) => normalizeCustomBet({ ...d, amount: d.amount - CUSTOM_BET.amountStep }))}
+                disabled={cbDraft.amount <= CUSTOM_BET.amountMin}
+              >
+                −
+              </button>
+              <span className={styles.cbValue}>{cbDraft.amount.toLocaleString()}<small>コイン</small></span>
+              <button
+                className={styles.cbStep}
+                onClick={() => setCbDraft((d) => normalizeCustomBet({ ...d, amount: d.amount + CUSTOM_BET.amountStep }))}
+                disabled={cbDraft.amount >= CUSTOM_BET.amountMax}
+              >
+                ＋
+              </button>
+            </div>
+            <input
+              className={styles.cbRange}
+              type="range"
+              min={CUSTOM_BET.amountMin}
+              max={CUSTOM_BET.amountMax}
+              step={CUSTOM_BET.amountStep}
+              value={cbDraft.amount}
+              onChange={(e) => setCbDraft((d) => normalizeCustomBet({ ...d, amount: Number(e.target.value) }))}
+            />
+
+            <div className={styles.cbLabel}>希望する倍率（整数のみ）</div>
+            <div className={styles.cbOddsRow}>
+              <input
+                className={styles.cbNum}
+                type="number"
+                inputMode="numeric"
+                min={CUSTOM_BET.oddsMin}
+                max={CUSTOM_BET.oddsMax}
+                step={1}
+                value={cbDraft.minOdds}
+                aria-label="倍率の下限"
+                onChange={(e) => setCbDraft((d) => ({ ...d, minOdds: Math.floor(Number(e.target.value) || 0) }))}
+              />
+              <span className={styles.cbTilde}>〜</span>
+              <input
+                className={styles.cbNum}
+                type="number"
+                inputMode="numeric"
+                min={CUSTOM_BET.oddsMin}
+                max={CUSTOM_BET.oddsMax}
+                step={1}
+                value={cbDraft.maxOdds}
+                aria-label="倍率の上限"
+                onChange={(e) => setCbDraft((d) => ({ ...d, maxOdds: Math.floor(Number(e.target.value) || 0) }))}
+              />
+              <span className={styles.cbUnit}>倍</span>
+            </div>
+            <p className={styles.cbNote}>
+              {CUSTOM_BET.oddsMin}〜{CUSTOM_BET.oddsMax.toLocaleString()}倍まで。範囲に入る買い目から1つを自動で選びます。
+            </p>
+
+            <button
+              className={styles.cbOk}
+              onClick={() => { setCustomBet(normalizeCustomBet(cbDraft)); setCbError(null); setCbOpen(false); }}
+            >
+              確定
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

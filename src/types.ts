@@ -309,6 +309,7 @@ export type SaveData = {
   mailbox?: MailItem[]; // 受信箱（フレーム配布・補填など）
   equippedFrame?: EquipFrame | null; // アイコンに装備中のフレーム（殿堂 or 連勝）
   equippedTitle?: string | null; // 装備中の称号ID（data/titles.ts）。未設定なら達成済みで一番上の段
+  customBet?: { amount: number; minOdds: number; maxOdds: number } | null; // カスタムベットの設定
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads
   arena?: ArenaState | null; // 対戦: pending entry + last revealed tournament
   farmClaimedAt?: number; // 牧場の放置収入を最後に回収した時刻（ms）

@@ -21,6 +21,7 @@ import {
 } from '../cloud';
 import { reconcile, resolvePushConflict, guardEmptyPush } from '../logic/cloudReconcile';
 import { randomUsername } from '../logic/username';
+import { NOTICE_TOTAL_EARNED } from '../data/notices';
 
 // Extract the persisted shape from the live store state.
 function snapshot(): SaveData {
@@ -58,6 +59,7 @@ function snapshot(): SaveData {
     mailbox: s.mailbox ?? [],
     equippedFrame: s.equippedFrame ?? null,
     equippedTitle: s.equippedTitle ?? null,
+    customBet: s.customBet ?? null,
     raceSession: s.raceSession ?? null,
     arena: s.arena ?? null,
     farmClaimedAt: s.farmClaimedAt, // 牧場の放置収入アンカー（クラウドでも保持しオフライン加算を保つ）
@@ -70,17 +72,17 @@ function snapshot(): SaveData {
 // of silently overwriting (ACCOUNT.md §1.6).
 export default function CloudSync() {
   // 「総獲得賞金」を後から足したので、それ以前の記録は残っていない。
-  // 事情を一度だけ受信箱で説明する（配布は id で重複しない）。
+  // 事情を一度だけ受信箱で説明する。
+  //
+  // 起動直後に1回だけ入れる作りにしていたが、そのあとクラウドのセーブを読み込むと
+  // 受信箱ごと差し替わって消えてしまっていた（＝届かない）。受信箱を見張って、
+  // 入っていなければ入れ直す形にする。id で重複しないので何度通っても1通だけ。
   const receiveNoticeOnce = useStore((st) => st.receiveNoticeOnce);
+  const mailbox = useStore((st) => st.mailbox);
   useEffect(() => {
-    receiveNoticeOnce(
-      'notice-total-earned',
-      'お詫び',
-      'プロフィールに「総獲得賞金」を追加しました。ただ、この項目より前のレースは記録が残っていないため、'
-        + '分かっているぶん（対戦の賞金と、1レースの最大獲得賞金）だけを入れた状態から始まります。'
-        + 'これから稼いだぶんは正しく積み上がります。数字が実際より少なくなってしまい申し訳ありません。',
-    );
-  }, [receiveNoticeOnce]);
+    if ((mailbox ?? []).some((m) => m.id === NOTICE_TOTAL_EARNED.id)) return;
+    receiveNoticeOnce(NOTICE_TOTAL_EARNED.id, NOTICE_TOTAL_EARNED.title, NOTICE_TOTAL_EARNED.body);
+  }, [mailbox, receiveNoticeOnce]);
 
   const user = useAuth((s) => s.user);
   const configured = useAuth((s) => s.configured);
