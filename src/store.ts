@@ -139,7 +139,7 @@ function normTasks(v: unknown): SaveData['tasks'] {
 }
 
 function freshStats(): SaveData['stats'] {
-  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0 };
+  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0, totalEarned: 0 };
 }
 // Reconstruct profile stats from a player's saved bet history, so existing users
 // see their past 最大オッズ / 回収率 / 獲得賞金 rather than starting at zero. Recovery
@@ -156,7 +156,7 @@ function deriveStatsFromBets(bets: SaveData['bets']): SaveData['stats'] {
       if (rec > maxRecoveryPct) maxRecoveryPct = rec;
     }
   }
-  return { betsPlaced: bets.length, maxPayout, maxRecoveryPct, maxOdds };
+  return { betsPlaced: bets.length, maxPayout, maxRecoveryPct, maxOdds, totalEarned: 0 };
 }
 // Default any missing profile stat (older saves predate the profile-stats feature).
 function normStats(v: unknown): SaveData['stats'] {
@@ -166,6 +166,7 @@ function normStats(v: unknown): SaveData['stats'] {
     maxPayout: typeof s.maxPayout === 'number' ? s.maxPayout : 0,
     maxRecoveryPct: typeof s.maxRecoveryPct === 'number' ? s.maxRecoveryPct : 0,
     maxOdds: typeof s.maxOdds === 'number' ? s.maxOdds : 0,
+    totalEarned: typeof s.totalEarned === 'number' ? s.totalEarned : 0,
   };
 }
 
@@ -342,6 +343,16 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   let stats = normStats(d.stats);
   const statsEmpty = stats.betsPlaced === 0 && stats.maxOdds === 0 && stats.maxPayout === 0 && stats.maxRecoveryPct === 0;
   if ((d.stats == null || statsEmpty) && bets.length > 0) stats = deriveStatsFromBets(bets);
+  // 総獲得賞金は後から足した項目なので、この項目より前から遊んでいる人には過去分の
+  // 記録がまったく残っていない。0 から始めると「今まで稼いだぶんが消えた」ように
+  // 見えるので、分かっている値（対戦の払戻合計 ＋ 1レースの最大獲得賞金）で下駄を
+  // 履かせてから積み上げる。足りないぶんはお詫びのメールで説明する。
+  if (!stats.totalEarned) {
+    const ar = normArena(d.arena);
+    const arenaPaid = (ar?.results ?? []).reduce((n, r) => n + Math.max(0, r.payout ?? 0), 0);
+    const seed = arenaPaid + stats.maxPayout;
+    if (seed > 0) stats = { ...stats, totalEarned: seed };
+  }
   // スペシャルタスク（連勝チャレンジ）の進捗。タスキル→再読込でも失われないよう保存値から復元。
   const nnum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
   const soloStreak = nnum(d.soloStreak);
@@ -518,7 +529,9 @@ type Store = SaveData & {
   /** ログインボーナス（曜日制）。受け取れたらその中身を返す。今日ぶん受け取り済みなら null。 */
   claimLoginBonus: () => LoginReward | null;
   /** 染料をウマに使う。色の属する枠（からだ/たてがみ/ひづめ）が塗り替わる。 */
-  useDye: (horseId: string, colorId: string) => boolean;
+  /** 染料で色を塗る。slot を渡すとその部位に塗る（省略時は染料の元の部位）。
+   *  色は3部位のどこにでも塗れる ＝ 手に入れた染料の使い道が狭まらない。 */
+  useDye: (horseId: string, colorId: string, slot?: ColorSlot) => boolean;
   /** Buy an extra grass charge (300, repeatable). Returns true on success. */
   buyOkawari: () => boolean;
   /** Begin a grand-prix attempt, consuming one of the day's plays (max
@@ -534,6 +547,8 @@ type Store = SaveData & {
    *  payout (最大獲得賞金), best single-race 回収率 = payout ÷ staked (最高回収率),
    *  and the highest winning odds (最大オッズ). */
   recordBetStats: (r: { placed: number; staked: number; payout: number; wonOdds: number }) => void;
+  /** 通算の獲得賞金に足す（レースの賞金・馬券の払戻・対戦の賞金すべて）。 */
+  addEarned: (n: number) => void;
   /** Merge external maxima into the profile stats (raise-only). Used to backfill
    *  from the account's ranking history (best odds/payout) on sign-in. */
   foldStats: (p: Partial<PlayerStats>) => void;
@@ -543,6 +558,8 @@ type Store = SaveData & {
   // メールボックス＆アイコンフレーム（殿堂の上位3名へ毎月配布）。
   /** 受信箱にフレームを配布（同一 period+種別は重複させない）。 */
   receiveFrames: (awards: FrameAward[]) => void;
+  /** 「総獲得賞金」を後から足したことへのお詫びを一度だけ受信箱に入れる。 */
+  receiveNoticeOnce: (id: string, title: string, body: string) => void;
   markMailRead: (id: string) => void;
   markAllMailRead: () => void;
   /** アイコンに装備するフレーム（殿堂 or 連勝、null で外す）。 */
@@ -906,11 +923,11 @@ export const useStore = create<Store>((set, get) => {
       return reward;
     },
 
-    useDye: (horseId, colorId) => {
+    useDye: (horseId, colorId, slotArg) => {
       const s = get();
       const have = (s.dyes ?? {})[colorId] ?? 0;
       if (have <= 0) return false;
-      const slot = colorSlotById[colorId];
+      const slot = slotArg ?? colorSlotById[colorId];
       if (!slot) return false; // 色パーツではない
       const horse = s.horses.find((h) => h.id === horseId);
       if (!horse) return false;
@@ -986,8 +1003,15 @@ export const useStore = create<Store>((set, get) => {
           maxPayout: Math.max(s.maxPayout, payout),
           maxRecoveryPct: Math.max(s.maxRecoveryPct, recovery),
           maxOdds: Math.max(s.maxOdds, wonOdds),
+          totalEarned: (s.totalEarned ?? 0) + Math.max(0, payout),
         },
       });
+    },
+
+    addEarned: (n) => {
+      if (!(n > 0)) return;
+      const s = get().stats;
+      commit({ stats: { ...s, totalEarned: (s.totalEarned ?? 0) + n } });
     },
 
     foldStats: (p) => {
@@ -997,6 +1021,7 @@ export const useStore = create<Store>((set, get) => {
         maxPayout: Math.max(s.maxPayout, p.maxPayout ?? 0),
         maxRecoveryPct: Math.max(s.maxRecoveryPct, p.maxRecoveryPct ?? 0),
         maxOdds: Math.max(s.maxOdds, p.maxOdds ?? 0),
+        totalEarned: Math.max(s.totalEarned ?? 0, p.totalEarned ?? 0),
       };
       if (
         next.betsPlaced !== s.betsPlaced ||
@@ -1026,6 +1051,11 @@ export const useStore = create<Store>((set, get) => {
         add.push({ id, at: Date.now(), read: false, kind: 'frame', frame: a });
       }
       if (add.length) commit({ mailbox: [...add, ...box] });
+    },
+    receiveNoticeOnce: (id, title, body) => {
+      const box = get().mailbox ?? [];
+      if (box.some((m) => m.id === id)) return;
+      commit({ mailbox: [{ id, at: Date.now(), read: false, kind: 'notice', title, body }, ...box] });
     },
     markMailRead: (id) => {
       const box = get().mailbox ?? [];
@@ -1108,9 +1138,11 @@ export const useStore = create<Store>((set, get) => {
 
       // 賞金と一緒に厳選チケットも配る（優勝3・準優勝2・3位1）。
       let tickets = get().refineTickets ?? 0;
+      let earned = 0; // このまとめて精算で得た賞金の合計
       const resolve = (entry: ArenaEntry) => {
         const r = runTournament(entry.snapshot, entry.seed, pool, ARENA_MODE, entry.period);
         coins += r.payout;
+        earned += r.payout; // 通算の獲得賞金にも積む
         tickets += arenaTickets(r.outcome, r.finalRank);
         results.unshift({ ...r, awarded: true, seen: false });
       };
@@ -1144,9 +1176,11 @@ export const useStore = create<Store>((set, get) => {
         }
       }
 
+      const st0 = get().stats;
       commit({
         coins: Math.max(0, coins),
         refineTickets: tickets,
+        stats: { ...st0, totalEarned: (st0.totalEarned ?? 0) + earned },
         arena: { auto, pending, lastPeriod, results: results.slice(0, ARENA_RESULTS_CAP) },
       });
     },

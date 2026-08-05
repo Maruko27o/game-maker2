@@ -91,6 +91,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const recordRace = useStore((s) => s.recordRace);
   const unlockGp = useStore((s) => s.unlockGp);
   const addCoins = useStore((s) => s.addCoins);
+  const addEarned = useStore((s) => s.addEarned);
   const spendCoins = useStore((s) => s.spendCoins);
   const coins = useStore((s) => s.coins);
   const startGpAttempt = useStore((s) => s.startGpAttempt);
@@ -196,7 +197,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       if (st.grade === 'g3' && rank <= 3) unlockGp({ g2: true });
       if (st.grade === 'g2' && rank === 1) unlockGp({ g1: true });
       const coinReward = st.grade === 'g1' ? gpFinalCoins(rank) : 0;
-      if (coinReward > 0) addCoins(coinReward);
+      if (coinReward > 0) { addCoins(coinReward); addEarned(coinReward); }
       bufferSubmission(buildSubmission(finalists, st.course.id, mode, st.seed ^ 0x5f, finalRes, finalists[playerIdx].horseId, finalLaps(mode)));
       reward = { trophy, items, rank, qualified: true, coins: coinReward };
     }

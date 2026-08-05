@@ -240,6 +240,7 @@ export default function Race() {
   const coins = useStore((s) => s.coins);
   const finishNormalRace = useStore((s) => s.finishNormalRace);
   const addCoins = useStore((s) => s.addCoins);
+  const addEarned = useStore((s) => s.addEarned);
   const spendCoins = useStore((s) => s.spendCoins);
   const recordBet = useStore((s) => s.recordBet);
   const finishRaceTask = useStore((s) => s.finishRaceTask);
@@ -371,6 +372,7 @@ export default function Race() {
       recordBet({ courseId: setup0.course.id, kind: b.kind, picks: b.sel.map((i) => res.gate[i]), amount: b.amount, odds: b.odds, won: got > 0, payout: got, at: Date.now() });
     }
     addCoins(earned + payout);
+    addEarned(earned); // 馬券の払戻は recordBetStats 側で積む
     recordBetStats({ placed: betList.length, staked, payout, wonOdds: bestWonOdds });
     // スペシャルタスク（連勝チャレンジ）：馬券を賭けた1人でレースのみ対象。払戻が賭け金の
     // 1.5倍以上で連勝を1つ伸ばし、そうでなければ連勝リセット。レースは開始時に確定(seed)＆
