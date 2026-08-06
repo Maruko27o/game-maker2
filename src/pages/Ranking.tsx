@@ -9,11 +9,30 @@ import TrophyMark from '../components/TrophyMark';
 import RankingProfileCard from '../components/RankingProfileCard';
 import CoinIcon from '../components/CoinIcon';
 import { fmtOdds } from '../logic/betting';
+import { titleById } from '../data/titles';
 import { monthKey, monthLabel, msToNextMonth, splitCountdown } from '../logic/period';
 import styles from './Ranking.module.css';
 
 // Unset avatar → the plain starter horse (base colours).
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
+
+// 記録がない・ログインしていないときの画面。ただの1行の注意書きだと寂しいので、
+// 空の表彰台を出して「ここに載る」ことが目標だと分かるようにする。
+function EmptyBoard({ note }: { note: string }) {
+  return (
+    <div className={styles.empty}>
+      <div className={styles.podium} aria-hidden>
+        {([2, 1, 3] as const).map((place) => (
+          <div key={place} className={`${styles.step} ${styles['step' + place]}`}>
+            <span className={styles.stepFace}>?</span>
+            <span className={styles.stepNo}>{place}</span>
+          </div>
+        ))}
+      </div>
+      <p className={styles.emptyNote}>{note}</p>
+    </div>
+  );
+}
 
 // Max hit-odds leaderboard (改修④). One row per player — their best winning
 // odds, with the player's chosen horse as their icon. Degrades gracefully:
@@ -128,8 +147,22 @@ export default function Ranking() {
           </span>
         )}
         <span className={styles.name}>
-          <span className={styles.uname}>{r.username}</span>
-          {me && <span className={styles.youTag}>あなた</span>}
+          <span className={styles.nameLine}>
+            <span className={styles.uname}>{r.username}</span>
+            {me && <span className={styles.youTag}>あなた</span>}
+          </span>
+          {/* 称号を名前の下に。順位表がただの名前の羅列にならず、
+              その人がどこまでやり込んでいるかが一目で伝わる。 */}
+          {(() => {
+            const t = r.title ? titleById[r.title] : undefined;
+            if (!t) return null;
+            return (
+              <span className={styles.rowTitle} style={{ ['--tc' as string]: t.colors[0] }}>
+                <span className={styles.rowTitleStar} aria-hidden>{'★'.repeat(t.tier)}</span>
+                {t.name}
+              </span>
+            );
+          })()}
         </span>
         <span className={styles.odds}>{metric(r)}</span>
       </li>
@@ -161,15 +194,17 @@ export default function Ranking() {
       </p>
 
       {!configured ? (
-        <div className={styles.note}>クラウド機能が未設定です。</div>
+        <EmptyBoard note="クラウド機能が未設定です。" />
       ) : !user ? (
-        <div className={styles.note}>ランキングに載るには、左上のアイコンからログインしてね。</div>
+        <EmptyBoard note="ランキングに載るには、左上のアイコンからログインしてね。" />
       ) : rows === null ? (
-        <div className={styles.note}>読み込み中…</div>
+        <EmptyBoard note="読み込み中…" />
       ) : shown.length === 0 ? (
-        <div className={styles.note}>
-          {tab === 'payout' ? '今月はまだ記録がありません。馬券を的中させて払戻を得よう！' : '今月はまだ記録がありません。レースで馬券を的中させよう！'}
-        </div>
+        <EmptyBoard
+          note={tab === 'payout'
+            ? '今月はまだ記録がありません。馬券を的中させて払戻を得よう！'
+            : '今月はまだ記録がありません。レースで馬券を的中させよう！'}
+        />
       ) : (
         <>
           <ol className={styles.list}>

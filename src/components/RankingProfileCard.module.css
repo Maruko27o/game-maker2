@@ -165,6 +165,20 @@
   color: var(--ink-soft);
   margin-left: 1px;
 }
+/* 通算の記録が届くまでの仮の表示。数字を出すと一瞬まちがった値を見せるので、
+   同じ大きさの「—」で場所だけ確保しておく（高さが動かない）。 */
+.pending {
+  color: var(--ink-soft);
+  opacity: 0.55;
+  animation: pendingBlink 1.2s ease-in-out infinite;
+}
+@keyframes pendingBlink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pending { animation: none; }
+}
 .trophyLabel {
   margin-top: 8px;
   font-size: 12px;

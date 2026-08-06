@@ -1,4 +1,6 @@
-/* 称号の背景。段が上がるほど層が増える。 */
+/* 称号の背景。段が上がるほど層が増える。
+   小さいチップ（高さ約30px）でも大きな帯でも同じに見えるよう、
+   模様のサイズは基本的に % で持つ。 */
 .banner {
   position: absolute;
   inset: 0;
@@ -6,67 +8,125 @@
   background: var(--c1);
 }
 .stripes,
+.lattice,
+.gloss,
 .rays,
 .sheen,
+.motes,
 .aurora,
-.sparks {
+.prism,
+.sparks,
+.edge {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-/* 2段：二色＋斜めの帯 */
+/* ふち。段が上がるほど内側の線が主張する。 */
+.edge {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+/* ── 1段：一色。ふちに落ちる影だけ ─────────────────────────── */
+.t1 {
+  background:
+    radial-gradient(120% 130% at 50% 0%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 62%),
+    var(--c1);
+}
+
+/* ── 2段：二色＋斜めの帯 ──────────────────────────────────── */
 .t2 {
   background: linear-gradient(160deg, var(--c1) 0%, var(--c2) 100%);
 }
 .t2 .stripes {
   background: repeating-linear-gradient(
     118deg,
-    rgba(255, 255, 255, 0.14) 0 12px,
+    rgba(255, 255, 255, 0.16) 0 12px,
     rgba(255, 255, 255, 0) 12px 34px
   );
 }
+.t2 .edge {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), inset 0 0 0 2px rgba(0, 0, 0, 0.16);
+}
 
-/* 3段：グラデ＋細かいストライプ */
+/* ── 3段：グラデ＋ひし形の織り＋上のツヤ（「柄もの」に見せる） ── */
 .t3 {
   background: linear-gradient(165deg, var(--c1) 0%, var(--c2) 105%);
 }
 .t3 .stripes {
   background: repeating-linear-gradient(
     112deg,
-    rgba(255, 255, 255, 0.18) 0 5px,
+    rgba(255, 255, 255, 0.16) 0 5px,
     rgba(255, 255, 255, 0) 5px 16px
   );
 }
+/* 斜めの線を左右から重ねて、ひし形の織り地に見せる */
+.lattice {
+  background:
+    repeating-linear-gradient(52deg, rgba(255, 255, 255, 0.13) 0 2px, rgba(255, 255, 255, 0) 2px 11px),
+    repeating-linear-gradient(-52deg, rgba(0, 0, 0, 0.1) 0 2px, rgba(0, 0, 0, 0) 2px 11px);
+}
+/* 上半分だけ乗るツヤ（ガラスっぽさ） */
+.gloss {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.08) 42%,
+    rgba(255, 255, 255, 0) 55%
+  );
+}
+.t3 .edge {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), inset 0 0 0 3px rgba(0, 0, 0, 0.14);
+}
 
-/* 4段：グラデ＋放射 */
+/* ── 4段：放射＋金のふち（記章らしくなる） ────────────────── */
 .t4 {
   background: radial-gradient(120% 150% at 50% 120%, var(--c2) 0%, var(--c1) 70%);
 }
 .t4 .stripes {
   background: repeating-linear-gradient(
     112deg,
-    rgba(255, 255, 255, 0.12) 0 5px,
+    rgba(255, 255, 255, 0.1) 0 5px,
     rgba(255, 255, 255, 0) 5px 16px
   );
+}
+.t4 .lattice {
+  opacity: 0.55;
 }
 .rays {
   background: repeating-conic-gradient(
     from 0deg at 50% 118%,
-    rgba(255, 255, 255, 0.22) 0deg 5deg,
+    rgba(255, 255, 255, 0.24) 0deg 5deg,
     rgba(255, 255, 255, 0) 5deg 15deg
   );
 }
+/* 金のふち。ここから「額に入った」感じになる。 */
+.t4 .edge,
+.t5 .edge {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 246, 214, 0.75),
+    inset 0 0 0 3px rgba(190, 142, 40, 0.55),
+    inset 0 0 12px rgba(255, 232, 170, 0.28);
+}
 
-/* 5段：放射＋流れる光 */
+/* ── 5段：放射＋流れる光＋光の粒 ──────────────────────────── */
 .t5 {
-  background: radial-gradient(120% 150% at 50% 120%, var(--c2) 0%, var(--c1) 68%);
+  background:
+    radial-gradient(90% 120% at 50% 118%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(120% 150% at 50% 120%, var(--c2) 0%, var(--c1) 68%);
 }
 .t5 .stripes {
   background: repeating-linear-gradient(
     112deg,
-    rgba(255, 255, 255, 0.1) 0 4px,
+    rgba(255, 255, 255, 0.09) 0 4px,
     rgba(255, 255, 255, 0) 4px 14px
+  );
+}
+.t5 .rays {
+  background: repeating-conic-gradient(
+    from 0deg at 50% 120%,
+    rgba(255, 255, 255, 0.28) 0deg 4.5deg,
+    rgba(255, 255, 255, 0) 4.5deg 14deg
   );
 }
 .sheen {
@@ -83,34 +143,100 @@
   0% { transform: translateX(-70%); }
   60%, 100% { transform: translateX(80%); }
 }
+/* ふわふわ浮かぶ光の粒（きらめきより控えめ＝6段との差を残す） */
+.motes span {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.9);
+  opacity: 0.5;
+  animation: float 3.2s ease-in-out infinite alternate;
+}
+@keyframes float {
+  from { transform: translateY(2px); opacity: 0.25; }
+  to { transform: translateY(-3px); opacity: 0.9; }
+}
 
-/* 6段：オーロラ＋きらめき */
+/* 5〜6段は地が明るくなるので、称号名が乗る左側だけ少し落として読みやすくする。 */
+.t5::after,
+.t6::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(40, 26, 10, 0.28) 0%,
+    rgba(40, 26, 10, 0.1) 45%,
+    rgba(40, 26, 10, 0) 72%
+  );
+  pointer-events: none;
+}
+
+/* ── 6段：オーロラ＋虹＋きらめき（別格） ──────────────────── */
 .t6 {
   background: linear-gradient(150deg, var(--c1) 0%, var(--c2) 55%, var(--c1) 100%);
+  background-size: 200% 100%;
+  animation: shift 9s ease-in-out infinite alternate;
+}
+@keyframes shift {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
 }
 .t6 .rays {
   background: repeating-conic-gradient(
     from 0deg at 50% 122%,
-    rgba(255, 255, 255, 0.3) 0deg 4deg,
+    rgba(255, 255, 255, 0.24) 0deg 4deg,
     rgba(255, 255, 255, 0) 4deg 13deg
   );
 }
+.t6 .lattice {
+  opacity: 0.4;
+}
 .aurora {
   background:
-    radial-gradient(60% 90% at 20% 30%, rgba(255, 120, 200, 0.5), transparent 70%),
-    radial-gradient(60% 90% at 78% 25%, rgba(90, 200, 255, 0.5), transparent 70%),
-    radial-gradient(70% 100% at 50% 95%, rgba(255, 235, 130, 0.45), transparent 70%);
+    radial-gradient(60% 90% at 20% 30%, rgba(255, 120, 200, 0.32), transparent 70%),
+    radial-gradient(60% 90% at 78% 25%, rgba(90, 200, 255, 0.32), transparent 70%),
+    radial-gradient(70% 100% at 50% 95%, rgba(255, 235, 130, 0.3), transparent 70%);
   animation: drift 7s ease-in-out infinite alternate;
 }
 @keyframes drift {
   from { transform: translateX(-5%) scale(1.02); }
   to { transform: translateX(5%) scale(1.08); }
 }
+/* 虹の膜。角度をゆっくり回して玉虫色に見せる。 */
+.prism {
+  background: repeating-linear-gradient(
+    100deg,
+    rgba(255, 90, 130, 0.2) 0 6%,
+    rgba(255, 220, 90, 0.2) 6% 12%,
+    rgba(110, 235, 160, 0.2) 12% 18%,
+    rgba(110, 190, 255, 0.2) 18% 24%,
+    rgba(200, 130, 255, 0.2) 24% 30%
+  );
+  /* overlay なら地の色を残したまま虹がのる。screen だと全部が
+     同じ淡いパステルに飛んで、称号ごとの色の違いが消えてしまう。 */
+  mix-blend-mode: overlay;
+  animation: prismShift 6s linear infinite alternate;
+}
+@keyframes prismShift {
+  from { transform: translateX(-8%); }
+  to { transform: translateX(8%); }
+}
+.t6 .edge {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    inset 0 0 0 3px rgba(255, 196, 70, 0.7),
+    inset 0 0 0 4px rgba(150, 90, 220, 0.45),
+    inset 0 0 16px rgba(255, 240, 190, 0.4);
+}
 .sparks span {
   position: absolute;
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
   background: #fff;
   clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
   opacity: 0;
@@ -118,15 +244,19 @@
 }
 @keyframes pop {
   0%, 70%, 100% { opacity: 0; transform: scale(0.5); }
-  20% { opacity: 1; transform: scale(1.15); }
+  20% { opacity: 1; transform: scale(1.2); }
   40% { opacity: 0.4; transform: scale(0.85); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .t6,
   .sheen,
   .aurora,
+  .prism,
+  .motes span,
   .sparks span {
     animation: none;
   }
   .sheen { opacity: 0.25; transform: none; }
+  .motes span { opacity: 0.7; }
 }

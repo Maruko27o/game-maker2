@@ -1018,6 +1018,9 @@ export const useStore = create<Store>((set, get) => {
       const recovery = staked > 0 ? Math.round((payout / staked) * 100) : 0;
       commit({
         stats: {
+          // ...s を必ず先に置く。ここで作り直すと、あとから足した項目
+          //（horsesFound など）がレースのたびに消える＝称号が勝手に外れる。
+          ...s,
           betsPlaced: s.betsPlaced + Math.max(0, placed),
           maxPayout: Math.max(s.maxPayout, payout),
           maxRecoveryPct: Math.max(s.maxRecoveryPct, recovery),
@@ -1036,6 +1039,7 @@ export const useStore = create<Store>((set, get) => {
     foldStats: (p) => {
       const s = get().stats;
       const next: PlayerStats = {
+        ...s, // 同上：作り直さず、上書きするぶんだけを重ねる
         betsPlaced: Math.max(s.betsPlaced, p.betsPlaced ?? 0),
         maxPayout: Math.max(s.maxPayout, p.maxPayout ?? 0),
         maxRecoveryPct: Math.max(s.maxRecoveryPct, p.maxRecoveryPct ?? 0),

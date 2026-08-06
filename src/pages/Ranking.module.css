@@ -23,16 +23,23 @@
 }
 /* 対象月＋更新までのカウントダウン（毎月1日0:00 JST で更新・赤字） */
 .monthBar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
   margin: 2px 0 10px;
-  padding: 9px 13px;
-  background: var(--panel);
-  border: 2px solid var(--border-dark);
-  border-radius: 12px;
+  padding: 9px 13px 9px 17px;
+  /* 左端に赤い縦線を入れて「開催中の月」だと分かるようにする。 */
+  background:
+    linear-gradient(90deg, #c8342e 0 6px, rgba(0, 0, 0, 0) 6px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 60%),
+    var(--panel);
+  border: 3px solid var(--border-dark);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 3px 0 var(--border);
 }
 .monthName {
   font-size: 16px;
@@ -95,6 +102,78 @@
   text-align: center;
   font-weight: 700;
   color: var(--ink-soft);
+}
+
+/* まだ記録がないとき。空の表彰台を見せて「ここに載る」のが目標だと伝える。 */
+.empty {
+  background: linear-gradient(180deg, rgba(255, 249, 238, 0.95), rgba(243, 231, 206, 0.95));
+  border: 3px solid var(--border-dark);
+  border-radius: 16px;
+  padding: 16px 14px 14px;
+  box-shadow: 0 4px 0 var(--border), 0 8px 16px rgba(0, 0, 0, 0.16);
+}
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+.step {
+  position: relative;
+  flex: 1 1 0;
+  max-width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  border-radius: 10px 10px 0 0;
+  border: 3px solid var(--border-dark);
+  border-bottom: none;
+  padding-bottom: 6px;
+}
+/* 台の上に浮かぶ「？」の顔 */
+.stepFace {
+  position: absolute;
+  top: -42px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  background: var(--panel-inner);
+  border: 3px dashed var(--border);
+}
+.stepNo {
+  font-size: 19px;
+  font-weight: 900;
+  color: rgba(43, 33, 24, 0.55);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.step1 {
+  height: 78px;
+  background: linear-gradient(180deg, #ffe9a3, #f0c33c);
+}
+.step2 {
+  height: 60px;
+  background: linear-gradient(180deg, #eef2f6, #cfd6dd);
+}
+.step3 {
+  height: 48px;
+  background: linear-gradient(180deg, #f7d3b6, #cf8a4e);
+}
+.emptyNote {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 3px solid var(--border);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  line-height: 1.6;
 }
 .list {
   list-style: none;
@@ -171,9 +250,42 @@
   font-weight: 800;
   color: var(--ink);
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+.nameLine {
+  display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
+  max-width: 100%;
+}
+/* 名前の下の称号。段の色をそのまま帯にして、やり込み具合が並べて分かるようにする。 */
+.rowTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(100deg, var(--tc), rgba(255, 255, 255, 0.45));
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+.rowTitleStar {
+  flex: none;
+  font-size: 7px;
+  letter-spacing: -1px;
+  color: #ffeaa8;
 }
 /* 名前本体だけを省略表示（…）にして、長い名前でも倍率欄に重ならない。 */
 .uname {
@@ -244,32 +356,57 @@
 }
 
 /* ranking tabs (最大オッズ / 最大獲得賞金) */
+/* ひとつながりの切り替えスイッチに見せる（別々のボタンが2つ並ぶより締まる）。 */
 .tabs {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   margin: 4px 0 8px;
+  padding: 4px;
+  border-radius: 14px;
+  border: 3px solid var(--border-dark);
+  background: linear-gradient(180deg, rgba(90, 60, 28, 0.16), rgba(90, 60, 28, 0.06));
+  box-shadow: inset 0 2px 4px rgba(60, 40, 12, 0.22);
 }
 .tab {
   flex: 1;
-  padding: 9px 4px;
+  padding: 8px 4px;
   border-radius: 10px;
-  border: 2px solid var(--border-dark);
-  background: var(--panel-inner);
+  border: none;
+  background: transparent;
   font-weight: 900;
   font-size: 14px;
   color: var(--ink-soft);
 }
 .tabOn {
-  background: var(--gold);
+  background: linear-gradient(180deg, #ffe28a, var(--gold));
   color: #2b2118;
+  box-shadow: 0 2px 0 rgba(140, 100, 20, 0.55), 0 3px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* prominent top-3 rows */
 .top {
+  position: relative;
   grid-template-columns: 34px auto 1fr auto;
   padding: 12px 14px;
   border-width: 3px;
-  box-shadow: 0 3px 0 rgba(43, 33, 24, 0.12);
+  overflow: hidden;
+  box-shadow: 0 3px 0 rgba(43, 33, 24, 0.12), 0 6px 12px rgba(0, 0, 0, 0.14);
+}
+/* 上位の札は斜めのストライプで「表彰台」感を出す（地色は順位ごとの色のまま）。 */
+.top::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.4) 0 10px,
+    rgba(255, 255, 255, 0) 10px 26px
+  );
+  pointer-events: none;
+}
+.top > * {
+  position: relative;
+  z-index: 1;
 }
 .top .place {
   width: 34px;
@@ -289,6 +426,28 @@
 .top1 {
   border-color: #ca9a00;
   background: linear-gradient(180deg, #fff6d6, #ffe9a3);
+}
+/* 1位だけ、金の光がゆっくり流れる。 */
+.top1::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    108deg,
+    rgba(255, 255, 255, 0) 38%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0) 62%
+  );
+  transform: translateX(-70%);
+  animation: rankSweep 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes rankSweep {
+  0% { transform: translateX(-70%); }
+  55%, 100% { transform: translateX(85%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .top1::after { animation: none; opacity: 0.2; transform: none; }
 }
 .top2 {
   border-color: #8b96a1;

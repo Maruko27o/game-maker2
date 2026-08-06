@@ -4,7 +4,6 @@ import { colorsBySlot, decosBySlot } from '../data/parts';
 import type { ColorPart, DecoPart, Rarity } from '../types';
 import PartThumb from '../components/PartThumb';
 import HorseView from '../components/HorseView';
-import Icon from '../components/Icon';
 import CloseButton from '../components/CloseButton';
 import styles from './Collection.module.css';
 
@@ -76,8 +75,9 @@ export default function Collection() {
               onClick={() => setTab(i)}
             >
               <span className={styles.tabName}>{s.tab}</span>
-              <span className={styles.tabCount}>
-                {done && <Icon name="star" size={12} />}
+              {/* コンプリートしていても「27/27」の形はそろえる（★を足すとそこだけ
+                  幅も見た目も変わって浮く）。色だけ金にして達成が分かるようにする。 */}
+              <span className={`${styles.tabCount} ${done ? styles.tabCountDone : ''}`}>
                 {have}/{s.entries.length}
               </span>
             </button>
