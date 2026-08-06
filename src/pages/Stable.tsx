@@ -55,13 +55,13 @@ function TrophyRack({ trophies }: { trophies: Trophy[] }) {
   }, [trophies]);
 
   if (trophies.length === 0) {
-    return <div className={styles.rackEmpty}>まだトロフィーがありません（グランプリ本戦で3位以内）</div>;
+    return <div className={styles.rackEmpty}>まだありません<small>グランプリ本戦で3位以内</small></div>;
   }
   return (
     <div className={styles.rack}>
       {groups.map((g, i) => (
         <div key={i} className={styles.rackItem}>
-          <TrophyIcon rank={g.rank} size={56} />
+          <TrophyIcon rank={g.rank} size={38} />
           {g.count > 1 && <span className={styles.countBadge}>{g.count}</span>}
         </div>
       ))}
@@ -84,13 +84,13 @@ function BadgeRack({ badges }: { badges: Badge[] }) {
   }, [badges]);
 
   if (badges.length === 0) {
-    return <div className={styles.rackEmpty}>まだバッジがありません（普段のレースで入賞）</div>;
+    return <div className={styles.rackEmpty}>まだありません<small>普段のレースで入賞</small></div>;
   }
   return (
     <div className={styles.badgeRack}>
       {groups.map((g) => (
         <div key={g.id} className={styles.badgeRackItem} title={BADGES[g.id as keyof typeof BADGES]?.name}>
-          <BadgeIcon id={g.id} size={40} />
+          <BadgeIcon id={g.id} size={30} />
           {g.count > 1 && <span className={styles.countBadge}>{g.count}</span>}
         </div>
       ))}
@@ -455,47 +455,48 @@ export default function Stable() {
             </div>
             {view === 'detail' ? (
               <>
-                {/* 左：ウマ全体像／右上：名前＋能力図（高さを揃える）。数値6マスは廃止し合計だけ下に。 */}
-                <div className={styles.detailTop}>
-                  <div className={styles.detailHorse}>
-                    <HorseView horse={selected} size={72} shadow />
+                {/* 左右2列。1行目＝名前／脚質・合計、2行目＝ウマの絵／能力図。
+                    左右の列幅をそろえて、真ん中のラインが通って見えるようにする。 */}
+                <div className={styles.detailGrid}>
+                  <div className={styles.dName}>
+                    <input
+                      className={styles.nameInput}
+                      value={draftName}
+                      maxLength={12}
+                      onChange={(e) => setDraftName(e.target.value)}
+                      aria-label="名前"
+                    />
+                    {draftName.trim() && draftName !== selected.name && (
+                      <button
+                        className={styles.renameBtn}
+                        disabled={!freeRename && coins < RENAME_COST}
+                        onClick={() => {
+                          if (freeRename) {
+                            renameHorse(selected.id, draftName.trim());
+                            consumeFreeRename();
+                          } else if (spendCoins(RENAME_COST)) {
+                            renameHorse(selected.id, draftName.trim());
+                          }
+                        }}
+                        title={!freeRename && coins < RENAME_COST ? 'コインが足りません' : ''}
+                      >
+                        {freeRename ? '改名（無料）' : <><CoinIcon size={13} /> 改名（{RENAME_COST}）</>}
+                      </button>
+                    )}
                   </div>
-                  <div className={styles.detailRight}>
-                    <div className={styles.renameRow}>
-                      <input
-                        className={styles.nameInput}
-                        value={draftName}
-                        maxLength={12}
-                        onChange={(e) => setDraftName(e.target.value)}
-                        aria-label="名前"
-                      />
-                      {draftName.trim() && draftName !== selected.name && (
-                        <button
-                          className={styles.renameBtn}
-                          disabled={!freeRename && coins < RENAME_COST}
-                          onClick={() => {
-                            if (freeRename) {
-                              renameHorse(selected.id, draftName.trim());
-                              consumeFreeRename();
-                            } else if (spendCoins(RENAME_COST)) {
-                              renameHorse(selected.id, draftName.trim());
-                            }
-                          }}
-                          title={!freeRename && coins < RENAME_COST ? 'コインが足りません' : ''}
-                        >
-                          {freeRename ? '改名（無料）' : <><CoinIcon size={14} /> 改名（{RENAME_COST}）</>}
-                        </button>
-                      )}
-                    </div>
-                    <div className={styles.metaRow}>
-                      <span className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</span>
-                      <span className={styles.metaTotal}>合計 {total} / {STAT_TOTAL_CAP}</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className={styles.detailRadar}>
-                  <StatRadar stats={selected.stats} size={132} />
+                  <div className={styles.dMeta}>
+                    <span className={styles.styleChip}>脚質：{RUN_STYLE_LABEL[styleFor(selected.id, selected.stats)]}</span>
+                    <span className={styles.metaTotal}>合計 {total}<small> / {STAT_TOTAL_CAP}</small></span>
+                  </div>
+
+                  <div className={styles.dHorse}>
+                    <HorseView horse={selected} size={150} shadow />
+                  </div>
+
+                  <div className={styles.dRadar}>
+                    <StatRadar stats={selected.stats} size={150} />
+                  </div>
                 </div>
 
                 {/* 固有スキル（生まれつき1つ。いまは表示のみ・レースには未反映） */}
@@ -591,11 +592,16 @@ export default function Stable() {
                   )}
                 </div>
 
+                {/* トロフィーとバッジは左右に並べる。たくさん取っても縦に伸びない。 */}
                 <div className={styles.rackWrap}>
-                  <h3 className={styles.rackTitle}>トロフィー</h3>
-                  <TrophyRack trophies={trophies.filter((t) => t.horseId === selected.id)} />
-                  <h3 className={`${styles.rackTitle} ${styles.badgeRackTitle}`}>バッジ</h3>
-                  <BadgeRack badges={badges.filter((b) => b.horseId === selected.id)} />
+                  <div className={styles.rackCol}>
+                    <h3 className={styles.rackTitle}>トロフィー</h3>
+                    <TrophyRack trophies={trophies.filter((t) => t.horseId === selected.id)} />
+                  </div>
+                  <div className={styles.rackCol}>
+                    <h3 className={styles.rackTitle}>バッジ</h3>
+                    <BadgeRack badges={badges.filter((b) => b.horseId === selected.id)} />
+                  </div>
                 </div>
 
                 {/* お気に入りロック：大切なウマの誤引退を防ぐ */}
