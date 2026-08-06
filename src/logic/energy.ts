@@ -1,8 +1,8 @@
 // Grass spawn energy (stamina) model. One spawn charges every hour, stored up to
-// a cap of 3. Availability is derived purely from timestamps — never a running
+// a cap of 10. Availability is derived purely from timestamps — never a running
 // timer — so it stays correct across app restarts, day rollovers and long idles.
 
-export const ENERGY_CAP = 3;
+export const ENERGY_CAP = 10;
 export const ENERGY_REGEN_MS = 60 * 60 * 1000; // 1 hour
 
 export type EnergyState = { energy: number; energyUpdatedAt: number };

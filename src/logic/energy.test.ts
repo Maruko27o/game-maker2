@@ -11,8 +11,8 @@ const T0 = 1_000_000_000_000;
 
 describe('normalizeEnergy', () => {
   it('keeps full energy full and re-anchors to now', () => {
-    expect(normalizeEnergy({ energy: 3, energyUpdatedAt: T0 }, T0 + 5 * H)).toEqual({
-      energy: 3,
+    expect(normalizeEnergy({ energy: ENERGY_CAP, energyUpdatedAt: T0 }, T0 + 5 * H)).toEqual({
+      energy: ENERGY_CAP,
       energyUpdatedAt: T0 + 5 * H,
     });
   });
@@ -22,7 +22,7 @@ describe('normalizeEnergy', () => {
     expect(normalizeEnergy({ energy: 0, energyUpdatedAt: T0 }, T0 + 2 * H).energy).toBe(2);
   });
 
-  it('caps at 3 even after a long idle', () => {
+  it('caps at ENERGY_CAP even after a long idle', () => {
     expect(normalizeEnergy({ energy: 0, energyUpdatedAt: T0 }, T0 + 99 * H)).toEqual({
       energy: ENERGY_CAP,
       energyUpdatedAt: T0 + 99 * H,
@@ -50,7 +50,7 @@ describe('normalizeEnergy', () => {
 
 describe('msUntilNextEnergy', () => {
   it('is 0 when full', () => {
-    expect(msUntilNextEnergy({ energy: 3, energyUpdatedAt: T0 }, T0 + H)).toBe(0);
+    expect(msUntilNextEnergy({ energy: ENERGY_CAP, energyUpdatedAt: T0 }, T0 + H)).toBe(0);
   });
   it('counts down within the current hour', () => {
     expect(msUntilNextEnergy({ energy: 1, energyUpdatedAt: T0 }, T0 + 20 * 60 * 1000)).toBe(
@@ -69,8 +69,8 @@ describe('spendEnergy', () => {
   });
 
   it('spending from full anchors regen to now', () => {
-    const s = spendEnergy({ energy: 3, energyUpdatedAt: T0 }, T0 + 5 * H);
-    expect(s).toEqual({ energy: 2, energyUpdatedAt: T0 + 5 * H });
+    const s = spendEnergy({ energy: ENERGY_CAP, energyUpdatedAt: T0 }, T0 + 5 * H);
+    expect(s).toEqual({ energy: ENERGY_CAP - 1, energyUpdatedAt: T0 + 5 * H });
   });
 
   it('spending while charging preserves partial progress', () => {

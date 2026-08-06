@@ -44,6 +44,7 @@ export type TitleCtx = {
   maxOdds: number; // 的中した最高倍率
   maxPayout: number; // 1レースの最大払戻
   totalEarned: number; // 通算で手に入れた賞金の合計（1人でレース・グランプリ・対戦）
+  arenaWins: number; // 対戦（トーナメント）の優勝回数
   coins: number;
   streakBest: number; // 最高連勝
   collectPct: number; // 図鑑の集まり具合（0..100）
@@ -70,6 +71,12 @@ export function titleCtx(s: SaveData, collectPct: number): TitleCtx {
     maxOdds: s.stats?.maxOdds ?? 0,
     maxPayout: s.stats?.maxPayout ?? 0,
     totalEarned: s.stats?.totalEarned ?? 0,
+    // 対戦の優勝回数。結果一覧は40件で打ち切るので、通算カウンタと
+    // 残っている結果の多い方を採る（horsesFound と同じ二重持ち）。
+    arenaWins: Math.max(
+      s.stats?.arenaWins ?? 0,
+      (s.arena?.results ?? []).filter((r) => r.outcome === 'champion').length,
+    ),
     coins: s.coins ?? 0,
     streakBest: s.streakBest ?? 0,
     collectPct,
@@ -84,6 +91,7 @@ export const TITLES: TitleDef[] = [
   { id: 'horse_lover', name: 'ウマ好き', desc: 'ウマを5頭見つける', tier: 1, colors: ['#8a6a3f', '#cdae83'], check: (c) => c.horsesFound >= 5 },
   { id: 'first_win', name: 'はじめの一勝', desc: 'レースで1着をとる', tier: 1, colors: ['#6f8f4a', '#b9d99a'], check: (c) => c.wins >= 1 },
   { id: 'first_bet', name: 'ちょこっと予想', desc: '馬券を10枚買う', tier: 1, colors: ['#4a7f8f', '#a5d2dd'], check: (c) => c.betsPlaced >= 10 },
+  { id: 'arena_first_win', name: '初勝利のよろこび', desc: '対戦で1回優勝する', tier: 1, colors: ['#8f5a3a', '#dcae90'], check: (c) => c.arenaWins >= 1 },
   { id: 'millionaire', name: 'ミリオネア', desc: '総獲得賞金100万コイン', tier: 1, colors: ['#5f7f4f', '#b6cf9a'], check: (c) => c.totalEarned >= 1_000_000 },
 
   // ── 2段：10人に6人 ──────────────────────────────────────────
@@ -91,6 +99,7 @@ export const TITLES: TitleDef[] = [
   { id: 'rancher', name: '牧場主', desc: 'ウマを25頭見つける', tier: 2, colors: ['#8f6a35', '#e0bd80'], check: (c) => c.horsesFound >= 25 },
   { id: 'longshot', name: '穴党', desc: '20倍以上を的中させる', tier: 2, colors: ['#37b98a', '#a9f0d6'], check: (c) => c.maxOdds >= 20 },
   { id: 'dresser', name: 'おしゃれさん', desc: '図鑑を30%あつめる', tier: 2, colors: ['#a05f8f', '#e3b6da'], check: (c) => c.collectPct >= 30 },
+  { id: 'arena_ten_wins', name: '道場やぶり', desc: '対戦で10回優勝する', tier: 2, colors: ['#7a4f9a', '#cfb0e6'], check: (c) => c.arenaWins >= 10 },
   { id: 'multi_millionaire', name: 'マルチミリオネア', desc: '総獲得賞金1000万コイン', tier: 2, colors: ['#3f8f6a', '#a8e0c4'], check: (c) => c.totalEarned >= 10_000_000 },
 
   // ── 3段：10人に3人 ──────────────────────────────────────────
@@ -99,6 +108,7 @@ export const TITLES: TitleDef[] = [
   { id: 'gp_finalist', name: 'グランプリ入賞', desc: 'グランプリG1で3位以内', tier: 3, colors: ['#c07b45', '#eec49a'], check: (c) => c.gpTop3 >= 1 },
   { id: 'collector', name: '収集家', desc: '図鑑を60%あつめる', tier: 3, colors: ['#7a5fd0', '#c4b3f0'], check: (c) => c.collectPct >= 60 },
   { id: 'big_rancher', name: '大牧場主', desc: 'ウマを100頭見つける', tier: 3, colors: ['#8f7a30', '#dfcd90'], check: (c) => c.horsesFound >= 100 },
+  { id: 'arena_25_wins', name: '闘技場の常勝者', desc: '対戦で25回優勝する', tier: 3, colors: ['#b05a2f', '#f0b58e'], check: (c) => c.arenaWins >= 25 },
   { id: 'mega_millionaire', name: 'メガミリオネア', desc: '総獲得賞金5000万コイン', tier: 3, colors: ['#2f8fa0', '#a4dfe8'], check: (c) => c.totalEarned >= 50_000_000 },
 
   // ── 4段：10人に1人 ──────────────────────────────────────────
@@ -109,6 +119,7 @@ export const TITLES: TitleDef[] = [
   { id: 'many_wins', name: '常勝', desc: '1着を50回とる', tier: 4, colors: ['#c05a7a', '#f0aec2'], check: (c) => c.wins >= 50 },
   { id: 'century_win', name: '百勝の名手', desc: '1着を100回とる', tier: 4, colors: ['#9b4f8f', '#e3b0dd'], check: (c) => c.wins >= 100 },
   { id: 'plains_lord', name: '草原の主', desc: 'ウマを500頭見つける', tier: 4, colors: ['#4f8f3a', '#bde79b'], check: (c) => c.horsesFound >= 500 },
+  { id: 'arena_50_wins', name: '無双の挑戦者', desc: '対戦で50回優勝する', tier: 4, colors: ['#2f7a8f', '#a4dbe8'], check: (c) => c.arenaWins >= 50 },
   { id: 'okuman', name: '億万長者', desc: '総獲得賞金1億コイン', tier: 4, colors: ['#c08a2a', '#f6dfa2'], check: (c) => c.totalEarned >= 100_000_000 },
 
   // ── 5段：50人に1人 ──────────────────────────────────────────
@@ -120,6 +131,7 @@ export const TITLES: TitleDef[] = [
   { id: 'thousand_runs', name: '千戦の走り手', desc: 'レースを1000回走る', tier: 5, colors: ['#3f6fb8', '#aec7ee'], check: (c) => c.races >= 1000 },
   { id: 'five_hundred_wins', name: '五百勝の名将', desc: '1着を500回とる', tier: 5, colors: ['#b8452f', '#f2b3a3'], check: (c) => c.wins >= 500 },
   { id: 'ranch_king', name: '千頭の牧場王', desc: 'ウマを1000頭見つける', tier: 5, colors: ['#2f9a6a', '#a9e8c9'], check: (c) => c.horsesFound >= 1000 },
+  { id: 'arena_100_wins', name: '百戦錬磨の覇王', desc: '対戦で100回優勝する', tier: 5, colors: ['#a8302f', '#f2a09e'], check: (c) => c.arenaWins >= 100 },
   { id: 'billionaire', name: 'ビリオネア', desc: '総獲得賞金10億コイン', tier: 5, colors: ['#e0b52a', '#fff0b0'], check: (c) => c.totalEarned >= 1_000_000_000 },
 
   // ── 6段：500人に1人 ─────────────────────────────────────────

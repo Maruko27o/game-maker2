@@ -108,15 +108,6 @@
   font-variant-numeric: tabular-nums;
   opacity: 0.9;
 }
-/* コンプリート済み。数字の形は他のタブと同じまま、色だけで示す。 */
-.tabCountDone {
-  color: var(--gold);
-  opacity: 1;
-  text-shadow: 0 1px 1px rgba(60, 40, 12, 0.55);
-}
-.tabActive .tabCountDone {
-  color: #ffe9a8;
-}
 
 .section {
   background: var(--panel);
@@ -240,4 +231,26 @@
   font-weight: 900;
   color: var(--ink);
   text-align: center;
+}
+/* レアリティと所持数を1行に。所持数は一覧では出さず、ここだけで見せる。 */
+.zoomMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.zoomOwned {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 11px;
+  font-variant-numeric: tabular-nums;
+}
+.zoomOwned small {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  margin-left: 2px;
 }

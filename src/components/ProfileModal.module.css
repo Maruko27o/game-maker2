@@ -219,6 +219,7 @@
 }
 
 /* lifetime stats — 木札のサインボード --------------------------------------- */
+/* 3行2列。項目は6つ（＋総獲得賞金は横いっぱいの1枚）。 */
 .statGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;

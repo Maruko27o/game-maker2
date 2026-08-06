@@ -65,7 +65,6 @@ export default function Collection() {
         <div className={styles.tabs} role="tablist" aria-label="図鑑のカテゴリ">
         {SECTIONS.map((s, i) => {
           const have = ownedIn(s.entries);
-          const done = have === s.entries.length;
           return (
             <button
               key={s.tab}
@@ -75,9 +74,9 @@ export default function Collection() {
               onClick={() => setTab(i)}
             >
               <span className={styles.tabName}>{s.tab}</span>
-              {/* コンプリートしていても「27/27」の形はそろえる（★を足すとそこだけ
-                  幅も見た目も変わって浮く）。色だけ金にして達成が分かるようにする。 */}
-              <span className={`${styles.tabCount} ${done ? styles.tabCountDone : ''}`}>
+              {/* コンプリートしていても見た目は変えない（★も色も付けない）。
+                  タブの表記は全部おなじ「n/m」でそろえる。 */}
+              <span className={styles.tabCount}>
                 {have}/{s.entries.length}
               </span>
             </button>
@@ -113,9 +112,10 @@ export default function Collection() {
                 {has ? (
                   <>
                     <div className={styles.name}>{e.name}</div>
+                    {/* 所持数はここには出さない（マスが窮屈になるので）。
+                        タップして開くポップアップの方で見せる。 */}
                     <div className={styles.meta}>
                       <span className={`rarity rarity-${e.rarity}`}>{e.rarity}</span>
-                      {cnt > 1 && <span className={styles.dup}>×{cnt}</span>}
                     </div>
                   </>
                 ) : (
@@ -134,7 +134,10 @@ export default function Collection() {
             <CloseButton onClick={() => setZoom(null)} />
             <PartThumb id={zoom.id} size={210} />
             <div className={styles.zoomName}>{zoom.name}</div>
-            <span className={`rarity rarity-${zoom.rarity}`}>{zoom.rarity}</span>
+            <div className={styles.zoomMeta}>
+              <span className={`rarity rarity-${zoom.rarity}`}>{zoom.rarity}</span>
+              <span className={styles.zoomOwned}>所持 {owned[zoom.id] ?? 0}<small>個</small></span>
+            </div>
           </div>
         </div>
       )}
