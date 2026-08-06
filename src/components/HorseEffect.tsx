@@ -51,6 +51,21 @@ function shuffled(i: number, n: number) {
   return (i * step + 2) % n;
 }
 
+/** にじのアーチの帯。外から内へ同心に並べる。
+ *  端点を必ず cx±rx に置くのが肝。以前は6本とも同じ両端を結んでいたので、
+ *  半径を小さくしても SVG 側が「弦に届かない半径」を弦に合わせて拡大し直し、
+ *  結局ぜんぶ同じ半円になって重なっていた（＝虹に見えない）。 */
+export const RAINBOW_COLORS = ['#ff5f5f', '#ff9f3a', '#ffe066', '#5fc85f', '#4fa8ff', '#a06bff'];
+export function rainbowBands(f: { cx: number; cy: number; r: number }) {
+  const width = f.r * 0.085; // 1本の太さ＝隣との間隔（すき間なく並ぶ）
+  const outer = f.r * 1.02; // いちばん外側（赤）の半径
+  const y = f.cy + f.r * 0.6; // 虹の足もと（水平線）
+  return RAINBOW_COLORS.map((color, i) => {
+    const rx = outer - width * (i + 0.5); // 線の「中心」を通る半径
+    return { color, rx, ry: rx * 0.92, x1: f.cx - rx, x2: f.cx + rx, y, width };
+  });
+}
+
 /** kind ごとの粒の置き方。view に関わらず「中心と半径」で決めるので両方で使える。 */
 export function layout(def: EffectDef, f: { cx: number; cy: number; r: number }, dense: number): Mote[] {
   const n = Math.max(3, Math.round((def.count ?? 8) * dense));
@@ -151,18 +166,18 @@ export default function HorseEffect({ id, view }: { id: string | undefined; view
         fill={`url(#eg-${uid})`}
       />
 
-      {/* にじのアーチ：帯を後ろに広げる */}
+      {/* にじのアーチ：色の帯を同心に内側へ重ねる（幾何は rainbowBands）。 */}
       {def.kind === 'aurora' && (
         <g className={`${styles.aurora} ${move}`}>
-          {['#ff6f6f', '#ffb45e', '#ffe066', '#69cf7a', '#4fb0ff', '#a06bff'].map((col, i) => (
+          {rainbowBands(f).map((b) => (
             <path
-              key={col}
-              d={`M ${f.cx - f.r * 1.05},${f.cy + f.r * 0.62} A ${f.r * (1.05 - i * 0.09)},${f.r * (0.98 - i * 0.09)} 0 0,1 ${f.cx + f.r * 1.05},${f.cy + f.r * 0.62}`}
+              key={b.color}
+              d={`M ${b.x1.toFixed(1)},${b.y.toFixed(1)} A ${b.rx.toFixed(1)},${b.ry.toFixed(1)} 0 0,1 ${b.x2.toFixed(1)},${b.y.toFixed(1)}`}
               fill="none"
-              stroke={col}
-              strokeOpacity="0.45"
-              strokeWidth={f.r * 0.075}
-              strokeLinecap="round"
+              stroke={b.color}
+              strokeOpacity="0.62"
+              strokeWidth={b.width}
+              strokeLinecap="butt"
             />
           ))}
         </g>

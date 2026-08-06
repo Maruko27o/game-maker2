@@ -153,6 +153,9 @@ export type PlayerStats = {
   /** 草むらで見つけたウマの通算数（引退させても減らない）。マイウマの所持数とは別物。
    *  この項目より前から遊んでいる人は記録が無いので、今いるウマの数から積み上げる。 */
   horsesFound?: number;
+  /** 対戦（トーナメント）の優勝回数。arena.results は40件で打ち切るので、
+   *  100勝の称号を判定するには別に通算を持つ必要がある。 */
+  arenaWins?: number;
 };
 
 // An in-progress race kept in the save so it survives tab switches / reloads and

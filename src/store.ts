@@ -140,7 +140,7 @@ function normTasks(v: unknown): SaveData['tasks'] {
 }
 
 function freshStats(): SaveData['stats'] {
-  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0, totalEarned: 0, horsesFound: 0 };
+  return { betsPlaced: 0, maxPayout: 0, maxRecoveryPct: 0, maxOdds: 0, totalEarned: 0, horsesFound: 0, arenaWins: 0 };
 }
 // Reconstruct profile stats from a player's saved bet history, so existing users
 // see their past 最大オッズ / 回収率 / 獲得賞金 rather than starting at zero. Recovery
@@ -157,7 +157,7 @@ function deriveStatsFromBets(bets: SaveData['bets']): SaveData['stats'] {
       if (rec > maxRecoveryPct) maxRecoveryPct = rec;
     }
   }
-  return { betsPlaced: bets.length, maxPayout, maxRecoveryPct, maxOdds, totalEarned: 0, horsesFound: 0 };
+  return { betsPlaced: bets.length, maxPayout, maxRecoveryPct, maxOdds, totalEarned: 0, horsesFound: 0, arenaWins: 0 };
 }
 // Default any missing profile stat (older saves predate the profile-stats feature).
 function normStats(v: unknown): SaveData['stats'] {
@@ -169,6 +169,7 @@ function normStats(v: unknown): SaveData['stats'] {
     maxOdds: typeof s.maxOdds === 'number' ? s.maxOdds : 0,
     totalEarned: typeof s.totalEarned === 'number' ? s.totalEarned : 0,
     horsesFound: typeof s.horsesFound === 'number' ? s.horsesFound : 0,
+    arenaWins: typeof s.arenaWins === 'number' ? s.arenaWins : 0,
   };
 }
 
@@ -365,6 +366,12 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   if (!stats.horsesFound) {
     const seed = Math.max(tasks.grassSpawns, Array.isArray(d.horses) ? d.horses.length : 0);
     if (seed > 0) stats = { ...stats, horsesFound: seed };
+  }
+  // 対戦の優勝回数も後から足した項目。残っている結果（最大40件）から数えて下駄にする。
+  if (!stats.arenaWins) {
+    const ar = normArena(d.arena);
+    const seed = (ar?.results ?? []).filter((r) => r.outcome === 'champion').length;
+    if (seed > 0) stats = { ...stats, arenaWins: seed };
   }
   // スペシャルタスク（連勝チャレンジ）の進捗。タスキル→再読込でも失われないよう保存値から復元。
   const nnum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
@@ -1046,6 +1053,7 @@ export const useStore = create<Store>((set, get) => {
         maxOdds: Math.max(s.maxOdds, p.maxOdds ?? 0),
         totalEarned: Math.max(s.totalEarned ?? 0, p.totalEarned ?? 0),
         horsesFound: Math.max(s.horsesFound ?? 0, p.horsesFound ?? 0),
+        arenaWins: Math.max(s.arenaWins ?? 0, p.arenaWins ?? 0),
       };
       if (
         next.betsPlaced !== s.betsPlaced ||
@@ -1053,7 +1061,8 @@ export const useStore = create<Store>((set, get) => {
         next.maxRecoveryPct !== s.maxRecoveryPct ||
         next.maxOdds !== s.maxOdds ||
         next.totalEarned !== (s.totalEarned ?? 0) ||
-        next.horsesFound !== (s.horsesFound ?? 0)
+        next.horsesFound !== (s.horsesFound ?? 0) ||
+        next.arenaWins !== (s.arenaWins ?? 0)
       ) {
         commit({ stats: next });
       }
@@ -1166,10 +1175,12 @@ export const useStore = create<Store>((set, get) => {
       // 賞金と一緒に厳選チケットも配る（優勝3・準優勝2・3位1）。
       let tickets = get().refineTickets ?? 0;
       let earned = 0; // このまとめて精算で得た賞金の合計
+      let wins = 0; // このまとめて精算での優勝回数（通算カウンタに積む）
       const resolve = (entry: ArenaEntry) => {
         const r = runTournament(entry.snapshot, entry.seed, pool, ARENA_MODE, entry.period);
         coins += r.payout;
         earned += r.payout; // 通算の獲得賞金にも積む
+        if (r.outcome === 'champion') wins += 1;
         tickets += arenaTickets(r.outcome, r.finalRank);
         results.unshift({ ...r, awarded: true, seen: false });
       };
@@ -1207,7 +1218,7 @@ export const useStore = create<Store>((set, get) => {
       commit({
         coins: Math.max(0, coins),
         refineTickets: tickets,
-        stats: { ...st0, totalEarned: (st0.totalEarned ?? 0) + earned },
+        stats: { ...st0, totalEarned: (st0.totalEarned ?? 0) + earned, arenaWins: (st0.arenaWins ?? 0) + wins },
         arena: { auto, pending, lastPeriod, results: results.slice(0, ARENA_RESULTS_CAP) },
       });
     },

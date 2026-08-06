@@ -42,16 +42,32 @@
   align-items: center;
   gap: 6px;
 }
-.hearts {
-  font-size: 16px;
-  letter-spacing: 1px;
-}
-.hearts .off {
-  filter: grayscale(1);
-  opacity: 0.35;
+.stockIcon {
+  display: grid;
+  place-items: center;
+  color: var(--ink);
 }
 .stockNum {
   font-size: 16px;
+}
+/* 10目盛りのゲージ。溜まっているぶんだけ色が付く。 */
+.gauge {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  margin-top: 3px;
+}
+.gauge > span {
+  flex: 1;
+  height: 6px;
+  border-radius: 2px;
+  border: 1px solid rgba(90, 60, 28, 0.35);
+}
+.gauge .on {
+  background: linear-gradient(180deg, #9ad46a, #5f9f3a);
+}
+.gauge .off {
+  background: rgba(90, 60, 28, 0.14);
 }
 .hintSub {
   font-size: 13px !important;

@@ -108,15 +108,16 @@ export default function Grass() {
       <header className={styles.header}>
         <div className={styles.stat}>
           <span className={styles.statLabel}>ストック</span>
+          {/* ストックは最大10。ウマのアイコンを10個ならべると枠に入りきらないので、
+              アイコン1つ＋数字＋10目盛りのバーで見せる。 */}
           <span className={styles.statValue}>
-            <span className={styles.hearts} aria-hidden>
-              {Array.from({ length: ENERGY_CAP }).map((_, i) => (
-                <span key={i} className={i < stock ? styles.on : styles.off}>
-                  <Icon name="horse" size={16} />
-                </span>
-              ))}
-            </span>
+            <span className={styles.stockIcon} aria-hidden><Icon name="horse" size={16} /></span>
             <span className={styles.stockNum}>{stock}/{ENERGY_CAP}</span>
+          </span>
+          <span className={styles.gauge} aria-hidden>
+            {Array.from({ length: ENERGY_CAP }).map((_, i) => (
+              <span key={i} className={i < stock ? styles.on : styles.off} />
+            ))}
           </span>
         </div>
         <div className={styles.stat}>

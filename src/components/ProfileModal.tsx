@@ -220,6 +220,14 @@ export default function ProfileModal({
             <span className={styles.statLabel}>図鑑コンプリート率</span>
             <span className={styles.statValue}>{dexPct}<small>%</small></span>
           </div>
+          <div className={styles.statCell}>
+            <span className={styles.statLabel}>ウマ発見数</span>
+            <span className={styles.statValue}>{ctx.horsesFound.toLocaleString()}<small>頭</small></span>
+          </div>
+          <div className={styles.statCell}>
+            <span className={styles.statLabel}>対戦勝利数</span>
+            <span className={styles.statValue}>{ctx.arenaWins.toLocaleString()}<small>回</small></span>
+          </div>
           <div className={`${styles.statCell} ${styles.statWide}`}>
             <span className={styles.statLabel}>総獲得賞金</span>
             <span className={styles.statValue}><CoinIcon size={14} /> {(pstats.totalEarned ?? 0).toLocaleString()}</span>

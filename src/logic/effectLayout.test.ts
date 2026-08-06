@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { EFFECTS } from '../data/effects';
-import { layout, FRAME } from '../components/HorseEffect';
+import { layout, FRAME, rainbowBands, RAINBOW_COLORS } from '../components/HorseEffect';
 
 // エフェクトの粒の散らばり。
 // 完全な乱数だと、8粒くらいでは必ずどこかが団子になり、反対側がぽっかり空く
@@ -59,4 +59,48 @@ describe('エフェクトの粒の散らばり', () => {
       expect(layout(def, f, 1)).toEqual(layout(def, f, 1));
     }
   });
+});
+
+// にじのアーチ。以前は6本の帯がすべて同じ両端（cx±1.05r）を結んでいたため、
+// 半径を小さくしても SVG が「弦に届かない半径」を弦に合わせて拡大し直し、
+// 結局ぜんぶ同じ半円に重なっていた（＝虹に見えない）。
+describe('にじのアーチ', () => {
+  for (const view of ['body', 'face'] as const) {
+    const bands = rainbowBands(FRAME[view]);
+
+    it(`${view}：6色ぶんの帯がある`, () => {
+      expect(bands).toHaveLength(RAINBOW_COLORS.length);
+      expect(bands.map((b) => b.color)).toEqual(RAINBOW_COLORS);
+    });
+
+    it(`${view}：半径が外から内へ必ず小さくなる`, () => {
+      for (let i = 1; i < bands.length; i++) {
+        expect(bands[i].rx).toBeLessThan(bands[i - 1].rx);
+      }
+      expect(Math.min(...bands.map((b) => b.rx))).toBeGreaterThan(0);
+    });
+
+    it(`${view}：隣どうしの間隔が線の太さと同じ（すき間も重なりも出ない）`, () => {
+      for (let i = 1; i < bands.length; i++) {
+        expect(bands[i - 1].rx - bands[i].rx).toBeCloseTo(bands[i].width, 6);
+      }
+    });
+
+    it(`${view}：弦の半分が半径を超えない（SVG に拡大し直されない）`, () => {
+      // ここが崩れると、半径の違いが無視されて全部おなじ半円になる＝以前のバグ。
+      for (const b of bands) {
+        const halfChord = (b.x2 - b.x1) / 2;
+        expect(halfChord).toBeLessThanOrEqual(b.rx + 1e-9);
+      }
+    });
+
+    it(`${view}：どの帯も上に開いた弧で、足もとの高さがそろっている`, () => {
+      const y = bands[0].y;
+      for (const b of bands) {
+        expect(b.y).toBe(y);
+        expect(b.x1).toBeLessThan(b.x2);
+        expect(b.ry).toBeGreaterThan(0);
+      }
+    });
+  }
 });
