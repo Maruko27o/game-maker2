@@ -146,7 +146,8 @@
   /* 中身は横幅いっぱいに揃える（中央寄せだとブロックごとに幅がバラつく）。
      中央に置きたいものは、その要素の中で place-items:center する。 */
   align-items: stretch;
-  gap: 9px;
+  /* 大切なウマの情報をひと目で見渡せるよう、ブロック間はつめる。 */
+  gap: 7px;
 }
 
 /* モーダル上部に貼り付く見出し＋✕。スクロールしても消えない。 */
@@ -220,13 +221,15 @@
 }
 
 .styleChip {
-  background: var(--blue);
+  background: linear-gradient(180deg, #5a9be8, var(--blue));
   color: #fff;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
   border-radius: 999px;
   padding: 4px 14px;
   border: 2px solid var(--blue-dark);
+  white-space: nowrap;
+  box-shadow: 0 2px 0 var(--blue-dark);
 }
 .statsBlock {
   display: flex;
@@ -313,24 +316,33 @@
   font-size: 13px;
 }
 
+/* トロフィーとバッジを左右に並べる。同じ種類はまとめて数で示すので、
+   たくさん取っても列が伸びず、縦の場所を食わない。 */
 .rackWrap {
   width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.rackCol {
+  min-width: 0;
 }
 .rackTitle {
-  font-size: 14px;
-  color: var(--ink);
-  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  margin: 0 0 4px 2px;
 }
 .rack {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   background: var(--panel);
-  border-radius: 12px;
-  padding: 8px 10px;
-  box-shadow: inset 0 0 0 3px var(--border);
-  min-height: 56px;
+  border-radius: 10px;
+  padding: 6px 8px;
+  box-shadow: inset 0 0 0 2px var(--border);
+  min-height: 46px;
 }
 .rackItem {
   position: relative;
@@ -344,30 +356,38 @@
   margin: 0 6px 6px -2px;
 }
 .rackEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 46px;
   background: var(--panel);
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 10px;
+  padding: 6px 8px;
   text-align: center;
   color: var(--ink-soft);
+  font-weight: 800;
+  font-size: 12px;
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.rackEmpty small {
+  font-size: 9.5px;
   font-weight: 700;
-  font-size: 13px;
-  box-shadow: inset 0 0 0 3px var(--border);
+  opacity: 0.85;
+  line-height: 1.3;
 }
 
-/* Badges sit a rung below trophies (smaller, ACCOUNT.md §2). */
-.badgeRackTitle {
-  margin-top: 10px;
-}
 .badgeRack {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 6px;
   align-items: center;
   background: var(--panel);
   border-radius: 10px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   box-shadow: inset 0 0 0 2px var(--border);
-  min-height: 44px;
+  min-height: 46px;
 }
 .badgeRackItem {
   position: relative;
@@ -435,15 +455,23 @@
 }
 .nameInput {
   width: 100%;
-  border: 3px solid var(--border);
-  border-radius: 12px;
-  padding: 8px 10px;
-  font-size: 16px;
+  min-width: 0;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  /* 縦幅は控えめに。文字の大きさは右の「脚質」「合計」とそろえる。 */
+  padding: 5px 8px;
+  font-size: 14px;
   font-weight: 800;
   text-align: center;
   font-family: inherit;
   background: var(--panel-inner);
   color: var(--ink);
+  box-shadow: inset 0 1px 3px rgba(90, 60, 28, 0.18);
+}
+.nameInput:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: inset 0 1px 3px rgba(90, 60, 28, 0.18), 0 0 0 3px rgba(63, 127, 214, 0.25);
 }
 .actions,
 .row {
@@ -462,49 +490,53 @@
 }
 
 /* 詳細トップ：左＝ウマ全体像／右＝名前＋能力図（高さを揃える two-column） */
-.detailTop {
-  /* ウマの枠は絵にぴったり沿わせ、余った幅は名前と脚質・合計に回す。
-     能力図はこの下に全幅で置く（縦長の余白を作らない）。 */
-  display: flex;
-  gap: 9px;
+/* ===== ウマ詳細の上半分（2列・真ん中で割る） =====
+   1行目：左＝名前の入力／右＝脚質と合計
+   2行目：左＝ウマの絵／右＝能力図（同じ大きさの正方形）
+   左右の列を 1fr 1fr でそろえるので、真ん中のラインが上下で通る。 */
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   width: 100%;
   align-items: center;
 }
-.detailHorse {
-  flex: 0 0 auto;
-  width: 82px;
-  height: 82px;
-  background: linear-gradient(180deg, #d7ecb4, #bfe08a);
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 4px;
-  display: grid;
-  place-items: center;
-}
-.detailHorse svg {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  display: block;
-}
-.detailRight {
-  flex: 1 1 auto;
-  min-width: 0;
+.dName {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
 }
-.detailRadar {
+.dMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+}
+/* ウマの絵と能力図は同じ正方形。中身は枠いっぱいまで自動で縮む。 */
+.dHorse,
+.dRadar {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
   display: grid;
   place-items: center;
-  background: var(--panel-inner);
   border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 6px;
+  border-radius: 13px;
+  padding: 5px;
+  overflow: hidden;
 }
-.detailRadar svg {
+.dHorse {
+  background: linear-gradient(180deg, #d9edb8, #bfe08a);
+  box-shadow: inset 0 2px 6px rgba(60, 90, 30, 0.18);
+}
+.dRadar {
+  background: linear-gradient(180deg, #fffaf0, var(--panel-inner));
+  box-shadow: inset 0 2px 6px rgba(90, 60, 28, 0.12);
+}
+.dHorse svg,
+.dRadar svg {
   width: auto;
   height: auto;
   max-width: 100%;
@@ -520,24 +552,30 @@
   min-width: 0;
 }
 .metaTotal {
-  font-weight: 800;
+  font-weight: 900;
   color: var(--ink);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.metaTotal small {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
 }
 /* 個数表示（案A）：アイコン右下の通知風カウントバッジ */
 .countBadge {
   position: absolute;
-  right: -4px;
+  right: -3px;
   bottom: -2px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 10px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
   background: #5a4326;
   color: #fff;
   font-weight: 900;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 18px;
   text-align: center;
   border: 2px solid var(--paper);
@@ -576,20 +614,15 @@
   cursor: pointer;
 }
 .expandSlot:disabled { opacity: 0.5; cursor: default; }
-.renameRow {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  width: 100%;
-}
 .renameBtn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   white-space: nowrap;
-  padding: 8px 12px;
-  border-radius: 10px;
+  justify-content: center;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 9px;
   border: 2px solid var(--border-dark);
   background: var(--gold);
   font-weight: 800;
@@ -813,19 +846,31 @@
   line-height: 1;
   font-weight: 800;
 }
+/* 牧場収入の一言。文だけがぽつんと大きく見えていたので、帯にして小さくまとめる。 */
 .earnRow {
-  margin-top: 6px;
-  font-size: 13px;
+  display: flex;
+  font-size: 11.5px;
   font-weight: 800;
 }
-.earnIn {
+.earnIn,
+.earnOut {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #b3852a;
+  width: 100%;
+  border-radius: 9px;
+  padding: 5px 10px;
+  line-height: 1.35;
+}
+.earnIn {
+  color: #7a5300;
+  background: linear-gradient(180deg, #fff4d8, #ffe9b6);
+  border: 2px solid #e0bd6a;
 }
 .earnOut {
   color: var(--ink-soft);
+  background: var(--panel);
+  border: 2px solid var(--border);
 }
 
 /* ===== チーム：はっきり囲ったパネル（出走・牧場収入の対象6頭） ===== */
@@ -927,7 +972,6 @@
 
 /* ===== 詳細モーダルのチーム編成 ===== */
 .teamEdit {
-  margin-top: 8px;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -950,10 +994,12 @@
   color: var(--ink-soft);
 }
 .teamJoin {
-  background: var(--gold);
+  flex: 1 1 auto;
+  background: linear-gradient(180deg, #ffdf8a, var(--gold));
   border: 2px solid #b8871f;
   border-radius: 9px;
-  padding: 5px 12px;
+  padding: 6px 12px;
+  font-size: 13px;
   font-weight: 900;
   color: #4a3000;
   box-shadow: 0 2px 0 #b8871f;
@@ -997,7 +1043,6 @@
   color: var(--ink-soft);
 }
 .lockBtn {
-  margin-top: 8px;
   width: 100%;
   display: inline-flex;
   align-items: center;
@@ -1006,8 +1051,8 @@
   background: var(--panel-inner);
   border: 2px solid var(--border);
   border-radius: 10px;
-  padding: 7px 10px;
-  font-size: 13px;
+  padding: 6px 10px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--ink-soft);
 }
@@ -1019,20 +1064,24 @@
 
 /* ===== 固有スキル（詳細モーダル） ===== */
 .skillRow {
-  margin-top: 8px;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 4px 8px;
-  background: var(--panel-inner);
+  gap: 3px 8px;
+  /* 固有スキルは「その子だけの持ち味」なので、少し温かい地色で他と差をつける。 */
+  background: linear-gradient(180deg, #fff6e0, var(--panel-inner));
   border: 2px solid var(--border);
   border-radius: 11px;
-  padding: 8px 10px;
+  padding: 7px 10px;
 }
 .skillLabel {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--border-dark);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
 }
 .skillName {
   font-size: 15px;
@@ -1054,47 +1103,57 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--ink-soft);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* ===== コース適性（2×3表・銅/銀/金/虹） ===== */
 .aptBlock {
-  margin-top: 8px;
   background: var(--panel-inner);
   border: 2px solid var(--border);
   border-radius: 11px;
-  padding: 8px 10px 9px;
+  padding: 7px 9px 8px;
 }
 .aptTitle {
-  display: block;
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--ink-soft);
-  margin-bottom: 6px;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--border-dark);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 5px;
 }
+/* 2列×3行。1マスを横長にして「コース名｜評価」を1行に収める。
+   3列だと8文字のコース名（やまみちトレイル等）が2行に折り返して、
+   枠の縦幅が倍になっていた。 */
 .aptGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 5px;
 }
 .aptCell {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 3px;
-  background: rgba(255, 255, 255, 0.55);
+  justify-content: space-between;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.6);
   border: 2px solid var(--border);
   border-radius: 8px;
-  padding: 4px 5px;
+  padding: 3px 6px;
   min-width: 0;
 }
 .aptCourse {
-  font-size: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11px;
   font-weight: 800;
   color: var(--ink);
-  text-align: center;
-  line-height: 1.25;
-  max-width: 100%;
+  /* 折り返さない。入りきらないときだけ「…」で省略する。 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
 }
 .aptGrade {
   flex: 0 0 auto;
@@ -1110,7 +1169,6 @@
 
 /* 厳選ボタン（既存ウマのみ） */
 .rerollBtn {
-  margin-top: 8px;
   width: 100%;
   display: inline-flex;
   align-items: center;
