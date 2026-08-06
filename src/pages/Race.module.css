@@ -32,29 +32,71 @@
 }
 
 /* Mode menu --------------------------------------------------------------- */
+/* モードごとに色をつけた「札」。左に色帯、その隣に丸い記章のアイコン。
+   4枚が同じ見た目だとどれがどれか分からないので、色で区別できるようにする。
+   --m1/--m2 はモードごとに差し替える（.modeSolo など）。 */
 .modeCard {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   text-align: left;
-  background: var(--panel-inner);
+  background:
+    linear-gradient(90deg, var(--m1) 0 7px, rgba(0, 0, 0, 0) 7px),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 55%),
+    var(--panel-inner);
   border: 3px solid var(--border-dark);
   border-radius: 16px;
-  padding: 14px 16px;
-  box-shadow: 0 4px 0 var(--border);
+  padding: 13px 12px 13px 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 0 var(--border), 0 7px 12px rgba(0, 0, 0, 0.14);
+}
+/* 右上にうっすら差す光（のっぺりさせない） */
+.modeCard::after {
+  content: '';
+  position: absolute;
+  right: -30px;
+  top: -46px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--m2) 0%, rgba(255, 255, 255, 0) 68%);
+  opacity: 0.5;
+  pointer-events: none;
 }
 .modeCard:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 var(--border);
+  box-shadow: 0 2px 0 var(--border), 0 4px 8px rgba(0, 0, 0, 0.14);
 }
 .modeEmoji {
-  font-size: 34px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(155deg, var(--m1), var(--m2));
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 5px rgba(60, 40, 12, 0.35);
+}
+.modeSolo { --m1: #2f7fb8; --m2: #8fd0f0; }
+.modePick { --m1: #4f8f3a; --m2: #b6e08e; }
+.modeGp { --m1: #c9922a; --m2: #ffe0a0; }
+.modeArena { --m1: #b8452f; --m2: #f6b3a3; }
+/* 中身は ::after の光より前に出す（文字が白飛びしないように）。 */
+.modeEmoji,
+.modeText,
+.modeGo {
+  position: relative;
+  z-index: 1;
 }
 .modeText {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 .modeName {
   font-size: 18px;

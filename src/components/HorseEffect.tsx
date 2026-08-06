@@ -14,7 +14,7 @@ import styles from './HorseEffect.module.css';
 type View = 'body' | 'face';
 
 // 見た目の中心と広がり。face は丸窓の中に収まるように小さくする。
-const FRAME = {
+export const FRAME = {
   body: { cx: 250, cy: 268, r: 210, s: 1 },
   face: { cx: 382, cy: 130, r: 96, s: 0.46 },
 } as const;
@@ -36,10 +36,27 @@ function rng(seed: string) {
 
 type Mote = { x: number; y: number; s: number; rot: number; delay: number; alt: boolean };
 
+/** i 番目の粒に割り当てる 0..1 の値。区画に1つずつ入れてから区画の中で揺らす
+ *  （層化サンプリング）。完全な乱数だと、少ない粒数では必ずどこかに固まりと
+ *  すき間ができる ＝「あまいかおり」が片寄って見えていた原因。
+ *  区画の中では動かすので、等間隔に整列した機械的な見た目にはならない。 */
+function strat(i: number, n: number, rand: () => number, jitter = 0.8) {
+  const pad = (1 - jitter) / 2;
+  return (i + pad + rand() * jitter) / n;
+}
+/** 層化した値を軸ごとにずらすための入れ替え。x と y で同じ順に並ぶと
+ *  斜めの一直線になってしまうので、互いに素な歩幅で番号を混ぜる。 */
+function shuffled(i: number, n: number) {
+  const step = n % 5 === 0 ? (n % 3 === 0 ? 7 : 3) : 5;
+  return (i * step + 2) % n;
+}
+
 /** kind ごとの粒の置き方。view に関わらず「中心と半径」で決めるので両方で使える。 */
-function layout(def: EffectDef, f: { cx: number; cy: number; r: number }, dense: number): Mote[] {
+export function layout(def: EffectDef, f: { cx: number; cy: number; r: number }, dense: number): Mote[] {
   const n = Math.max(3, Math.round((def.count ?? 8) * dense));
   const rand = rng(def.id);
+  // エフェクトごとに全体の向きを変える（層化しても全部が同じ位置から始まらない）。
+  const spin = rand();
   const out: Mote[] = [];
   for (let i = 0; i < n; i++) {
     const t = i / n;
@@ -51,14 +68,19 @@ function layout(def: EffectDef, f: { cx: number; cy: number; r: number }, dense:
       s = 0.85 + rand() * 0.4;
       rot = (a * 180) / Math.PI + 90;
     } else if (def.kind === 'petals') {
-      // 上から降ってくる：左右に散らし、上ほど小さく
-      x = f.cx + (rand() * 2 - 1) * f.r * 1.02;
-      y = f.cy - f.r * 0.95 + rand() * f.r * 1.85;
+      // 上から降ってくる：左右に散らす。左右も上下も区画に割り当ててから揺らすので、
+      // 「右半分だけに固まる」ような偏りが出ない。
+      const ux = strat(i, n, rand);
+      const uy = strat(shuffled(i, n), n, rand);
+      x = f.cx + (ux * 2 - 1) * f.r * 1.02;
+      y = f.cy - f.r * 0.95 + uy * f.r * 1.85;
       s = 0.7 + rand() * 0.6;
       rot = rand() * 360;
     } else if (def.kind === 'bubbles') {
-      x = f.cx + (rand() * 2 - 1) * f.r * 1.0;
-      y = f.cy + f.r * 0.9 - rand() * f.r * 1.8;
+      const ux = strat(i, n, rand);
+      const uy = strat(shuffled(i, n), n, rand);
+      x = f.cx + (ux * 2 - 1) * f.r * 1.0;
+      y = f.cy + f.r * 0.9 - uy * f.r * 1.8;
       s = 0.55 + rand() * 0.7;
       rot = 0;
     } else if (def.kind === 'flames') {
@@ -75,8 +97,10 @@ function layout(def: EffectDef, f: { cx: number; cy: number; r: number }, dense:
       s = 0.9 + rand() * 0.3;
       rot = (a * 180) / Math.PI + 90;
     } else {
-      // motes / glow：まわりにゆるく散らす（ウマに重ならないよう外周寄り）
-      const a = rand() * Math.PI * 2;
+      // motes / glow：まわりにゆるく散らす（ウマに重ならないよう外周寄り）。
+      // 角度は区画に1つずつ割り当ててから区画内で揺らす＝ぐるりを均等に囲みつつ、
+      // 半径も回転もばらばらなので機械的な円にはならない。
+      const a = (spin + strat(i, n, rand, 0.9)) * Math.PI * 2;
       const rr = f.r * (0.72 + rand() * 0.34);
       x = f.cx + Math.cos(a) * rr;
       y = f.cy + Math.sin(a) * rr * 0.9;

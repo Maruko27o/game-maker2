@@ -3,7 +3,7 @@ import { TITLES, TIER_INFO, activeTitle, earnedTitles, type TitleCtx } from '../
 
 const ZERO: TitleCtx = {
   races: 0, horsesFound: 0, wins: 0, betsPlaced: 0, maxOdds: 0, maxPayout: 0,
-  coins: 0, streakBest: 0, collectPct: 0, gpTop3: 0, gpWins: 0,
+  totalEarned: 0, coins: 0, streakBest: 0, collectPct: 0, gpTop3: 0, gpWins: 0,
 };
 
 describe('称号', () => {
@@ -46,6 +46,11 @@ describe('称号', () => {
         ['five_hundred_wins', 500], ['thousand_wins', 1000],
       ]],
       ['払戻', [['lucky_hand', 500_000], ['jackpot', 1_000_000]]],
+      ['総獲得賞金', [
+        ['millionaire', 1_000_000], ['multi_millionaire', 10_000_000],
+        ['mega_millionaire', 50_000_000], ['okuman', 100_000_000],
+        ['billionaire', 1_000_000_000], ['gold_emperor', 10_000_000_000],
+      ]],
     ];
     for (const [, rungs] of ladders) {
       let prevTier = 0;
@@ -70,6 +75,20 @@ describe('称号', () => {
       const t = TITLES.find((x) => x.id === id)!;
       expect(t.check({ ...ZERO, horsesFound: need - 1 })).toBe(false);
       expect(t.check({ ...ZERO, horsesFound: need })).toBe(true);
+    }
+  });
+
+  it('総獲得賞金の称号は1段ずつ上がる（100万→100億で★1→★6）', () => {
+    const rungs: Array<[string, number, number]> = [
+      ['millionaire', 1_000_000, 1], ['multi_millionaire', 10_000_000, 2],
+      ['mega_millionaire', 50_000_000, 3], ['okuman', 100_000_000, 4],
+      ['billionaire', 1_000_000_000, 5], ['gold_emperor', 10_000_000_000, 6],
+    ];
+    for (const [id, need, tier] of rungs) {
+      const t = TITLES.find((x) => x.id === id)!;
+      expect(t.tier).toBe(tier);
+      expect(t.check({ ...ZERO, totalEarned: need - 1 })).toBe(false);
+      expect(t.check({ ...ZERO, totalEarned: need })).toBe(true);
     }
   });
 

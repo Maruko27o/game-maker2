@@ -20,6 +20,7 @@ import HorseView from '../components/HorseView';
 import BadgeIcon from '../components/BadgeIcon';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
+import EventCalendar from '../components/EventCalendar';
 import RaceTrack2 from '../components/RaceTrack2';
 import CourseScene, { SceneDefs, courseTheme, THEME_LABEL } from '../components/CourseScene';
 import GrandPrix from './GrandPrix';
@@ -461,35 +462,49 @@ export default function Race() {
       <div className={styles.page}>
         <h1 className={styles.title}>レース</h1>
         <p className={styles.lead}>育てたウマを走らせよう！</p>
-        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(false); setMode(60); setScreen('setup'); }}>
-          <span className={styles.modeEmoji}><Icon name="medal" size={30} /></span>
+
+        {/* 曜日イベントのカレンダー。もとは「一人でレース」があった位置。 */}
+        <EventCalendar />
+
+        {/* モードは4枚。左の色帯とアイコンでどれがどれか一目で分かるようにする。 */}
+        <button
+          className={`${styles.modeCard} ${styles.modeSolo}`}
+          onClick={() => { setGrade('normal'); setPickMode(false); setMode(60); setScreen('setup'); }}
+        >
+          <span className={styles.modeEmoji}><Icon name="medal" size={28} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>一人でレース</span>
-            <span className={styles.modeDesc}>8頭立て・1〜3周・馬券あり・3位以内でメダル</span>
+            <span className={styles.modeDesc}>8頭立て・1〜3周・馬券あり・3位でメダル</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
-        <button className={styles.modeCard} onClick={() => { setGrade('normal'); setPickMode(true); setMode(60); setScreen('setup'); }}>
-          <span className={styles.modeEmoji}><Icon name="flag" size={30} /></span>
+        <button
+          className={`${styles.modeCard} ${styles.modePick}`}
+          onClick={() => { setGrade('normal'); setPickMode(true); setMode(60); setScreen('setup'); }}
+        >
+          <span className={styles.modeEmoji}><Icon name="flag" size={28} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>コースを選ぶ</span>
             <span className={styles.modeDesc}>好きなコースで練習（馬券なし）</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
-        <button className={styles.modeCard} onClick={() => { setGrade('gp'); setPickMode(false); setScreen('setup'); }}>
-          <span className={styles.modeEmoji}><Icon name="trophy" size={30} /></span>
+        <button
+          className={`${styles.modeCard} ${styles.modeGp}`}
+          onClick={() => { setGrade('gp'); setPickMode(false); setScreen('setup'); }}
+        >
+          <span className={styles.modeEmoji}><Icon name="trophy" size={28} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>グランプリ</span>
-            <span className={styles.modeDesc}>強敵ぞろい・3位以内でトロフィー＋育成アイテム</span>
+            <span className={styles.modeDesc}>強敵ぞろい・3位でトロフィー＋アイテム</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>
-        <button className={styles.modeCard} onClick={() => setScreen('arena')}>
-          <span className={styles.modeEmoji}><Icon name="swords" size={30} /></span>
+        <button className={`${styles.modeCard} ${styles.modeArena}`} onClick={() => setScreen('arena')}>
+          <span className={styles.modeEmoji}><Icon name="swords" size={28} /></span>
           <span className={styles.modeText}>
             <span className={styles.modeName}>対戦</span>
-            <span className={styles.modeDesc}>毎日の勝ち抜きトーナメント・優勝で1.2万コイン</span>
+            <span className={styles.modeDesc}>毎日の勝ち抜き戦・優勝で1.2万コイン</span>
           </span>
           <span className={styles.modeGo}>▶</span>
         </button>

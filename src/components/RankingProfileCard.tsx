@@ -31,12 +31,20 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
 
   // ランキングの行は「その月」の記録。個人のページは今まで全部の自己ベストを見せる。
   const [life, setLife] = useState<{ bestOdds: number; bestPayout: number } | null>(null);
+  // 「まだ返ってきていない」と「返ってきたが取れなかった」は別もの。取れなかった
+  // ときは今月の記録で妥協して出す（ずっと「—」のままにしない）。
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let alive = true;
-    loadLifetimeBest(row.userId).then((r) => { if (alive) setLife(r); });
+    setLoaded(false);
+    setLife(null);
+    loadLifetimeBest(row.userId).then((r) => { if (alive) { setLife(r); setLoaded(true); } });
     return () => { alive = false; };
   }, [row.userId]);
 
+  // 通算の記録が返るまで数字を出さない。先に「その月の記録」を描いてしまうと、
+  // 通算が届いた瞬間に別の数字へ書き換わって、一瞬まちがった記録を見せてしまう。
+  const ready = loaded;
   const bestOdds = Math.max(row.bestOdds, life?.bestOdds ?? 0);
   const bestPayout = Math.max(row.bestPayout, life?.bestPayout ?? 0);
   const title = titleOf(row.title);
@@ -67,14 +75,16 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
         <div className={styles.stats}>
           <div className={styles.stat}>
             <span className={styles.statLabel}>最高的中</span>
-            <span className={styles.statVal}>{fmtOdds(bestOdds)}<small>倍</small></span>
+            <span className={styles.statVal}>
+              {ready ? <>{fmtOdds(bestOdds)}<small>倍</small></> : <span className={styles.pending}>—</span>}
+            </span>
           </div>
-          {bestPayout > 0 && (
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>最大獲得賞金</span>
-              <span className={styles.statVal}><CoinIcon size={13} /> {bestPayout.toLocaleString()}</span>
-            </div>
-          )}
+          <div className={styles.stat}>
+            <span className={styles.statLabel}>最大獲得賞金</span>
+            <span className={styles.statVal}>
+              {ready ? <><CoinIcon size={13} /> {bestPayout.toLocaleString()}</> : <span className={styles.pending}>—</span>}
+            </span>
+          </div>
         </div>
 
         <div className={styles.trophyLabel}>飾っているトロフィー</div>

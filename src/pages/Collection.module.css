@@ -108,6 +108,15 @@
   font-variant-numeric: tabular-nums;
   opacity: 0.9;
 }
+/* コンプリート済み。数字の形は他のタブと同じまま、色だけで示す。 */
+.tabCountDone {
+  color: var(--gold);
+  opacity: 1;
+  text-shadow: 0 1px 1px rgba(60, 40, 12, 0.55);
+}
+.tabActive .tabCountDone {
+  color: #ffe9a8;
+}
 
 .section {
   background: var(--panel);
