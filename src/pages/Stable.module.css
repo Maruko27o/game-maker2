@@ -1397,3 +1397,63 @@
 @media (prefers-reduced-motion: reduce) {
   .critPop { animation: none; }
 }
+
+/* 指の当たり判定を広げる（見た目は変えない）。小さい丸ボタンは押しにくいので、
+   透明な当たり判定だけを 44px まで広げる。 */
+.farmInfoBtn {
+  position: relative;
+}
+.farmInfoBtn::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+}
+
+/* 指の当たり判定を広げる（見た目は変えない）。小さい丸ボタンは押しにくいので、
+   透明な当たり判定だけを 44px まで広げる。 */
+.teamMove {
+  position: relative;
+}
+.teamMove::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+}
+
+/* 指の当たり判定を広げる（見た目は変えない）。小さい丸ボタンは押しにくいので、
+   透明な当たり判定だけを 44px まで広げる。 */
+.starChip {
+  position: relative;
+}
+.starChip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+}
+
+/* 指の当たり判定を広げる（見た目は変えない）。小さい丸ボタンは押しにくいので、
+   透明な当たり判定だけを 44px まで広げる。 */
+.bulkBtn {
+  position: relative;
+}
+.bulkBtn::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+}

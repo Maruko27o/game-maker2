@@ -93,6 +93,22 @@
   text-align: center;
 }
 
+/* 節の見出し（殿堂など、目録とは別枠のもの） */
+.section {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.section small {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
 /* ── 称号 ─────────────────────────────────────────────────── */
 .titles {
   list-style: none;

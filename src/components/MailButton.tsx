@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { setRankingFrame } from '../cloud';
 import { monthLabel } from '../logic/period';
 import type { BoxFrameKind, EquipFrame, FrameAward, HorseLook, MailItem } from '../types';
-import { isStreakFrame, isAptFrame, isBoxFrame } from '../types';
 import { BOXES, boxMailId } from '../data/boxes';
 import Icon from './Icon';
 import AvatarFrame from './AvatarFrame';
@@ -16,17 +14,13 @@ import CloseButton from './CloseButton';
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 const metricLabel = (m: FrameAward['metric']) => (m === 'payout' ? '最大獲得賞金' : '最大オッズ');
 const frameTitle = (f: FrameAward) => `${monthLabel(f.period)} ${metricLabel(f.metric)} ${f.rank}位`;
-const sameFrame = (a: EquipFrame | null | undefined, b: FrameAward) =>
-  !!a && !isStreakFrame(a) && !isAptFrame(a) && !isBoxFrame(a) && a.period === b.period && a.rank === b.rank && a.metric === b.metric;
 
 // Top-bar mailbox (タスクの横). フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
 export default function MailButton() {
   const mailbox = useStore((s) => s.mailbox ?? []);
-  const equippedFrame = useStore((s) => s.equippedFrame ?? null);
   const horses = useStore((s) => s.horses);
   const avatarHorseId = useStore((s) => s.avatarHorseId);
   const markMailRead = useStore((s) => s.markMailRead);
-  const equipFrame = useStore((s) => s.equipFrame);
 
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<MailItem | null>(null);
@@ -48,13 +42,6 @@ export default function MailButton() {
       return;
     }
     setDetail(m);
-  }
-
-  // Equip/unequip locally *and* mirror it to the player's ranking row so everyone
-  // sees the frame on their line (best-effort; no-op when signed out / offline).
-  function equip(frame: FrameAward | null) {
-    equipFrame(frame);
-    void setRankingFrame(frame);
   }
 
   return (
@@ -143,12 +130,12 @@ export default function MailButton() {
                   <AvatarFrame rank={detail.frame.rank} metric={detail.frame.metric} period={detail.frame.period} look={look} size={128} />
                 </div>
                 <div className={styles.detailTitle}>{frameTitle(detail.frame)}</div>
+                {/* 着けかえは「プロフィール → アイコン設定 → フレーム」に一本化した。
+                    受信箱と2か所にあると、どちらが本体か分からなくなるため。 */}
+                <p className={styles.detailNote}>
+                  プロフィール → アイコン設定 → フレーム から着けられます。
+                </p>
                 <div className={styles.detailActions}>
-                  {sameFrame(equippedFrame, detail.frame) ? (
-                    <button className="btn neutral" onClick={() => equip(null)}>はずす</button>
-                  ) : (
-                    <button className="btn" onClick={() => equip(detail.frame!)}>アイコンにつける</button>
-                  )}
                   <button className="btn neutral" onClick={() => setDetail(null)}>とじる</button>
                 </div>
               </div>
