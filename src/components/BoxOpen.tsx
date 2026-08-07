@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { BOXES, RARITY_FX, BOX_FRAME_NAME, BOX_TITLE_NAME, BOX_TITLE_ID, type BoxKind } from '../data/boxes';
 import { titleById } from '../data/titles';
-import type { BoxResult } from '../logic/boxes';
+import { tallyBoxResults, type BoxResult, type BoxTally } from '../logic/boxes';
 import CoinIcon from './CoinIcon';
 import Icon from './Icon';
 import CloseButton from './CloseButton';
@@ -22,6 +22,9 @@ import styles from './BoxOpen.module.css';
 
 type Phase = 'idle' | 'charging' | 'done';
 
+/** 「まとめて開ける」の1回ぶん。これ以上はレア演出のありがたみが薄れる。 */
+const BULK = 10;
+
 export default function BoxOpen({
   kind,
   count,
@@ -34,11 +37,13 @@ export default function BoxOpen({
   onClose: () => void;
 }) {
   const def = BOXES[kind];
-  const openWeekendBox = useStore((s) => s.openWeekendBox);
+  const openMany = useStore((s) => s.openWeekendBoxMany);
   const reduced = usePrefersReducedMotion();
 
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<BoxResult | null>(null);
+  // まとめ開けの結果。null のときは1個ずつ開けている。
+  const [tally, setTally] = useState<BoxTally | null>(null);
   const [showInfo, setShowInfo] = useState(false);
 
   const fx = result ? RARITY_FX[result.rarity] : RARITY_FX.normal;
@@ -50,12 +55,21 @@ export default function BoxOpen({
     return () => clearTimeout(t);
   }, [phase, result, reduced]);
 
-  function open() {
+  // 1個でも10個でも入口は同じ。溜め演出は「いちばんレアだったもの」で1回だけ流す。
+  function open(n: number) {
     if (phase === 'charging') return;
-    const r = openWeekendBox(kind);
-    if (!r) return;
-    setResult(r);
+    const got = openMany(kind, n);
+    if (got.length === 0) return;
+    const t = tallyBoxResults(got);
+    setTally(n > 1 ? t : null);
+    setResult(t.best);
     setPhase('charging');
+  }
+
+  function reset() {
+    setResult(null);
+    setTally(null);
+    setPhase('idle');
   }
 
   return (
@@ -114,17 +128,60 @@ export default function BoxOpen({
               )}
             </div>
 
-            <p className={styles.lead}>{phase === 'done' ? 'おめでとう！' : def.lead}</p>
+            {/* まとめて開けたときは、演出のあとに中身を一覧で見せる */}
+            {phase === 'done' && tally && <BulkSummary tally={tally} />}
+
+            {/* まとめ開けは一覧そのものが結果なので、ひとことは出さない（下に浮いて見える） */}
+            {!(phase === 'done' && tally) && (
+              <p className={styles.lead}>{phase === 'done' ? 'おめでとう！' : def.lead}</p>
+            )}
 
             <div className={styles.actions}>
               <span className={styles.left}>のこり ×{count}</span>
-              <button className={styles.open} onClick={phase === 'done' ? () => { setResult(null); setPhase('idle'); } : open} disabled={phase === 'charging' || (phase !== 'done' && count <= 0)}>
-                {phase === 'charging' ? '…' : phase === 'done' ? (count > 0 ? 'もう1つ開ける' : '閉じるまで待つ') : '開ける'}
-              </button>
+              {phase === 'done' ? (
+                <button className={styles.open} onClick={reset} disabled={count <= 0}>
+                  {count > 0 ? 'つづけて開ける' : '開ける箱がありません'}
+                </button>
+              ) : (
+                <>
+                  <button className={styles.open} onClick={() => open(1)} disabled={phase === 'charging' || count <= 0}>
+                    {phase === 'charging' ? '…' : '開ける'}
+                  </button>
+                  {count >= 2 && (
+                    <button className={styles.openBulk} onClick={() => open(BULK)} disabled={phase === 'charging'}>
+                      {Math.min(BULK, count)}個まとめて
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// まとめて開けたときの中身の一覧。出た順のまま、同じものは ×N でまとめる。
+function BulkSummary({ tally }: { tally: BoxTally }) {
+  const totals: string[] = [];
+  if (tally.coins > 0) totals.push(`コイン ${tally.coins.toLocaleString()}`);
+  if (tally.items > 0) totals.push(`育成アイテム ${tally.items}`);
+  if (tally.tickets > 0) totals.push(`厳選チケット ${tally.tickets}`);
+  if (tally.dyes > 0) totals.push(`染料 ${tally.dyes}`);
+
+  return (
+    <div className={styles.bulk}>
+      <div className={styles.bulkLead}>開けた中身</div>
+      <div className={styles.bulkList}>
+        {tally.rows.map((r) => (
+          <div key={r.label} className={`${styles.bulkRow} ${styles[`r_${r.rarity}`]}`}>
+            <span className={styles.bulkName}>{r.label}</span>
+            <span className={styles.bulkCount}>×{r.count}</span>
+          </div>
+        ))}
+      </div>
+      {totals.length > 0 && <div className={styles.bulkTotal}>合計：{totals.join('／')}</div>}
     </div>
   );
 }

@@ -660,6 +660,8 @@ type Store = SaveData & {
   receiveBox: (kind: BoxKind) => void;
   /** 受信箱のボックスを1つ開ける。中身はその場で反映して結果を返す。 */
   openWeekendBox: (kind: BoxKind) => BoxResult | null;
+  /** まとめて開ける。持っているぶんまで。保存は最後に1回だけ。 */
+  openWeekendBoxMany: (kind: BoxKind, n: number) => BoxResult[];
   /** 称号の初ゲットお知らせを出しおわった印をつける。 */
   markTitlesSeen: (ids: string[]) => void;
   /** 適性フレームを受け取る。受け取り待ちに無ければ false。 */
@@ -1211,36 +1213,70 @@ export const useStore = create<Store>((set, get) => {
       commit({ mailbox: stackBox(get().mailbox ?? [], kind, Date.now()) });
     },
 
-    openWeekendBox: (kind) => {
+    openWeekendBox: (kind) => get().openWeekendBoxMany(kind, 1)[0] ?? null,
+
+    /**
+     * まとめて開ける。持っているぶんまでしか開けない（足りなければそこで止まる）。
+     *
+     * 保存は最後に1回だけ。1個ごとに commit すると、10個で10回の書き出しと
+     * クラウド同期が走ってしまう。
+     *
+     * 限定枠は「引いた瞬間から取得ずみ」として次の抽選に渡す。こうしないと
+     * 同じまとめ開けの中で2枚目が出てしまう（一度きりの約束が破れる）。
+     */
+    openWeekendBoxMany: (kind, n) => {
       const s0 = get();
-      const nextMail = takeBox(s0.mailbox ?? [], kind);
-      if (!nextMail) return null; // 持っていない
+      const hadFrame = (s0.boxFrames ?? []).includes(kind);
+      const hadTitle = (s0.boxTitles ?? []).includes(kind);
 
-      const res = rollBox(kind, Math.random, {
-        frame: (s0.boxFrames ?? []).includes(kind),
-        title: (s0.boxTitles ?? []).includes(kind),
-      });
+      let mail = s0.mailbox ?? [];
+      let frameTaken = hadFrame;
+      let titleTaken = hadTitle;
+      let coins = s0.coins;
+      let earned = s0.stats.totalEarned ?? 0;
+      let tickets = s0.refineTickets ?? 0;
+      const items: TrainingItem[] = [...s0.items];
+      const dyes: Record<string, number> = { ...(s0.dyes ?? {}) };
+      const out: BoxResult[] = [];
 
-      const patch: Partial<SaveData> = { mailbox: nextMail };
-      const r = res.reward;
-      if (r.type === 'coins') {
-        patch.coins = s0.coins + r.amount;
-        patch.stats = { ...s0.stats, totalEarned: (s0.stats.totalEarned ?? 0) + r.amount };
-      } else if (r.type === 'ticket') {
-        patch.refineTickets = (s0.refineTickets ?? 0) + r.amount;
-      } else if (r.type === 'item') {
-        const add: TrainingItem[] = Array.from({ length: r.amount }, () => ({ kind: 'any' }));
-        patch.items = [...s0.items, ...add];
-      } else if (r.type === 'dye') {
-        const colorId = rollDye(mulberry32((Math.random() * 2 ** 31) >>> 0));
-        patch.dyes = { ...(s0.dyes ?? {}), [colorId]: ((s0.dyes ?? {})[colorId] ?? 0) + 1 };
-      } else if (r.type === 'frame') {
-        patch.boxFrames = [...(s0.boxFrames ?? []), kind];
-      } else if (r.type === 'title') {
-        patch.boxTitles = [...(s0.boxTitles ?? []), kind];
+      for (let i = 0; i < n; i++) {
+        const nextMail = takeBox(mail, kind);
+        if (!nextMail) break; // 在庫ぎれ
+        mail = nextMail;
+
+        const res = rollBox(kind, Math.random, { frame: frameTaken, title: titleTaken });
+        out.push(res);
+        const r = res.reward;
+        if (r.type === 'coins') {
+          coins += r.amount;
+          earned += r.amount;
+        } else if (r.type === 'ticket') {
+          tickets += r.amount;
+        } else if (r.type === 'item') {
+          for (let k = 0; k < r.amount; k++) items.push({ kind: 'any' });
+        } else if (r.type === 'dye') {
+          const colorId = rollDye(mulberry32((Math.random() * 2 ** 31) >>> 0));
+          dyes[colorId] = (dyes[colorId] ?? 0) + 1;
+        } else if (r.type === 'frame') {
+          frameTaken = true;
+        } else if (r.type === 'title') {
+          titleTaken = true;
+        }
       }
+      if (out.length === 0) return [];
+
+      const patch: Partial<SaveData> = {
+        mailbox: mail,
+        coins,
+        refineTickets: tickets,
+        items,
+        dyes,
+        stats: { ...s0.stats, totalEarned: earned },
+      };
+      if (frameTaken && !hadFrame) patch.boxFrames = [...(s0.boxFrames ?? []), kind];
+      if (titleTaken && !hadTitle) patch.boxTitles = [...(s0.boxTitles ?? []), kind];
       commit(patch);
-      return res;
+      return out;
     },
 
     // 適性フレームを受け取る（タスク画面のボタン）。受け取り待ちから所持へ移す。

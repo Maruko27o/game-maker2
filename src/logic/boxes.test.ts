@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openBox, stackBox, takeBox, boxCount } from './boxes';
+import { openBox, stackBox, takeBox, boxCount, tallyBoxResults } from './boxes';
 import { BOXES, BOX_KINDS, dropTable, boxOfDow, boxMailId } from '../data/boxes';
 import { mulberry32 } from './stats';
 import type { MailItem } from '../types';
@@ -137,5 +137,52 @@ describe('週末のボックス', () => {
       for (let i = 0; i < 200_000; i++) seen.add(openBox(k, rng, { frame: true, title: true }).label);
       for (const s of BOXES[k].slots) expect(seen.has(s.label)).toBe(true);
     }
+  });
+});
+
+describe('まとめて開ける', () => {
+  it('同じ中身は1行にまとまり、合計が合う', () => {
+    const t = tallyBoxResults([
+      { kind: 'gold', rarity: 'normal', label: 'コイン 5,000', reward: { type: 'coins', amount: 5000 } },
+      { kind: 'gold', rarity: 'normal', label: 'コイン 5,000', reward: { type: 'coins', amount: 5000 } },
+      { kind: 'gold', rarity: 'epic', label: 'コイン 100,000', reward: { type: 'coins', amount: 100000 } },
+    ]);
+    expect(t.rows).toEqual([
+      { label: 'コイン 5,000', rarity: 'normal', count: 2 },
+      { label: 'コイン 100,000', rarity: 'epic', count: 1 },
+    ]);
+    expect(t.coins).toBe(110_000);
+    expect(t.best?.rarity).toBe('epic'); // 溜め演出はいちばんレアなものに合わせる
+  });
+
+  it('育成アイテム・チケット・染料もそれぞれ数える', () => {
+    const t = tallyBoxResults([
+      { kind: 'lucky', rarity: 'normal', label: '育成アイテム ×1', reward: { type: 'item', stat: 'any', amount: 1 } },
+      { kind: 'lucky', rarity: 'rare', label: '育成アイテム ×3', reward: { type: 'item', stat: 'any', amount: 3 } },
+      { kind: 'lucky', rarity: 'rare', label: '厳選チケット ×1', reward: { type: 'ticket', amount: 1 } },
+      { kind: 'lucky', rarity: 'normal', label: '染料 ×1', reward: { type: 'dye' } },
+      { kind: 'lucky', rarity: 'legend', label: 'げんていフレーム', reward: { type: 'frame' } },
+    ]);
+    expect(t.items).toBe(4);
+    expect(t.tickets).toBe(1);
+    expect(t.dyes).toBe(1);
+    expect(t.frame).toBe(true);
+    expect(t.title).toBe(false);
+    expect(t.best?.rarity).toBe('legend');
+  });
+
+  it('並びは出た順のまま（レア順に並べ替えない）', () => {
+    const t = tallyBoxResults([
+      { kind: 'gold', rarity: 'epic', label: 'B', reward: { type: 'coins', amount: 1 } },
+      { kind: 'gold', rarity: 'normal', label: 'A', reward: { type: 'coins', amount: 1 } },
+    ]);
+    expect(t.rows.map((r) => r.label)).toEqual(['B', 'A']);
+  });
+
+  it('空なら何も無い', () => {
+    const t = tallyBoxResults([]);
+    expect(t.rows).toEqual([]);
+    expect(t.best).toBeNull();
+    expect(t.coins).toBe(0);
   });
 });
