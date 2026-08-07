@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { raceCommentary, telopAt, TELOP_HOLD } from './commentary';
+import { raceCommentary, sameHorseGapFor, telopAt, TELOP_HOLD } from './commentary';
 import { simulate2, type Entrant } from './raceSim2';
 import { COURSES } from '../data/courses';
 import type { Stats, RunStyle } from '../types';
@@ -15,7 +15,7 @@ function field(n = 8): Entrant[] {
     style: STYLES[i % STYLES.length],
   }));
 }
-const run = (seed: number) => simulate2(field(), COURSES[0], 30, seed, { recordFrames: true });
+const run = (seed: number, laps?: number) => simulate2(field(), COURSES[0], 30, seed, { recordFrames: true, laps });
 
 describe('レースの実況テロップ', () => {
   it('同じレースなら毎回まったく同じ（表示だけで結果に関わらない）', () => {
@@ -120,5 +120,94 @@ describe('実況テロップの語彙', () => {
     const res = run(4242);
     const list = raceCommentary(res, names());
     expect(list.some((t) => /先頭でゴール/.test(t.text))).toBe(true);
+  });
+});
+
+describe('馬券に絡むテロップ', () => {
+  const names = () => field().map((e) => ({ name: e.name, isPlayer: !!e.isPlayer, style: e.style }));
+
+  it('買っていなければ、馬券の文は出ない', () => {
+    for (const seed of [1, 2, 3, 5, 8]) {
+      const list = raceCommentary(run(seed), names());
+      expect(list.some((t) => t.text.startsWith('買った'))).toBe(false);
+    }
+  });
+
+  it('買ったウマが動くと実況される', () => {
+    // 自分以外の全頭を買っておけば、どれかは動く
+    const all = [1, 2, 3, 4, 5, 6, 7];
+    const hits = [1, 2, 3, 5, 8, 13, 21].filter((seed) =>
+      raceCommentary(run(seed), names(), all).some((t) => t.text.startsWith('買った')),
+    );
+    expect(hits.length).toBeGreaterThan(0);
+  });
+
+  it('自分のウマは「買った」扱いにしない（別の文が担当している）', () => {
+    for (const seed of [1, 2, 3, 5, 8, 13]) {
+      const list = raceCommentary(run(seed), names(), [0]); // 0 番＝自分のウマ
+      expect(list.some((t) => t.text.startsWith('買った'))).toBe(false);
+    }
+  });
+
+  it('馬券を渡してもレースの中身は変わらない（表示だけ）', () => {
+    const res = run(4242);
+    const a = raceCommentary(res, names());
+    const b = raceCommentary(res, names(), [3, 5]);
+    // 順位・タイムは当然おなじ。テロップも「買った」以外は変わらない。
+    const strip = (l: typeof a) => l.filter((t) => !t.text.startsWith('買った')).map((t) => t.text);
+    expect(strip(b)).toEqual(expect.arrayContaining(strip(a).filter((t) => strip(b).includes(t))));
+    expect(a.length).toBeLessThanOrEqual(b.length + 2);
+  });
+});
+
+describe('同じウマの話が続かない', () => {
+  const names = () => field().map((e) => ({ name: e.name, isPlayer: !!e.isPlayer, style: e.style }));
+
+  it('「脚が上がってきた」の直後に「上がってきた！」が来ない', () => {
+    // 同じウマについて、続けて逆のことを言うと読み手が混乱する
+    for (const seed of [1, 4242, 777, 31, 99, 512]) {
+      const res = run(seed, 2);
+      const list = raceCommentary(res, names(), [3, 5]);
+      const gap = sameHorseGapFor(res.duration);
+      for (let i = 1; i < list.length; i++) {
+        const prev = list[i - 1].text;
+        const cur = list[i].text;
+        // 両方に同じウマ名が入っているなら、間隔をちゃんとあけていること
+        const m = prev.match(/ウマ\d/);
+        if (m && cur.includes(m[0])) {
+          expect(list[i].at - list[i - 1].at).toBeGreaterThanOrEqual(gap);
+        }
+      }
+    }
+  });
+});
+
+describe('呼び名は「枠番＋名前」でそろえる', () => {
+  const names = () => field().map((e) => ({ name: e.name, isPlayer: !!e.isPlayer, style: e.style }));
+
+  it('ウマに触れる文は、必ず番号から始まる呼び名になっている', () => {
+    for (const seed of [1, 4242, 777, 31, 99]) {
+      const res = run(seed, 2);
+      const list = raceCommentary(res, names(), [3, 5]);
+      const nums = new Set(res.gate);
+      for (const t of list) {
+        // 名前が出ているなら、その直前に「N番」が付いていること
+        for (let i = 0; i < res.gate.length; i++) {
+          const name = names()[i].isPlayer ? 'あなたのウマ' : names()[i].name;
+          const at = t.text.indexOf(name);
+          if (at < 0) continue;
+          expect(t.text.slice(0, at)).toMatch(/\d+番$/);
+        }
+      }
+      expect(nums.size).toBe(res.gate.length); // 枠番は重複しない
+    }
+  });
+
+  it('自分のウマも番号つきで呼ぶ（他と同じ形にそろえる）', () => {
+    const res = run(4242, 2);
+    const list = raceCommentary(res, names());
+    const mine = list.filter((t) => t.text.includes('あなたのウマ'));
+    expect(mine.length).toBeGreaterThan(0);
+    for (const t of mine) expect(t.text).toMatch(new RegExp(`${res.gate[0]}番あなたのウマ`));
   });
 });
