@@ -260,3 +260,16 @@
   .sheen { opacity: 0.25; transform: none; }
   .motes span { opacity: 0.7; }
 }
+
+/* 週末ボックスの称号の紋章。帯の左端に、高さいっぱいより少し小さく置く。
+   文字は親が中央に描くので、左端に寄せておけば重ならない。 */
+.crest {
+  position: absolute;
+  left: 3%;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 76%;
+  aspect-ratio: 1; /* 帯の高さ基準。幅で決めると大きい帯でだけ巨大になる */
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}

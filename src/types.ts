@@ -349,8 +349,18 @@ export type SaveData = {
   /** 適性フレームを授与された等級。等級だけを持つので、そのウマを引退させても
    *  厳選で振り直しても取り上げられない（スペシャルタスクの約束）。 */
   aptFrames?: AptGrade[];
+  /** 条件は満たしたが、まだタスク画面で受け取っていない等級。
+   *  ここに入った時点で「取り上げない」約束は成立している（ウマを引退させてもよい）。 */
+  aptPending?: AptGrade[];
   /** ボックスの限定フレームを引き当てた種類。各1回きりなので記録だけ残す。 */
   boxFrames?: BoxFrameKind[];
+  /** ボックスから出た限定称号（1度きり）。称号IDではなく箱の種類で持つ。 */
+  boxTitles?: BoxFrameKind[];
+  /** 「初ゲット」のお知らせを出しおわった称号ID。出したものを覚えておくだけ。 */
+  seenTitles?: string[];
+  /** 「総獲得賞金」のお詫びを出す対象か。この項目より前から遊んでいた人だけ true。
+   *  新規アカウントには無関係なので届かない。判定は初回の読み込みで一度だけ。 */
+  earnedNoticeDue?: boolean;
   equippedTitle?: string | null; // 装備中の称号ID（data/titles.ts）。未設定なら達成済みで一番上の段
   customBet?: { amount: number; minOdds: number; maxOdds: number } | null; // カスタムベットの設定
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads

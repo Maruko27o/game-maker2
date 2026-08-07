@@ -1,0 +1,113 @@
+/* 称号の初ゲットのお知らせ。連勝フレームの受け取り演出と同じ格に合わせる。 */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: rgba(20, 12, 4, 0.62);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.card {
+  position: relative;
+  width: min(330px, 100%);
+  background: var(--paper);
+  border: 4px solid var(--border-dark);
+  border-radius: 20px;
+  padding: 18px 16px 16px;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  animation: pop 0.42s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+/* 後ろで広がる光。カードの中身より奥に置く。 */
+.burst {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 320px;
+  height: 320px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 226, 138, 0.85), rgba(255, 226, 138, 0) 62%);
+  pointer-events: none;
+  animation: breathe 2.2s ease-in-out infinite alternate;
+}
+@keyframes breathe {
+  from { opacity: 0.45; transform: translate(-50%, -50%) scale(0.9); }
+  to { opacity: 0.9; transform: translate(-50%, -50%) scale(1.08); }
+}
+.kicker,
+.bannerWrap,
+.stars,
+.desc,
+.tier,
+.actions {
+  position: relative;
+  z-index: 1;
+}
+.kicker {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+.bannerWrap {
+  position: relative;
+  height: 44px;
+  border-radius: 11px;
+  overflow: hidden;
+  border: 3px solid var(--border-dark);
+  display: grid;
+  place-items: center;
+}
+.bannerText {
+  position: relative;
+  z-index: 1;
+  font-size: 17px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.stars {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-shadow: 0 1px 0 rgba(120, 80, 10, 0.5);
+}
+.desc {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.tier {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.actions > * {
+  flex: 1;
+  /* 2行に折り返さない幅に収める */
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .burst {
+    animation: none;
+  }
+}

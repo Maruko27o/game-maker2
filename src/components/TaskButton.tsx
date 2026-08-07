@@ -15,7 +15,7 @@ import {
   GRASS_TASK_EVERY,
   GRASS_TASK_REWARD,
 } from '../data/coins';
-import { STREAK_MAX, isStreakFrame, type HorseLook, type StreakFrame as StreakFrameType } from '../types';
+import { STREAK_MAX, isStreakFrame, isAptFrame, type HorseLook, type AptGrade, type EquipFrame } from '../types';
 import Icon from './Icon';
 import CoinIcon from './CoinIcon';
 import StreakFrame from './StreakFrame';
@@ -38,6 +38,8 @@ export default function TaskButton() {
   const claimStreakFrame = useStore((s) => s.claimStreakFrame);
   const equippedFrame = useStore((s) => s.equippedFrame ?? null);
   const aptFrames = useStore((s) => s.aptFrames ?? []);
+  const aptPending = useStore((s) => s.aptPending ?? []);
+  const claimAptFrame = useStore((s) => s.claimAptFrame);
   const equipFrame = useStore((s) => s.equipFrame);
   const horses = useStore((s) => s.horses);
   const avatarHorseId = useStore((s) => s.avatarHorseId);
@@ -46,6 +48,7 @@ export default function TaskButton() {
   const [tab, setTab] = useState<'normal' | 'special'>('normal');
   const [popCoins, setPopCoins] = useState(0);
   const [reveal, setReveal] = useState(0); // level just claimed (0 = no reveal)
+  const [aptReveal, setAptReveal] = useState<AptGrade | null>(null); // 受け取った適性フレーム
 
   const streak = { soloStreak, streakBest, streakClaimed };
   const look = useMemo<HorseLook>(() => {
@@ -56,7 +59,8 @@ export default function TaskButton() {
   const bank = tasks.bank;
   const bankPending = Math.floor(bank / 1000); // rewards are 1000 each
   const specialPending = streakPending(streak);
-  const pending = bankPending + specialPending;
+  // 受け取り待ちの適性フレームもバッジに数える（気づかず放置されないように）。
+  const pending = bankPending + specialPending + aptPending.length;
 
   function claim() {
     const got = claimTaskBank();
@@ -71,8 +75,12 @@ export default function TaskButton() {
     if (lvl > 0) setReveal(lvl);
   }
 
+  function claimApt(g: AptGrade) {
+    if (claimAptFrame(g)) setAptReveal(g);
+  }
+
   // Equip/unequip locally *and* mirror to the ranking row (best-effort; no-op offline).
-  function equip(frame: StreakFrameType | null) {
+  function equip(frame: EquipFrame | null) {
     equipFrame(frame);
     void setRankingFrame(frame);
   }
@@ -208,18 +216,23 @@ export default function TaskButton() {
                 {/* 適性チャレンジ：6コースすべての適性が同じ等級のウマを手に入れる。 */}
                 <div className={styles.spLead}>
                   <span className={styles.spLeadTitle}>適性チャレンジ</span>
-                  <span className={styles.spLeadSub}>6つのコース適性が<b>すべて同じ等級</b>のウマを手に入れると、その等級のフレームがもらえるよ。草むらでも厳選でもOK！<b>一度もらったフレームは、そのウマを引退させても厳選し直しても消えません。</b></span>
+                  <span className={styles.spLeadSub}>6つのコース適性が<b>すべて同じ等級</b>のウマを手に入れると、ここで<b>受け取れる</b>ようになるよ。草むらでも厳選でもOK！<b>条件を満たした時点で確定するので、そのウマを引退させても厳選し直しても消えません。</b></span>
                 </div>
                 <div className={styles.aptRow}>
                   {APT_GRADES.map((g) => {
                     const got = aptFrames.includes(g);
+                    const ready = aptPending.includes(g);
                     return (
-                      <div key={g} className={`${styles.aptCard} ${got ? styles.aptCardGot : ''}`}>
+                      <div key={g} className={`${styles.aptCard} ${got ? styles.aptCardGot : ''} ${ready ? styles.aptCardReady : ''}`}>
                         <div className={styles.aptFrameWrap}>
                           <AptFrame grade={g} look={look} size={64} />
                         </div>
                         <div className={styles.aptCardName}>オール{g}</div>
-                        <div className={styles.aptCardState}>{got ? '獲得ずみ' : 'みつけよう'}</div>
+                        {ready ? (
+                          <button className={styles.aptClaim} onClick={() => claimApt(g)}>受け取る</button>
+                        ) : (
+                          <div className={styles.aptCardState}>{got ? '獲得ずみ' : 'みつけよう'}</div>
+                        )}
                       </div>
                     );
                   })}
@@ -233,6 +246,25 @@ export default function TaskButton() {
           {popCoins > 0 && (
             <div className={styles.pop} aria-hidden>
               <CoinIcon size={22} /> +{popCoins.toLocaleString()}
+            </div>
+          )}
+
+          {/* 適性フレームの受け取り演出（連勝フレームと同じ形） */}
+          {aptReveal && (
+            <div className={styles.revealOverlay} onClick={() => setAptReveal(null)}>
+              <div className={styles.revealCard} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.revealBurst} aria-hidden />
+                <div className={styles.revealTitle}>オール{aptReveal}フレーム獲得！</div>
+                <div className={styles.revealFrame}><AptFrame grade={aptReveal} look={look} size={128} /></div>
+                <div className={styles.revealActions}>
+                  {equippedFrame && isAptFrame(equippedFrame) && equippedFrame.grade === aptReveal ? (
+                    <button className="btn neutral" onClick={() => equip(null)}>はずす</button>
+                  ) : (
+                    <button className="btn" onClick={() => equip({ kind: 'apt', grade: aptReveal })}>アイコンにつける</button>
+                  )}
+                  <button className="btn neutral" onClick={() => setAptReveal(null)}>とじる</button>
+                </div>
+              </div>
             </div>
           )}
 

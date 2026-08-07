@@ -448,8 +448,9 @@ export default function Stable() {
             {/* 常に見えている閉じ口。中身が長いので、下まで送らないと閉じられない
                 状態を無くす。左は今どの画面を見ているかの表示。 */}
             <div className={styles.modalBar}>
+              {/* 詳細では名前を出さない。すぐ下の入力欄に同じ名前が出ていて二重になるため。 */}
               <span className={styles.modalBarTitle}>
-                {view === 'detail' ? selected.name : `${selected.name}を育てる`}
+                {view === 'detail' ? '' : `${selected.name}を育てる`}
               </span>
               <button className={styles.modalClose} onClick={close} aria-label="閉じる">
                 ✕

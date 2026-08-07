@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../store';
-import { BOXES, RARITY_FX, dropTable, BOX_FRAME_NAME, type BoxKind } from '../data/boxes';
+import { BOXES, RARITY_FX, BOX_FRAME_NAME, BOX_TITLE_NAME, BOX_TITLE_ID, type BoxKind } from '../data/boxes';
+import { titleById } from '../data/titles';
 import type { BoxResult } from '../logic/boxes';
 import CoinIcon from './CoinIcon';
 import Icon from './Icon';
 import CloseButton from './CloseButton';
 import BoxFrame from './BoxFrame';
+import BoxDropTable from './BoxDropTable';
+import TitleBanner from './TitleBanner';
 import { usePrefersReducedMotion } from '../hooks';
 import type { HorseLook } from '../types';
 import styles from './BoxOpen.module.css';
@@ -55,8 +58,6 @@ export default function BoxOpen({
     setPhase('charging');
   }
 
-  const rows = useMemo(() => dropTable(def), [def]);
-
   return (
     <div className={styles.overlay} onClick={phase === 'charging' ? undefined : onClose}>
       <div
@@ -72,16 +73,7 @@ export default function BoxOpen({
         </div>
 
         {showInfo ? (
-          <div className={styles.table}>
-            <div className={styles.tableLead}>中身の出る割合</div>
-            {rows.map((r) => (
-              <div key={r.label} className={`${styles.row} ${styles[`r_${r.rarity}`]}`}>
-                <span className={styles.rowName}>{r.label}</span>
-                <span className={styles.rowPct}>{r.pct >= 0.1 ? r.pct.toFixed(1) : r.pct.toFixed(3)}%</span>
-              </div>
-            ))}
-            <p className={styles.tableNote}>限定フレームは一度きり。手に入れたあとは、そのぶん他の中身が出ます。</p>
-          </div>
+          <BoxDropTable kind={kind} />
         ) : (
           <>
             <div className={`${styles.stage} ${phase === 'charging' ? styles.charging : ''} ${phase === 'done' ? styles.opened : ''}`}>
@@ -93,6 +85,14 @@ export default function BoxOpen({
                       {/* フレームは銘板が枠の外まで出るので、名前と重ならないよう下に余白を取る */}
                       <div className={styles.frameArt}><BoxFrame box={kind} look={look} size={96} /></div>
                       <div className={styles.prizeName}>{BOX_FRAME_NAME[kind]}</div>
+                    </>
+                  ) : result.reward.type === 'title' ? (
+                    <>
+                      <div className={styles.titleArt}>
+                        <TitleBanner title={titleById[BOX_TITLE_ID[kind]]} />
+                        <span className={styles.titleText}>{BOX_TITLE_NAME[kind]}</span>
+                      </div>
+                      <div className={styles.prizeName}>称号「{BOX_TITLE_NAME[kind]}」</div>
                     </>
                   ) : (
                     <>

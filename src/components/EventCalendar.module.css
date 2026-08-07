@@ -217,3 +217,35 @@
   padding: 8px 10px;
   line-height: 1.5;
 }
+
+/* ボックスの日の「i」（中身の出る割合）。見出しの帯の右に置く。 */
+.info {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-right: 34px; /* 右上の閉じるボタンとぶつからないぶん空ける */
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.drops {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.back {
+  align-self: stretch;
+  padding: 9px;
+  border-radius: 10px;
+  border: 2px solid var(--border-dark);
+  background: var(--panel-inner);
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+  cursor: pointer;
+}
