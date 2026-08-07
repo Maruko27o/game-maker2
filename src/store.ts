@@ -55,6 +55,8 @@ import { farmRatePerHour, farmAccrued, retireValueOf, teamHorses } from './logic
 import { addToTeam, removeFromTeam, moveInTeam, normalizeTeam } from './logic/team';
 import { trustedNow } from './logic/trustedClock';
 import { normAptFrames, newlyEarned, mergeAptFrames } from './logic/aptFrames';
+import { openBox as rollBox, stackBox, takeBox, type BoxResult } from './logic/boxes';
+import { type BoxKind } from './data/boxes';
 import { normalizeCustomBet } from './data/customBet';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
@@ -206,6 +208,7 @@ function freshSave(): SaveData {
     mailbox: [],
     equippedFrame: null,
     aptFrames: [],
+    boxFrames: [],
     equippedTitle: null,
     customBet: null,
     raceSession: null,
@@ -220,6 +223,10 @@ function normFrame(v: unknown): EquipFrame | null {
   if (!v || typeof v !== 'object') return null;
   const f = v as Record<string, unknown>;
   // 連勝フレーム（スペシャルタスク報酬）。
+  // ボックス限定フレーム（1/1000・1/10000）。
+  if (f.kind === 'box') {
+    return f.box === 'lucky' || f.box === 'gold' ? { kind: 'box', box: f.box } : null;
+  }
   // 適性フレーム（6コースすべて同じ等級のウマを手に入れた記録）。
   if (f.kind === 'apt') {
     const g = f.grade;
@@ -239,6 +246,14 @@ function normFrame(v: unknown): EquipFrame | null {
  *  授与は「ウマの顔ぶれが変わったとき」に走るが、それだけだとこの更新より前から
  *  オール S のウマを持っている人がいつまでももらえない。読み込みのたびに今いる
  *  ウマを見て足す（すでに持っている等級は絶対に消さない）。 */
+/** ボックス限定フレームの記録。各1回きりなので種類だけを持つ。 */
+function normBoxFrames(v: unknown): BoxKind[] {
+  if (!Array.isArray(v)) return [];
+  const out: BoxKind[] = [];
+  for (const k of v) if ((k === 'lucky' || k === 'gold') && !out.includes(k)) out.push(k);
+  return out;
+}
+
 function profileWithAptFrames(d: Record<string, unknown>, horses: Horse[]) {
   const p = normProfile(d);
   return { ...p, aptFrames: mergeAptFrames(p.aptFrames, newlyEarned(horses, p.aptFrames)) };
@@ -250,6 +265,7 @@ function normProfile(d: Record<string, unknown>): {
   mailbox: MailItem[];
   equippedFrame: EquipFrame | null;
   aptFrames: AptGrade[];
+  boxFrames: BoxKind[];
   equippedTitle: string | null;
   customBet: SaveData['customBet'];
 } {
@@ -265,7 +281,7 @@ function normProfile(d: Record<string, unknown>): {
   const equippedTitle = typeof d.equippedTitle === 'string' ? d.equippedTitle : null;
   const cb = d.customBet as SaveData['customBet'];
   const customBet = cb && typeof cb === 'object' && typeof cb.amount === 'number' ? normalizeCustomBet(cb) : null;
-  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), aptFrames: normAptFrames(d.aptFrames), equippedTitle, customBet };
+  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), aptFrames: normAptFrames(d.aptFrames), boxFrames: normBoxFrames(d.boxFrames), equippedTitle, customBet };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -601,6 +617,10 @@ type Store = SaveData & {
   markMailRead: (id: string) => void;
   markAllMailRead: () => void;
   /** アイコンに装備するフレーム（殿堂 or 連勝、null で外す）。 */
+  /** 週末のボックスを1つ受け取る（同じ種類は1行にまとめて個数を増やす）。 */
+  receiveBox: (kind: BoxKind) => void;
+  /** 受信箱のボックスを1つ開ける。中身はその場で反映して結果を返す。 */
+  openWeekendBox: (kind: BoxKind) => BoxResult | null;
   equipFrame: (frame: EquipFrame | null) => void;
   /** 称号を付け替える（未達成のIDは無視される）。 */
   equipTitle: (id: string | null) => void;
@@ -715,6 +735,7 @@ export const useStore = create<Store>((set, get) => {
       mailbox: next.mailbox ?? [],
       equippedFrame: next.equippedFrame ?? null,
       aptFrames: next.aptFrames ?? [],
+      boxFrames: next.boxFrames ?? [],
       equippedTitle: next.equippedTitle ?? null,
       customBet: next.customBet ?? null,
       raceSession: next.raceSession ?? null,
@@ -1127,6 +1148,39 @@ export const useStore = create<Store>((set, get) => {
       const box = get().mailbox ?? [];
       if (box.some((m) => !m.read)) commit({ mailbox: box.map((m) => ({ ...m, read: true })) });
     },
+    // 同じ種類は1行のまま個数だけ増える（×2 → ×4 …）。土と日は別の箱なので別の行。
+    receiveBox: (kind) => {
+      commit({ mailbox: stackBox(get().mailbox ?? [], kind, Date.now()) });
+    },
+
+    openWeekendBox: (kind) => {
+      const s0 = get();
+      const nextMail = takeBox(s0.mailbox ?? [], kind);
+      if (!nextMail) return null; // 持っていない
+
+      const taken = (s0.boxFrames ?? []).includes(kind);
+      const res = rollBox(kind, Math.random, taken);
+
+      const patch: Partial<SaveData> = { mailbox: nextMail };
+      const r = res.reward;
+      if (r.type === 'coins') {
+        patch.coins = s0.coins + r.amount;
+        patch.stats = { ...s0.stats, totalEarned: (s0.stats.totalEarned ?? 0) + r.amount };
+      } else if (r.type === 'ticket') {
+        patch.refineTickets = (s0.refineTickets ?? 0) + r.amount;
+      } else if (r.type === 'item') {
+        const add: TrainingItem[] = Array.from({ length: r.amount }, () => ({ kind: 'any' }));
+        patch.items = [...s0.items, ...add];
+      } else if (r.type === 'dye') {
+        const colorId = rollDye(mulberry32((Math.random() * 2 ** 31) >>> 0));
+        patch.dyes = { ...(s0.dyes ?? {}), [colorId]: ((s0.dyes ?? {})[colorId] ?? 0) + 1 };
+      } else if (r.type === 'frame') {
+        patch.boxFrames = [...(s0.boxFrames ?? []), kind];
+      }
+      commit(patch);
+      return res;
+    },
+
     equipFrame: (frame) => commit({ equippedFrame: frame }),
     equipTitle: (id) => commit({ equippedTitle: id }),
     setCustomBet: (spec) => commit({ customBet: spec ? normalizeCustomBet(spec) : null }),

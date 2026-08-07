@@ -162,7 +162,14 @@ export type PlayerStats = {
 // resumes where it left off (改修：レース継続). The race is deterministic, so only
 // the seeds/choices + a wall-clock anchor are stored; entrants/result are rebuilt.
 export type SavedBet = { kind: string; sel: number[]; amount: number; odds: number };
-export type SingleRaceReward = { rank: number; awarded: Badge[]; earned: number; payout: number };
+export type SingleRaceReward = {
+  rank: number;
+  awarded: Badge[];
+  earned: number;
+  payout: number;
+  /** 週末イベントで受け取ったボックスの種類（もらえなかったレースでは未設定）。 */
+  box?: BoxFrameKind;
+};
 export type SingleRaceSession = {
   kind: 'single';
   screen: 'roulette' | 'paddock' | 'race' | 'result';
@@ -273,13 +280,20 @@ export type AptGrade = 'C' | 'B' | 'A' | 'S';
 export const APT_GRADES: AptGrade[] = ['C', 'B', 'A', 'S'];
 export type AptFrame = { kind: 'apt'; grade: AptGrade };
 
+// 週末のボックスから 1/1000・1/10000 で出る限定フレーム。各1回きり。
+export type BoxFrameKind = 'lucky' | 'gold';
+export type BoxFrame = { kind: 'box'; box: BoxFrameKind };
+
 // アイコンに装備できるフレームは 殿堂 / 連勝 / 適性 のいずれか。
-export type EquipFrame = FrameAward | StreakFrame | AptFrame;
+export type EquipFrame = FrameAward | StreakFrame | AptFrame | BoxFrame;
 export function isStreakFrame(f: EquipFrame | null | undefined): f is StreakFrame {
   return !!f && (f as StreakFrame).kind === 'streak';
 }
 export function isAptFrame(f: EquipFrame | null | undefined): f is AptFrame {
   return !!f && (f as AptFrame).kind === 'apt';
+}
+export function isBoxFrame(f: EquipFrame | null | undefined): f is BoxFrame {
+  return !!f && (f as BoxFrame).kind === 'box';
 }
 
 // メールボックスの1通。フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
@@ -287,10 +301,13 @@ export type MailItem = {
   id: string; // 重複防止の安定ID（例 'frame-2026-06-odds'）
   at: number; // 受信時刻(ms)
   read: boolean;
-  kind: 'frame' | 'notice';
+  kind: 'frame' | 'notice' | 'box';
   frame?: FrameAward; // kind==='frame'
   title?: string; // kind==='notice'（将来用）
   body?: string;
+  /** kind==='box'：週末のボックス。種類ごとに1行にまとめ、個数だけ増やす（×4 のように）。 */
+  box?: BoxFrameKind;
+  count?: number;
 };
 
 export type SaveData = {
@@ -330,6 +347,8 @@ export type SaveData = {
   /** 適性フレームを授与された等級。等級だけを持つので、そのウマを引退させても
    *  厳選で振り直しても取り上げられない（スペシャルタスクの約束）。 */
   aptFrames?: AptGrade[];
+  /** ボックスの限定フレームを引き当てた種類。各1回きりなので記録だけ残す。 */
+  boxFrames?: BoxFrameKind[];
   equippedTitle?: string | null; // 装備中の称号ID（data/titles.ts）。未設定なら達成済みで一番上の段
   customBet?: { amount: number; minOdds: number; maxOdds: number } | null; // カスタムベットの設定
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads

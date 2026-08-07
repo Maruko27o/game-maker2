@@ -14,13 +14,14 @@ import { teamHorses } from '../logic/farm';
 import { skillOf } from '../logic/skill';
 import { aptitudeOf } from '../logic/aptitude';
 import { TEAM_SIZE } from '../data/coins';
-import type { Horse, HorseLook, Badge, Stats } from '../types';
+import type { Horse, HorseLook, Badge, Stats, SingleRaceReward } from '../types';
 import { RUN_STYLE_LABEL, STAT_KEYS } from '../types';
 import HorseView from '../components/HorseView';
 import BadgeIcon from '../components/BadgeIcon';
 import CoinIcon from '../components/CoinIcon';
 import Icon from '../components/Icon';
 import EventCalendar from '../components/EventCalendar';
+import EventNote from '../components/EventNote';
 import RaceTrack2 from '../components/RaceTrack2';
 import CourseScene, { SceneDefs, courseTheme, THEME_LABEL } from '../components/CourseScene';
 import GrandPrix from './GrandPrix';
@@ -35,6 +36,9 @@ import BetResult from '../components/BetResult';
 import HorseStatsPopup from '../components/HorseStatsPopup';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import { normalRaceCoins, BADGE_COINS, MAX_BETS_PER_RACE } from '../data/coins';
+import { boxOfDow, BOXES, type BoxKind } from '../data/boxes';
+import { dowOfTime } from '../data/events';
+import { trustedNow } from '../logic/trustedClock';
 import { usePrefersReducedMotion, useScrollTopOnChange } from '../hooks';
 import styles from './Race.module.css';
 import CourseMark from '../components/CourseMark';
@@ -255,6 +259,7 @@ export default function Race() {
   const finishRaceTask = useStore((s) => s.finishRaceTask);
   const recordBetStats = useStore((s) => s.recordBetStats);
   const recordSoloStreak = useStore((s) => s.recordSoloStreak);
+  const receiveBox = useStore((s) => s.receiveBox);
   const raceSession = useStore((s) => s.raceSession);
   const setRaceSession = useStore((s) => s.setRaceSession);
   const patchRaceSession = useStore((s) => s.patchRaceSession);
@@ -268,7 +273,7 @@ export default function Race() {
   const [laps, setLaps] = useState<number>(2); // 1人でレースの周回数（1/2/3）
   const [setup, setSetup] = useState<RaceSetup | null>(null);
   const [result, setResult] = useState<SimResult | null>(null);
-  const [reward, setReward] = useState<{ rank: number; awarded: Badge[]; earned: number; payout: number } | null>(null);
+  const [reward, setReward] = useState<SingleRaceReward | null>(null);
   const [cutin, setCutin] = useState<Badge[]>([]); // achievement badges to celebrate
   const [bets, setBets] = useState<Bet[]>([]); // the placed bets (empty = no bet)
   const [odds, setOdds] = useState<number[] | null>(null); // Monte-Carlo win probs for the paddock
@@ -387,9 +392,19 @@ export default function Race() {
     // 1.5倍以上で連勝を1つ伸ばし、そうでなければ連勝リセット。レースは開始時に確定(seed)＆
     // セッション保持なので、タブを離れても結果は変わらず連勝を稼ぎ直せない。
     if (betList.length > 0) recordSoloStreak(isStreakWin(payout, staked));
+    // 週末イベント：馬券を買った一人でレースで1着をとると、その日のボックスが受信箱にたまる。
+    // 土＝ラッキーボックス（育成のごほうび）／日＝ゴールドボックス（コイン）。
+    let box: BoxKind | undefined;
+    if (betList.length > 0 && rank === 1) {
+      const kind = boxOfDow(dowOfTime(trustedNow()));
+      if (kind) {
+        receiveBox(kind);
+        box = kind;
+      }
+    }
     if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup0.course.id, payout);
     bufferSubmission(buildSubmission(setup0.entrants, setup0.course.id, setup0.mode, setup0.seed, res, setup0.entrants[0].horseId, setup0.laps));
-    return { reward: { rank, awarded, earned, payout }, achievements };
+    return { reward: { rank, awarded, earned, payout, box }, achievements };
   }
 
   function onFinish(result: SimResult) {
@@ -655,6 +670,11 @@ export default function Race() {
     }
     return (
       <div className={styles.page}>
+        {/* 週末は1着でボックスがもらえる（常設の仕様と取り違えないよう明示する） */}
+        <div className={styles.eventNote}>
+          <EventNote dow={6} text="馬券を買ったこのレースで1着になると、ラッキーボックスが受信箱にもらえるよ！" />
+          <EventNote dow={0} text="馬券を買ったこのレースで1着になると、ゴールドボックスが受信箱にもらえるよ！" />
+        </div>
         <Paddock
           entrants={setup.entrants}
           looks={setup.looks}
@@ -716,6 +736,16 @@ export default function Race() {
                   <span>{BADGES[b.id as keyof typeof BADGES]?.name}</span>
                 </div>
               ))}
+            </div>
+          )}
+          {/* 週末イベントのボックス。受信箱にたまったことをここで知らせる。 */}
+          {reward?.box && (
+            <div className={styles.boxGot} style={{ ['--c1' as string]: BOXES[reward.box].colors[0], ['--c2' as string]: BOXES[reward.box].colors[1] }}>
+              <span className={styles.boxGotIcon} aria-hidden><Icon name={reward.box === 'gold' ? 'crown' : 'gift'} size={26} /></span>
+              <span className={styles.boxGotText}>
+                <span className={styles.boxGotTitle}>{BOXES[reward.box].name} をもらった！</span>
+                <span className={styles.boxGotSub}>今日は週末イベント！受信箱にたまっているよ</span>
+              </span>
             </div>
           )}
           {/* 賞金＋馬券収支をコンパクトに（ぱっと確認）*/}

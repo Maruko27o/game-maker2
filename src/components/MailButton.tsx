@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store';
 import { setRankingFrame } from '../cloud';
 import { monthLabel } from '../logic/period';
-import type { EquipFrame, FrameAward, HorseLook, MailItem } from '../types';
-import { isStreakFrame, isAptFrame } from '../types';
+import type { BoxFrameKind, EquipFrame, FrameAward, HorseLook, MailItem } from '../types';
+import { isStreakFrame, isAptFrame, isBoxFrame } from '../types';
+import { BOXES, boxMailId } from '../data/boxes';
 import Icon from './Icon';
 import AvatarFrame from './AvatarFrame';
 import EquippedFrame from './EquippedFrame';
 import HorseFace from './HorseFace';
+import BoxOpen from './BoxOpen';
 import styles from './MailButton.module.css';
 import CloseButton from './CloseButton';
 
@@ -15,7 +17,7 @@ const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: 
 const metricLabel = (m: FrameAward['metric']) => (m === 'payout' ? '最大獲得賞金' : '最大オッズ');
 const frameTitle = (f: FrameAward) => `${monthLabel(f.period)} ${metricLabel(f.metric)} ${f.rank}位`;
 const sameFrame = (a: EquipFrame | null | undefined, b: FrameAward) =>
-  !!a && !isStreakFrame(a) && !isAptFrame(a) && a.period === b.period && a.rank === b.rank && a.metric === b.metric;
+  !!a && !isStreakFrame(a) && !isAptFrame(a) && !isBoxFrame(a) && a.period === b.period && a.rank === b.rank && a.metric === b.metric;
 
 // Top-bar mailbox (タスクの横). フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
 export default function MailButton() {
@@ -28,6 +30,7 @@ export default function MailButton() {
 
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<MailItem | null>(null);
+  const [boxOpen, setBoxOpen] = useState<BoxFrameKind | null>(null);
 
   const unread = mailbox.filter((m) => !m.read).length;
   const look = useMemo<HorseLook>(() => {
@@ -35,8 +38,15 @@ export default function MailButton() {
     return h ?? DEFAULT_LOOK;
   }, [avatarHorseId, horses]);
 
+  // 開封中のボックスの残り個数は store から都度読む（開けるたびに減るので prop 固定にしない）。
+  const boxLeft = boxOpen ? (mailbox.find((m) => m.id === boxMailId(boxOpen))?.count ?? 0) : 0;
+
   function openMail(m: MailItem) {
     if (!m.read) markMailRead(m.id);
+    if (m.kind === 'box' && m.box) {
+      setBoxOpen(m.box);
+      return;
+    }
     setDetail(m);
   }
 
@@ -81,6 +91,20 @@ export default function MailButton() {
                             <span className={styles.rowSub}>{frameTitle(m.frame)}</span>
                           </span>
                         </>
+                      ) : m.kind === 'box' && m.box ? (
+                        <>
+                          <span
+                            className={`${styles.thumb} ${styles.boxThumb}`}
+                            style={{ ['--c1' as string]: BOXES[m.box].colors[0], ['--c2' as string]: BOXES[m.box].colors[1] }}
+                          >
+                            <Icon name={m.box === 'gold' ? 'crown' : 'gift'} size={24} />
+                          </span>
+                          <span className={styles.rowText}>
+                            <span className={styles.rowTitle}>{BOXES[m.box].name}</span>
+                            <span className={styles.rowSub}>タップすると開けられるよ</span>
+                          </span>
+                          <span className={styles.count}>×{m.count ?? 1}</span>
+                        </>
                       ) : (
                         <span className={styles.rowText}>
                           <span className={styles.rowTitle}>{m.title ?? 'おしらせ'}</span>
@@ -98,7 +122,7 @@ export default function MailButton() {
           </div>
 
           {/* おしらせ（お詫び・補填など）は全文を読める形で開く */}
-          {detail && detail.kind !== 'frame' && (
+          {detail && detail.kind !== 'frame' && detail.kind !== 'box' && (
             <div className={styles.detailOverlay} onClick={() => setDetail(null)}>
               <div className={`${styles.detailCard} ${styles.noticeCard}`} onClick={(e) => e.stopPropagation()}>
                 <CloseButton onClick={() => setDetail(null)} />
@@ -132,6 +156,9 @@ export default function MailButton() {
           )}
         </div>
       )}
+
+      {/* 受信箱のオーバーレイの外に出す（中に置くと閉じるクリックが親まで伝わってしまう） */}
+      {boxOpen && <BoxOpen kind={boxOpen} count={boxLeft} look={look} onClose={() => setBoxOpen(null)} />}
     </>
   );
 }
