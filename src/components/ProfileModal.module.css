@@ -688,7 +688,9 @@
   /* 右下のペンは枠の「外」に出すので、中身の余白は左右そろえてよい。
      ここで overflow: hidden にするとペンが枠の内側に切り取られてしまう。
      背景（TitleBanner）は自前で inset:0 + overflow:hidden なので、はみ出さない。 */
-  padding: 5px 14px;
+  /* 右のペンは枠の外に半分かかるので、そのぶん右の余白を広くとって
+     最後の文字にペンが触れないようにする。 */
+  padding: 5px 20px 5px 14px;
   margin-right: 8px;
   border: 3px solid #5c4326;
   border-radius: 999px;
@@ -740,4 +742,19 @@
 /* 称号エディタの一覧は、ポップアップの高さに収める */
 .editorCard .titleList {
   max-height: min(58vh, 400px);
+}
+
+/* 指の当たり判定を広げる（見た目は変えない）。小さい丸ボタンは押しにくいので、
+   透明な当たり判定だけを 44px まで広げる。 */
+.collectionBtn {
+  position: relative;
+}
+.collectionBtn::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100%, 44px);
+  height: max(100%, 44px);
 }

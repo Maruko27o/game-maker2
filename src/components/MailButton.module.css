@@ -172,3 +172,14 @@
   white-space: pre-wrap;
   text-align: left;
 }
+
+/* 受信箱では着けかえない（アイコン設定に一本化）ので、行き先を案内する。
+   フレーム獲得カードは濃い紫地なので、文字色は暗い ink 系ではなく淡い金にする。 */
+.detailNote {
+  margin: -6px 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #d8c894;
+  text-align: center;
+  line-height: 1.5;
+}

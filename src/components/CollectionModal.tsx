@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store';
 import { TITLES, titleCtx, type TitleDef } from '../data/titles';
 import { TOTAL_PARTS } from '../data/parts';
-import { frameCatalog, frameProgress, type FrameSlot } from '../logic/frameCatalog';
+import { frameCatalog, frameProgress, rankingFrames, type FrameSlot } from '../logic/frameCatalog';
 import type { HorseLook } from '../types';
+import { monthLabel } from '../logic/period';
 import EquippedFrame from './EquippedFrame';
 import TitleBanner from './TitleBanner';
 import CloseButton from './CloseButton';
@@ -19,6 +20,7 @@ export default function CollectionModal({ look, onClose }: { look: HorseLook; on
   const aptFrames = useStore((s) => s.aptFrames ?? []);
   const streakClaimed = useStore((s) => s.streakClaimed ?? 0);
   const owned = useStore((s) => s.owned);
+  const mailbox = useStore((s) => s.mailbox ?? []);
 
   const [tab, setTab] = useState<'frame' | 'title'>('frame');
 
@@ -27,6 +29,9 @@ export default function CollectionModal({ look, onClose }: { look: HorseLook; on
     [boxFrames, streakClaimed, aptFrames],
   );
   const fp = frameProgress(frames);
+  // 殿堂フレームは毎月増えるので「あと何個」の数には入れない。持っているぶんだけ
+  // 下に別枠で飾る。
+  const ranks = useMemo(() => rankingFrames(mailbox), [mailbox]);
 
   const ctx = useMemo(
     () => titleCtx(useStore.getState(), Math.round((Object.keys(owned ?? {}).length / TOTAL_PARTS) * 100)),
@@ -55,7 +60,26 @@ export default function CollectionModal({ look, onClose }: { look: HorseLook; on
           </button>
         </div>
 
-        {tab === 'frame' ? <FrameGrid rows={frames} look={look} /> : <TitleList rows={titles} />}
+        {tab === 'frame' ? (
+          <>
+            <FrameGrid rows={frames} look={look} />
+            {ranks.length > 0 && (
+              <>
+                <div className={styles.section}>殿堂（月間トップ3）<small>持っているぶんだけ</small></div>
+                <div className={styles.grid}>
+                  {ranks.map((f) => (
+                    <div key={`${f.period}-${f.rank}-${f.metric}`} className={styles.cell}>
+                      <EquippedFrame frame={f} look={look} size={56} />
+                      <span className={styles.hint}>{monthLabel(f.period)} {f.metric === 'payout' ? '最大獲得賞金' : '最大オッズ'} {f.rank}位</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <TitleList rows={titles} />
+        )}
 
         <p className={styles.foot}>
           ぼやけているものはまだ持っていません。装備は「アイコン設定」と「名前の上のバッジ」から。

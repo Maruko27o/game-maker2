@@ -531,3 +531,18 @@
   transform: translateY(2px);
   box-shadow: 0 1px 0 var(--blue-dark);
 }
+
+/* 指の当たり判定を広げる（見た目は変えない）。小さい丸ボタンは押しにくいので、
+   透明な当たり判定だけを 44px まで広げる。 */
+.skillBookBtn {
+  position: relative;
+}
+.skillBookBtn::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+}

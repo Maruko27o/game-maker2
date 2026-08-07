@@ -4,9 +4,10 @@ import { TITLES, titleCtx, activeTitle, type TitleDef } from '../data/titles';
 import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRankingFrame, setRankingTitle } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
-import type { HorseLook, EquipFrame } from '../types';
+import type { HorseLook, EquipFrame, FrameAward } from '../types';
+import { monthLabel } from '../logic/period';
 import { isStreakFrame, isAptFrame, isBoxFrame } from '../types';
-import { frameCatalog } from '../logic/frameCatalog';
+import { frameCatalog, rankingFrames } from '../logic/frameCatalog';
 import { fmtOdds } from '../logic/betting';
 import HorseFace from './HorseFace';
 import EquippedFrame from './EquippedFrame';
@@ -27,6 +28,10 @@ function sameFrame(a: EquipFrame | null, b: EquipFrame | null): boolean {
   if (isBoxFrame(a) || isBoxFrame(b)) return isBoxFrame(a) && isBoxFrame(b) && a.box === b.box;
   return a.period === b.period && a.rank === b.rank && a.metric === b.metric;
 }
+
+// 殿堂フレームの説明（読み上げと見出し用）。
+const metricLabel = (m: FrameAward['metric']) => (m === 'payout' ? '最大獲得賞金' : '最大オッズ');
+const frameAwardLabel = (f: FrameAward) => `${monthLabel(f.period)} ${metricLabel(f.metric)} ${f.rank}位`;
 
 const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 const SLOTS = 5;
@@ -51,6 +56,7 @@ export default function ProfileModal({
   const pstats = useStore((s) => s.stats);
   const streakClaimed = useStore((s) => s.streakClaimed ?? 0);
   const equippedFrame = useStore((s) => s.equippedFrame ?? null);
+  const mailbox = useStore((s) => s.mailbox ?? []);
   const aptFrames = useStore((s) => s.aptFrames ?? []);
   const boxFrames = useStore((s) => s.boxFrames ?? []);
   const equipFrame = useStore((s) => s.equipFrame);
@@ -76,6 +82,9 @@ export default function ProfileModal({
     () => frameCatalog({ boxFrames, streakClaimed, aptFrames }),
     [streakClaimed, aptFrames, boxFrames],
   );
+  // 殿堂フレームは「持っているぶんだけ」を目録のうしろに足す。毎月増えるので
+  // 未取得の枠は作らない（作ると一覧が月の数だけ伸びてしまう）。
+  const rankFrames = useMemo(() => rankingFrames(mailbox), [mailbox]);
 
   // フレームを装備／解除（ローカル＋ランキング行にも反映）。
   function equip(frame: EquipFrame | null) {
@@ -235,7 +244,7 @@ export default function ProfileModal({
 
         {/* コレクション：フレームと称号が「あと何で埋まるか」を眺める場所。 */}
         <button className={styles.collectionBtn} onClick={() => setShowCollection(true)}>
-          <Icon name="book" size={16} /> コレクション
+          <span className={styles.collectionLabel}><Icon name="book" size={16} /> コレクション</span>
           <span className={styles.collectionCount}>フレーム {frameHave}/{frameSlots.length}・称号 {titleHave}/{TITLES.length}</span>
         </button>
 
@@ -314,6 +323,21 @@ export default function ProfileModal({
                         <span className={got ? undefined : styles.frameBlur}>
                           <EquippedFrame frame={frame} look={avatar} size={56} />
                         </span>
+                        {on && <span className={styles.frameTag}>装備中</span>}
+                      </button>
+                    );
+                  })}
+                  {/* 殿堂（月間トップ3）。持っているものだけを後ろに並べる。 */}
+                  {rankFrames.map((f) => {
+                    const on = sameFrame(equippedFrame, f);
+                    return (
+                      <button
+                        key={`rank-${f.period}-${f.rank}-${f.metric}`}
+                        className={`${styles.framePick} ${on ? styles.picked : ''}`}
+                        onClick={() => equip(f)}
+                        aria-label={`殿堂フレーム ${frameAwardLabel(f)}`}
+                      >
+                        <EquippedFrame frame={f} look={avatar} size={56} />
                         {on && <span className={styles.frameTag}>装備中</span>}
                       </button>
                     );
