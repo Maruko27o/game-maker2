@@ -41,8 +41,14 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   );
   // 実況テロップ（レースの記録から作るので、レースが同じなら毎回同じ）。
   const telops = useMemo(
-    () => raceCommentary(result, entrants.map((e) => ({ name: e.name, isPlayer: !!e.isPlayer, style: e.style }))),
-    [result, entrants],
+    () => raceCommentary(
+      result,
+      entrants.map((e) => ({ name: e.name, isPlayer: !!e.isPlayer, style: e.style })),
+      // 買い目に入っているウマ（重複は落とす）。実況に出すためだけで、
+      // レースの計算には一切渡していない。
+      [...new Set((bets ?? []).flatMap((b) => b.sel))],
+    ),
+    [result, entrants, bets],
   );
   const track = course.track;
   const lap = lapLength(track);

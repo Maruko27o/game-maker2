@@ -30,28 +30,30 @@ type Tier = {
   glow: boolean;
   sparkles: boolean;
   rainbow: boolean;
+  /** リングを一周する光の速さ（秒）。等級が上がるほど速く・強くする。 */
+  sheenDur: string;
 };
 
 const TIERS: Record<AptGrade, Tier> = {
   C: {
     base: '#b97742', hi: '#e7b184', lo: '#7c4a20', ink: '#5b3a1c',
     plate: '#d9a273', plateHi: '#f2cba6',
-    studs: 8, laurel: false, gems: false, glow: false, sparkles: false, rainbow: false,
+    studs: 8, laurel: false, gems: false, glow: false, sparkles: false, rainbow: false, sheenDur: '7s',
   },
   B: {
     base: '#b9c4cf', hi: '#f4f8fb', lo: '#77828e', ink: '#3f4650',
     plate: '#dfe6ed', plateHi: '#ffffff',
-    studs: 12, laurel: true, gems: false, glow: false, sparkles: false, rainbow: false,
+    studs: 12, laurel: true, gems: false, glow: false, sparkles: false, rainbow: false, sheenDur: '6s',
   },
   A: {
     base: '#e9b93c', hi: '#fff0b8', lo: '#a2760f', ink: '#5a3f00',
     plate: '#ffe9a8', plateHi: '#fff8dc',
-    studs: 16, laurel: true, gems: true, glow: true, sparkles: false, rainbow: false,
+    studs: 16, laurel: true, gems: true, glow: true, sparkles: false, rainbow: false, sheenDur: '5s',
   },
   S: {
     base: '#c4a2ff', hi: '#ffffff', lo: '#7b5fc0', ink: '#3a2c1c',
     plate: '#ffd59a', plateHi: '#fdff9a',
-    studs: 20, laurel: true, gems: true, glow: true, sparkles: true, rainbow: true,
+    studs: 20, laurel: true, gems: true, glow: true, sparkles: true, rainbow: true, sheenDur: '3.6s',
   },
 };
 
@@ -109,6 +111,12 @@ export default function AptFrame({
             <stop offset="0%" stopColor={t.plateHi} />
             <stop offset="100%" stopColor={t.plate} />
           </linearGradient>
+          {/* リングの上を流れる光。どの等級にも入れて「止まって見えない」ようにする。 */}
+          <linearGradient id={`asheen-${uid}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+            <stop offset="50%" stopColor="#fff" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
           <radialGradient id={`aglow-${uid}`} cx="50%" cy="50%" r="50%">
             <stop offset="60%" stopColor={t.hi} stopOpacity="0" />
             <stop offset="86%" stopColor={t.hi} stopOpacity="0.5" />
@@ -117,7 +125,11 @@ export default function AptFrame({
         </defs>
 
         {/* 外周のオーラ（A 以上） */}
-        {t.glow && <circle cx={C} cy={C} r={57} fill={`url(#aglow-${uid})`} />}
+        {t.glow && (
+          <circle cx={C} cy={C} r={57} fill={`url(#aglow-${uid})`}>
+            <animate attributeName="opacity" values="0.55;1;0.55" dur="2.8s" repeatCount="indefinite" />
+          </circle>
+        )}
 
         {/* 左右の月桂樹（B 以上） */}
         {t.laurel && (
@@ -148,8 +160,42 @@ export default function AptFrame({
           stroke={t.rainbow ? `url(#abow-${uid})` : `url(#aring-${uid})`}
           strokeWidth={ringW}
         />
+        {/* S の虹は色そのものを回す。止まった虹より「特別」に見える。 */}
+        {t.rainbow && (
+          <circle cx={C} cy={C} r={R} fill="none" stroke={`url(#abow-${uid})`} strokeWidth={ringW} opacity="0.85">
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from={`0 ${C} ${C}`}
+              to={`360 ${C} ${C}`}
+              dur="11s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        )}
         <circle cx={C} cy={C} r={R + ringW / 2} fill="none" stroke={t.lo} strokeOpacity="0.7" strokeWidth="1.2" />
         <circle cx={C} cy={C} r={R - ringW / 2} fill="none" stroke={t.lo} strokeOpacity="0.5" strokeWidth="1.2" />
+
+        {/* リングを一周する光。等級が上がるほど速い。 */}
+        <circle
+          cx={C}
+          cy={C}
+          r={R}
+          fill="none"
+          stroke={`url(#asheen-${uid})`}
+          strokeWidth={ringW - 1.8}
+          strokeDasharray="24 272"
+          strokeLinecap="round"
+        >
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from={`0 ${C} ${C}`}
+            to={`360 ${C} ${C}`}
+            dur={t.sheenDur}
+            repeatCount="indefinite"
+          />
+        </circle>
 
         {/* 鋲。等級が上がるほど密になる。 */}
         {studs.map((p, i) => (
@@ -167,7 +213,16 @@ export default function AptFrame({
                   fill={t.rainbow ? `url(#abow-${uid})` : t.plateHi}
                   stroke={t.lo}
                   strokeWidth="0.9"
-                />
+                >
+                  {/* 4つが順にまたたく（同時だと点滅に見える） */}
+                  <animate
+                    attributeName="opacity"
+                    values="0.6;1;0.6"
+                    dur="2.4s"
+                    begin={`${(deg / 360) * 2.4}s`}
+                    repeatCount="indefinite"
+                  />
+                </path>
               </g>
             );
           })}
@@ -181,7 +236,9 @@ export default function AptFrame({
               d="M 0,-5 L 1.3,-1.3 L 5,0 L 1.3,1.3 L 0,5 L -1.3,1.3 L -5,0 L -1.3,-1.3 Z"
               fill="#fff"
               opacity="0.95"
-            />
+            >
+              <animate attributeName="opacity" values="0.15;1;0.15" dur="2.4s" begin={`${i * 0.5}s`} repeatCount="indefinite" />
+            </path>
           ))}
 
         {/* 下の銘板に等級の文字 */}

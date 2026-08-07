@@ -13,13 +13,23 @@ import type { RunStyle } from '../types';
 //  ・あなたのウマの話を優先する（他馬の話ばかりだと他人事になる）
 
 export type Telop = { at: number; text: string };
-/** 内部用。近い時刻でぶつかったとき、どちらを残すかの重み。 */
-type Cand = Telop & { pri: number };
+/** 内部用。近い時刻でぶつかったとき、どちらを残すかの重みと、誰の話か。 */
+type Cand = Telop & { pri: number; subj: number };
 
 /** 1本のテロップが出ている長さ(秒)。 */
 export const TELOP_HOLD = 2.6;
 /** テロップ同士の最短の間隔(秒)。詰まると読めない。 */
 const MIN_GAP = 3.0;
+
+/**
+ * 同じウマの話が続くときの最低間隔（秒）。
+ *
+ * 固定の秒数にすると、短いレース（1周＝約38秒）では削りすぎて実況がほとんど
+ * 消えてしまうので、レースの長さに比例させる。
+ */
+export function sameHorseGapFor(duration: number): number {
+  return Math.max(MIN_GAP, Math.min(8, duration * 0.1));
+}
 /** スタートの合図を出す時刻と文。これだけは必ず1本目に出す。 */
 const START_AT = 0.4;
 const START_TEXT = 'ゲートが開いた！';
@@ -34,19 +44,38 @@ const LEAD_BY_STYLE: Record<RunStyle, (n: string) => string> = {
   oikomi: (n) => `${n}がめずらしく前につけている`,
 };
 
-/** そのウマの呼び名。自分のウマは名前ではなく「あなたのウマ」。 */
-function who(e: Entrant): string {
-  return e.isPlayer ? 'あなたのウマ' : e.name;
+/**
+ * そのウマの呼び名。実況では必ず「3番ナミゴウ」のように枠番と名前をそろえて言う。
+ *
+ * 名前だけだと、順位カードや馬券の番号と結びつかない（画面では番号で見ている
+ * のに、実況だけ名前で言われても、どのウマの話か分からない）。
+ * 自分のウマは名前ではなく「あなたのウマ」だが、番号は同じように付ける。
+ */
+function whoAt(entrants: Entrant[], gate: number[], i: number): string {
+  const e = entrants[i];
+  if (!e) return '';
+  const no = gate[i];
+  const name = e.isPlayer ? 'あなたのウマ' : e.name;
+  return no != null ? `${no}番${name}` : name;
 }
 
-export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
+/**
+ * @param betOn 馬券で買ったウマの並び順（entrants の添字）。買い目に絡む動きも
+ *   実況する。あくまで表示だけで、レースの結果にも倍率にも一切影響しない。
+ */
+export function raceCommentary(res: SimResult, entrants: Entrant[], betOn: number[] = []): Telop[] {
   const frames = res.frames;
   if (frames.length === 0 || entrants.length === 0) return [];
+  /** 「3番ナミゴウ」。実況ではどのウマも必ずこの形で呼ぶ。 */
+  const who = (i: number) => whoAt(entrants, res.gate, i);
 
   // pri は「同じころに2つ起きたとき、どちらを言うか」の重み。時刻だけで
   // 決めると、早く起きやすい文（順位の上下）ばかりが毎回残ってしまう。
   const out: Cand[] = [];
-  const push = (at: number, text: string, pri: number) => out.push({ at, text, pri });
+  // subj は「誰の話か」（entrants の添字・-1 は特定のウマの話ではない）。
+  // 同じウマの話が続けて出ると、「脚が上がってきた」の直後に「上がってきた！」の
+  // ように食い違って読めてしまうので、少し間をあける。
+  const push = (at: number, text: string, pri: number, subj = -1) => out.push({ at, text, pri, subj });
 
   const playerIdx = entrants.findIndex((e) => e.isPlayer);
   const goal = res.distanceS;
@@ -87,7 +116,7 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
     const e = entrants[l];
     if (e) {
       const say = e.style ? LEAD_BY_STYLE[e.style] : null;
-      push(frames[fi].t, say ? say(who(e)) : `${who(e)}が先手を取った！`, 65);
+      push(frames[fi].t, say ? say(who(l)) : `${who(l)}が先手を取った！`, 65, l);
     }
   }
 
@@ -98,7 +127,7 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
       const fi = frameAtProgress(0.45);
       const rank = frames[fi].runners[playerIdx]?.rank ?? 0;
       if (rank >= entrants.length - 1) {
-        push(frames[fi].t, 'あなたのウマは後ろでじっと脚をためている', 40);
+        push(frames[fi].t, `${who(playerIdx)}は後ろでじっと脚をためている`, 40, playerIdx);
       }
     }
   }
@@ -108,7 +137,7 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
     for (let k = 0; k < frames[i].runners.length; k++) {
       if (frames[i].runners[k].state !== 'jump') continue;
       if (!entrants[k]) continue;
-      push(frames[i].t, `${who(entrants[k])}が障害を跳んだ！`, 70);
+      push(frames[i].t, `${who(k)}が障害を跳んだ！`, 70, k);
       break outer2;
     }
   }
@@ -120,7 +149,7 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
     for (let i = from + 1; i < frames.length; i++) {
       const l = leaderAt(i);
       if (l === prev) continue;
-      if (entrants[l]) push(frames[i].t, `先頭が入れかわった！${who(entrants[l])}！`, 60);
+      if (entrants[l]) push(frames[i].t, `先頭が入れかわった！${who(l)}！`, 60, l);
       prev = l;
       break; // 1回だけ
     }
@@ -132,7 +161,7 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
     for (let k = 0; k < frames[fi].runners.length; k++) {
       const r = frames[fi].runners[k];
       if (r.state !== 'tired' || !entrants[k]) continue;
-      push(frames[fi].t, `${who(entrants[k])}、脚が上がってきた…`, 40);
+      push(frames[fi].t, `${who(k)}、脚が上がってきた…`, 40, k);
       break;
     }
   }
@@ -142,7 +171,7 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
     for (let k = 0; k < frames[i].runners.length; k++) {
       if (frames[i].runners[k].state !== 'stumble') continue;
       if (!entrants[k]) continue;
-      push(frames[i].t, `${who(entrants[k])}がつまずいた！`, 70);
+      push(frames[i].t, `${who(k)}がつまずいた！`, 70, k);
       break outer;
     }
   }
@@ -158,22 +187,22 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
       if (d > bestGain.d) bestGain = { d, fi: i };
       if (-d > bestLoss.d) bestLoss = { d: -d, fi: i };
     }
-    if (bestGain.d >= 2) push(frames[bestGain.fi].t, `あなたのウマが上がってきた！${rankAt(bestGain.fi)}番手！`, 55);
-    if (bestLoss.d >= 2) push(frames[bestLoss.fi].t, 'あなたのウマ、少し置かれた…', 45);
+    if (bestGain.d >= 2) push(frames[bestGain.fi].t, `${who(playerIdx)}が上がってきた！${rankAt(bestGain.fi)}番手！`, 55, playerIdx);
+    if (bestLoss.d >= 2) push(frames[bestLoss.fi].t, `${who(playerIdx)}、少し置かれた…`, 45, playerIdx);
   }
 
   // ── 勝負どころ ──
   {
     const fi = frameAtProgress(0.72);
     const l = leaderAt(fi);
-    if (entrants[l]) push(frames[fi].t, `勝負どころ！先頭は${who(entrants[l])}`, 50);
+    if (entrants[l]) push(frames[fi].t, `勝負どころ！先頭は${who(l)}`, 50, l);
   }
 
   // ── 直線 ──
   {
     const fi = frameAtProgress(0.88);
     const l = leaderAt(fi);
-    if (entrants[l]) push(frames[fi].t, `直線！${who(entrants[l])}が抜け出すか`, 55);
+    if (entrants[l]) push(frames[fi].t, `直線！${who(l)}が抜け出すか`, 55, l);
   }
 
   // ── ゴール前の接戦（1着と2着のタイム差が僅かなときだけ）──
@@ -181,6 +210,35 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
     const times = res.finishTimes.filter((t) => Number.isFinite(t)).sort((a, b) => a - b);
     if (times.length >= 2 && times[1] - times[0] <= 0.25) {
       push(Math.max(0, times[0] - 1.4), 'ゴール前、横一線！', 90);
+    }
+  }
+
+  // ── 買った馬券のウマ ──
+  // 自分のウマの話しかしないと、馬券を買っていても他の7頭がただの背景になる。
+  // 買い目に絡むウマが動いたときだけ、ひとこと言う（自分のウマは別の文が担当）。
+  {
+    const mine = new Set(betOn.filter((i) => i !== playerIdx && entrants[i]));
+    if (mine.size > 0) {
+      // いちばん順位を上げた瞬間をひとつだけ。
+      let best: { fi: number; gain: number; k: number } | null = null;
+      const from = frameAtProgress(0.3);
+      for (let i = from; i < frames.length; i++) {
+        for (const k of mine) {
+          const r0 = frames[from].runners[k]?.rank;
+          const r1 = frames[i].runners[k]?.rank;
+          if (r0 == null || r1 == null) continue;
+          const gain = r0 - r1;
+          if (gain >= 2 && (!best || gain > best.gain)) best = { fi: i, gain, k };
+        }
+      }
+      if (best) {
+        const rank = frames[best.fi].runners[best.k].rank;
+        push(frames[best.fi].t, `買った${who(best.k)}が上がってきた！${rank}番手！`, 58, best.k);
+      }
+      // 直線で買い目のウマが先頭なら、そこも言う。
+      const fi = frameAtProgress(0.9);
+      const l = leaderAt(fi);
+      if (mine.has(l)) push(frames[fi].t, `買った${who(l)}が先頭だ！`, 80, l);
     }
   }
 
@@ -194,10 +252,12 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
       if (!Number.isFinite(t)) continue;
       if (win < 0 || t < res.finishTimes[win]) win = i;
     }
-    if (win >= 0 && entrants[win]) push(res.finishTimes[win], `${who(entrants[win])}が先頭でゴール！`, 95);
+    if (win >= 0 && entrants[win]) push(res.finishTimes[win], `${who(win)}が先頭でゴール！`, 95, win);
   }
 
   // 時間順にならべ、近すぎるものは落とす（同時に2本出さない）。
+  const sameHorseGap = sameHorseGapFor(res.duration);
+
   // ぶつかったときは pri の高い方を残す。
   out.sort((a, b) => a.at - b.at);
   const kept: Cand[] = [];
@@ -212,7 +272,24 @@ export function raceCommentary(res: SimResult, entrants: Entrant[]): Telop[] {
     }
     kept.push(t);
   }
-  return kept.map(({ at, text }) => ({ at, text }));
+
+  // 同じウマの話が近くで続くものを落とす。
+  // 「ウマ3、脚が上がってきた…」の直後に「買ったウマ3が上がってきた！」だと、
+  // 同じウマについて逆のことを言っているように読めてしまう。
+  //
+  // ここで別の通しをかけるのは、上の並べ替えで「入れかえ」が起きたときに、
+  // 入れかわった結果として同じウマが隣り合うことがあるため（入れかえた時点では
+  // 一つ前としか比べていない）。
+  const final: Cand[] = [];
+  for (const t of kept) {
+    const last = final[final.length - 1];
+    if (last && last.subj >= 0 && last.subj === t.subj && t.at - last.at < sameHorseGap) {
+      if (t.pri > last.pri) final[final.length - 1] = t;
+      continue;
+    }
+    final.push(t);
+  }
+  return final.map(({ at, text }) => ({ at, text }));
 }
 
 /** その時刻に出ているテロップ（無ければ null）。 */
