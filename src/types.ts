@@ -169,6 +169,8 @@ export type SingleRaceReward = {
   payout: number;
   /** 週末イベントで受け取ったボックスの種類（もらえなかったレースでは未設定）。 */
   box?: BoxFrameKind;
+  /** 水曜（万馬券デー）の上乗せ額。payout とは別枠でコインに足している。 */
+  ticketBonus?: number;
 };
 export type SingleRaceSession = {
   kind: 'single';

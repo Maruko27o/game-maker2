@@ -23,6 +23,7 @@ import Icon from '../components/Icon';
 import StatRadar from '../components/StatRadar';
 import TrophyIcon from '../components/TrophyIcon';
 import BadgeIcon from '../components/BadgeIcon';
+import EventNote from '../components/EventNote';
 import styles from './Stable.module.css';
 
 type View = 'detail' | 'train';
@@ -124,6 +125,7 @@ export default function Stable() {
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [view, setView] = useState<View>('detail');
+  const [crit, setCrit] = useState<StatKey | null>(null); // 火曜のまぐれ +2 を出す項目
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [rerollOpen, setRerollOpen] = useState(false);
   // まとめて引退：選択モードと選択中のウマ
@@ -675,6 +677,7 @@ export default function Stable() {
               // --- Training view ---
               <>
                 <h2 className={styles.trainTitle}>育てる</h2>
+                <EventNote dow={2} text="まぐれで2つ上がることがあるよ！（合計48の上限は超えません）" />
                 <div className={styles.trainHorse}>
                   <HorseView horse={selected} size={120} shadow />
                 </div>
@@ -701,10 +704,15 @@ export default function Stable() {
                         <button
                           className={styles.plusBtn}
                           disabled={!usable}
-                          onClick={() => trainHorse(selected.id, idx, k)}
+                          onClick={() => {
+                            const gained = trainHorse(selected.id, idx, k);
+                            // まぐれの +2 は見逃されやすいので、その項目に短く出す。
+                            if (gained >= 2) { setCrit(k); setTimeout(() => setCrit((c) => (c === k ? null : c)), 1400); }
+                          }}
                         >
                           +1
                         </button>
+                        {crit === k && <span className={styles.critPop} aria-hidden>+2！</span>}
                       </div>
                     );
                   })}

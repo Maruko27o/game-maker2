@@ -1,5 +1,9 @@
 /* 各画面に出す「今日はイベントデー」の帯。常設仕様と見分けがつくよう色を強めに。 */
 .note {
+  /* 木目や草むらの部屋など、背景が position: absolute で敷かれている画面がある。
+     静的なままだとその背景の下に潜ってカードが見えなくなるので、必ず前に出す。 */
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 8px;

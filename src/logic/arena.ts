@@ -9,6 +9,8 @@ import { mulberry32 } from './stats';
 import { makeCpu } from './cpu';
 import { colorById } from '../data/parts';
 import { ARENA_FIELD, ARENA_ADVANCE, ARENA_REAL_CAP, ARENA_COM_BANDS, ARENA_FORM_SCALE, arenaPrize, periodLabel } from '../data/arena';
+import { arenaPrizeMul } from './weekdayEvents';
+import { trustedNow } from './trustedClock';
 import type { ArenaHorseSnapshot, ArenaRoundResult, ArenaResult, ArenaOutcome, HorseLook } from '../types';
 
 /** entrant/look へ変換するヘルパ（simulate2・HorseView 用）。 */
@@ -125,7 +127,8 @@ export function runTournament(
     }
   }
 
-  const payout = arenaPrize(outcome, finalRank ?? 0);
+  // 金曜（グランプリデー）は優勝賞金1.5倍。開催した日の条件で確定させる。
+  const payout = arenaPrize(outcome, finalRank ?? 0, arenaPrizeMul(trustedNow()));
   return { period, label: periodLabel(period), seed, mode, rounds, outcome, finalRank, payout, awarded: false, seen: false };
 }
 

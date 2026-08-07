@@ -377,10 +377,27 @@
 }
 .bmedal {
   width: 22px;
-  text-align: center;
+  display: grid;
+  place-items: center;
   font-size: 14px;
   font-weight: 900;
 }
+/* 1〜3位の丸バッジ（絵文字のメダルの置きかえ）。色はレース結果の順位表と同じ。 */
+.bbadge {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid;
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.bnum { font-size: 13px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+.prizeName { display: inline-flex; align-items: center; gap: 6px; }
+.autoTitle { display: inline-flex; align-items: center; gap: 6px; }
+.resDash { font-size: 14px; font-weight: 900; color: var(--ink-soft); }
 .bface {
   padding: 0;
   cursor: pointer;
@@ -498,7 +515,8 @@
 .resMedal {
   font-size: 18px;
   width: 22px;
-  text-align: center;
+  display: grid;
+  place-items: center;
   flex: none;
 }
 .resInfo {

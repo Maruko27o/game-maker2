@@ -27,7 +27,8 @@ import { foldRace, achievedLevel } from './logic/streak';
 import { allParts, slotOf } from './data/parts';
 import { COURSES } from './data/courses';
 import { spawn as gachaSpawn } from './logic/gacha';
-import { ENERGY_CAP, spendEnergy } from './logic/energy';
+import { ENERGY_CAP, ENERGY_REGEN_MS, spendEnergy } from './logic/energy';
+import { grassRegenMs, okawariCost, trainingGain, srRateMul, prefersUnowned, g1Attempts } from './logic/weekdayEvents';
 import { rescaleTo40, mulberry32, hashString } from './logic/stats';
 import { rollSkill, skillForHorseId } from './logic/skill';
 import { rollAptitude, aptitudeForHorseId } from './logic/aptitude';
@@ -36,7 +37,7 @@ import { applyReroll } from './logic/reroll';
 import { canRefine, refineState, REFINE_TICKET_COST, arenaTickets } from './logic/refine';
 import { rewardForDow, loginDayKey, dowOf, canClaim, rollDye, type LoginReward } from './logic/loginBonus';
 import { colorSlotById } from './data/parts';
-import { applyTraining } from './logic/training';
+import { applyTraining, trainingRoom } from './logic/training';
 import { evaluateBadges } from './logic/badges';
 import {
   GRASS_OKAWARI_COST,
@@ -561,7 +562,8 @@ type Store = SaveData & {
   grantItems: (items: TrainingItem[]) => void;
   unlockGp: (patch: { g2?: boolean; g1?: boolean }) => void;
   /** Consume item at index and raise `target` on the horse. Returns success. */
-  trainHorse: (horseId: string, itemIndex: number, target: StatKey) => boolean;
+  /** 上がったポイント数（0＝失敗）。火曜はまぐれで2になることがある。 */
+  trainHorse: (horseId: string, itemIndex: number, target: StatKey) => number;
   recordRace: (courseId: string, mode: 30 | 60, rank: number, time: number) => void;
   /** Record a finished single race: updates best time, win streak, and awards
    *  badges (ACCOUNT.md §2). Returns the newly-earned badges (for the cut-in). */
@@ -782,13 +784,18 @@ export const useStore = create<Store>((set, get) => {
       const now = trustedNow();
       // ボックスが満杯なら召喚できない（ストックも消費しない）。
       if (get().horses.length >= get().maxHorses) return null;
-      const spent = spendEnergy({ energy: get().energy, energyUpdatedAt: get().energyUpdatedAt }, now);
+      // 月曜（草むらデー）は回復間隔が半分になる。
+      const spent = spendEnergy({ energy: get().energy, energyUpdatedAt: get().energyUpdatedAt }, now, grassRegenMs(now, ENERGY_REGEN_MS));
       if (!spent) return null;
 
       // 1回の草むらでは同じ部位（body/mane/hoof の色・head/face/back/tail の飾り）を
       // 重複させない。→ 飛び出してくるウマは受け取ったパーツを漏れなく身に着けた姿になり、
       // 「着けていないのに入手できる」違和感を解消する。
-      const ids = gachaSpawn(rng, allParts, (e) => slotOf(e.id));
+      // 木曜（図鑑デー）は SR が2倍出やすく、未所持のパーツが優先して出る。
+      const ids = gachaSpawn(rng, allParts, (e) => slotOf(e.id), {
+        srMul: srRateMul(now),
+        owned: prefersUnowned(now) ? get().owned : undefined,
+      });
       const owned = { ...get().owned };
       const parts: SpawnedPart[] = ids.map((id) => {
         const isNew = !owned[id];
@@ -904,17 +911,19 @@ export const useStore = create<Store>((set, get) => {
     trainHorse: (horseId, itemIndex, target) => {
       const horse = get().horses.find((h) => h.id === horseId);
       const item = get().items[itemIndex];
-      if (!horse || !item) return false;
-      if (item.kind === 'stat' && item.stat !== target) return false; // stat items are fixed
-      const next = applyTraining(horse.stats, target);
-      if (!next) return false; // capped — item is NOT consumed
+      if (!horse || !item) return 0;
+      if (item.kind === 'stat' && item.stat !== target) return 0; // stat items are fixed
+      // 火曜（トレーニングデー）はまぐれで2つ上がる。合計48は超えない（room で切る）。
+      const gain = trainingGain(trustedNow(), Math.random, trainingRoom(horse.stats, target));
+      const next = applyTraining(horse.stats, target, gain);
+      if (!next) return 0; // capped — item is NOT consumed
       const items = get().items.slice();
       items.splice(itemIndex, 1);
       commit({
         horses: get().horses.map((h) => (h.id === horseId ? { ...h, stats: next } : h)),
         items,
       });
-      return true;
+      return next[target] - horse.stats[target];
     },
 
     recordRace: (courseId, mode, rank, time) => {
@@ -1022,9 +1031,10 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const today = dayKey();
       const daily = s.daily.day === today ? s.daily : freshDaily();
-      if (s.coins < GRASS_OKAWARI_COST || s.energy >= ENERGY_CAP) return false;
+      const cost = okawariCost(trustedNow(), GRASS_OKAWARI_COST); // 草むらデーは半額
+      if (s.coins < cost || s.energy >= ENERGY_CAP) return false;
       commit({
-        coins: s.coins - GRASS_OKAWARI_COST,
+        coins: s.coins - cost,
         energy: Math.min(ENERGY_CAP, s.energy + 1),
         daily: { ...daily, okawari: daily.okawari + 1 },
       });
@@ -1037,7 +1047,8 @@ export const useStore = create<Store>((set, get) => {
       const s = get();
       const today = dayKey();
       const daily = s.daily.day === today ? s.daily : freshDaily();
-      if (daily.gp >= GP_DAILY_LIMIT) {
+      // 金曜（グランプリデー）は1日の挑戦回数が倍（3回 → 6回）。
+      if (daily.gp >= g1Attempts(trustedNow(), GP_DAILY_LIMIT)) {
         if (s.daily.day !== today) commit({ daily });
         return false;
       }

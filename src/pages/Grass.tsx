@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore, type SpawnedPart } from '../store';
-import { ENERGY_CAP, normalizeEnergy, msUntilNextEnergy } from '../logic/energy';
+import { ENERGY_CAP, ENERGY_REGEN_MS, normalizeEnergy, msUntilNextEnergy } from '../logic/energy';
+import { grassRegenMs, okawariCost } from '../logic/weekdayEvents';
+import EventNote from '../components/EventNote';
 import { partName, partRarity } from '../data/parts';
 import { GRASS_OKAWARI_COST } from '../data/coins';
 import type { Horse } from '../types';
@@ -58,8 +60,11 @@ export default function Grass() {
   }, []);
 
   const state = { energy, energyUpdatedAt };
-  const stock = normalizeEnergy(state, now).energy;
-  const countdown = useMemo(() => fmt(msUntilNextEnergy(state, now)), [energy, energyUpdatedAt, now]);
+  // 月曜（草むらデー）は回復間隔が半分。表示も store と同じ間隔で数える。
+  const regenMs = grassRegenMs(now, ENERGY_REGEN_MS);
+  const okawari = okawariCost(now, GRASS_OKAWARI_COST);
+  const stock = normalizeEnergy(state, now, regenMs).energy;
+  const countdown = useMemo(() => fmt(msUntilNextEnergy(state, now, regenMs)), [energy, energyUpdatedAt, now, regenMs]);
   const boxFull = horseCount >= maxHorses;
   const available = stock > 0 && !boxFull; // 箱が満杯なら草むらに行けない
 
@@ -105,6 +110,8 @@ export default function Grass() {
   return (
     <div className={styles.page}>
       <GrassRoom />
+      <EventNote dow={1} text="ストックが30分で1つたまるよ！「草をおかわり」も半額の150コイン！" />
+      <EventNote dow={4} text="SRのパーツが2倍出やすい！まだ持っていないパーツが優先して出るよ" />
       <header className={styles.header}>
         <div className={styles.stat}>
           <span className={styles.statLabel}>ストック</span>
@@ -174,10 +181,10 @@ export default function Grass() {
           <button
             className={styles.okawari}
             onClick={() => { if (buyOkawari()) setNow(trustedNow()); }}
-            disabled={coins < GRASS_OKAWARI_COST}
-            title={`${GRASS_OKAWARI_COST}コインでストック+1（何回でもOK）`}
+            disabled={coins < okawari}
+            title={`${okawari}コインでストック+1（何回でもOK）`}
           >
-            <CoinIcon size={16} /> 草をおかわり（{GRASS_OKAWARI_COST}）
+            <CoinIcon size={16} /> 草をおかわり（{okawari}）
           </button>
         )}
       </div>

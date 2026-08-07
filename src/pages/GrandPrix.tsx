@@ -25,6 +25,9 @@ import Paddock from '../components/Paddock';
 import HorseStatsPopup from '../components/HorseStatsPopup';
 import BetResult from '../components/BetResult';
 import { GP_DAILY_LIMIT, MAX_BETS_GP, gpFinalCoins } from '../data/coins';
+import { g1Attempts } from '../logic/weekdayEvents';
+import { trustedNow } from '../logic/trustedClock';
+import EventNote from '../components/EventNote';
 import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import type { Horse, HorseLook, Trophy, TrainingItem, GpRaceReward } from '../types';
 import { RUN_STYLE_LABEL, STAT_LABEL } from '../types';
@@ -106,7 +109,9 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
   const setRaceSession = useStore((s) => s.setRaceSession);
   const patchRaceSession = useStore((s) => s.patchRaceSession);
   const daily = useStore((s) => s.daily);
-  const gpLeft = Math.max(0, GP_DAILY_LIMIT - (daily.day === dayKey() ? daily.gp : 0));
+  // 金曜（グランプリデー）は挑戦回数が倍。表示も store と同じ数で数える。
+  const gpLimit = g1Attempts(trustedNow(), GP_DAILY_LIMIT);
+  const gpLeft = Math.max(0, gpLimit - (daily.day === dayKey() ? daily.gp : 0));
 
   // Betting (改修：グランプリでも馬券。予選＋本戦の2回・各最大 MAX_BETS_GP 通り・コイン使用)。
   const [heatBets, setHeatBets] = useState<Bet[]>([]);
@@ -313,6 +318,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
       <div className={styles.page}>
         <h1 className={styles.title}>グランプリ</h1>
         <p className={styles.lead}>18頭・予選3組 → 上位＋敗者復活で本戦8頭。時間: {mode}秒</p>
+        <EventNote dow={5} text="G1に挑める回数が6回に増えているよ！対戦の優勝賞金も1.5倍！" />
         {rows.map(({ g, locked, cond }) => {
           const isG1 = g === 'g1';
           const capped = isG1 && gpLeft <= 0;
@@ -336,7 +342,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
                       <>
                         <span className={`${gp.chip} ${gp.chipGold}`}><Icon name="trophy" size={12} /> トロフィー</span>
                         <span className={`${gp.chip} ${gp.chipGold}`}><CoinIcon size={12} /> 最大10,000</span>
-                        <span className={`${gp.chip} ${capped ? gp.chipEmpty : gp.chipLimit}`}>本日 {gpLeft}/{GP_DAILY_LIMIT}</span>
+                        <span className={`${gp.chip} ${capped ? gp.chipEmpty : gp.chipLimit}`}>本日 {gpLeft}/{gpLimit}</span>
                       </>
                     ) : (
                       <>

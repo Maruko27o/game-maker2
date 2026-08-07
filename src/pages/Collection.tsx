@@ -5,6 +5,7 @@ import type { ColorPart, DecoPart, Rarity } from '../types';
 import PartThumb from '../components/PartThumb';
 import HorseView from '../components/HorseView';
 import CloseButton from '../components/CloseButton';
+import EventNote from '../components/EventNote';
 import styles from './Collection.module.css';
 
 type Entry = { id: string; name: string; rarity: Rarity };
@@ -61,6 +62,8 @@ export default function Collection() {
             </span>
           </div>
         </header>
+
+        <EventNote dow={4} text="草むらで SR が2倍出やすい！まだ持っていないパーツが優先して出るよ" />
 
         <div className={styles.tabs} role="tablist" aria-label="図鑑のカテゴリ">
         {SECTIONS.map((s, i) => {

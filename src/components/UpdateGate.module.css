@@ -22,8 +22,10 @@
   box-shadow: 0 10px 0 rgba(43, 33, 24, 0.18);
 }
 .emoji {
-  font-size: 40px;
   line-height: 1;
+  color: var(--gold);
+  display: grid;
+  place-items: center;
 }
 .title {
   margin: 0;
