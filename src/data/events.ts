@@ -3,9 +3,9 @@ import type { IconName } from '../components/Icon';
 // 曜日イベント。
 //
 // レース画面のいちばん上に「月〜日」のカレンダーを出して、その日どんなイベントを
-// やっているかが一目で分かるようにする。今はまだ中身（効果）は入っていないので、
-// 全部「準備中」。先に側（カレンダー・詳細・見た目）を作って、あとから1つずつ
-// 効果を実装していく。status を 'live' に変えるだけで本番あつかいになる。
+// やっているかが一目で分かるようにする。効果の中身は logic/weekdayEvents.ts に
+// まとめてあり、ここの status が 'live' の日だけ効く。止めたいときは 'soon' に
+// 戻せば、効果も画面の「今日は◯◯デー！」の帯もいっしょに消える。
 //
 // dow は Date#getDay と同じ 0=日曜 … 6=土曜。カレンダーの表示は月曜はじまり。
 
@@ -44,7 +44,7 @@ export const WEEKLY_EVENTS: WeeklyEvent[] = [
       '「草をおかわり」が半額！300 → 150コイン',
       'たくさんウマを見つけて「牧場主」系の称号を手に入れよう！',
     ],
-    status: 'soon',
+    status: 'live',
   },
   {
     id: 'ev_tue_training',
@@ -58,7 +58,7 @@ export const WEEKLY_EVENTS: WeeklyEvent[] = [
       '※ 合計48の上限は超えません（超えるぶんは1つぶんだけ上がります）',
       '金曜のグランプリにむけて、いっきに仕上げよう！',
     ],
-    status: 'soon',
+    status: 'live',
   },
   {
     id: 'ev_wed_ticket',
@@ -73,7 +73,7 @@ export const WEEKLY_EVENTS: WeeklyEvent[] = [
       '※ 倍率そのものは変わりません（当たったあとの上乗せだけ）',
       '大穴をねらって「万馬券ハンター」を手に入れよう！',
     ],
-    status: 'soon',
+    status: 'live',
   },
   {
     id: 'ev_thu_dex',
@@ -87,7 +87,7 @@ export const WEEKLY_EVENTS: WeeklyEvent[] = [
       'まだ持っていないパーツが優先して出るよ',
       '一気に集めて「図鑑コンプリート」を目指そう！',
     ],
-    status: 'soon',
+    status: 'live',
   },
   {
     id: 'ev_fri_gp',
@@ -98,10 +98,10 @@ export const WEEKLY_EVENTS: WeeklyEvent[] = [
     lead: '大舞台の日。G1に挑める回数が増える。',
     detail: [
       'G1の挑戦回数が増える！1日3回 → 6回',
-      '対戦（トーナメント）の優勝賞金も1.5倍！',
+      '対戦（トーナメント）の優勝賞金も1.5倍！12,000 → 18,000コイン',
       'トロフィーをたくさん持ち帰って「頂点の証」を手に入れよう！',
     ],
-    status: 'soon',
+    status: 'live',
   },
   {
     id: 'ev_sat_box',

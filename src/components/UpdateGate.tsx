@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Icon from './Icon';
 import styles from './UpdateGate.module.css';
 
 // Detects that a newer version has been deployed (the served version.json differs
@@ -103,7 +104,7 @@ export default function UpdateGate() {
   return (
     <div className={styles.overlay} role="alertdialog" aria-label="アップデート">
       <div className={styles.card}>
-        <div className={styles.emoji} aria-hidden>🎉</div>
+        <div className={styles.emoji} aria-hidden><Icon name="sparkle" size={40} /></div>
         <h2 className={styles.title}>新しいバージョンがあります</h2>
         <p className={styles.text}>
           最新の「ウマあつめ」に更新できます。

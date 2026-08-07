@@ -281,6 +281,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative; /* 火曜のまぐれ +2 を重ねるため */
 }
 .statLabel {
   font-size: 12px;
@@ -1369,4 +1370,30 @@
   font-size: 11px;
   font-weight: 800;
   color: var(--ink);
+}
+
+/* 火曜（トレーニングデー）のまぐれ +2。押した項目の上に短く出す。 */
+.critPop {
+  position: absolute;
+  right: 4px;
+  top: -10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffe28a, var(--gold));
+  border: 2px solid #a97a12;
+  color: #4a3000;
+  font-size: 11px;
+  font-weight: 900;
+  pointer-events: none;
+  animation: critRise 1.4s ease-out forwards;
+}
+@keyframes critRise {
+  0% { opacity: 0; transform: translateY(6px) scale(0.7); }
+  18% { opacity: 1; transform: translateY(0) scale(1.1); }
+  30% { transform: translateY(0) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .critPop { animation: none; }
 }

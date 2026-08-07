@@ -18,6 +18,23 @@ export const COUNT_TABLE: { count: number; p: number }[] = [
 // Rarity draw weights.
 export const RARITY_WEIGHT: Record<Rarity, number> = { N: 70, R: 25, SR: 5 };
 
+/**
+ * 抽選の味つけ（木曜の図鑑デー用）。渡さなければ従来どおりの確率のまま。
+ *  - srMul   : SR の重みの倍率（図鑑デーは 2）
+ *  - owned   : 所持数。渡すと未所持のパーツの重みを UNOWNED_MUL 倍にする
+ */
+export type DrawOpts = { srMul?: number; owned?: Record<string, number> };
+
+/** 未所持を優先する強さ。図鑑が埋まっていくほど効きが実感できるくらいの控えめな値。 */
+export const UNOWNED_MUL = 2;
+
+function weightOf<T extends Poolable>(e: T, opts?: DrawOpts): number {
+  let w = RARITY_WEIGHT[e.rarity];
+  if (opts?.srMul && e.rarity === 'SR') w *= opts.srMul;
+  if (opts?.owned && !opts.owned[e.id]) w *= UNOWNED_MUL;
+  return w;
+}
+
 /** Pick how many parts this spawn yields (1..4). */
 export function pickCount(rng: RNG): number {
   const r = rng();
@@ -30,11 +47,11 @@ export function pickCount(rng: RNG): number {
 }
 
 /** Weighted single pick from the pool by rarity. */
-export function pickOne<T extends Poolable>(rng: RNG, pool: T[]): T {
-  const total = pool.reduce((s, e) => s + RARITY_WEIGHT[e.rarity], 0);
+export function pickOne<T extends Poolable>(rng: RNG, pool: T[], opts?: DrawOpts): T {
+  const total = pool.reduce((s, e) => s + weightOf(e, opts), 0);
   let r = rng() * total;
   for (const e of pool) {
-    r -= RARITY_WEIGHT[e.rarity];
+    r -= weightOf(e, opts);
     if (r < 0) return e;
   }
   return pool[pool.length - 1];
@@ -51,6 +68,7 @@ export function drawParts<T extends Poolable>(
   pool: T[],
   count: number,
   keyOf: (e: T) => string = (e) => e.id,
+  opts?: DrawOpts,
 ): string[] {
   // The number of distinct keys caps the draw (e.g. one part per slot).
   const distinctKeys = new Set(pool.map(keyOf)).size;
@@ -61,7 +79,7 @@ export function drawParts<T extends Poolable>(
   let guard = 0;
   while (picked.length < n && guard < 10000) {
     guard++;
-    const e = pickOne(rng, pool);
+    const e = pickOne(rng, pool, opts);
     const k = keyOf(e);
     if (seenKeys.has(k)) continue;
     seenKeys.add(k);
@@ -71,6 +89,6 @@ export function drawParts<T extends Poolable>(
 }
 
 /** Full spawn: decide the count, then draw that many parts distinct by `keyOf`. */
-export function spawn<T extends Poolable>(rng: RNG, pool: T[], keyOf?: (e: T) => string): string[] {
-  return drawParts(rng, pool, pickCount(rng), keyOf);
+export function spawn<T extends Poolable>(rng: RNG, pool: T[], keyOf?: (e: T) => string, opts?: DrawOpts): string[] {
+  return drawParts(rng, pool, pickCount(rng), keyOf, opts);
 }

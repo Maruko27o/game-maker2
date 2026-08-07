@@ -15,6 +15,7 @@ import {
   ARENA_ADVANCE,
   ARENA_ROUND_NAMES,
   arenaOutcomeLabel,
+  arenaPrize,
   periodId,
   periodLabel,
   msToNextPeriod,
@@ -23,6 +24,9 @@ import { RUN_STYLE_LABEL } from '../types';
 import type { ArenaResult, ArenaRoundResult, ArenaEntry, Horse } from '../types';
 import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
+import { arenaPrizeMul } from '../logic/weekdayEvents';
+import { trustedNow } from '../logic/trustedClock';
+import EventNote from '../components/EventNote';
 import Icon from '../components/Icon';
 import RaceTrack2 from '../components/RaceTrack2';
 import HorseStatsPopup from '../components/HorseStatsPopup';
@@ -46,10 +50,28 @@ function fmtCountdown(ms: number): string {
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise.race([p.catch(() => fallback), new Promise<T>((res) => setTimeout(() => res(fallback), ms))]);
 }
-function outcomeMedal(r: ArenaResult): string {
-  if (r.outcome === 'champion') return '🥇';
-  if (r.outcome === 'final') return r.finalRank === 2 ? '🥈' : r.finalRank === 3 ? '🥉' : '🏁';
-  return '—';
+// 結果の見出しにつける印。絵文字は使わず、順位バッジ（金銀銅）で表す。
+function OutcomeMedal({ r }: { r: ArenaResult }) {
+  if (r.outcome === 'champion') return <RankBadge rank={1} />;
+  if (r.outcome === 'final') {
+    if (r.finalRank === 2 || r.finalRank === 3) return <RankBadge rank={r.finalRank} />;
+    return <Icon name="flag" size={17} />;
+  }
+  return <span className={a.resDash}>—</span>;
+}
+
+// 1〜3位は金銀銅の丸バッジ、それ以外はただの数字（レース結果の順位表とそろえる）。
+const RANK_TONE: Record<number, { bg: string; bd: string; fg: string }> = {
+  1: { bg: '#f0c33c', bd: '#8a6410', fg: '#2b2118' },
+  2: { bg: '#cfd6dd', bd: '#79838d', fg: '#2b2118' },
+  3: { bg: '#cf8a4e', bd: '#8f5a28', fg: '#fff' },
+};
+function RankBadge({ rank }: { rank: number }) {
+  const t = RANK_TONE[rank];
+  if (!t) return <span className={a.bnum}>{rank}</span>;
+  return (
+    <span className={a.bbadge} style={{ background: t.bg, borderColor: t.bd, color: t.fg }}>{rank}</span>
+  );
 }
 
 // The finishing rows of one round, sorted by rank (for the summary board).
@@ -66,7 +88,7 @@ function RoundBoard({ rr, onPick }: { rr: ArenaRoundResult; onPick: (fieldIdx: n
         const label = passLabel(rank);
         return (
           <div key={s.horseId} className={`${a.brow} ${s.isPlayer ? a.bmine : ''}`}>
-            <span className={a.bmedal}>{rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</span>
+            <span className={a.bmedal}><RankBadge rank={rank} /></span>
             {/* ウマをタップ → 能力ポップアップ（他のレースモードと同じ） */}
             <button className={a.bface} onClick={() => onPick(i)} aria-label={`${s.isPlayer ? 'あなた' : s.name}の能力を見る`}>
               <HorseView horse={s} size={30} />
@@ -331,7 +353,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
           <div className={a.resultList}>
             {results.map((r) => (
               <button key={r.period} className={`${a.resultRow} ${!r.seen ? a.resultNew : ''}`} onClick={() => watch(r)}>
-                <span className={a.resMedal}>{outcomeMedal(r)}</span>
+                <span className={a.resMedal}><OutcomeMedal r={r} /></span>
                 <span className={a.resInfo}>
                   <span className={a.resLabel}>{r.label}{!r.seen && <span className={a.newDot}>NEW</span>}</span>
                   <span className={a.resOutcome}>{arenaOutcomeLabel(r.outcome, r.finalRank ?? 0)}</span>
@@ -364,7 +386,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
             <div className={a.autoRow}>
               <div className={a.bface}>{autoHorse && <HorseView horse={autoHorse} size={38} />}</div>
               <div className={a.autoText}>
-                <b>🔁 自動エントリー：ON</b>
+                <b className={a.autoTitle}><Icon name="refresh" size={15} /> 自動エントリー：ON</b>
                 <div className={a.autoSub}>資金がある限り毎回の部に自動参加（{autoHorse?.name ?? '—'}）</div>
               </div>
             </div>
@@ -393,7 +415,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
               <span className={a.fee}><CoinIcon size={16} /> {ARENA_ENTRY_FEE.toLocaleString()}</span>
             </div>
             <button className={`btn ${a.bigGreen}`} onClick={doEnter} disabled={!selected}>この部にエントリーする</button>
-            <button className={`btn neutral ${a.autoBtn}`} onClick={enableAuto} disabled={!selected}>🔁 自動エントリーにする（毎回参加）</button>
+            <button className={`btn neutral ${a.autoBtn}`} onClick={enableAuto} disabled={!selected}><Icon name="refresh" size={15} /> 自動エントリーにする（毎回参加）</button>
             {note && <div className={a.note}>{note}</div>}
             <div className={a.hint}>持ちコイン {coins.toLocaleString()} ・ 足りない相手はCOMが入るよ</div>
           </>
@@ -415,17 +437,19 @@ export default function Arena({ onExit }: { onExit: () => void }) {
       {/* prize table */}
       <div className={a.section}>
         <div className={a.sectionTitle}>本戦の賞金（8頭立て）</div>
+        <EventNote dow={5} text="今日の優勝賞金は1.5倍！下の表もその日の金額になっているよ" />
         <div className={a.prizes}>
           <div className={`${a.prize} ${a.prizeTop}`}>
-            <b>🥇 優勝</b>
-            <b className={a.prizeAmt}>＋12,000<span className={a.prizeTicket}><Icon name="ticket" size={13} />3</span></b>
+            <b className={a.prizeName}><RankBadge rank={1} /> 優勝</b>
+            {/* 金曜（グランプリデー）は 1.5 倍。表の数字も実際にもらえる額に合わせる。 */}
+            <b className={a.prizeAmt}>＋{arenaPrize('champion', 1, arenaPrizeMul(trustedNow())).toLocaleString()}<span className={a.prizeTicket}><Icon name="ticket" size={13} />3</span></b>
           </div>
           <div className={a.prize}>
-            <b>🥈 準優勝</b>
+            <b className={a.prizeName}><RankBadge rank={2} /> 準優勝</b>
             <b className={a.prizeAmt}>＋5,000<span className={a.prizeTicket}><Icon name="ticket" size={13} />2</span></b>
           </div>
           <div className={a.prize}>
-            <b>🥉 3位</b>
+            <b className={a.prizeName}><RankBadge rank={3} /> 3位</b>
             <b className={a.prizeAmt}>＋1,000<span className={a.prizeTicket}><Icon name="ticket" size={13} />1</span></b>
           </div>
           <div className={a.prize}><b>4〜8位（本戦出場）</b><b className={a.prizeAmt}>＋500</b></div>

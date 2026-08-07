@@ -72,8 +72,9 @@ export function msToNextPeriod(now = trustedNow()): number {
 }
 
 // 着順・脱落に応じた賞金（ユーザー指定）。
-export function arenaPrize(outcome: ArenaOutcome, finalRank: number): number {
-  if (outcome === 'champion') return 12000; // 本戦 優勝
+// prizeMul は金曜（グランプリデー）の優勝賞金1.5倍。優勝以外は据え置き。
+export function arenaPrize(outcome: ArenaOutcome, finalRank: number, prizeMul = 1): number {
+  if (outcome === 'champion') return Math.round(12000 * prizeMul); // 本戦 優勝
   if (outcome === 'final') {
     if (finalRank === 2) return 5000; // 準優勝
     if (finalRank === 3) return 1000; // 3位

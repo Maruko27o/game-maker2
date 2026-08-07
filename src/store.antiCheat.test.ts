@@ -149,7 +149,8 @@ describe('コインが増える経路の二重取り防止', () => {
       horses: [{ ...horse('A'), stats: capped }], team: ['A'],
       items: [{ kind: 'stat', stat: 'gut' }],
     });
-    expect(useStore.getState().trainHorse('A', 0, 'gut')).toBe(false);
+    // trainHorse は「上がったポイント数」を返す（0＝失敗）。
+    expect(useStore.getState().trainHorse('A', 0, 'gut')).toBe(0);
     expect(useStore.getState().items).toHaveLength(1); // アイテムは残る
   });
 });

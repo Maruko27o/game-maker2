@@ -38,6 +38,7 @@ import { buildSubmission, bufferSubmission } from '../logic/raceSubmission';
 import { normalRaceCoins, BADGE_COINS, MAX_BETS_PER_RACE } from '../data/coins';
 import { boxOfDow, BOXES, type BoxKind } from '../data/boxes';
 import { dowOfTime } from '../data/events';
+import { ticketDayBonus } from '../logic/weekdayEvents';
 import { trustedNow } from '../logic/trustedClock';
 import { usePrefersReducedMotion, useScrollTopOnChange } from '../hooks';
 import styles from './Race.module.css';
@@ -221,7 +222,9 @@ function Roulette({ course, laps, player, reduced, onDone }: { course: Course; l
         <div className={styles.fadeR} aria-hidden />
         {stopped && (
           <div className={styles.centerFrame} aria-hidden>
-            {['✨', '✨', '✨', '✨'].map((s, i) => <span key={i} className={styles[`spark${i}` as 'spark0']}>{s}</span>)}
+            {[0, 1, 2, 3].map((i) => (
+              <span key={i} className={styles[`spark${i}` as 'spark0']}><Icon name="sparkle" size={18} /></span>
+            ))}
           </div>
         )}
       </div>
@@ -378,15 +381,24 @@ export default function Race() {
     const earned = normalRaceCoins(rank) + achievements.length * BADGE_COINS;
     let payout = 0;
     let bestWonOdds = 0;
+    // 水曜（万馬券デー）の上乗せ。10倍以上の的中だけが対象で、倍率そのものは動かさない。
+    // ランキングや称号に使う payout には混ぜず、コインにだけ足す（曜日で記録が
+    // 有利にならないようにするため）。
+    let ticketBonus = 0;
     const staked = betList.reduce((s, b) => s + b.amount, 0);
     for (const b of betList) {
       const got = settle(b, res.order);
       payout += got;
-      if (got > 0) bestWonOdds = Math.max(bestWonOdds, b.odds);
+      if (got > 0) {
+        bestWonOdds = Math.max(bestWonOdds, b.odds);
+        ticketBonus += ticketDayBonus(trustedNow(), b.odds, got);
+      }
       recordBet({ courseId: setup0.course.id, kind: b.kind, picks: b.sel.map((i) => res.gate[i]), amount: b.amount, odds: b.odds, won: got > 0, payout: got, at: Date.now() });
     }
-    addCoins(earned + payout);
-    addEarned(earned); // 馬券の払戻は recordBetStats 側で積む
+    addCoins(earned + payout + ticketBonus);
+    // 総獲得賞金には上乗せも積む（生涯の稼ぎなので）。ただし「1レースの払戻」を見る
+    // ランキング・称号には混ぜない（曜日で記録が有利にならないように）。
+    addEarned(earned + ticketBonus); // 馬券の払戻は recordBetStats 側で積む
     recordBetStats({ placed: betList.length, staked, payout, wonOdds: bestWonOdds });
     // スペシャルタスク（連勝チャレンジ）：馬券を賭けた1人でレースのみ対象。払戻が賭け金の
     // 1.5倍以上で連勝を1つ伸ばし、そうでなければ連勝リセット。レースは開始時に確定(seed)＆
@@ -404,7 +416,7 @@ export default function Race() {
     }
     if (ENABLE_RANKING && (bestWonOdds > 0 || payout > 0)) submitBestOdds(bestWonOdds, setup0.course.id, payout);
     bufferSubmission(buildSubmission(setup0.entrants, setup0.course.id, setup0.mode, setup0.seed, res, setup0.entrants[0].horseId, setup0.laps));
-    return { reward: { rank, awarded, earned, payout, box }, achievements };
+    return { reward: { rank, awarded, earned, payout, box, ticketBonus: ticketBonus || undefined }, achievements };
   }
 
   function onFinish(result: SimResult) {
@@ -672,6 +684,7 @@ export default function Race() {
       <div className={styles.page}>
         {/* 週末は1着でボックスがもらえる（常設の仕様と取り違えないよう明示する） */}
         <div className={styles.eventNote}>
+          <EventNote dow={3} text="10倍以上を当てると払戻に上乗せ！倍率が高いほど多くもらえるよ（倍率そのものは変わりません）" />
           <EventNote dow={6} text="馬券を買ったこのレースで1着になると、ラッキーボックスが受信箱にもらえるよ！" />
           <EventNote dow={0} text="馬券を買ったこのレースで1着になると、ゴールドボックスが受信箱にもらえるよ！" />
         </div>
@@ -755,6 +768,10 @@ export default function Race() {
               <span className={`${styles.betNet} ${betNet >= 0 ? styles.betPlus : styles.betMinus}`}>
                 馬券 {betNet >= 0 ? '＋' : '−'}{Math.abs(betNet).toLocaleString()}
               </span>
+            )}
+            {/* 水曜（万馬券デー）の上乗せ。常設ではないので青文字で添える。 */}
+            {!!reward?.ticketBonus && (
+              <span className={styles.eventBonus}>（万馬券デーボーナス ＋{reward.ticketBonus.toLocaleString()}）</span>
             )}
           </div>
           {/* スクロール不要ですぐ次の動作へ */}
