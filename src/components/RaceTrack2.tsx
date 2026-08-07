@@ -41,7 +41,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   );
   // 実況テロップ（レースの記録から作るので、レースが同じなら毎回同じ）。
   const telops = useMemo(
-    () => raceCommentary(result, entrants.map((e) => ({ name: e.name, isPlayer: !!e.isPlayer }))),
+    () => raceCommentary(result, entrants.map((e) => ({ name: e.name, isPlayer: !!e.isPlayer, style: e.style }))),
     [result, entrants],
   );
   const track = course.track;
