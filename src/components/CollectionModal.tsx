@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { TITLES, titleCtx, type TitleDef } from '../data/titles';
+import { TITLES, titleCtx, nextTitles, METRIC_UNIT, type TitleDef, type NumericTitleKey } from '../data/titles';
 import { TOTAL_PARTS } from '../data/parts';
 import { frameCatalog, frameProgress, rankingFrames, type FrameSlot } from '../logic/frameCatalog';
 import type { HorseLook } from '../types';
@@ -39,6 +39,8 @@ export default function CollectionModal({ look, onClose }: { look: HorseLook; on
   );
   const titles = useMemo(() => TITLES.map((t) => ({ t, got: t.check(ctx) })), [ctx]);
   const titleHave = titles.filter((x) => x.got).length;
+  // あと少しで取れる称号（近い順に3つ）。「次に何をすればいいか」を出す。
+  const soon = useMemo(() => nextTitles(ctx, 3), [ctx]);
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -59,6 +61,21 @@ export default function CollectionModal({ look, onClose }: { look: HorseLook; on
             称号 <small>{titleHave}/{titles.length}</small>
           </button>
         </div>
+
+        {tab === 'title' && soon.length > 0 && (
+          <div className={styles.soon}>
+            <div className={styles.soonLead}>あと少しで取れる称号</div>
+            {soon.map(({ title, progress }) => (
+              <div key={title.id} className={styles.soonRow}>
+                <span className={styles.soonName}>{title.name}</span>
+                <span className={styles.soonBar}>
+                  <span className={styles.soonFill} style={{ width: `${Math.round(progress.ratio * 100)}%` }} />
+                </span>
+                <span className={styles.soonLeft}>あと{fmtLeft(progress.left, title.metric)}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {tab === 'frame' ? (
           <>
@@ -87,6 +104,15 @@ export default function CollectionModal({ look, onClose }: { look: HorseLook; on
       </div>
     </div>
   );
+}
+
+// 「あと◯◯」の書き方。桁が大きいものは万・億で丸める（あと98,765,432コイン
+// と出しても近さが伝わらない）。
+function fmtLeft(left: number, metric?: NumericTitleKey): string {
+  const unit = metric ? METRIC_UNIT[metric] ?? '' : '';
+  if (left >= 100_000_000) return `${Math.ceil(left / 100_000_000)}億${unit}`;
+  if (left >= 10_000) return `${Math.ceil(left / 10_000)}万${unit}`;
+  return `${left.toLocaleString()}${unit}`;
 }
 
 function FrameGrid({ rows, look }: { rows: FrameSlot[]; look: HorseLook }) {

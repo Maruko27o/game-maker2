@@ -69,3 +69,56 @@ describe('レースの実況テロップ', () => {
     expect(raceCommentary(res, [])).toEqual([]);
   });
 });
+
+describe('実況テロップの語彙', () => {
+  const names = () => field().map((e) => ({ name: e.name, isPlayer: !!e.isPlayer, style: e.style }));
+
+  it('脚質で先手の言い方が変わる', () => {
+    // 逃げのウマが先頭になったレースでは「ハナを切って」が出る
+    const seeds = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233];
+    const texts = seeds.flatMap((s) => raceCommentary(run(s), names()).map((t) => t.text));
+    const leadLines = texts.filter((t) => /ハナを切って|すんなり前に|思い切って前に|めずらしく前に|先手を取った/.test(t));
+    expect(leadLines.length).toBeGreaterThan(0);
+    // 12レースぶん集めれば、言い方は1種類では終わらない
+    expect(new Set(leadLines.map((t) => t.replace(/^\S+?(?=が)/, ''))).size).toBeGreaterThan(1);
+  });
+
+  it('語彙を増やしても「同時に2本」「レース後」の決まりは守られる', () => {
+    for (const seed of [7, 70, 700, 7000, 70000]) {
+      const res = run(seed);
+      const list = raceCommentary(res, names());
+      for (let i = 1; i < list.length; i++) {
+        expect(list[i].at - list[i - 1].at).toBeGreaterThanOrEqual(TELOP_HOLD);
+      }
+      for (const t of list) expect(t.at).toBeLessThan(res.duration);
+    }
+  });
+
+  it('1レースに出しすぎない（多くても9本）', () => {
+    for (const seed of [11, 22, 33, 44, 55]) {
+      expect(raceCommentary(run(seed), names()).length).toBeLessThanOrEqual(9);
+    }
+  });
+
+  it('周回数が増えても、後半までまんべんなく出る', () => {
+    // s はスタート線の位置から始まるので、startS を引かずに進み具合を出すと
+    // 判定点がぜんぶ前半に寄ってしまう（1周だと開始時点でもう 0.9 を超える）。
+    for (const laps of [1, 2, 3]) {
+      const res = simulate2(field(), COURSES[0], 30, 4242, { recordFrames: true, laps });
+      const list = raceCommentary(res, names());
+      expect(list.length).toBeGreaterThanOrEqual(4);
+      const last = list[list.length - 1].at;
+      // 最後のテロップがレースの7割より後に出ている（後半が無言にならない）
+      expect(last / res.duration).toBeGreaterThan(0.7);
+      // 前半・後半それぞれに最低1本ある
+      expect(list.some((t) => t.at < res.duration * 0.5)).toBe(true);
+      expect(list.some((t) => t.at > res.duration * 0.5)).toBe(true);
+    }
+  });
+
+  it('先頭がゴールした瞬間を言う（1着と最下位の間が空くため）', () => {
+    const res = run(4242);
+    const list = raceCommentary(res, names());
+    expect(list.some((t) => /先頭でゴール/.test(t.text))).toBe(true);
+  });
+});

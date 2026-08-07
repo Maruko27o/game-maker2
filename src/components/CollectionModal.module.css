@@ -109,6 +109,59 @@
   color: var(--ink-soft);
 }
 
+/* あと少しで取れる称号。称号タブの先頭に出す「次の目標」。 */
+.soon {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 3px solid var(--border-dark);
+  background: var(--panel-inner);
+}
+.soonLead {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.soonRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.soonName {
+  flex: 0 0 92px;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.soonBar {
+  flex: 1;
+  min-width: 0;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  overflow: hidden;
+}
+.soonFill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), #7fc6ff);
+}
+.soonLeft {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* ── 称号 ─────────────────────────────────────────────────── */
 .titles {
   list-style: none;
