@@ -66,6 +66,35 @@
   font-size: 14px;
   white-space: nowrap;
 }
+/* 実況テロップ。画面の上端に横いっぱいの帯で出す。
+   「最後の直線！」は下に出るので、ぶつからないよう上に置く。 */
+.telop {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(28, 20, 12, 0.82);
+  border: 2px solid rgba(255, 233, 168, 0.5);
+  color: #ffe9a8;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  pointer-events: none;
+  /* 長い文でも1行に収める（折り返すとコースが隠れる） */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.telopIn {
+  animation: telopIn 0.28s ease-out;
+}
+@keyframes telopIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Skip — a fixed pill on the track (bottom-right corner), always in reach without
    scrolling. Disabled/greyed for the first half, then lights up when it unlocks. */
 .skip {

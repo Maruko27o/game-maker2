@@ -190,6 +190,77 @@
   box-shadow: 0 3px 0 rgba(140, 100, 20, 0.6);
   cursor: pointer;
 }
+/* まとめて開ける。主ボタンより控えめに（ふだんは1個ずつが基本） */
+.openBulk {
+  flex: none;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 3px solid var(--border-dark);
+  background: var(--panel-inner);
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.openBulk:disabled {
+  opacity: 0.6;
+}
+
+/* まとめ開けの中身の一覧 */
+.bulk {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.bulkLead {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.bulkList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  /* 10個ぶんの行が入りきらない端末でも、ここだけスクロールさせる */
+  max-height: 172px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.bulkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--panel-inner);
+}
+.bulkName {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.bulkCount {
+  flex: none;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.bulkTotal {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
 .open:disabled {
   background: var(--panel);
   color: var(--ink-soft);
@@ -197,64 +268,18 @@
   opacity: 0.65;
 }
 
-/* ── 排出率の表（i ボタン） ────────────────────────────── */
-.table {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.tableLead {
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--ink-soft);
-  margin-bottom: 2px;
-}
-.row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 9px;
-  border: 2px solid var(--border);
-  background: var(--panel-inner);
-}
-.rowName {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--ink);
-}
-.rowPct {
-  flex: none;
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-.tableNote {
-  margin: 6px 0 0;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-/* レアリティの色。表と結果の両方で使う。 */
+/* レアリティの色。結果のバッジは塗り、まとめ開けの行は枠の色だけ使う
+   （行を塗ると文字が読みにくくなるうえ、10行並ぶとうるさい）。 */
 .r_normal { background: #8d99a6; border-color: #8d99a6; }
 .r_rare { background: #2f7fb8; border-color: #2f7fb8; }
 .r_epic { background: #8a4fd0; border-color: #8a4fd0; }
 .r_legend { background: linear-gradient(100deg, #e0a92e, #ffe066); border-color: #e0a92e; color: #4a3000; }
-.table .r_normal,
-.table .r_rare,
-.table .r_epic,
-.table .r_legend {
+.bulkRow.r_normal,
+.bulkRow.r_rare,
+.bulkRow.r_epic {
   background: var(--panel-inner);
 }
-.table .r_rare { border-color: #2f7fb8; }
-.table .r_epic { border-color: #8a4fd0; }
-.table .r_legend {
-  border-color: #e0a92e;
+.bulkRow.r_legend {
   background: linear-gradient(180deg, #fff6dc, #ffeab6);
 }
 

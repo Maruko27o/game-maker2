@@ -85,3 +85,61 @@ export function boxCount(mailbox: MailItem[], kind: BoxKind): number {
   const m = mailbox.find((x) => x.id === boxMailId(kind));
   return m ? (m.count ?? 1) : 0;
 }
+
+/** レアリティの格。まとめて開けたときに「いちばんレアだったもの」を選ぶのに使う。 */
+export const RARITY_RANK: Record<BoxRarity, number> = { normal: 0, rare: 1, epic: 2, legend: 3 };
+
+export type BoxTally = {
+  /** 中身ごとの行（出た順を保ったまま、同じものはまとめる）。 */
+  rows: { label: string; rarity: BoxRarity; count: number }[];
+  /** 合計。0 のものは表示しない側で落とす。 */
+  coins: number;
+  tickets: number;
+  items: number;
+  dyes: number;
+  /** 限定枠が出たか（演出をそれに合わせる）。 */
+  frame: boolean;
+  title: boolean;
+  /** いちばんレアだった1件。まとめ開けの溜め演出はこれ1回だけ流す。 */
+  best: BoxResult | null;
+};
+
+/**
+ * まとめて開けた結果を1つにまとめる。
+ *
+ * 1つずつ演出を見るのは10個もあると苦行なので、演出は「いちばんレアだったもの」
+ * だけ流し、中身は一覧で見せる。並び順は出た順のまま（レア順に並べ替えると
+ * 「何が出たか」ではなく「何がレアか」の表になってしまい、開けた実感が薄れる）。
+ */
+export function tallyBoxResults(results: BoxResult[]): BoxTally {
+  const rows: BoxTally['rows'] = [];
+  const at = new Map<string, number>();
+  let coins = 0;
+  let tickets = 0;
+  let items = 0;
+  let dyes = 0;
+  let frame = false;
+  let title = false;
+  let best: BoxResult | null = null;
+
+  for (const r of results) {
+    const i = at.get(r.label);
+    if (i === undefined) {
+      at.set(r.label, rows.length);
+      rows.push({ label: r.label, rarity: r.rarity, count: 1 });
+    } else {
+      rows[i].count++;
+    }
+    const w = r.reward;
+    if (w.type === 'coins') coins += w.amount;
+    else if (w.type === 'ticket') tickets += w.amount;
+    else if (w.type === 'item') items += w.amount;
+    else if (w.type === 'dye') dyes += 1;
+    else if (w.type === 'frame') frame = true;
+    else if (w.type === 'title') title = true;
+
+    if (!best || RARITY_RANK[r.rarity] > RARITY_RANK[best.rarity]) best = r;
+  }
+
+  return { rows, coins, tickets, items, dyes, frame, title, best };
+}

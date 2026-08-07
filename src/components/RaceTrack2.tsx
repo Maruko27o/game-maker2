@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Course } from '../data/courses';
 import { centerline, toWorld, lapLength, goalS, trackBounds } from '../logic/track';
+import { raceCommentary, telopAt } from '../logic/commentary';
 import { simulate2, type Entrant, type SimResult } from '../logic/raceSim2';
 import type { HorseLook } from '../types';
 import HorseDefs from './HorseDefs';
@@ -37,6 +38,11 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const result = useMemo(
     () => simulate2(entrants, course, mode, seed, { recordFrames: true, laps, moods, formScale }),
     [entrants, course, mode, seed, laps, moods, formScale],
+  );
+  // 実況テロップ（レースの記録から作るので、レースが同じなら毎回同じ）。
+  const telops = useMemo(
+    () => raceCommentary(result, entrants.map((e) => ({ name: e.name, isPlayer: !!e.isPlayer }))),
+    [result, entrants],
   );
   const track = course.track;
   const lap = lapLength(track);
@@ -273,6 +279,7 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
   const alpha = Math.min(1, Math.max(0, elapsed.current / dt - fi));
 
   const done = phaseEff === 'run' && elapsed.current >= result.duration; // race over, in cool-down
+  const telop = telopAt(telops, elapsed.current);
   const leaderS = Math.max(...fr.runners.map((r) => r.s));
   const travelled = leaderS - result.startS; // distance run since the start/finish line
   // Live leader (for the turf vision) and the finishing 1-2-3 (for the result board).
@@ -419,6 +426,11 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
             not at a fixed % of total distance (which lands mid-lap on 2-lap races). */}
         {remaining <= track.straight / 2 && phaseEff === 'run' && !done && (
           <div className={styles.callout}>最後の直線！</div>
+        )}
+        {/* 実況テロップ。走り終わったレースの記録から作るので、同じレースなら
+            必ず同じ文が同じところで出る。表示だけで勝敗には関わらない。 */}
+        {telop && phaseEff === 'run' && !done && (
+          <div key={telop.at} className={`${styles.telop} ${reduced ? '' : styles.telopIn}`}>{telop.text}</div>
         )}
         {/* Skip — always shown during the run as a fixed pill on the track (easy to
             reach), disabled until the half-way point, then it lights up & unlocks. */}

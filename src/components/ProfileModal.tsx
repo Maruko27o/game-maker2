@@ -5,9 +5,8 @@ import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRank
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
 import type { HorseLook, EquipFrame } from '../types';
-import { isStreakFrame, isAptFrame, isBoxFrame, APT_GRADES, STREAK_MAX } from '../types';
-import { ownedLevels } from '../logic/streak';
-import { BOX_KINDS } from '../data/boxes';
+import { isStreakFrame, isAptFrame, isBoxFrame } from '../types';
+import { frameCatalog } from '../logic/frameCatalog';
 import { fmtOdds } from '../logic/betting';
 import HorseFace from './HorseFace';
 import EquippedFrame from './EquippedFrame';
@@ -17,6 +16,8 @@ import AccountPanel from './AccountPanel';
 import styles from './ProfileModal.module.css';
 import CloseButton from './CloseButton';
 import TitleBanner from './TitleBanner';
+import CollectionModal from './CollectionModal';
+import Icon from './Icon';
 
 // アイコンに装備できるフレーム同士の同一判定。
 function sameFrame(a: EquipFrame | null, b: EquipFrame | null): boolean {
@@ -62,38 +63,19 @@ export default function ProfileModal({
   const [editing, setEditing] = useState<null | 'icon' | 'trophy' | 'title'>(null); // tap a header box to open
   const [iconMode, setIconMode] = useState<'horse' | 'frame'>('horse');
   const [frameHint, setFrameHint] = useState<string | null>(null); // 未取得フレームをタップしたときの獲得条件
+  const [showCollection, setShowCollection] = useState(false);
 
   const avatar = useMemo<HorseLook>(() => {
     const byId = avatarHorseId ? horses.find((h) => h.id === avatarHorseId) : null;
     return byId ?? horses[0] ?? DEFAULT_LOOK;
   }, [avatarHorseId, horses]);
 
-  // フレーム一覧。集める対象がひと目で分かるよう、まだ持っていないものも
-  // ぼかして並べる（何があるか見えないと集めようがない）。
-  //
-  // 殿堂（ランキング）フレームはここに出さない。毎月増えていって一覧が
-  // 際限なく伸びるうえ、集めきる対象でもないため。受信箱から直接装備する。
-  const frameSlots = useMemo<{ frame: EquipFrame; owned: boolean; hint: string }[]>(() => {
-    const rows: { frame: EquipFrame; owned: boolean; hint: string }[] = [];
-    // ボックスの限定フレーム（いちばん出ない）を先頭に。
-    for (const b of BOX_KINDS) {
-      rows.push({
-        frame: { kind: 'box', box: b },
-        owned: boxFrames.includes(b),
-        hint: b === 'lucky' ? 'ラッキーボックスから 1/10000' : 'ゴールドボックスから 1/10000',
-      });
-    }
-    // 連勝フレーム（高い連勝ほど手前）。
-    const claimed = new Set(ownedLevels({ soloStreak: 0, streakBest: 0, streakClaimed }));
-    for (let lv = STREAK_MAX; lv >= 1; lv--) {
-      rows.push({ frame: { kind: 'streak', level: lv }, owned: claimed.has(lv), hint: `馬券レースで${lv}連勝` });
-    }
-    // 適性フレーム（S がいちばん豪華なので降順）。
-    for (const g of [...APT_GRADES].reverse()) {
-      rows.push({ frame: { kind: 'apt', grade: g }, owned: aptFrames.includes(g), hint: `6コースの適性がすべて${g}のウマ` });
-    }
-    return rows;
-  }, [streakClaimed, aptFrames, boxFrames]);
+  // フレーム一覧（目録は logic/frameCatalog.ts に集約）。まだ持っていないものも
+  // ぼかして並べる。何があるか見えないと集めようがないため。
+  const frameSlots = useMemo(
+    () => frameCatalog({ boxFrames, streakClaimed, aptFrames }),
+    [streakClaimed, aptFrames, boxFrames],
+  );
 
   // フレームを装備／解除（ローカル＋ランキング行にも反映）。
   function equip(frame: EquipFrame | null) {
@@ -117,6 +99,9 @@ export default function ProfileModal({
   const equipTitle = useStore((s) => s.equipTitle);
   const ctx = useMemo(() => titleCtx(useStore.getState(), dexPct), [dexPct, horses, trophies, pstats, owned]);
   const active = activeTitle(equippedTitle, ctx);
+  // コレクションの入口に出す集まり具合（ctx を使うので、その下で数える）。
+  const frameHave = frameSlots.filter((f) => f.owned).length;
+  const titleHave = TITLES.filter((t) => t.check(ctx)).length;
   function pickTitle(t: TitleDef) {
     if (!t.check(ctx)) return;
     equipTitle(t.id);
@@ -248,6 +233,12 @@ export default function ProfileModal({
           </div>
         </div>
 
+        {/* コレクション：フレームと称号が「あと何で埋まるか」を眺める場所。 */}
+        <button className={styles.collectionBtn} onClick={() => setShowCollection(true)}>
+          <Icon name="book" size={16} /> コレクション
+          <span className={styles.collectionCount}>フレーム {frameHave}/{frameSlots.length}・称号 {titleHave}/{TITLES.length}</span>
+        </button>
+
         {/* Tabs */}
         <div className={styles.tabs}>
           <button className={`${styles.tab} ${tab === 'profile' ? styles.tabOn : ''}`} onClick={() => setTab('profile')}>
@@ -311,11 +302,11 @@ export default function ProfileModal({
                     <div className={styles.frameFace}><HorseFace horse={avatar} size={56} /></div>
                     {!equippedFrame && <span className={styles.frameTag}>装備中</span>}
                   </button>
-                  {frameSlots.map(({ frame, owned: got, hint }, i) => {
+                  {frameSlots.map(({ key, frame, owned: got, hint }) => {
                     const on = got && sameFrame(equippedFrame, frame);
                     return (
                       <button
-                        key={i}
+                        key={key}
                         className={`${styles.framePick} ${on ? styles.picked : ''} ${got ? '' : styles.frameLocked}`}
                         onClick={() => { if (got) equip(frame); else setFrameHint(hint); }}
                         aria-label={got ? 'フレーム' : `未取得のフレーム：${hint}`}
@@ -411,6 +402,8 @@ export default function ProfileModal({
           </div>
         </div>
       )}
+
+      {showCollection && <CollectionModal look={avatar} onClose={() => setShowCollection(false)} />}
     </div>
   );
 }
