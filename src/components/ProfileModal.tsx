@@ -5,8 +5,9 @@ import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRank
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
 import type { HorseLook, EquipFrame } from '../types';
-import { isStreakFrame, isAptFrame, isBoxFrame } from '../types';
+import { isStreakFrame, isAptFrame, isBoxFrame, APT_GRADES, STREAK_MAX } from '../types';
 import { ownedLevels } from '../logic/streak';
+import { BOX_KINDS } from '../data/boxes';
 import { fmtOdds } from '../logic/betting';
 import HorseFace from './HorseFace';
 import EquippedFrame from './EquippedFrame';
@@ -48,7 +49,6 @@ export default function ProfileModal({
   const tasks = useStore((s) => s.tasks);
   const pstats = useStore((s) => s.stats);
   const streakClaimed = useStore((s) => s.streakClaimed ?? 0);
-  const mailbox = useStore((s) => s.mailbox ?? []);
   const equippedFrame = useStore((s) => s.equippedFrame ?? null);
   const aptFrames = useStore((s) => s.aptFrames ?? []);
   const boxFrames = useStore((s) => s.boxFrames ?? []);
@@ -61,34 +61,39 @@ export default function ProfileModal({
   const [tab, setTab] = useState<'profile' | 'account'>(initialTab);
   const [editing, setEditing] = useState<null | 'icon' | 'trophy' | 'title'>(null); // tap a header box to open
   const [iconMode, setIconMode] = useState<'horse' | 'frame'>('horse');
+  const [frameHint, setFrameHint] = useState<string | null>(null); // 未取得フレームをタップしたときの獲得条件
 
   const avatar = useMemo<HorseLook>(() => {
     const byId = avatarHorseId ? horses.find((h) => h.id === avatarHorseId) : null;
     return byId ?? horses[0] ?? DEFAULT_LOOK;
   }, [avatarHorseId, horses]);
 
-  // 獲得済みフレーム一覧（連勝フレーム＋殿堂フレーム）。アイコン設定の「フレーム」で装備する。
-  const ownedFrames = useMemo<EquipFrame[]>(() => {
-    const streak: EquipFrame[] = ownedLevels({ soloStreak: 0, streakBest: 0, streakClaimed })
-      .slice()
-      .reverse() // 高い連勝ほど手前に
-      .map((level) => ({ kind: 'streak', level }));
-    const seen = new Set<string>();
-    const rank: EquipFrame[] = [];
-    for (const m of mailbox) {
-      if (m.kind !== 'frame' || !m.frame) continue;
-      const key = `${m.frame.period}-${m.frame.rank}-${m.frame.metric}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      rank.push(m.frame);
+  // フレーム一覧。集める対象がひと目で分かるよう、まだ持っていないものも
+  // ぼかして並べる（何があるか見えないと集めようがない）。
+  //
+  // 殿堂（ランキング）フレームはここに出さない。毎月増えていって一覧が
+  // 際限なく伸びるうえ、集めきる対象でもないため。受信箱から直接装備する。
+  const frameSlots = useMemo<{ frame: EquipFrame; owned: boolean; hint: string }[]>(() => {
+    const rows: { frame: EquipFrame; owned: boolean; hint: string }[] = [];
+    // ボックスの限定フレーム（いちばん出ない）を先頭に。
+    for (const b of BOX_KINDS) {
+      rows.push({
+        frame: { kind: 'box', box: b },
+        owned: boxFrames.includes(b),
+        hint: b === 'lucky' ? 'ラッキーボックスから 1/10000' : 'ゴールドボックスから 1/10000',
+      });
     }
-    // 適性フレーム（6コース全部同じ等級のウマを手に入れた記録）。等級だけを持つので
-    // そのウマを引退させても厳選し直しても消えない。
-    const apt: EquipFrame[] = aptFrames.map((grade) => ({ kind: 'apt', grade }));
-    // ボックスの限定フレーム（1/1000・1/10000）。いちばん手前に出す。
-    const box: EquipFrame[] = boxFrames.map((b) => ({ kind: 'box', box: b }));
-    return [...box, ...streak, ...apt, ...rank];
-  }, [streakClaimed, mailbox, aptFrames, boxFrames]);
+    // 連勝フレーム（高い連勝ほど手前）。
+    const claimed = new Set(ownedLevels({ soloStreak: 0, streakBest: 0, streakClaimed }));
+    for (let lv = STREAK_MAX; lv >= 1; lv--) {
+      rows.push({ frame: { kind: 'streak', level: lv }, owned: claimed.has(lv), hint: `馬券レースで${lv}連勝` });
+    }
+    // 適性フレーム（S がいちばん豪華なので降順）。
+    for (const g of [...APT_GRADES].reverse()) {
+      rows.push({ frame: { kind: 'apt', grade: g }, owned: aptFrames.includes(g), hint: `6コースの適性がすべて${g}のウマ` });
+    }
+    return rows;
+  }, [streakClaimed, aptFrames, boxFrames]);
 
   // フレームを装備／解除（ローカル＋ランキング行にも反映）。
   function equip(frame: EquipFrame | null) {
@@ -294,36 +299,38 @@ export default function ProfileModal({
                   })}
                 </div>
               )
-            ) : ownedFrames.length === 0 ? (
-              <p className={styles.hint}>まだフレームがありません。連勝チャレンジ（タスク→スペシャル）や殿堂入りで手に入ります。</p>
             ) : (
               <>
                 <div className={styles.frameGrid}>
-                  {/* なし（フレームを外す） */}
+                  {/* フレームを外す（文字は置かない。素の顔が「なし」そのもの） */}
                   <button
                     className={`${styles.framePick} ${!equippedFrame ? styles.picked : ''}`}
                     onClick={() => equip(null)}
                     aria-label="フレームなし"
                   >
                     <div className={styles.frameFace}><HorseFace horse={avatar} size={56} /></div>
-                    <span className={styles.frameName}>なし</span>
+                    {!equippedFrame && <span className={styles.frameTag}>装備中</span>}
                   </button>
-                  {ownedFrames.map((f, i) => {
-                    const on = sameFrame(equippedFrame, f);
+                  {frameSlots.map(({ frame, owned: got, hint }, i) => {
+                    const on = got && sameFrame(equippedFrame, frame);
                     return (
                       <button
                         key={i}
-                        className={`${styles.framePick} ${on ? styles.picked : ''}`}
-                        onClick={() => equip(f)}
-                        aria-label="フレーム"
+                        className={`${styles.framePick} ${on ? styles.picked : ''} ${got ? '' : styles.frameLocked}`}
+                        onClick={() => { if (got) equip(frame); else setFrameHint(hint); }}
+                        aria-label={got ? 'フレーム' : `未取得のフレーム：${hint}`}
                       >
-                        <EquippedFrame frame={f} look={avatar} size={56} />
+                        <span className={got ? undefined : styles.frameBlur}>
+                          <EquippedFrame frame={frame} look={avatar} size={56} />
+                        </span>
                         {on && <span className={styles.frameTag}>装備中</span>}
                       </button>
                     );
                   })}
                 </div>
-                <p className={styles.hint}>タップでアイコンに装備できます。</p>
+                <p className={styles.hint}>
+                  {frameHint ?? 'タップでアイコンに装備できます。ぼやけているものはまだ持っていません。'}
+                </p>
               </>
             )}
           </div>

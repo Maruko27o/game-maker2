@@ -28,31 +28,62 @@ describe('週末のボックス', () => {
     }
   });
 
-  it('限定フレームの確率が 1/1000 と 1/10000 になっている', () => {
+  it('限定枠の確率どおりに出る（フレーム 1/10000・称号 1/1000）', () => {
+    // 当たりの回数はポアソン分布なので、割合そのものではなく回数を ±4σ で見る。
+    // 1/10000 は 400k 回でも期待40回しか出ず、割合の ±25% だと誤差にひっかかる。
     const trials = 400_000;
-    for (const [k, odds] of [['lucky', 1000], ['gold', 10000]] as const) {
+    const cases = [
+      { kind: 'lucky' as const, frameOdds: 10000, titleOdds: 1000 },
+      { kind: 'gold' as const, frameOdds: 10000, titleOdds: 1000 },
+    ];
+    for (const c of cases) {
       const rng = mulberry32(12345);
-      let hits = 0;
-      for (let i = 0; i < trials; i++) if (openBox(k, rng, false).reward.type === 'frame') hits++;
-      const rate = hits / trials;
-      // 実測が理論値の ±25% に収まること（400k 回ならこの幅で十分安定）
-      expect(rate).toBeGreaterThan((1 / odds) * 0.75);
-      expect(rate).toBeLessThan((1 / odds) * 1.25);
+      let frames = 0;
+      let titles = 0;
+      for (let i = 0; i < trials; i++) {
+        const t = openBox(c.kind, rng, { frame: false, title: false }).reward.type;
+        if (t === 'frame') frames++;
+        if (t === 'title') titles++;
+      }
+      for (const [hits, odds] of [[frames, c.frameOdds], [titles, c.titleOdds]] as const) {
+        const mu = trials / odds;
+        const band = 4 * Math.sqrt(mu);
+        expect(hits).toBeGreaterThan(mu - band);
+        expect(hits).toBeLessThan(mu + band);
+      }
     }
   });
 
-  it('もう持っている限定フレームは二度と出ない（一度きりの約束）', () => {
+  it('もう持っている限定枠は二度と出ない（一度きりの約束）', () => {
     const rng = mulberry32(999);
     for (let i = 0; i < 200_000; i++) {
-      expect(openBox('lucky', rng, true).reward.type).not.toBe('frame');
+      const t = openBox('lucky', rng, { frame: true, title: true }).reward.type;
+      expect(t).not.toBe('frame');
+      expect(t).not.toBe('title');
     }
+  });
+
+  it('フレームを持っていても称号はちゃんと出る（片方だけ取得ずみ）', () => {
+    const rng = mulberry32(555);
+    let titles = 0;
+    for (let i = 0; i < 200_000; i++) {
+      if (openBox('gold', rng, { frame: true, title: false }).reward.type === 'title') titles++;
+    }
+    const mu = 200_000 / 1000; // 称号はどちらの箱も 1/1000
+    expect(titles).toBeGreaterThan(mu - 4 * Math.sqrt(mu));
+    expect(titles).toBeLessThan(mu + 4 * Math.sqrt(mu));
+  });
+
+  it('ゴールドボックスの最高額は 100,000 コイン', () => {
+    const amounts = BOXES.gold.slots.map((s) => (s.reward.type === 'coins' ? s.reward.amount : 0));
+    expect(Math.max(...amounts)).toBe(100_000);
   });
 
   it('必ず何かが当たる（空っぽで返らない）', () => {
     const rng = mulberry32(7);
     for (const k of BOX_KINDS) {
       for (let i = 0; i < 5000; i++) {
-        const r = openBox(k, rng, false);
+        const r = openBox(k, rng, { frame: false, title: false });
         expect(r.reward).toBeTruthy();
         expect(r.label.length).toBeGreaterThan(0);
       }
@@ -103,7 +134,7 @@ describe('週末のボックス', () => {
     for (const k of BOX_KINDS) {
       const rng = mulberry32(4242);
       const seen = new Set<string>();
-      for (let i = 0; i < 200_000; i++) seen.add(openBox(k, rng, true).label);
+      for (let i = 0; i < 200_000; i++) seen.add(openBox(k, rng, { frame: true, title: true }).label);
       for (const s of BOXES[k].slots) expect(seen.has(s.label)).toBe(true);
     }
   });

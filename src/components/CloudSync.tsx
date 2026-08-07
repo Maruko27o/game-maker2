@@ -59,7 +59,11 @@ function snapshot(): SaveData {
     mailbox: s.mailbox ?? [],
     equippedFrame: s.equippedFrame ?? null,
     aptFrames: s.aptFrames ?? [],
+    aptPending: s.aptPending ?? [],
     boxFrames: s.boxFrames ?? [],
+    boxTitles: s.boxTitles ?? [],
+    seenTitles: s.seenTitles ?? [],
+    earnedNoticeDue: s.earnedNoticeDue,
     equippedTitle: s.equippedTitle ?? null,
     customBet: s.customBet ?? null,
     raceSession: s.raceSession ?? null,
@@ -76,15 +80,20 @@ export default function CloudSync() {
   // 「総獲得賞金」を後から足したので、それ以前の記録は残っていない。
   // 事情を一度だけ受信箱で説明する。
   //
+  // 出すのは earnedNoticeDue が立っている人だけ＝この項目より前から遊んでいた人。
+  // 新規アカウントには失われた記録がないので、お詫びも届かない。
+  //
   // 起動直後に1回だけ入れる作りにしていたが、そのあとクラウドのセーブを読み込むと
   // 受信箱ごと差し替わって消えてしまっていた（＝届かない）。受信箱を見張って、
   // 入っていなければ入れ直す形にする。id で重複しないので何度通っても1通だけ。
   const receiveNoticeOnce = useStore((st) => st.receiveNoticeOnce);
   const mailbox = useStore((st) => st.mailbox);
+  const noticeDue = useStore((st) => st.earnedNoticeDue);
   useEffect(() => {
+    if (!noticeDue) return;
     if ((mailbox ?? []).some((m) => m.id === NOTICE_TOTAL_EARNED.id)) return;
     receiveNoticeOnce(NOTICE_TOTAL_EARNED.id, NOTICE_TOTAL_EARNED.title, NOTICE_TOTAL_EARNED.body);
-  }, [mailbox, receiveNoticeOnce]);
+  }, [noticeDue, mailbox, receiveNoticeOnce]);
 
   const user = useAuth((s) => s.user);
   const configured = useAuth((s) => s.configured);

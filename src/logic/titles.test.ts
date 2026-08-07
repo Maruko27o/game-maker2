@@ -4,6 +4,7 @@ import { TITLES, TIER_INFO, activeTitle, earnedTitles, type TitleCtx } from '../
 const ZERO: TitleCtx = {
   races: 0, horsesFound: 0, wins: 0, betsPlaced: 0, maxOdds: 0, maxPayout: 0,
   totalEarned: 0, arenaWins: 0, coins: 0, streakBest: 0, collectPct: 0, gpTop3: 0, gpWins: 0,
+  luckyBoxTitle: false, goldBoxTitle: false,
 };
 
 describe('称号', () => {
@@ -155,5 +156,23 @@ describe('称号', () => {
       prevTier = t.tier;
       prevNeed = need;
     }
+  });
+});
+
+describe('週末ボックスの限定称号', () => {
+  it('引き当てるまで出てこない', () => {
+    expect(earnedTitles(ZERO)).not.toContain('box_lucky_tail');
+    expect(earnedTitles(ZERO)).not.toContain('box_gold_hoof');
+    expect(earnedTitles({ ...ZERO, luckyBoxTitle: true })).toContain('box_lucky_tail');
+    expect(earnedTitles({ ...ZERO, goldBoxTitle: true })).toContain('box_gold_hoof');
+  });
+
+  it('フレームと同じ紋章（ウマの顔）を持つ', () => {
+    const lucky = TITLES.find((t) => t.id === 'box_lucky_tail')!;
+    const gold = TITLES.find((t) => t.id === 'box_gold_hoof')!;
+    expect(lucky.crest).toBe('lucky');
+    expect(gold.crest).toBe('gold');
+    // 紋章を出すのはこの2つだけ（他の称号に混ざらない）
+    expect(TITLES.filter((t) => t.crest).map((t) => t.id).sort()).toEqual(['box_gold_hoof', 'box_lucky_tail']);
   });
 });

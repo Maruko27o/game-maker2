@@ -1,4 +1,5 @@
 import type { TitleDef } from '../data/titles';
+import BoxCrest from './BoxCrest';
 import styles from './TitleBanner.module.css';
 
 // 称号の背景。段（tier）が上がるほど層が増える。
@@ -32,6 +33,15 @@ export default function TitleBanner({ title, className }: { title: TitleDef; cla
       )}
       {t >= 6 && <span className={styles.aurora} />}
       {t >= 6 && <span className={styles.prism} />}
+      {/* 週末ボックスの称号だけ、左端にフレームと同じ紋章（ウマの顔）を出す。
+          並べたとき「同じイベントのもの」だと一目で分かるようにするため。 */}
+      {title.crest && (
+        <span className={styles.crest}>
+          <svg viewBox="-16 -16 32 32" width="100%" height="100%">
+            <BoxCrest box={title.crest} uid={`tb-${title.id}`} r={14} />
+          </svg>
+        </span>
+      )}
       {t >= 6 && (
         <span className={styles.sparks}>
           {[12, 30, 52, 71, 88].map((x, i) => (

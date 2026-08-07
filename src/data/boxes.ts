@@ -20,7 +20,8 @@ export type BoxReward =
   | { type: 'ticket'; amount: number } // 厳選チケット
   | { type: 'item'; stat: StatKey | 'any'; amount: number } // 育成アイテム
   | { type: 'dye' } // 染料（色は開けたときに抽選）
-  | { type: 'frame' }; // その箱だけの限定フレーム
+  | { type: 'frame' } // その箱だけの限定フレーム
+  | { type: 'title' }; // その箱だけの限定称号
 
 export type BoxSlot = {
   /** 抽選の重み。合計に対する割合が排出率になる。 */
@@ -39,11 +40,14 @@ export type BoxDef = {
   lead: string;
   /** 限定フレームの当たる確率の分母（1/1000 など）。 */
   frameOdds: number;
+  /** 限定称号の当たる確率の分母。フレームとわざと入れ替えてある。 */
+  titleOdds: number;
   slots: BoxSlot[];
 };
 
-// 限定フレームは重みではなく「1/N」で先に判定する（重みに混ぜると、他の中身を
-// 増減させたときに確率が動いてしまう）。slots には入れず frameOdds で持つ。
+// 限定枠（フレーム・称号）は重みではなく「1/N」で先に判定する（重みに混ぜると、
+// 他の中身を増減させたときに確率が動いてしまう）。slots には入れず別に持つ。
+// どちらの箱も フレーム＝1/10000（最レア）／称号＝1/1000 でそろえてある。
 
 /** 土曜：育成系。ウマを強くするものが出る。 */
 export const LUCKY_BOX: BoxDef = {
@@ -51,7 +55,8 @@ export const LUCKY_BOX: BoxDef = {
   name: 'ラッキーボックス',
   colors: ['#d0417a', '#ffb3cd'],
   lead: '育てるためのごほうびが入っているよ。',
-  frameOdds: 1000,
+  frameOdds: 10000,
+  titleOdds: 1000,
   slots: [
     { weight: 34, rarity: 'normal', label: '育成アイテム ×1', reward: { type: 'item', stat: 'any', amount: 1 } },
     { weight: 20, rarity: 'normal', label: 'コイン 2,000', reward: { type: 'coins', amount: 2000 } },
@@ -70,13 +75,14 @@ export const GOLD_BOX: BoxDef = {
   colors: ['#b8860b', '#ffd76a'],
   lead: 'コインがたっぷり入っているよ。',
   frameOdds: 10000,
+  titleOdds: 1000,
   slots: [
-    { weight: 36, rarity: 'normal', label: 'コイン 5,000', reward: { type: 'coins', amount: 5000 } },
+    { weight: 32, rarity: 'normal', label: 'コイン 5,000', reward: { type: 'coins', amount: 5000 } },
     { weight: 26, rarity: 'normal', label: 'コイン 10,000', reward: { type: 'coins', amount: 10000 } },
-    { weight: 20, rarity: 'rare', label: 'コイン 30,000', reward: { type: 'coins', amount: 30000 } },
-    { weight: 11, rarity: 'rare', label: 'コイン 60,000', reward: { type: 'coins', amount: 60000 } },
-    { weight: 5, rarity: 'epic', label: 'コイン 150,000', reward: { type: 'coins', amount: 150000 } },
-    { weight: 2, rarity: 'epic', label: 'コイン 400,000', reward: { type: 'coins', amount: 400000 } },
+    { weight: 20, rarity: 'rare', label: 'コイン 20,000', reward: { type: 'coins', amount: 20000 } },
+    { weight: 13, rarity: 'rare', label: 'コイン 35,000', reward: { type: 'coins', amount: 35000 } },
+    { weight: 6, rarity: 'epic', label: 'コイン 60,000', reward: { type: 'coins', amount: 60000 } },
+    { weight: 3, rarity: 'epic', label: 'コイン 100,000', reward: { type: 'coins', amount: 100000 } },
   ],
 };
 
@@ -107,16 +113,33 @@ export const BOX_FRAME_NAME: Record<BoxKind, string> = {
   gold: 'ゴールドボックス限定フレーム',
 };
 
-/** i ボタンに出す排出率（%）。frameOdds を含めて合計100%になるようにそろえる。 */
+/** 限定称号の ID（data/titles.ts のものと合わせる）。 */
+export const BOX_TITLE_ID: Record<BoxKind, string> = {
+  lucky: 'box_lucky_tail',
+  gold: 'box_gold_hoof',
+};
+
+/** 限定称号の表示名。 */
+export const BOX_TITLE_NAME: Record<BoxKind, string> = {
+  lucky: '幸運のしっぽ',
+  gold: '黄金のひづめ',
+};
+
+/** i ボタンに出す排出率（%）。限定枠を含めて合計100%になるようにそろえる。 */
 export function dropTable(def: BoxDef): { label: string; rarity: BoxRarity; pct: number }[] {
   const framePct = 100 / def.frameOdds;
-  const rest = 100 - framePct;
+  const titlePct = 100 / def.titleOdds;
+  const rest = 100 - framePct - titlePct;
   const total = def.slots.reduce((n, s) => n + s.weight, 0);
   const rows = def.slots.map((s) => ({
     label: s.label,
     rarity: s.rarity,
     pct: (s.weight / total) * rest,
   }));
-  rows.push({ label: BOX_FRAME_NAME[def.kind], rarity: 'legend' as BoxRarity, pct: framePct });
-  return rows;
+  // 限定枠は当たりにくい順に下へ。
+  const specials = [
+    { label: BOX_FRAME_NAME[def.kind], rarity: 'legend' as BoxRarity, pct: framePct },
+    { label: `称号「${BOX_TITLE_NAME[def.kind]}」`, rarity: 'legend' as BoxRarity, pct: titlePct },
+  ].sort((a, b) => b.pct - a.pct);
+  return [...rows, ...specials];
 }

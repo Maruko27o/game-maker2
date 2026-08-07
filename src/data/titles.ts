@@ -11,6 +11,8 @@ import type { SaveData } from '../types';
 // どうしても最上段に集まるので、数を無理にそろえると難しさの方がゆがむ。
 // 揃えるのは「難しさ ↔ 段 ↔ 背景の格」の対応であって、段ごとの点数ではない。
 
+import type { BoxFrameKind } from '../types';
+
 export type TitleTier = 1 | 2 | 3 | 4 | 5 | 6;
 
 /** 段ごとの「1か月でどのくらいの人が持っているか」の目安と、背景の作り込み。 */
@@ -31,6 +33,8 @@ export type TitleDef = {
   tier: TitleTier;
   /** 背景と名札の色（濃い→淡い）。 */
   colors: [string, string];
+  /** 週末ボックスの称号だけ、左端に同じイベントの紋章（ウマの顔）を出す。 */
+  crest?: BoxFrameKind;
   /** 達成しているか。セーブ全体を見て判定する。 */
   check: (s: TitleCtx) => boolean;
 };
@@ -50,6 +54,10 @@ export type TitleCtx = {
   collectPct: number; // 図鑑の集まり具合（0..100）
   gpTop3: number; // グランプリで3位以内に入った回数（G1のみトロフィーが出る）
   gpWins: number; // グランプリ優勝の回数
+  // 週末ボックスから出る限定称号。条件を数えるものではなく「引き当てたか」なので、
+  // セーブのフラグをそのまま持ち込む。
+  luckyBoxTitle: boolean;
+  goldBoxTitle: boolean;
 };
 
 export function titleCtx(s: SaveData, collectPct: number): TitleCtx {
@@ -82,6 +90,8 @@ export function titleCtx(s: SaveData, collectPct: number): TitleCtx {
     collectPct,
     gpTop3: (s.trophies ?? []).length,
     gpWins: (s.trophies ?? []).filter((t) => t.rank === 1).length,
+    luckyBoxTitle: (s.boxTitles ?? []).includes('lucky'),
+    goldBoxTitle: (s.boxTitles ?? []).includes('gold'),
   };
 }
 
@@ -147,6 +157,12 @@ export const TITLES: TitleDef[] = [
   { id: 'ruler_50000', name: '五万頭の覇者', desc: 'ウマを5万頭見つける', tier: 6, colors: ['#ff7a5f', '#ffd0c2'], check: (c) => c.horsesFound >= 50_000 },
   { id: 'legend_100000', name: '十万頭の伝説', desc: 'ウマを10万頭見つける', tier: 6, colors: ['#8f7aff', '#d5cdff'], check: (c) => c.horsesFound >= 100_000 },
   { id: 'gold_emperor', name: 'ゴールドエンペラー', desc: '総獲得賞金100億コイン', tier: 6, colors: ['#7a3fd0', '#ffd76a'], check: (c) => c.totalEarned >= 10_000_000_000 },
+
+  // 週末ボックスの限定称号。フレームと確率をわざと入れ替えてあるので、
+  // 「フレームは出たのに称号が出ない」箱と、その逆の箱ができる。
+  // 色はそれぞれの限定フレームとそろえる（並べたとき同じイベントのものだと分かる）。
+  { id: 'box_lucky_tail', name: '幸運のしっぽ', desc: 'ラッキーボックスから 1/1000 で出る', tier: 6, colors: ['#e0518c', '#ffd9a8'], crest: 'lucky', check: (c) => c.luckyBoxTitle },
+  { id: 'box_gold_hoof', name: '黄金のひづめ', desc: 'ゴールドボックスから 1/1000 で出る', tier: 6, colors: ['#5aa8c8', '#eafaff'], crest: 'gold', check: (c) => c.goldBoxTitle },
 ];
 
 export const titleById: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

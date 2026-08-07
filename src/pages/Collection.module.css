@@ -184,6 +184,13 @@
   text-align: center;
   line-height: 1.2;
   color: var(--ink);
+  /* 1行に収める。長い名前は文字サイズを縮めて対応する（Collection.tsx）。
+     マスの左右のパディングぶんまで使いたいので、その幅だけ外へ広げる。 */
+  white-space: nowrap;
+  width: calc(100% + 6px);
+  margin: 0 -3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .locked .name {
   color: var(--ink-soft);

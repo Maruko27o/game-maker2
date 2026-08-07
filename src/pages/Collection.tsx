@@ -34,6 +34,17 @@ const TOTAL = SECTIONS.reduce((n, s) => n + s.entries.length, 0);
 // A blank horse used purely as a black silhouette behind the "?" for unowned parts.
 const BLANK = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
 
+// 図鑑のマスは幅がせまく（中身は約56px）、10px のままだと5文字以上で必ず折り返す。
+// 折り返すとマスの高さがバラバラになって並びが崩れるので、文字数に応じて縮めて
+// 1行に収める。日本語の全角は「およそフォントサイズと同じ幅」なので、
+// 収まる大きさは 56 ÷ 文字数 で見積もれる。短い名前はそのまま 10px。
+const NAME_BOX_W = 56;
+function nameFontSize(name: string): number | undefined {
+  const n = [...name].length;
+  if (n <= 5) return undefined; // 既定の 10px のままで収まる
+  return Math.max(6, Math.floor((NAME_BOX_W / n) * 10) / 10);
+}
+
 export default function Collection() {
   const owned = useStore((s) => s.owned);
   const [tab, setTab] = useState(0);
@@ -114,7 +125,7 @@ export default function Collection() {
                 </div>
                 {has ? (
                   <>
-                    <div className={styles.name}>{e.name}</div>
+                    <div className={styles.name} style={{ fontSize: nameFontSize(e.name) }}>{e.name}</div>
                     {/* 所持数はここには出さない（マスが窮屈になるので）。
                         タップして開くポップアップの方で見せる。 */}
                     <div className={styles.meta}>

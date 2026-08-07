@@ -420,6 +420,19 @@
   overflow: visible; /* フレームの装飾が枠外へはみ出すため clip しない */
   line-height: 0;
 }
+/* まだ持っていないフレーム。ぼかして沈ませるが、形と色は残す
+   （何が集められるのか見えないと集めようがない）。 */
+.frameLocked {
+  background: var(--panel);
+  box-shadow: inset 0 0 0 99px rgba(90, 70, 40, 0.06);
+}
+.frameBlur {
+  display: block;
+  /* 「ぼやけているが何のフレームかは分かる」ところで止める。強くかけすぎると
+     どれも同じ茶色い丸になって、集める目標として機能しなくなる。 */
+  filter: blur(1.3px) grayscale(0.2);
+  opacity: 0.72;
+}
 .frameFace {
   width: 56px;
   height: 56px;

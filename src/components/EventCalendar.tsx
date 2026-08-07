@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { WEEK_ORDER, DOW_SHORT, eventByDow, dowOfTime, type WeeklyEvent } from '../data/events';
+import { boxOfDow } from '../data/boxes';
+import BoxDropTable from './BoxDropTable';
 import { trustedNow } from '../logic/trustedClock';
 import Icon from './Icon';
 import CloseButton from './CloseButton';
@@ -52,6 +54,10 @@ export default function EventCalendar() {
 }
 
 function EventDetail({ ev, today, onClose }: { ev: WeeklyEvent; today: number; onClose: () => void }) {
+  // 週末（土・日）はボックスの日。中身の出る割合をここからも見られるようにする。
+  const box = boxOfDow(ev.dow);
+  const [showDrops, setShowDrops] = useState(false);
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div
@@ -66,8 +72,24 @@ function EventDetail({ ev, today, onClose }: { ev: WeeklyEvent; today: number; o
             <span className={styles.bannerDow}>{DOW_SHORT[ev.dow]}曜日{ev.dow === today ? '（今日）' : ''}</span>
             <span className={styles.bannerName}>{ev.name}</span>
           </span>
+          {box && (
+            <button
+              className={styles.info}
+              onClick={() => setShowDrops((v) => !v)}
+              aria-label="中身の出る割合を見る"
+            >
+              i
+            </button>
+          )}
         </div>
 
+        {box && showDrops ? (
+          <div className={styles.drops}>
+            <BoxDropTable kind={box} />
+            <button className={styles.back} onClick={() => setShowDrops(false)}>イベントの説明にもどる</button>
+          </div>
+        ) : (
+        <>
         <p className={styles.lead}>{ev.lead}</p>
 
         <ul className={styles.list}>
@@ -80,6 +102,8 @@ function EventDetail({ ev, today, onClose }: { ev: WeeklyEvent; today: number; o
           <p className={styles.soon}>
             このイベントはまだ準備中です。内容はこれから実装していきます。
           </p>
+        )}
+        </>
         )}
       </div>
     </div>

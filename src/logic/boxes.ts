@@ -14,18 +14,29 @@ export type BoxResult = {
 /**
  * 1回開ける。
  *
- * 限定フレームは重みに混ぜず「1/N」で先に判定する。重みに入れてしまうと、
- * 他の中身を足し引きしたときにフレームの確率まで動いてしまうため。
+ * 限定枠（フレーム・称号）は重みに混ぜず「1/N」で先に判定する。重みに入れて
+ * しまうと、他の中身を足し引きしたときに限定の確率まで動いてしまうため。
+ * 判定用の乱数は取得済みかどうかに関わらず必ず2つ引く。こうしておくと、
+ * 「もう持っているぶんだけ乱数の並びがずれる」ということが起きない。
  *
  * @param rng 0以上1未満を返す乱数
- * @param frameTaken すでにその箱の限定フレームを持っているか。持っていれば
- *   フレームは出さない（一度きりの約束）。そのぶんは通常の抽選に回る。
+ * @param taken すでに持っている限定枠。持っているものは出さない（一度きりの
+ *   約束）。そのぶんは通常の抽選に回る。
  */
-export function openBox(kind: BoxKind, rng: () => number, frameTaken: boolean): BoxResult {
+export function openBox(
+  kind: BoxKind,
+  rng: () => number,
+  taken: { frame: boolean; title: boolean },
+): BoxResult {
   const def: BoxDef = BOXES[kind];
 
-  if (!frameTaken && rng() < 1 / def.frameOdds) {
+  const frameRoll = rng();
+  const titleRoll = rng();
+  if (!taken.frame && frameRoll < 1 / def.frameOdds) {
     return { kind, rarity: 'legend', label: 'げんていフレーム', reward: { type: 'frame' } };
+  }
+  if (!taken.title && titleRoll < 1 / def.titleOdds) {
+    return { kind, rarity: 'legend', label: 'げんてい称号', reward: { type: 'title' } };
   }
 
   const total = def.slots.reduce((n, s) => n + s.weight, 0);

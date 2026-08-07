@@ -181,6 +181,8 @@ function normStats(v: unknown): SaveData['stats'] {
 function freshSave(): SaveData {
   return {
     version: 6,
+    // 新規アカウントには「総獲得賞金」のお詫びは要らない（失われた記録がない）。
+    earnedNoticeDue: false,
     owned: starterOwned(),
     horses: [],
     energy: ENERGY_CAP,
@@ -209,7 +211,12 @@ function freshSave(): SaveData {
     mailbox: [],
     equippedFrame: null,
     aptFrames: [],
+    aptPending: [],
     boxFrames: [],
+    boxTitles: [],
+    // 空配列で持たせておく（undefined のままだと「まだ読み込めていない」と
+    // 区別がつかず、称号の初ゲットのお知らせが一度も出なくなる）。
+    seenTitles: [],
     equippedTitle: null,
     customBet: null,
     raceSession: null,
@@ -248,6 +255,12 @@ function normFrame(v: unknown): EquipFrame | null {
  *  オール S のウマを持っている人がいつまでももらえない。読み込みのたびに今いる
  *  ウマを見て足す（すでに持っている等級は絶対に消さない）。 */
 /** ボックス限定フレームの記録。各1回きりなので種類だけを持つ。 */
+/** 文字列だけを拾う ID の配列（重複は落とす）。 */
+function normIdList(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return [...new Set((v as unknown[]).filter((x): x is string => typeof x === 'string'))];
+}
+
 function normBoxFrames(v: unknown): BoxKind[] {
   if (!Array.isArray(v)) return [];
   const out: BoxKind[] = [];
@@ -255,9 +268,12 @@ function normBoxFrames(v: unknown): BoxKind[] {
   return out;
 }
 
+// 読み込み時にも適性チャレンジの達成を拾う（前の版で条件を満たしていた人ぶん）。
+// 授与ではなく「受け取り待ち」に入れる。受け取るのはタスク画面。
 function profileWithAptFrames(d: Record<string, unknown>, horses: Horse[]) {
   const p = normProfile(d);
-  return { ...p, aptFrames: mergeAptFrames(p.aptFrames, newlyEarned(horses, p.aptFrames)) };
+  const have = mergeAptFrames(p.aptFrames, p.aptPending);
+  return { ...p, aptPending: mergeAptFrames(p.aptPending, newlyEarned(horses, have)) };
 }
 
 function normProfile(d: Record<string, unknown>): {
@@ -266,7 +282,10 @@ function normProfile(d: Record<string, unknown>): {
   mailbox: MailItem[];
   equippedFrame: EquipFrame | null;
   aptFrames: AptGrade[];
+  aptPending: AptGrade[];
   boxFrames: BoxKind[];
+  boxTitles: BoxKind[];
+  seenTitles: string[];
   equippedTitle: string | null;
   customBet: SaveData['customBet'];
 } {
@@ -282,7 +301,7 @@ function normProfile(d: Record<string, unknown>): {
   const equippedTitle = typeof d.equippedTitle === 'string' ? d.equippedTitle : null;
   const cb = d.customBet as SaveData['customBet'];
   const customBet = cb && typeof cb === 'object' && typeof cb.amount === 'number' ? normalizeCustomBet(cb) : null;
-  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), aptFrames: normAptFrames(d.aptFrames), boxFrames: normBoxFrames(d.boxFrames), equippedTitle, customBet };
+  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), aptFrames: normAptFrames(d.aptFrames), boxFrames: normBoxFrames(d.boxFrames), boxTitles: normBoxFrames(d.boxTitles), aptPending: normAptFrames(d.aptPending), seenTitles: normIdList(d.seenTitles), equippedTitle, customBet };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -389,6 +408,15 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   // 記録がまったく残っていない。0 から始めると「今まで稼いだぶんが消えた」ように
   // 見えるので、分かっている値（対戦の払戻合計 ＋ 1レースの最大獲得賞金）で下駄を
   // 履かせてから積み上げる。足りないぶんはお詫びのメールで説明する。
+  // お詫びの判定に使う値。どちらも下駄を履かせる前に見る。
+  //  ・hadTotalEarned … その項目をすでに積んでいたか
+  //  ・hadPlayHistory … そもそも遊んだ形跡があるか（新規アカウントは false）
+  const hadTotalEarned = (stats.totalEarned ?? 0) > 0;
+  const hadPlayHistory =
+    (tasks.racesFinished ?? 0) > 0
+    || bets.length > 0
+    || (Array.isArray(d.trophies) && d.trophies.length > 0)
+    || (Array.isArray(d.horses) && d.horses.length > 0);
   if (!stats.totalEarned) {
     const ar = normArena(d.arena);
     const arenaPaid = (ar?.results ?? []).reduce((n, r) => n + Math.max(0, r.payout ?? 0), 0);
@@ -420,10 +448,18 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
     ? normalizeTeam(d.team.filter((x): x is string => typeof x === 'string'), horses, TEAM_SIZE)
     : horses.map((h) => h.id).slice(0, TEAM_SIZE);
 
+  // お詫びメールは「総獲得賞金より前から遊んでいた人」だけに出す。新規アカウントには
+  // 何も失われていないので不要。判定は初回の読み込みで一度だけ行い、以後は保存値を使う
+  //（あとから走れば履歴ができてしまい、毎回判定だと新規の人にも届いてしまうため）。
+  const earnedNoticeDue = typeof d.earnedNoticeDue === 'boolean'
+    ? d.earnedNoticeDue
+    : hadPlayHistory && !hadTotalEarned;
+
   if (d.version === 6) {
     return {
       data: {
         version: 6,
+        earnedNoticeDue,
         owned,
         horses,
         energy,
@@ -468,6 +504,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   return {
     data: {
       version: 6,
+      earnedNoticeDue,
       owned,
       horses: rescaled,
       energy,
@@ -623,6 +660,10 @@ type Store = SaveData & {
   receiveBox: (kind: BoxKind) => void;
   /** 受信箱のボックスを1つ開ける。中身はその場で反映して結果を返す。 */
   openWeekendBox: (kind: BoxKind) => BoxResult | null;
+  /** 称号の初ゲットお知らせを出しおわった印をつける。 */
+  markTitlesSeen: (ids: string[]) => void;
+  /** 適性フレームを受け取る。受け取り待ちに無ければ false。 */
+  claimAptFrame: (grade: AptGrade) => boolean;
   equipFrame: (frame: EquipFrame | null) => void;
   /** 称号を付け替える（未達成のIDは無視される）。 */
   equipTitle: (id: string | null) => void;
@@ -694,18 +735,21 @@ export const useStore = create<Store>((set, get) => {
   if (migrated) persist(initial); // save the upgraded shape immediately
 
   const commit = (partial: Partial<SaveData>) => {
-    // ウマの顔ぶれが変わったら、適性フレームの授与を確かめる。
-    // 「6コース全部が同じ等級」のウマを持った瞬間にもらえる。すでに持っている
-    // 等級は足しこむだけなので、あとで引退させても厳選し直しても消えない。
+    // ウマの顔ぶれが変わったら、適性チャレンジの達成を確かめる。
+    // 「6コース全部が同じ等級」のウマを持った瞬間に “受け取り待ち” になる。
+    // 実際に受け取るのは連勝チャレンジと同じくタスク画面（claimAptFrame）。
+    // 待ちに入った時点で記録は等級だけなので、あとで引退させても厳選し直しても消えない。
     if (partial.horses) {
       const owned = get().aptFrames ?? [];
-      const add = newlyEarned(partial.horses, owned);
-      if (add.length > 0) partial = { ...partial, aptFrames: mergeAptFrames(owned, add) };
+      const pending = get().aptPending ?? [];
+      const add = newlyEarned(partial.horses, mergeAptFrames(owned, pending));
+      if (add.length > 0) partial = { ...partial, aptPending: mergeAptFrames(pending, add) };
     }
     const savedAt = Date.now();
     const next = { ...get(), ...partial, savedAt } as Store;
     const data: SaveData = {
       version: 6,
+      earnedNoticeDue: next.earnedNoticeDue,
       owned: next.owned,
       horses: next.horses,
       energy: next.energy,
@@ -737,7 +781,10 @@ export const useStore = create<Store>((set, get) => {
       mailbox: next.mailbox ?? [],
       equippedFrame: next.equippedFrame ?? null,
       aptFrames: next.aptFrames ?? [],
+      aptPending: next.aptPending ?? [],
       boxFrames: next.boxFrames ?? [],
+      boxTitles: next.boxTitles ?? [],
+      seenTitles: next.seenTitles ?? [],
       equippedTitle: next.equippedTitle ?? null,
       customBet: next.customBet ?? null,
       raceSession: next.raceSession ?? null,
@@ -1169,8 +1216,10 @@ export const useStore = create<Store>((set, get) => {
       const nextMail = takeBox(s0.mailbox ?? [], kind);
       if (!nextMail) return null; // 持っていない
 
-      const taken = (s0.boxFrames ?? []).includes(kind);
-      const res = rollBox(kind, Math.random, taken);
+      const res = rollBox(kind, Math.random, {
+        frame: (s0.boxFrames ?? []).includes(kind),
+        title: (s0.boxTitles ?? []).includes(kind),
+      });
 
       const patch: Partial<SaveData> = { mailbox: nextMail };
       const r = res.reward;
@@ -1187,9 +1236,30 @@ export const useStore = create<Store>((set, get) => {
         patch.dyes = { ...(s0.dyes ?? {}), [colorId]: ((s0.dyes ?? {})[colorId] ?? 0) + 1 };
       } else if (r.type === 'frame') {
         patch.boxFrames = [...(s0.boxFrames ?? []), kind];
+      } else if (r.type === 'title') {
+        patch.boxTitles = [...(s0.boxTitles ?? []), kind];
       }
       commit(patch);
       return res;
+    },
+
+    // 適性フレームを受け取る（タスク画面のボタン）。受け取り待ちから所持へ移す。
+    claimAptFrame: (grade) => {
+      const pending = get().aptPending ?? [];
+      if (!pending.includes(grade)) return false;
+      commit({
+        aptFrames: mergeAptFrames(get().aptFrames ?? [], [grade]),
+        aptPending: pending.filter((g) => g !== grade),
+      });
+      return true;
+    },
+
+    // 称号の「初ゲット」お知らせを出しおわった印。出した分だけ足しこむ。
+    markTitlesSeen: (ids) => {
+      const seen = get().seenTitles ?? [];
+      const add = ids.filter((id) => !seen.includes(id));
+      if (add.length === 0) return;
+      commit({ seenTitles: [...seen, ...add] });
     },
 
     equipFrame: (frame) => commit({ equippedFrame: frame }),

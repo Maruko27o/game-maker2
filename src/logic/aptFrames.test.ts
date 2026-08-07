@@ -52,3 +52,26 @@ describe('適性フレーム', () => {
     expect(normAptFrames('S')).toEqual([]);
   });
 });
+
+describe('適性チャレンジは受け取り式', () => {
+  it('条件を満たすと受け取り待ちに入り、受け取ると所持に移る', () => {
+    // 受け取り待ちと所持の両方を「もう持っている」として扱う（二重に湧かない）
+    const owned: AptGrade[] = ['C'];
+    const pending: AptGrade[] = ['A'];
+    const have = mergeAptFrames(owned, pending);
+    expect(newlyEarned([all('A')], have)).toEqual([]); // 待ちにあるものは再度湧かない
+    expect(newlyEarned([all('S')], have)).toEqual(['S']);
+
+    // 受け取り＝待ちから外して所持へ
+    const claimed = mergeAptFrames(owned, ['A']);
+    expect(claimed).toEqual(['C', 'A']);
+    expect(pending.filter((g) => g !== 'A')).toEqual([]);
+  });
+
+  it('受け取り待ちのまま引退させても、待ちは消えない（等級だけを持つ）', () => {
+    // 待ちは等級の配列なので、ウマの一覧とは無関係に残る
+    const pending: AptGrade[] = ['S'];
+    expect(newlyEarned([], pending)).toEqual([]); // ウマがいなくても増減しない
+    expect(mergeAptFrames([], pending)).toEqual(['S']);
+  });
+});

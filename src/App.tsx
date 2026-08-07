@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useStore } from './store';
 import { useAuth } from './cloud';
 import CloudSync from './components/CloudSync';
+import TitleUnlock from './components/TitleUnlock';
 import SyncConflictModal from './components/SyncConflictModal';
 import ProfileButton from './components/ProfileButton';
 import TaskButton from './components/TaskButton';
@@ -96,6 +97,8 @@ export default function App() {
       <TaskButton />
       <MailButton />
       <LoginBonus />
+      {/* 称号を新しく手に入れたら知らせる（タイトル画面を抜けてから） */}
+      {!showTitle && <TitleUnlock />}
       <CoinBalance />
       {migrated && (
         <div className={styles.notice} role="status">
