@@ -106,8 +106,10 @@ function buildSingleSetup(seed: number, player: Horse, mode: 30 | 60, chosenLaps
     },
   ];
   const avoidBody = colorById[player.colors.body]?.value;
+  // 同じレースに同じ名前のCOMが出ないよう、使った名前を持ち回る。
+  const takenNames = new Set<string>([player.name]);
   for (let i = 0; i < 7; i++) {
-    const cpu = makeCpu(`cpu${i}`, rng, band, 0.5, undefined, avoidBody);
+    const cpu = makeCpu(`cpu${i}`, rng, band, 0.5, undefined, avoidBody, takenNames);
     entrants.push(cpu.entrant);
     looks[cpu.entrant.horseId] = cpu.look;
   }

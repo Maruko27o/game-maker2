@@ -7,7 +7,7 @@ import type { StatKey } from '../types';
 // どちらを開けているのか迷わない。
 //
 // もらえるのは「馬券を買った一人でレース」で1着をとったときだけ。無料の練習で
-// いくらでも増やせると、1/1000 のフレームが的当てゲームになってしまうため。
+// いくらでも増やせると、0.1% のフレームが的当てゲームになってしまうため。
 // 受信箱に種類ごと1行でたまり、個数が ×4 のように増える。開けるのはいつでもよい。
 
 export type BoxKind = 'lucky' | 'gold';
@@ -38,16 +38,16 @@ export type BoxDef = {
   /** 受信箱と開封画面の色（濃い→淡い）。 */
   colors: [string, string];
   lead: string;
-  /** 限定フレームの当たる確率の分母（1/1000 など）。 */
-  frameOdds: number;
-  /** 限定称号の当たる確率の分母。フレームとわざと入れ替えてある。 */
-  titleOdds: number;
+  /** 限定フレームの当たる割合（0.001 ＝ 0.1%）。 */
+  frameRate: number;
+  /** 限定称号の当たる割合（0.003 ＝ 0.3%）。フレームより少しだけ出やすい。 */
+  titleRate: number;
   slots: BoxSlot[];
 };
 
 // 限定枠（フレーム・称号）は重みではなく「1/N」で先に判定する（重みに混ぜると、
 // 他の中身を増減させたときに確率が動いてしまう）。slots には入れず別に持つ。
-// どちらの箱も フレーム＝1/10000（最レア）／称号＝1/1000 でそろえてある。
+// どちらの箱も フレーム＝0.1%（最レア）／称号＝0.3% でそろえてある。
 
 /** 土曜：育成系。ウマを強くするものが出る。 */
 export const LUCKY_BOX: BoxDef = {
@@ -55,8 +55,8 @@ export const LUCKY_BOX: BoxDef = {
   name: 'ラッキーボックス',
   colors: ['#d0417a', '#ffb3cd'],
   lead: '育てるためのごほうびが入っているよ。',
-  frameOdds: 10000,
-  titleOdds: 1000,
+  frameRate: 0.001,
+  titleRate: 0.003,
   slots: [
     { weight: 34, rarity: 'normal', label: '育成アイテム ×1', reward: { type: 'item', stat: 'any', amount: 1 } },
     { weight: 20, rarity: 'normal', label: 'コイン 2,000', reward: { type: 'coins', amount: 2000 } },
@@ -74,18 +74,18 @@ export const GOLD_BOX: BoxDef = {
   name: 'ゴールドボックス',
   colors: ['#b8860b', '#ffd76a'],
   lead: 'コインがたっぷり入っているよ。',
-  frameOdds: 10000,
-  titleOdds: 1000,
-  // 1箱あたりの平均は約 7,800 コイン。以前（平均 19,350）は出しすぎだったので、
-  // 下の段を大きく下げた。最高額の 100,000 は据え置きで、当たったときの
-  // 「やった！」は残している（平均の4割はこの1段が担っている）。
+  frameRate: 0.001,
+  titleRate: 0.003,
+  // 1箱あたりの平均は約 3,700 コイン。上の段を絞って、下に 500 を足した。
+  // 100,000 は 1% ＝ 100箱に1回。それでも平均の3割弱をこの1段が担っているので、
+  // 「たまに大当たりする箱」という手ざわりは残る。
   slots: [
-    { weight: 32, rarity: 'normal', label: 'コイン 1,000', reward: { type: 'coins', amount: 1000 } },
-    { weight: 26, rarity: 'normal', label: 'コイン 2,500', reward: { type: 'coins', amount: 2500 } },
-    { weight: 20, rarity: 'rare', label: 'コイン 5,000', reward: { type: 'coins', amount: 5000 } },
-    { weight: 13, rarity: 'rare', label: 'コイン 10,000', reward: { type: 'coins', amount: 10000 } },
-    { weight: 6, rarity: 'epic', label: 'コイン 25,000', reward: { type: 'coins', amount: 25000 } },
-    { weight: 3, rarity: 'epic', label: 'コイン 100,000', reward: { type: 'coins', amount: 100000 } },
+    { weight: 36, rarity: 'normal', label: 'コイン 500', reward: { type: 'coins', amount: 500 } },
+    { weight: 30, rarity: 'normal', label: 'コイン 1,000', reward: { type: 'coins', amount: 1000 } },
+    { weight: 20, rarity: 'normal', label: 'コイン 2,500', reward: { type: 'coins', amount: 2500 } },
+    { weight: 10, rarity: 'rare', label: 'コイン 10,000', reward: { type: 'coins', amount: 10000 } },
+    { weight: 3, rarity: 'epic', label: 'コイン 25,000', reward: { type: 'coins', amount: 25000 } },
+    { weight: 1, rarity: 'epic', label: 'コイン 100,000', reward: { type: 'coins', amount: 100000 } },
   ],
 };
 
@@ -102,12 +102,38 @@ export function boxOfDow(dow: number): BoxKind | null {
 /** 受信箱の1行のID。種類ごとに1行にまとめて、個数だけ増やす。 */
 export const boxMailId = (kind: BoxKind) => `box-${kind}`;
 
-/** 開封演出：レアリティごとの色と「溜め」の長さ(ms)。 */
-export const RARITY_FX: Record<BoxRarity, { label: string; glow: string; ring: string; holdMs: number }> = {
-  normal: { label: 'ノーマル', glow: '#cfd6dd', ring: '#8d99a6', holdMs: 700 },
-  rare: { label: 'レア', glow: '#7fc6ff', ring: '#2f7fb8', holdMs: 1300 },
-  epic: { label: 'エピック', glow: '#d8a6ff', ring: '#8a4fd0', holdMs: 2100 },
-  legend: { label: 'レジェンド', glow: '#ffe066', ring: '#e0a92e', holdMs: 3200 },
+/**
+ * 開封演出：レアリティごとの色。
+ *
+ * 光り方は「段を1つずつ上げていく」形にしてある。
+ *   ノーマル … 灰に1回
+ *   レア     … 灰 → 青
+ *   エピック … 灰 → 青 → 紫
+ *   レジェンド… 灰 → 青 → 紫 → 金
+ * 光った回数がそのままレアさになるので、最後まで見なくても「まだ続く＝当たりだ」
+ * と分かる。ここが1回で終わるか続くかが、開けるときのいちばんの見どころ。
+ */
+export const RARITY_FX: Record<BoxRarity, { label: string; glow: string; ring: string }> = {
+  normal: { label: 'ノーマル', glow: '#cfd6dd', ring: '#8d99a6' },
+  rare: { label: 'レア', glow: '#7fc6ff', ring: '#2f7fb8' },
+  epic: { label: 'エピック', glow: '#d8a6ff', ring: '#8a4fd0' },
+  legend: { label: 'レジェンド', glow: '#ffe066', ring: '#e0a92e' },
+};
+
+/** 光る順番。手前の段から順に光って、そのレアリティの色で止まる。 */
+export const FLASH_STEPS: Record<BoxRarity, BoxRarity[]> = {
+  normal: ['normal'],
+  rare: ['normal', 'rare'],
+  epic: ['normal', 'rare', 'epic'],
+  legend: ['normal', 'rare', 'epic', 'legend'],
+};
+
+/** 1段ぶんの光の長さ(ms)。段が上がるほど溜めを長くして、期待を引っぱる。 */
+export const FLASH_MS: Record<BoxRarity, number> = {
+  normal: 620,
+  rare: 780,
+  epic: 950,
+  legend: 1400,
 };
 
 /** 限定フレームの表示名。 */
@@ -130,8 +156,8 @@ export const BOX_TITLE_NAME: Record<BoxKind, string> = {
 
 /** i ボタンに出す排出率（%）。限定枠を含めて合計100%になるようにそろえる。 */
 export function dropTable(def: BoxDef): { label: string; rarity: BoxRarity; pct: number }[] {
-  const framePct = 100 / def.frameOdds;
-  const titlePct = 100 / def.titleOdds;
+  const framePct = def.frameRate * 100;
+  const titlePct = def.titleRate * 100;
   const rest = 100 - framePct - titlePct;
   const total = def.slots.reduce((n, s) => n + s.weight, 0);
   const rows = def.slots.map((s) => ({

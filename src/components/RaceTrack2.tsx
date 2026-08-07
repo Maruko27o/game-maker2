@@ -469,6 +469,8 @@ export default function RaceTrack2({ entrants, looks, course, mode, seed, reduce
       {openStats !== null && entrants[openStats] && (
         <HorseStatsPopup
           entrant={entrants[openStats]}
+          // 見た目を渡さないと、どのウマも初期の真っ白なウマで出てしまう
+          look={looks[entrants[openStats].horseId]}
           gate={result.gate[openStats]}
           onClose={() => setOpenStats(null)}
         />

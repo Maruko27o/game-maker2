@@ -32,10 +32,10 @@ export function openBox(
 
   const frameRoll = rng();
   const titleRoll = rng();
-  if (!taken.frame && frameRoll < 1 / def.frameOdds) {
+  if (!taken.frame && frameRoll < def.frameRate) {
     return { kind, rarity: 'legend', label: 'げんていフレーム', reward: { type: 'frame' } };
   }
-  if (!taken.title && titleRoll < 1 / def.titleOdds) {
+  if (!taken.title && titleRoll < def.titleRate) {
     return { kind, rarity: 'legend', label: 'げんてい称号', reward: { type: 'title' } };
   }
 
