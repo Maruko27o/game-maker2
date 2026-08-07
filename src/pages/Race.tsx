@@ -759,7 +759,7 @@ export default function Race() {
               <span className={styles.boxGotIcon} aria-hidden><Icon name={reward.box === 'gold' ? 'crown' : 'gift'} size={26} /></span>
               <span className={styles.boxGotText}>
                 <span className={styles.boxGotTitle}>{BOXES[reward.box].name} をもらった！</span>
-                <span className={styles.boxGotSub}>今日は週末イベント！受信箱にたまっているよ</span>
+                <span className={styles.boxGotSub}>今日は週末イベント！受信箱に貯まっているよ</span>
               </span>
             </div>
           )}
@@ -778,8 +778,8 @@ export default function Race() {
           </div>
           {/* スクロール不要ですぐ次の動作へ */}
           <div className={styles.resultActions}>
-            <button className="btn" onClick={() => (pickMode && setup ? begin(setup.course) : begin())}>もう一回</button>
-            <button className="btn neutral" onClick={() => { setRaceSession(null); setScreen('menu'); }}>モードせんたくへ</button>
+            <button className="btn" onClick={() => (pickMode && setup ? begin(setup.course) : begin())}>もう一度</button>
+            <button className="btn neutral" onClick={() => { setRaceSession(null); setScreen('menu'); }}>モード選択へ</button>
           </div>
           <button className={styles.exitLink} onClick={() => { setRaceSession(null); setScreen('setup'); }}>ウマ・時間を変える</button>
           {/* くわしい払戻・着順は下に */}

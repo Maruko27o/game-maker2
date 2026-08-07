@@ -105,7 +105,7 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
         </div>
 
         <div className={styles.countRow}>
-          <span className={styles.countLabel}>のこり</span>
+          <span className={styles.countLabel}>残り</span>
           <span className={styles.countBig}>{st.left}</span>
           <span className={styles.countSub}>/ {REFINE_MAX}回</span>
           <span className={styles.ticketHave}>
@@ -116,7 +116,7 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
         <p className={styles.lead}>
           引き直したい枠を<strong>タップして「✓振り直す」</strong>にしてください。
           「このまま」の枠は動きません。選び終えたら下のボタンでまとめて振り直します。
-          <br />1回振り直すごとに <strong>厳選チケット1枚</strong> つかいます。
+          <br />1回振り直すごとに <strong>厳選チケット1枚</strong> 使います。
           チケットは<strong>対戦の入賞</strong>でもらえます（優勝3枚・準優勝2枚・3位1枚）。
         </p>
 
@@ -155,7 +155,7 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
               ? '厳選チケットがありません（対戦の入賞でもらえます）'
               : picked.size === 0
                 ? '振り直す枠を選んでね'
-                : `${picked.size}枠を振り直す（チケット1枚・のこり${st.left}回）`}
+                : `${picked.size}枠を振り直す（チケット1枚・残り${st.left}回）`}
         </button>
 
         {/* 確認ダイアログ：何がどうなるかを出してから実行する */}
@@ -169,17 +169,17 @@ export default function RerollPanel({ horse, onClose }: { horse: Horse; onClose:
                     {rows.filter((r) => picked.has(r.slot)).map((r) => (
                       <li key={r.slot} className={styles.confirmItem}>
                         <span className={styles.confirmLabel}>{r.label}</span>
-                        <span className={styles.confirmNow}>いま</span>
+                        <span className={styles.confirmNow}>今</span>
                         <span className={styles.rowValue}>{r.value}</span>
                       </li>
                     ))}
                   </ul>
                   <p className={styles.confirmWarn}>
                     今の内容には<strong>戻せません</strong>。悪くなることもあります。
-                    <br />のこり回数：{st.left} → {st.left - 1}
+                    <br />残り回数：{st.left} → {st.left - 1}
                     <br />
                     <span className={styles.confirmCost}>
-                      <Icon name="ticket" size={14} /> 厳選チケット 1枚つかいます（{tickets} → {tickets - 1}枚）
+                      <Icon name="ticket" size={14} /> 厳選チケット 1枚使います（{tickets} → {tickets - 1}枚）
                     </span>
                   </p>
                 </>

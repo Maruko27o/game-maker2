@@ -141,8 +141,8 @@ describe('週末のボックス', () => {
     expect(boxCount(box, 'gold')).toBe(1);
   });
 
-  it('ほかのメールを押しのけない（フレームやおしらせは残る）', () => {
-    const notice: MailItem = { id: 'n1', at: 0, read: true, kind: 'notice', title: 'おしらせ' };
+  it('ほかのメールを押しのけない（フレームやお知らせは残る）', () => {
+    const notice: MailItem = { id: 'n1', at: 0, read: true, kind: 'notice', title: 'お知らせ' };
     const box = stackBox(stackBox([notice], 'lucky', 1), 'lucky', 2);
     expect(box.find((m) => m.id === 'n1')).toEqual(notice);
   });
@@ -228,7 +228,7 @@ describe('まとめて開ける', () => {
       { kind: 'lucky', rarity: 'rare', label: '育成アイテム ×3', reward: { type: 'item', stat: 'any', amount: 3 } },
       { kind: 'lucky', rarity: 'rare', label: '厳選チケット ×1', reward: { type: 'ticket', amount: 1 } },
       { kind: 'lucky', rarity: 'normal', label: '染料 ×1', reward: { type: 'dye' } },
-      { kind: 'lucky', rarity: 'legend', label: 'げんていフレーム', reward: { type: 'frame' } },
+      { kind: 'lucky', rarity: 'legend', label: '限定フレーム', reward: { type: 'frame' } },
     ]);
     expect(t.items).toBe(4);
     expect(t.tickets).toBe(1);

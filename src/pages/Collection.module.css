@@ -261,3 +261,36 @@
   color: var(--ink-soft);
   margin-left: 2px;
 }
+
+/* 見出しの行：タイトルの右にダブり交換のボタンを置く。 */
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+/* ダブり→染料の交換ボタン。たまっている「個ぶん」を添えて、
+   押す前に交換できそうかどうかが分かるようにする。 */
+.swapBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 3px solid var(--border-dark);
+  border-radius: 999px;
+  background: var(--panel-inner);
+  color: var(--ink);
+  font-weight: 900;
+  font-size: 13px;
+  box-shadow: 0 3px 0 var(--border);
+}
+.swapCount {
+  font-variant-numeric: tabular-nums;
+}
+/* 交換できるだけたまったら金色にして気づけるようにする。 */
+.swapReady {
+  background: linear-gradient(180deg, #ffe9a8, var(--gold));
+  border-color: #a97a12;
+  color: #4a3000;
+}

@@ -48,7 +48,7 @@ function rankColor(rank: number, total: number): { bg: string; bd: string; fg: s
   return { bg: `rgb(${v},${v},${v})`, bd: '#2b2118', fg: v > 140 ? '#2b2118' : '#fff' };
 }
 function itemLabel(it: TrainingItem): string {
-  return it.kind === 'any' ? 'すきなステータス +1' : `${STAT_LABEL[it.stat]} +1`;
+  return it.kind === 'any' ? '好きなステータス +1' : `${STAT_LABEL[it.stat]} +1`;
 }
 
 type GpState = {
@@ -481,7 +481,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
     const playerIn = qualifiers.some((q) => q.entrant.isPlayer);
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>予選けっか</h1>
+        <h1 className={styles.title}>予選結果</h1>
         {state.heats.map((heat, h) => {
           const res = heatResults[h];
           const rows = heat.map((e, i) => ({ e, rank: res.ranks[i], time: res.finishTimes[i] })).sort((a, b) => a.rank - b.rank);

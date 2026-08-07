@@ -2,6 +2,8 @@ import { useId } from 'react';
 import type { BoxFrameKind, HorseLook } from '../types';
 import HorseFace from './HorseFace';
 import BoxCrest from './BoxCrest';
+import { Facets, Orbit, Pulse } from './FrameFx';
+import { usePrefersReducedMotion } from '../hooks';
 
 // 週末のボックスから出る限定フレーム。ゲーム内でいちばん出ないものなので、
 // 他のどのフレームとも見間違えないところまで振り切る。
@@ -34,6 +36,10 @@ export default function BoxFrame({
   const gold = box === 'gold';
   const C = 60;
   const ringW = gold ? 8.4 : 7.6;
+  const still = usePrefersReducedMotion();
+  // ゲーム内でいちばん出ないフレームなので、動きは適性 S 以上を積む。
+  // カット面 → 巡る粒 → 二段脈動 を全部持ち、そのうえで箱ごとの色で回す。
+  const fxColor = gold ? '#eaf6ff' : '#ffe6f1';
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
@@ -50,8 +56,26 @@ export default function BoxFrame({
 
         {/* いちばん外の光の輪。ここが「限定」の格を出す。 */}
         <circle cx={C} cy={C} r={58} fill={`url(#bglow-${uid})`} />
+        {/* 外周オーラの二段脈動（適性 A 以上と同じ動き）。 */}
+        <Pulse c={C} r={R} color={fxColor} uid={`b${uid}`} still={still} />
 
         {gold ? <GoldRing uid={uid} c={C} r={R} w={ringW} /> : <LuckyRing uid={uid} c={C} r={R} w={ringW} />}
+
+        {/* カット面のきらめき。ダイヤの金は面を多く細かく、ラッキーは大きめに。 */}
+        <Facets
+          c={C}
+          r={R}
+          w={ringW}
+          uid={`b${uid}`}
+          count={gold ? 20 : 14}
+          color="#fff"
+          dur={gold ? 2.4 : 3}
+          peak={gold ? 1 : 0.85}
+          still={still}
+        />
+
+        {/* 巡る光の粒。限定フレームだけ 12 粒＝いちばん多い。 */}
+        <Orbit c={C} r={R} uid={`b${uid}`} count={12} color={fxColor} still={still} />
 
         {/* リングを一周する流れる光 */}
         <circle

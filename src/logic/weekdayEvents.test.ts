@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   eventLive, grassRegenMs, okawariCost, trainingGain, ticketDayBonus,
   srRateMul, prefersUnowned, g1Attempts, arenaPrizeMul,
-  TICKET_DAY_MIN_ODDS, TICKET_DAY_MAX_RATE,
+  TICKET_DAY_MIN_ODDS, TICKET_DAY_MAX_RATE, TICKET_DAY_MAX_BONUS,
 } from './weekdayEvents';
 import { dowOfTime } from '../data/events';
 import { ENERGY_REGEN_MS, normalizeEnergy } from './energy';
@@ -89,6 +89,20 @@ describe('曜日イベントの効果', () => {
     expect(ticketDayBonus(at(4), 100, 10000)).toBe(0); // 他の曜日は0
   });
 
+  it('1レースの上乗せには絶対額の上限がある（コイン経済を壊さない歯止め）', () => {
+    const w = at(3);
+    // 率だけの上限では歯止めにならない。3連単は1周で最高4,991倍まで出るので、
+    // 1000コイン賭けの的中で払戻 4,991,000 → 30% なら約150万コインが一撃で入る。
+    const huge = ticketDayBonus(w, 4991, 4_991_000);
+    expect(huge).toBe(TICKET_DAY_MAX_BONUS);
+    expect(huge).toBeLessThan(1_497_300); // 上限が無かったころの額
+    // ふだんの当たり（払戻10万コイン級）は上限に当たらないので体感が変わらない
+    expect(ticketDayBonus(w, 100, 100_000)).toBe(30_000);
+    // 上限にちょうど届くのは払戻 166,667コイン（30%）あたりから
+    expect(ticketDayBonus(w, 100, 166_666)).toBe(49_999);
+    expect(ticketDayBonus(w, 100, 200_000)).toBe(TICKET_DAY_MAX_BONUS);
+  });
+
   it('上乗せは倍率が高いほど大きい（単調）', () => {
     const w = at(3);
     let prev = -1;
@@ -121,6 +135,26 @@ describe('曜日イベントの効果', () => {
     const doubled = count({ srMul: 2 });
     expect(base).toBeCloseTo(RARITY_WEIGHT.SR / 100, 2);
     expect(doubled).toBeGreaterThan(base * 1.7);
+  });
+
+  it('図鑑が埋まってきた人ほど未所持優先の効きが分かる（終盤で体感がある）', () => {
+    // 100種のうち90種を所持している状態で「引いた1つが未所持である確率」。
+    // 重み2倍のころは 9.2% → 16.8% で、いちばん効いてほしい終盤に体感が無かった。
+    const pool = Array.from({ length: 100 }, (_, i) => ({ id: `p${i}`, rarity: 'N' as const }));
+    const owned: Record<string, number> = {};
+    for (let i = 0; i < 90; i++) owned[`p${i}`] = 1;
+    const rate = (opts?: Parameters<typeof pickOne>[2]) => {
+      const rng = mulberry32(11);
+      let hit = 0;
+      for (let i = 0; i < 60000; i++) if (!owned[pickOne(rng, pool, opts).id]) hit++;
+      return hit / 60000;
+    };
+    const plain = rate();
+    const dexDay = rate({ owned });
+    expect(plain).toBeCloseTo(0.1, 2);
+    // 理論値 10*MUL / (90 + 10*MUL)。MUL=4 なら約30.8%
+    expect(dexDay).toBeCloseTo((10 * UNOWNED_MUL) / (90 + 10 * UNOWNED_MUL), 2);
+    expect(dexDay).toBeGreaterThan(0.25); // 終盤でもはっきり効く
   });
 
   it('未所持のパーツの重みが UNOWNED_MUL 倍になる', () => {

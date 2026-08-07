@@ -186,10 +186,10 @@ export default function BoxOpen({
             )}
 
             <div className={styles.actions}>
-              <span className={styles.left}>のこり ×{count}</span>
+              <span className={styles.left}>残り ×{count}</span>
               {phase === 'done' ? (
                 <button className={styles.open} onClick={reset} disabled={count <= 0}>
-                  {count > 0 ? 'つづけて開ける' : '開ける箱がありません'}
+                  {count > 0 ? '続けて開ける' : '開ける箱がありません'}
                 </button>
               ) : (
                 <>

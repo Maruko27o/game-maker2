@@ -94,7 +94,7 @@ export default function MailButton() {
                         </>
                       ) : (
                         <span className={styles.rowText}>
-                          <span className={styles.rowTitle}>{m.title ?? 'おしらせ'}</span>
+                          <span className={styles.rowTitle}>{m.title ?? 'お知らせ'}</span>
                           <span className={styles.rowSub}>{m.body ?? ''}</span>
                         </span>
                       )}
@@ -113,10 +113,10 @@ export default function MailButton() {
             <div className={styles.detailOverlay} onClick={() => setDetail(null)}>
               <div className={`${styles.detailCard} ${styles.noticeCard}`} onClick={(e) => e.stopPropagation()}>
                 <CloseButton onClick={() => setDetail(null)} />
-                <div className={styles.noticeTitle}>{detail.title ?? 'おしらせ'}</div>
+                <div className={styles.noticeTitle}>{detail.title ?? 'お知らせ'}</div>
                 <p className={styles.noticeBody}>{detail.body ?? ''}</p>
                 <div className={styles.detailActions}>
-                  <button className="btn neutral" onClick={() => setDetail(null)}>とじる</button>
+                  <button className="btn neutral" onClick={() => setDetail(null)}>閉じる</button>
                 </div>
               </div>
             </div>
@@ -136,7 +136,7 @@ export default function MailButton() {
                   プロフィール → アイコン設定 → フレーム から着けられます。
                 </p>
                 <div className={styles.detailActions}>
-                  <button className="btn neutral" onClick={() => setDetail(null)}>とじる</button>
+                  <button className="btn neutral" onClick={() => setDetail(null)}>閉じる</button>
                 </div>
               </div>
             </div>

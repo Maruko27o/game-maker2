@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import type { AptGrade, HorseLook } from '../types';
 import HorseFace from './HorseFace';
+import { Facets, Orbit, Pulse } from './FrameFx';
+import { usePrefersReducedMotion } from '../hooks';
 
 // スペシャルタスク（適性チャレンジ）の報酬フレーム。
 // 6コースすべての適性が同じ等級のウマを手に入れると、その等級のフレームがもらえる。
@@ -32,6 +34,13 @@ type Tier = {
   rainbow: boolean;
   /** リングを一周する光の速さ（秒）。等級が上がるほど速く・強くする。 */
   sheenDur: string;
+  // ── 動きの積み上げ（FrameFx）。等級が上がるほど種類が増える。 ──
+  /** カット面の数。全等級が持つ土台の動き。 */
+  facets: number;
+  /** 巡る光の粒の数（0 なら無し）。B 以上。 */
+  orbit: number;
+  /** 外周オーラの二段脈動。A 以上。 */
+  pulse: boolean;
 };
 
 const TIERS: Record<AptGrade, Tier> = {
@@ -39,21 +48,25 @@ const TIERS: Record<AptGrade, Tier> = {
     base: '#b97742', hi: '#e7b184', lo: '#7c4a20', ink: '#5b3a1c',
     plate: '#d9a273', plateHi: '#f2cba6',
     studs: 8, laurel: false, gems: false, glow: false, sparkles: false, rainbow: false, sheenDur: '7s',
+    facets: 10, orbit: 0, pulse: false,
   },
   B: {
     base: '#b9c4cf', hi: '#f4f8fb', lo: '#77828e', ink: '#3f4650',
     plate: '#dfe6ed', plateHi: '#ffffff',
     studs: 12, laurel: true, gems: false, glow: false, sparkles: false, rainbow: false, sheenDur: '6s',
+    facets: 12, orbit: 4, pulse: false,
   },
   A: {
     base: '#e9b93c', hi: '#fff0b8', lo: '#a2760f', ink: '#5a3f00',
     plate: '#ffe9a8', plateHi: '#fff8dc',
     studs: 16, laurel: true, gems: true, glow: true, sparkles: false, rainbow: false, sheenDur: '5s',
+    facets: 14, orbit: 6, pulse: true,
   },
   S: {
     base: '#c4a2ff', hi: '#ffffff', lo: '#7b5fc0', ink: '#3a2c1c',
     plate: '#ffd59a', plateHi: '#fdff9a',
     studs: 20, laurel: true, gems: true, glow: true, sparkles: true, rainbow: true, sheenDur: '3.6s',
+    facets: 16, orbit: 9, pulse: true,
   },
 };
 
@@ -73,6 +86,8 @@ export default function AptFrame({
 }) {
   const uid = useId().replace(/:/g, '');
   const t = TIERS[grade];
+  // 動きを減らす設定のときは、形はそのままで動かさない。
+  const still = usePrefersReducedMotion();
   const off = `${-SPILL * 100}%`;
   const span = `${(1 + SPILL * 2) * 100}%`;
   const ringW = RING_W[grade];
@@ -124,11 +139,11 @@ export default function AptFrame({
           </radialGradient>
         </defs>
 
-        {/* 外周のオーラ（A 以上） */}
-        {t.glow && (
-          <circle cx={C} cy={C} r={57} fill={`url(#aglow-${uid})`}>
-            <animate attributeName="opacity" values="0.55;1;0.55" dur="2.8s" repeatCount="indefinite" />
-          </circle>
+        {/* 外周のオーラ。A 以上は「ドクン・ドクン」と二段で脈打つ（FrameFx.Pulse）。 */}
+        {t.pulse ? (
+          <Pulse c={C} r={R} color={t.hi} uid={uid} still={still} />
+        ) : (
+          t.glow && <circle cx={C} cy={C} r={57} fill={`url(#aglow-${uid})`} opacity="0.7" />
         )}
 
         {/* 左右の月桂樹（B 以上） */}
@@ -175,6 +190,12 @@ export default function AptFrame({
         )}
         <circle cx={C} cy={C} r={R + ringW / 2} fill="none" stroke={t.lo} strokeOpacity="0.7" strokeWidth="1.2" />
         <circle cx={C} cy={C} r={R - ringW / 2} fill="none" stroke={t.lo} strokeOpacity="0.5" strokeWidth="1.2" />
+
+        {/* カット面のきらめき。光源が一周しながら面を順に立ち上げる（全等級）。 */}
+        <Facets c={C} r={R} w={ringW} uid={uid} count={t.facets} color={t.hi} dur={parseFloat(t.sheenDur) * 0.55} still={still} />
+
+        {/* 巡る光の粒（B 以上）。等級が上がるほど数が増える。 */}
+        {t.orbit > 0 && <Orbit c={C} r={R} uid={uid} count={t.orbit} color={t.hi} still={still} />}
 
         {/* リングを一周する光。等級が上がるほど速い。 */}
         <circle

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useStore, trophyCount } from '../store';
 import { statTotal } from '../logic/stats';
 import { styleFor } from '../logic/runStyle';
-import { canApply } from '../logic/training';
+import { canApply, canTrim, isPityHit, TRAIN_PITY_AFTER, type TrainResult } from '../logic/training';
+import { trainingSuccessRate, trimCost, TRAINING_SUCCESS_RATE_DAY, TRIM_COST_DAY } from '../logic/weekdayEvents';
 import { RENAME_COST, TEAM_SIZE } from '../data/coins';
 import { farmRatePerHour, farmAccrued, farmMsToFull, retireValueOf, horseFarmRateOf, teamHorses } from '../logic/farm';
 import { canJoinTeam, type JoinCheck } from '../logic/team';
@@ -110,6 +111,7 @@ export default function Stable() {
   const freeRename = useStore((s) => s.freeRename);
   const consumeFreeRename = useStore((s) => s.consumeFreeRename);
   const trainHorse = useStore((s) => s.trainHorse);
+  const trimHorseStat = useStore((s) => s.trimHorseStat);
   const freeRebalance = useStore((s) => s.freeRebalance);
   const maxHorses = useStore((s) => s.maxHorses);
   const coins = useStore((s) => s.coins);
@@ -125,7 +127,9 @@ export default function Stable() {
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [view, setView] = useState<View>('detail');
-  const [crit, setCrit] = useState<StatKey | null>(null); // 火曜のまぐれ +2 を出す項目
+  // 直前の育成の結果（成功／失敗／まぐれ／救済）。押した項目の上に短く出す。
+  const [flash, setFlash] = useState<(TrainResult & { key: StatKey }) | null>(null);
+  const [confirmTrim, setConfirmTrim] = useState<StatKey | null>(null); // 調整(-1)の確認
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [rerollOpen, setRerollOpen] = useState(false);
   // まとめて引退：選択モードと選択中のウマ
@@ -148,10 +152,16 @@ export default function Stable() {
     setOpenId(null);
     setConfirmDelete(false);
     setRerollOpen(false);
+    setConfirmTrim(null);
+    setFlash(null);
     setView('detail');
   }
 
   const total = selected ? statTotal(selected.stats) : 0;
+  // 育成の成功する割合と調整の値段は曜日で変わる（火曜＝トレーニングデー）。
+  const successRate = trainingSuccessRate(trustedNow());
+  const cost = trimCost(trustedNow());
+  const missCount = selected?.trainMiss ?? 0;
   const statItemCount = items.filter((i) => i.kind === 'stat').length;
   const anyItemCount = items.filter((i) => i.kind === 'any').length;
 
@@ -541,7 +551,7 @@ export default function Stable() {
                     旧仕様で振り直したことがあるウマは使い切り扱いで出さない。 */}
                 {selected && canRefine(selected) && rr && rr.left > 0 && (
                   <button className={styles.rerollBtn} onClick={() => setRerollOpen(true)}>
-                    <Icon name="sparkle" size={14} /> 厳選する（のこり{rr.left}／{REFINE_MAX}回・
+                    <Icon name="sparkle" size={14} /> 厳選する（残り{rr.left}／{REFINE_MAX}回・
                     <Icon name="ticket" size={13} />{refineTickets}枚）
                   </button>
                 )}
@@ -678,7 +688,10 @@ export default function Stable() {
               // --- Training view ---
               <>
                 <h2 className={styles.trainTitle}>育てる</h2>
-                <EventNote dow={2} text="まぐれで2つ上がることがあるよ！（合計48の上限は超えません）" />
+                <EventNote
+                  dow={2}
+                  text={`成功する割合が ${Math.round(TRAINING_SUCCESS_RATE_DAY * 100)}% にアップ！まぐれで2つ上がることもあるよ。調整も ${TRIM_COST_DAY} 個で済むよ`}
+                />
                 <div className={styles.trainHorse}>
                   <HorseView horse={selected} size={120} shadow />
                 </div>
@@ -688,6 +701,16 @@ export default function Stable() {
                     ステータス {statItemCount} / どれでも {anyItemCount}
                   </span>
                 </div>
+                {/* 成功の割合と、連続失敗の救済がいまどこまで来ているか。
+                    「押せば上がる」ではなくなったので、割合は必ず見えるところに出す。 */}
+                <div className={styles.trainOdds}>
+                  <span>成功する割合 <b>{Math.round(successRate * 100)}%</b></span>
+                  {missCount > 0 && (
+                    <span className={styles.pityNote}>
+                      {isPityHit(missCount) ? '次は必ず成功！' : `${TRAIN_PITY_AFTER - missCount} 回続けて失敗すると次は必ず成功`}
+                    </span>
+                  )}
+                </div>
                 {items.length === 0 && (
                   <p className={styles.trainHint}>アイテムがありません。グランプリで入賞するともらえます。</p>
                 )}
@@ -695,6 +718,7 @@ export default function Stable() {
                   {STAT_KEYS.map((k) => {
                     const idx = itemIndexFor(items, k);
                     const usable = idx >= 0 && canApply(selected.stats, k);
+                    const trimmable = canTrim(selected.stats, k) && items.length >= cost;
                     return (
                       <div key={k} className={styles.trainRow}>
                         <span className={styles.statLabel}>{STAT_LABEL[k]}</span>
@@ -702,26 +726,76 @@ export default function Stable() {
                           <div className={styles.statFill} style={{ width: `${(selected.stats[k] / STAT_CAP) * 100}%` }} />
                         </div>
                         <span className={styles.statVal}>{selected.stats[k]}</span>
+                        {/* 調整（-1）。合計から1つ戻るので、別の項目に振り直せる。 */}
+                        <button
+                          className={styles.minusBtn}
+                          disabled={!trimmable}
+                          title={`アイテム ${cost} 個で1つ下げる（下げたぶんは別の項目に振り直せます）`}
+                          aria-label={`${STAT_LABEL[k]}を1つ下げる（アイテム${cost}個）`}
+                          onClick={() => setConfirmTrim(k)}
+                        >
+                          −1
+                        </button>
                         <button
                           className={styles.plusBtn}
                           disabled={!usable}
                           onClick={() => {
-                            const gained = trainHorse(selected.id, idx, k);
-                            // まぐれの +2 は見逃されやすいので、その項目に短く出す。
-                            if (gained >= 2) { setCrit(k); setTimeout(() => setCrit((c) => (c === k ? null : c)), 1400); }
+                            const r = trainHorse(selected.id, idx, k);
+                            if (r.blocked) return;
+                            setFlash({ key: k, ...r });
+                            setTimeout(() => setFlash((f) => (f && f.key === k ? null : f)), 1500);
                           }}
                         >
                           +1
                         </button>
-                        {crit === k && <span className={styles.critPop} aria-hidden>+2！</span>}
+                        {flash?.key === k && (
+                          <span
+                            className={`${styles.critPop} ${flash.ok ? (flash.gain >= 2 ? styles.popCrit : styles.popOk) : styles.popMiss}`}
+                            aria-hidden
+                          >
+                            {flash.ok ? (flash.gain >= 2 ? '+2！' : flash.pity ? '+1 救済！' : '+1 成功！') : '失敗…'}
+                          </span>
+                        )}
                       </div>
                     );
                   })}
                 </div>
                 <div className={styles.statTotal}>
                   合計 {total} / {STAT_TOTAL_CAP}
-                  {total >= STAT_TOTAL_CAP && '（これ以上つよくできません）'}
+                  {total >= STAT_TOTAL_CAP && '（これ以上強くできません）'}
                 </div>
+                <p className={styles.trainHint}>
+                  −1 はアイテム {cost} 個。下げたぶんは合計から減るので、別の項目に振り直せます。
+                </p>
+
+                {/* 調整は10個まとめて使うので、必ず確認をはさむ。 */}
+                {confirmTrim && (
+                  <div className={styles.confirmBox} role="dialog" aria-label="能力値の調整の確認">
+                    <p className={styles.confirmText}>
+                      {STAT_LABEL[confirmTrim]} を {selected.stats[confirmTrim]} → {selected.stats[confirmTrim] - 1} にします。
+                      <br />
+                      育成アイテムを {cost} 個使います（残り {items.length} 個）。
+                    </p>
+                    <div className={styles.actions}>
+                      <button
+                        className={`${styles.smallBtn} ${styles.smallDanger}`}
+                        onClick={() => {
+                          if (trimHorseStat(selected.id, confirmTrim)) {
+                            setFlash({ key: confirmTrim, ok: true, gain: -1, pity: false, blocked: false });
+                            const k = confirmTrim;
+                            setTimeout(() => setFlash((f) => (f && f.key === k ? null : f)), 1500);
+                          }
+                          setConfirmTrim(null);
+                        }}
+                      >
+                        1つ下げる
+                      </button>
+                      <button className={styles.smallBtn} onClick={() => setConfirmTrim(null)}>
+                        やめる
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <button className="btn neutral" onClick={() => setView('detail')}>
                   戻る
                 </button>

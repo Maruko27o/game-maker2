@@ -47,7 +47,7 @@ function DecoGlyph({ slot, id, svg, className }: { slot: DecoSlot; id: string; s
 const PRESETS: { key: string; label: string; stats: Stats }[] = [
   { key: 'balance', label: 'バランス', stats: { spd: 7, sta: 7, pwr: 7, jmp: 7, gut: 6, wit: 6 } },
   { key: 'speed', label: 'スピード', stats: { spd: 10, sta: 6, pwr: 8, jmp: 4, gut: 5, wit: 7 } },
-  { key: 'nebari', label: 'ねばり', stats: { spd: 6, sta: 10, pwr: 7, jmp: 3, gut: 9, wit: 5 } },
+  { key: 'nebari', label: '粘り', stats: { spd: 6, sta: 10, pwr: 7, jmp: 3, gut: 9, wit: 5 } },
 ];
 
 function firstOwnedColor(owned: Record<string, number>, slot: ColorSlot): string {
@@ -209,10 +209,10 @@ export default function Create() {
               出さない。着せ替えできるのは飾り（頭・顔・背中・エフェクト）だけ。 */}
           {editing ? (
             <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>染料でいろを変える</h2>
+              <h2 className={styles.sectionTitle}>染料で色を変える</h2>
               {myDyes.length === 0 ? (
                 <p className={styles.lockedNote}>
-                  からだ・たてがみ・ひづめの色は生まれつきです。
+                  体・たてがみ・ひづめの色は生まれつきです。
                   <br />ログインボーナス（土・日）でもらえる<strong>染料</strong>があると、塗り替えられます。
                 </p>
               ) : (
@@ -244,7 +244,7 @@ export default function Create() {
             </section>
           ) : (
             <p className={styles.lockedNote}>
-              からだ・たてがみ・ひづめの色は生まれつきで、ここでは選べません。
+              体・たてがみ・ひづめの色は生まれつきで、ここでは選べません。
             </p>
           )}
 
@@ -274,7 +274,7 @@ export default function Create() {
                       </button>
                     ))}
                   </div>
-                  <p className={styles.dyeConfirmNote}>染料を1つつかいます。元の色には戻せません。</p>
+                  <p className={styles.dyeConfirmNote}>染料を1つ使います。元の色には戻せません。</p>
                   <div className={styles.dyeConfirmRow}>
                     <button type="button" className="btn neutral" onClick={() => { setDyePick(null); setDyeSlot(null); }}>やめる</button>
                     <button

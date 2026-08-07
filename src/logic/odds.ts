@@ -51,6 +51,32 @@ export function mcWinProbs(
   return probsFromWins(wins, N, winProbs(entrants, course, mode, PRIOR_TEMP));
 }
 
+/**
+ * 画面に息をつがせるための「1回だけ譲る」。
+ *
+ * setTimeout(fn, 0) はブラウザの決まりで **最短でも 4ms** 待たされ、しかも
+ * タイマーが入れ子になると5段目から強制的に丸められる。オッズ計算は何十回も
+ * 譲るので、これだけで数百ミリ秒を「ただ待つ」ことに使っていた。
+ * MessageChannel には丸めが無いので、次のタスクへすぐ戻れる。
+ *
+ * 計算の中身も乱数の並びも変えていないので、**出る倍率は1つも動かない**。
+ */
+const yieldToUI: () => Promise<void> =
+  typeof MessageChannel === 'function'
+    ? () =>
+        new Promise<void>((resolve) => {
+          const ch = new MessageChannel();
+          ch.port1.onmessage = () => {
+            ch.port1.close();
+            resolve();
+          };
+          ch.port2.postMessage(0);
+        })
+    : () => new Promise<void>((r) => setTimeout(r));
+
+/** 1回譲るまでに進める試行の数。多いほど速いが、譲らなすぎると画面が固まる。 */
+const MC_BATCH = 12;
+
 /** Async MC win probabilities — chunks the work across ticks so the paddock's
  *  "オッズ計算中" spinner keeps animating instead of the tab freezing. */
 export async function mcWinProbsAsync(
@@ -60,13 +86,12 @@ export async function mcWinProbsAsync(
   opts: { laps?: number; samples?: number; moods?: number[]; onProgress?: (frac: number) => void } = {},
 ): Promise<number[]> {
   const N = opts.samples ?? MC_SAMPLES;
-  const batch = 6;
   const wins = new Array(entrants.length).fill(0);
   for (let s = 0; s < N; s++) {
     wins[simulate2(entrants, course, mode, seedAt(s), { laps: opts.laps, moods: opts.moods }).order[0]]++;
-    if ((s + 1) % batch === 0) {
+    if ((s + 1) % MC_BATCH === 0) {
       opts.onProgress?.((s + 1) / N);
-      await new Promise((r) => setTimeout(r));
+      await yieldToUI();
     }
   }
   return probsFromWins(wins, N, winProbs(entrants, course, mode, PRIOR_TEMP));

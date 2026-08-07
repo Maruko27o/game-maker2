@@ -33,7 +33,7 @@ describe('フレームの目録', () => {
       { id: 'b', at: 2, read: true, kind: 'frame', frame: { period: '2026-06', rank: 2, metric: 'odds' } },
       // 同じ月・同じ種別が2通あっても1つにまとめる
       { id: 'c', at: 1, read: true, kind: 'frame', frame: { period: '2026-07', rank: 1, metric: 'payout' } },
-      { id: 'd', at: 0, read: true, kind: 'notice', title: 'おしらせ' },
+      { id: 'd', at: 0, read: true, kind: 'notice', title: 'お知らせ' },
     ];
     const got = rankingFrames(mail);
     expect(got).toHaveLength(2);

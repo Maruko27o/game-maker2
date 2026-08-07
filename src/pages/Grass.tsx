@@ -110,7 +110,7 @@ export default function Grass() {
   return (
     <div className={styles.page}>
       <GrassRoom />
-      <EventNote dow={1} text="ストックが30分で1つたまるよ！「草をおかわり」も半額の150コイン！" />
+      <EventNote dow={1} text="ストックが30分で1つ貯まるよ！「草をおかわり」も半額の150コイン！" />
       <EventNote dow={4} text="SRのパーツが2倍出やすい！まだ持っていないパーツが優先して出るよ" />
       <header className={styles.header}>
         <div className={styles.stat}>
@@ -174,7 +174,7 @@ export default function Grass() {
 
       <div className={styles.footRow}>
         <span className={styles.footNote}>マイウマ {horseCount}/{maxHorses}</span>
-        <button className={styles.skillBookBtn} onClick={() => setBookOpen(true)} aria-label="ウマのとくちょう図鑑を見る">
+        <button className={styles.skillBookBtn} onClick={() => setBookOpen(true)} aria-label="ウマの特徴図鑑を見る">
           i
         </button>
         {stock < ENERGY_CAP && (
@@ -256,7 +256,7 @@ export default function Grass() {
                 <div className={styles.cardMeta}>
                   <span className={`rarity rarity-${partRarity(p.id)}`}>{partRarity(p.id)}</span>
                   <span className={p.isNew ? styles.tagNew : styles.tagDup}>
-                    {p.isNew ? 'NEW' : 'かぶり'}
+                    {p.isNew ? 'NEW' : 'ダブり'}
                   </span>
                 </div>
               </div>

@@ -120,7 +120,7 @@ describe('称号', () => {
     expect(jackpot.tier).toBe(6);
   });
 
-  it('まっさらな状態では「かけだし」だけ', () => {
+  it('まっさらな状態では「駆け出し」だけ', () => {
     expect(earnedTitles(ZERO)).toEqual(['rookie']);
     expect(activeTitle(null, ZERO).id).toBe('rookie');
   });

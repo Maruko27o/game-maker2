@@ -81,7 +81,7 @@ export default function TitleUnlock() {
             <button className="btn" onClick={wear}>つける</button>
           )}
           <button className="btn neutral" onClick={next}>
-            {queue.length > 1 ? `つぎへ（あと${queue.length - 1}）` : 'とじる'}
+            {queue.length > 1 ? `つぎへ（あと${queue.length - 1}）` : '閉じる'}
           </button>
         </div>
       </div>
