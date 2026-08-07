@@ -74,9 +74,22 @@ describe('週末のボックス', () => {
     expect(titles).toBeLessThan(mu + 4 * Math.sqrt(mu));
   });
 
-  it('ゴールドボックスの最高額は 100,000 コイン', () => {
+  it('ゴールドボックスは 1,000 〜 100,000 コインの6段', () => {
     const amounts = BOXES.gold.slots.map((s) => (s.reward.type === 'coins' ? s.reward.amount : 0));
-    expect(Math.max(...amounts)).toBe(100_000);
+    expect(amounts).toEqual([1_000, 2_500, 5_000, 10_000, 25_000, 100_000]);
+    // 段は必ず上がっていく（並べ替えを間違えると i ボタンの表が変になる）
+    for (let i = 1; i < amounts.length; i++) expect(amounts[i]).toBeGreaterThan(amounts[i - 1]);
+  });
+
+  it('ゴールドボックス1箱あたりの平均は 8,000 コイン前後', () => {
+    // 出しすぎないことの歯止め。中身をいじったときにここで気づけるようにする。
+    const total = BOXES.gold.slots.reduce((n, s) => n + s.weight, 0);
+    const avg = BOXES.gold.slots.reduce(
+      (n, s) => n + (s.reward.type === 'coins' ? s.reward.amount : 0) * (s.weight / total),
+      0,
+    );
+    expect(avg).toBeGreaterThan(6_000);
+    expect(avg).toBeLessThan(9_500);
   });
 
   it('必ず何かが当たる（空っぽで返らない）', () => {

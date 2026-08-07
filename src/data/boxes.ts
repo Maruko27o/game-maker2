@@ -76,12 +76,15 @@ export const GOLD_BOX: BoxDef = {
   lead: 'コインがたっぷり入っているよ。',
   frameOdds: 10000,
   titleOdds: 1000,
+  // 1箱あたりの平均は約 7,800 コイン。以前（平均 19,350）は出しすぎだったので、
+  // 下の段を大きく下げた。最高額の 100,000 は据え置きで、当たったときの
+  // 「やった！」は残している（平均の4割はこの1段が担っている）。
   slots: [
-    { weight: 32, rarity: 'normal', label: 'コイン 5,000', reward: { type: 'coins', amount: 5000 } },
-    { weight: 26, rarity: 'normal', label: 'コイン 10,000', reward: { type: 'coins', amount: 10000 } },
-    { weight: 20, rarity: 'rare', label: 'コイン 20,000', reward: { type: 'coins', amount: 20000 } },
-    { weight: 13, rarity: 'rare', label: 'コイン 35,000', reward: { type: 'coins', amount: 35000 } },
-    { weight: 6, rarity: 'epic', label: 'コイン 60,000', reward: { type: 'coins', amount: 60000 } },
+    { weight: 32, rarity: 'normal', label: 'コイン 1,000', reward: { type: 'coins', amount: 1000 } },
+    { weight: 26, rarity: 'normal', label: 'コイン 2,500', reward: { type: 'coins', amount: 2500 } },
+    { weight: 20, rarity: 'rare', label: 'コイン 5,000', reward: { type: 'coins', amount: 5000 } },
+    { weight: 13, rarity: 'rare', label: 'コイン 10,000', reward: { type: 'coins', amount: 10000 } },
+    { weight: 6, rarity: 'epic', label: 'コイン 25,000', reward: { type: 'coins', amount: 25000 } },
     { weight: 3, rarity: 'epic', label: 'コイン 100,000', reward: { type: 'coins', amount: 100000 } },
   ],
 };
