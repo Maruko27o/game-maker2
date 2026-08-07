@@ -3,7 +3,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import type { SaveData, HorseLook, ArenaHorseSnapshot, FrameAward, FrameRank, EquipFrame } from './types';
-import { STREAK_MAX } from './types';
+import { parseEquipFrame } from './types';
 import { monthKey } from './logic/period';
 import { anchorServerTime } from './logic/trustedClock';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from './supabaseConfig';
@@ -362,23 +362,14 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
   }
 }
 
-/** Validate a jsonb equipped_frame from the DB into an EquipFrame (or null). */
-function normFrameAward(v: unknown): EquipFrame | null {
-  if (!v || typeof v !== 'object') return null;
-  const o = v as Record<string, unknown>;
-  // 連勝フレーム（スペシャルタスク報酬）。
-  if (o.kind === 'streak') {
-    const level = Number(o.level);
-    if (Number.isFinite(level) && level >= 1 && level <= STREAK_MAX) return { kind: 'streak', level: Math.round(level) };
-    return null;
-  }
-  const rank = Number(o.rank);
-  const metric = o.metric;
-  if (typeof o.period !== 'string') return null;
-  if (rank !== 1 && rank !== 2 && rank !== 3) return null;
-  if (metric !== 'odds' && metric !== 'payout') return null;
-  return { period: o.period, rank: rank as FrameRank, metric };
-}
+/**
+ * DB の jsonb を EquipFrame として受け取る（合わなければ null）。
+ *
+ * 判定の中身は types.ts の parseEquipFrame に一本化した。以前ここに独自の判定を
+ * 持っていて、ボックス限定フレームと適性フレームを知らなかったため、それらを
+ * 着けている人がランキングでは枠なしで表示されていた。
+ */
+const normFrameAward = parseEquipFrame;
 
 /** Past months (period 'YYYY-MM') that have at least one score, newest first —
  *  the months eligible for the 殿堂. Empty if the period column isn't applied yet. */

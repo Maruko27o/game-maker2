@@ -231,7 +231,7 @@ export default function TaskButton() {
                         {ready ? (
                           <button className={styles.aptClaim} onClick={() => claimApt(g)}>受け取る</button>
                         ) : (
-                          <div className={styles.aptCardState}>{got ? '獲得ずみ' : 'みつけよう'}</div>
+                          <div className={styles.aptCardState}>{got ? '獲得ずみ' : '見つけよう'}</div>
                         )}
                       </div>
                     );
@@ -262,7 +262,7 @@ export default function TaskButton() {
                   ) : (
                     <button className="btn" onClick={() => equip({ kind: 'apt', grade: aptReveal })}>アイコンにつける</button>
                   )}
-                  <button className="btn neutral" onClick={() => setAptReveal(null)}>とじる</button>
+                  <button className="btn neutral" onClick={() => setAptReveal(null)}>閉じる</button>
                 </div>
               </div>
             </div>
@@ -281,7 +281,7 @@ export default function TaskButton() {
                   ) : (
                     <button className="btn" onClick={() => equip({ kind: 'streak', level: reveal })}>アイコンにつける</button>
                   )}
-                  <button className="btn neutral" onClick={() => setReveal(0)}>とじる</button>
+                  <button className="btn neutral" onClick={() => setReveal(0)}>閉じる</button>
                 </div>
               </div>
             </div>

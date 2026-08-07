@@ -68,7 +68,7 @@ export default function LoginBonus() {
             <div className={styles.head}>
               <span className={styles.title}>ログインボーナス</span>
             </div>
-            <p className={styles.sub}>{canGet ? 'きょうのぶんを受け取れます' : 'また明日！'}</p>
+            <p className={styles.sub}>{canGet ? '今日のぶんを受け取れます' : 'また明日！'}</p>
 
             <ul className={styles.week}>
               {WEEK_ORDER.map((d) => {
@@ -99,7 +99,7 @@ export default function LoginBonus() {
                 '受け取り済み'
               )}
             </button>
-            <p className={styles.note}>毎日1回、その曜日のごほうびがもらえます。</p>
+            <p className={styles.note}>毎日1回、その曜日のご褒美がもらえます。</p>
           </div>
         </div>,
         document.body,

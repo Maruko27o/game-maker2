@@ -27,6 +27,23 @@ export function okawariCost(now: number, base: number): number {
 // ── 火：トレーニングデー ─────────────────────────────────────
 /** まぐれで2つ上がる確率。 */
 export const TRAINING_CRIT_RATE = 0.25;
+/** 育成が成功する割合。ふだんは半々。 */
+export const TRAINING_SUCCESS_RATE = 0.5;
+/** トレーニングデーの成功する割合。 */
+export const TRAINING_SUCCESS_RATE_DAY = 0.75;
+/** その日の成功する割合。 */
+export function trainingSuccessRate(now: number): number {
+  return eventLive(now, 2) ? TRAINING_SUCCESS_RATE_DAY : TRAINING_SUCCESS_RATE;
+}
+
+/** 能力値を1つ下げる「調整」に必要なアイテムの数。 */
+export const TRIM_COST = 10;
+/** トレーニングデーの調整の値段。半分で済む。 */
+export const TRIM_COST_DAY = 5;
+/** その日の調整の値段。 */
+export function trimCost(now: number): number {
+  return eventLive(now, 2) ? TRIM_COST_DAY : TRIM_COST;
+}
 /**
  * ステータスを1つ振ったときに実際に上がる量。
  * トレーニングデーは 25% で +2。ただし合計48の上限は超えないので、
@@ -46,9 +63,20 @@ export const TICKET_DAY_MIN_ODDS = 10;
 /** 倍率に対する上乗せ率の上限（＝どんなに高倍率でも払戻の30%まで）。 */
 export const TICKET_DAY_MAX_RATE = 0.3;
 /**
+ * 1レースの上乗せ額の上限（コイン）。
+ *
+ * 率だけの上限では歯止めにならない。3連単は1周で最高4,991倍まで出るので、
+ * 上限1000コインを賭けて当てると払戻 4,991,000 → 上乗せだけで約150万コインが
+ * 入り、ボックスや牧場の稼ぎが一瞬で意味を失う。率は据え置いたまま、絶対額でも
+ * 頭を止める。払戻 166,666コイン（＝1000コインで167倍）までは上限に当たらないので、
+ * ふだん遊ぶぶんには体感が変わらない。
+ */
+export const TICKET_DAY_MAX_BONUS = 50_000;
+/**
  * 万馬券デーの上乗せ額。10倍以上の的中だけが対象で、倍率が高いほど率が上がる
  * （10倍で5%、100倍で上限の30%）。倍率そのものは動かさないので、
  * オッズのバランス（期待払戻0.80）には影響しない。
+ * さらに TICKET_DAY_MAX_BONUS で絶対額にも上限をかける。
  */
 export function ticketDayBonus(now: number, odds: number, payout: number): number {
   if (!eventLive(now, 3)) return 0;
@@ -56,7 +84,7 @@ export function ticketDayBonus(now: number, odds: number, payout: number): numbe
   // 10倍→0.05、100倍→0.30 を対数でつなぐ。
   const t = Math.log10(odds / TICKET_DAY_MIN_ODDS); // 10倍で0、100倍で1
   const rate = Math.min(TICKET_DAY_MAX_RATE, 0.05 + t * 0.25);
-  return Math.floor(payout * rate);
+  return Math.min(TICKET_DAY_MAX_BONUS, Math.floor(payout * rate));
 }
 
 // ── 木：図鑑デー ─────────────────────────────────────────────

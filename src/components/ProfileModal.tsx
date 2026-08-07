@@ -358,7 +358,7 @@ export default function ProfileModal({
           <div className={styles.editorCard} onClick={(e) => e.stopPropagation()}>
             <CloseButton onClick={() => setEditing(null)} />
             <div className={styles.editorHead}>
-              <h3 className={styles.editorTitle}>称号をえらぶ</h3>
+              <h3 className={styles.editorTitle}>称号を選ぶ</h3>
             </div>
         <ul className={styles.titleList}>
               {TITLES.map((t) => {

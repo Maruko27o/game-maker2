@@ -1457,3 +1457,75 @@
   width: max(100%, 44px);
   height: max(100%, 44px);
 }
+
+/* ── 育成：成功する割合と、連続失敗の救済 ─────────────────────────────
+   アイテムを入れれば必ず上がる作りをやめたので、割合は必ず見えるところに出す。 */
+.trainOdds {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-inner);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.trainOdds b {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.pityNote {
+  color: var(--blue-dark);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* 調整（-1）。上げるボタンと取り違えないよう、色を分けて左に置く。 */
+.minusBtn {
+  flex: 0 0 auto;
+  background: var(--panel-inner);
+  color: var(--ink);
+  border: 2px solid var(--border-dark);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-weight: 800;
+  box-shadow: 0 2px 0 var(--border);
+}
+.minusBtn:disabled {
+  color: var(--ink-soft);
+  border-color: var(--border);
+  box-shadow: none;
+  opacity: 0.45;
+}
+
+/* 調整の確認。10個まとめて消えるので必ずはさむ。 */
+.confirmBox {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 3px solid var(--border-dark);
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+/* 育成の結果ポップ。成功／まぐれ／失敗で色を変える（.critPop の色ちがい）。 */
+.popOk {
+  background: linear-gradient(180deg, #bfe6c2, #7bc98a);
+  border-color: #3f8a55;
+  color: #17391f;
+}
+.popCrit {
+  /* .critPop の金色のまま（まぐれ +2 がいちばん目立つ） */
+}
+.popMiss {
+  background: linear-gradient(180deg, #e8e2d6, #c9bfae);
+  border-color: #8a7f6d;
+  color: #4a4034;
+}

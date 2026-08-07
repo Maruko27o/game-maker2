@@ -33,10 +33,10 @@ export function openBox(
   const frameRoll = rng();
   const titleRoll = rng();
   if (!taken.frame && frameRoll < def.frameRate) {
-    return { kind, rarity: 'legend', label: 'げんていフレーム', reward: { type: 'frame' } };
+    return { kind, rarity: 'legend', label: '限定フレーム', reward: { type: 'frame' } };
   }
   if (!taken.title && titleRoll < def.titleRate) {
-    return { kind, rarity: 'legend', label: 'げんてい称号', reward: { type: 'title' } };
+    return { kind, rarity: 'legend', label: '限定称号', reward: { type: 'title' } };
   }
 
   const total = def.slots.reduce((n, s) => n + s.weight, 0);

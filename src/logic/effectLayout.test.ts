@@ -64,7 +64,7 @@ describe('エフェクトの粒の散らばり', () => {
 // にじのアーチ。以前は6本の帯がすべて同じ両端（cx±1.05r）を結んでいたため、
 // 半径を小さくしても SVG が「弦に届かない半径」を弦に合わせて拡大し直し、
 // 結局ぜんぶ同じ半円に重なっていた（＝虹に見えない）。
-describe('にじのアーチ', () => {
+describe('虹のアーチ', () => {
   for (const view of ['body', 'face'] as const) {
     const bands = rainbowBands(FRAME[view]);
 

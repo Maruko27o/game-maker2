@@ -66,6 +66,7 @@ export type Horse = {
   rerollDone?: boolean; // 厳選を「確定」した。回数が余っていても、もう振り直せない。
   refineUsed?: number; // チケット厳選を使った回数（0..REFINE_MAX）。旧 rerollsUsed とは別勘定。
   locked?: boolean; // お気に入りロック。引退（＝削除）を防ぐ。大切に育てたウマの誤タップ対策。
+  trainMiss?: number; // 育成で連続して失敗した回数。成功すると0に戻る（連続失敗の救済に使う）。
   gen2?: boolean; // 個体値厳選アップデート後に生まれた「新世代」のウマ。既存ウマには付かない。
   //   調整期間中は チーム/レースに入れない（既存ウマが6頭に満たない分だけ埋められる）。
   //   引退額のベースも小さい（おかわり300→引退の荒稼ぎ防止）。
@@ -296,6 +297,43 @@ export function isAptFrame(f: EquipFrame | null | undefined): f is AptFrame {
 }
 export function isBoxFrame(f: EquipFrame | null | undefined): f is BoxFrame {
   return !!f && (f as BoxFrame).kind === 'box';
+}
+
+/**
+ * 外から来た値をフレームとして受け取ってよいか調べる。合わなければ null。
+ *
+ * セーブ（localStorage）とランキング（Supabase の jsonb）は、どちらも中身が
+ * 保証されない外部データなので、必ずここを通してから使う。
+ *
+ * ここに置いてある理由：以前はセーブ用とランキング用に同じ判定が2つあり、
+ * 新しい種類（ボックス限定・適性）を足したときにセーブ側だけ直してランキング側を
+ * 直し忘れた。その結果、ボックス限定フレームや適性フレームを着けている人が
+ * ランキングでは枠なしで表示されていた。**フレームの種類を増やすときは、
+ * この関数1つだけを直せば両方に効く。**
+ */
+export function parseEquipFrame(v: unknown): EquipFrame | null {
+  if (!v || typeof v !== 'object') return null;
+  const f = v as Record<string, unknown>;
+  // 週末ボックスの限定フレーム。
+  if (f.kind === 'box') {
+    return f.box === 'lucky' || f.box === 'gold' ? { kind: 'box', box: f.box } : null;
+  }
+  // 適性フレーム（6コースすべて同じ等級のウマを手に入れた記録）。
+  if (f.kind === 'apt') {
+    const g = f.grade;
+    return g === 'C' || g === 'B' || g === 'A' || g === 'S' ? { kind: 'apt', grade: g } : null;
+  }
+  // 連勝フレーム（スペシャルタスク報酬）。
+  if (f.kind === 'streak') {
+    const level = Number(f.level);
+    if (Number.isFinite(level) && level >= 1 && level <= STREAK_MAX) return { kind: 'streak', level: Math.round(level) };
+    return null;
+  }
+  // 殿堂フレーム（毎月の上位3名）。kind を持たないのが目印。
+  const rank = f.rank === 1 || f.rank === 2 || f.rank === 3 ? f.rank : null;
+  const metric = f.metric === 'odds' || f.metric === 'payout' ? f.metric : null;
+  if (typeof f.period !== 'string' || rank === null || metric === null) return null;
+  return { period: f.period, rank, metric };
 }
 
 // メールボックスの1通。フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。

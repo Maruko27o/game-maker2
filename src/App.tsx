@@ -10,6 +10,9 @@ import TaskButton from './components/TaskButton';
 import MailButton from './components/MailButton';
 import LoginBonus from './components/LoginBonus';
 import UpdateGate from './components/UpdateGate';
+// 開発メニュー。import.meta.env.DEV が false になる本番ビルドでは、この import ごと
+// 未使用として落とされるので、公開版のバンドルには入らない。
+import DevPanel from './components/DevPanel';
 import CoinBalance from './components/CoinBalance';
 import Title from './components/Title';
 import Icon, { type IconName } from './components/Icon';
@@ -88,6 +91,7 @@ export default function App() {
     <div className={styles.shell}>
       <UpdateGate />
       <CloudSync />
+      {import.meta.env.DEV && <DevPanel />}
       <SyncConflictModal />
       {showTitle && <Title onStart={dismissTitle} />}
       {/* 上部アイコンの裏を固定の木目バンドで埋める（スクロールしても中身が
@@ -123,7 +127,7 @@ export default function App() {
         </div>
       )}
       {raceBusy && (
-        <div className={styles.busyNote} role="status">レース中はほかの画面に移動できません</div>
+        <div className={styles.busyNote} role="status">レース中は他の画面に移動できません</div>
       )}
       <main className={styles.main} data-screen={screen}>
         <Outlet />

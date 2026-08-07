@@ -5,6 +5,9 @@ import type { ColorPart, DecoPart, Rarity } from '../types';
 import PartThumb from '../components/PartThumb';
 import HorseView from '../components/HorseView';
 import CloseButton from '../components/CloseButton';
+import Icon from '../components/Icon';
+import DyeExchange from '../components/DyeExchange';
+import { dupeRows, DYE_EXCHANGE_COST } from '../logic/dyeExchange';
 import EventNote from '../components/EventNote';
 import styles from './Collection.module.css';
 
@@ -50,6 +53,9 @@ export default function Collection() {
   const [tab, setTab] = useState(0);
   // タップしたパーツを大きく見る（所持しているものだけ）。
   const [zoom, setZoom] = useState<Entry | null>(null);
+  // ダブり→染料の交換。何個ぶんためているかはボタンの上に出す。
+  const [swapOpen, setSwapOpen] = useState(false);
+  const dupeStock = dupeRows(owned).reduce((n, r) => n + r.dupes * r.value, 0);
 
   const ownedIn = (entries: Entry[]) => entries.filter((e) => (owned[e.id] ?? 0) > 0).length;
   const ownedTotal = SECTIONS.reduce((n, s) => n + ownedIn(s.entries), 0);
@@ -63,7 +69,20 @@ export default function Collection() {
           しても消えない様に（木目背景で内容が透けない）。 */}
       <div className={styles.pinned}>
         <header className={styles.head}>
-          <h1 className={styles.title}>図鑑</h1>
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>図鑑</h1>
+            {/* ダブりを染料に替える。何ができるボタンかが分かるよう、
+                重なったカード→しずくのアイコンと、たまっている数を出す。 */}
+            <button
+              className={`${styles.swapBtn} ${dupeStock >= DYE_EXCHANGE_COST ? styles.swapReady : ''}`}
+              onClick={() => setSwapOpen(true)}
+              aria-label="ダブりを染料に替える"
+              title={`ダブり ${DYE_EXCHANGE_COST} 個ぶんで染料が1つできます`}
+            >
+              <Icon name="dyeSwap" size={20} />
+              <span className={styles.swapCount}>{dupeStock.toLocaleString()}</span>
+            </button>
+          </div>
           <div className={styles.progress}>
             <div className={styles.bar}>
               <div className={styles.fill} style={{ width: `${pct}%` }} />
@@ -140,6 +159,8 @@ export default function Collection() {
           })}
         </div>
       </section>
+
+      {swapOpen && <DyeExchange onClose={() => setSwapOpen(false)} />}
 
       {/* パーツを大きく見る。枠外タップか右上の✕で閉じる。 */}
       {zoom && (

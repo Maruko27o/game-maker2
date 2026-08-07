@@ -9,7 +9,7 @@ import { mulberry32 } from './stats';
 // 曜日は 0=日 … 6=土
 const SUN = 0, MON = 1, TUE = 2, WED = 3, THU = 4, FRI = 5, SAT = 6;
 
-describe('曜日ごとのごほうび', () => {
+describe('曜日ごとのご褒美', () => {
   it('月・火・木・金はコイン', () => {
     for (const d of [MON, TUE, THU, FRI]) {
       expect(rewardForDow(d)).toEqual({ kind: 'coins', amount: LOGIN_COINS });
@@ -80,7 +80,7 @@ describe('染料の抽選', () => {
     }
   });
 
-  it('からだ・たてがみ・ひづめ どの色も出る', () => {
+  it('体・たてがみ・ひづめ どの色も出る', () => {
     const slots = new Set<string>();
     for (let seed = 0; seed < 300; seed++) slots.add(colorSlotById[rollDye(mulberry32(seed))]);
     expect(slots).toEqual(new Set(['body', 'mane', 'hoof']));

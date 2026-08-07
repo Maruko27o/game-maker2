@@ -17,9 +17,9 @@ export type TitleTier = 1 | 2 | 3 | 4 | 5 | 6;
 
 /** 段ごとの「1か月でどのくらいの人が持っているか」の目安と、背景の作り込み。 */
 export const TIER_INFO: Record<TitleTier, { label: string; share: string; art: string }> = {
-  1: { label: 'ふつう', share: 'ほぼ全員', art: '一色' },
-  2: { label: 'なれてきた', share: '10人に6人', art: '二色＋斜めの帯' },
-  3: { label: 'やりこみ', share: '10人に3人', art: 'グラデ＋ストライプ' },
+  1: { label: '普通', share: 'ほぼ全員', art: '一色' },
+  2: { label: '慣れてきた', share: '10人に6人', art: '二色＋斜めの帯' },
+  3: { label: 'やり込み', share: '10人に3人', art: 'グラデ＋ストライプ' },
   4: { label: 'かなり', share: '10人に1人', art: 'グラデ＋放射' },
   5: { label: 'ごく一部', share: '50人に1人', art: '放射＋流れる光' },
   6: { label: '伝説', share: '500人に1人', art: 'オーロラ＋きらめき' },
@@ -106,26 +106,26 @@ export function titleCtx(s: SaveData, collectPct: number): TitleCtx {
 
 export const TITLES: TitleDef[] = [
   // ── 1段：ほぼ全員 ───────────────────────────────────────────
-  { id: 'rookie', name: 'かけだし', desc: 'はじめから持っている', tier: 1, colors: ['#8a7a5c', '#c9bda1'], check: () => true },
+  { id: 'rookie', name: '駆け出し', desc: '初めから持っている', tier: 1, colors: ['#8a7a5c', '#c9bda1'], check: () => true },
   { id: 'horse_lover', name: 'ウマ好き', desc: 'ウマを5頭見つける', tier: 1, colors: ['#8a6a3f', '#cdae83'], metric: 'horsesFound', goal: 5, check: (c) => c.horsesFound >= 5 },
-  { id: 'first_win', name: 'はじめの一勝', desc: 'レースで1着をとる', tier: 1, colors: ['#6f8f4a', '#b9d99a'], metric: 'wins', goal: 1, check: (c) => c.wins >= 1 },
+  { id: 'first_win', name: '初めの一勝', desc: 'レースで1着をとる', tier: 1, colors: ['#6f8f4a', '#b9d99a'], metric: 'wins', goal: 1, check: (c) => c.wins >= 1 },
   { id: 'first_bet', name: 'ちょこっと予想', desc: '馬券を10枚買う', tier: 1, colors: ['#4a7f8f', '#a5d2dd'], metric: 'betsPlaced', goal: 10, check: (c) => c.betsPlaced >= 10 },
-  { id: 'arena_first_win', name: '初勝利のよろこび', desc: '対戦で1回優勝する', tier: 1, colors: ['#8f5a3a', '#dcae90'], metric: 'arenaWins', goal: 1, check: (c) => c.arenaWins >= 1 },
+  { id: 'arena_first_win', name: '初勝利の喜び', desc: '対戦で1回優勝する', tier: 1, colors: ['#8f5a3a', '#dcae90'], metric: 'arenaWins', goal: 1, check: (c) => c.arenaWins >= 1 },
   { id: 'millionaire', name: 'ミリオネア', desc: '総獲得賞金100万コイン', tier: 1, colors: ['#5f7f4f', '#b6cf9a'], metric: 'totalEarned', goal: 1_000_000, check: (c) => c.totalEarned >= 1_000_000 },
 
   // ── 2段：10人に6人 ──────────────────────────────────────────
   { id: 'regular', name: '常連さん', desc: 'レースを50回走る', tier: 2, colors: ['#5f8f4a', '#b6e08e'], metric: 'races', goal: 50, check: (c) => c.races >= 50 },
   { id: 'rancher', name: '牧場主', desc: 'ウマを25頭見つける', tier: 2, colors: ['#8f6a35', '#e0bd80'], metric: 'horsesFound', goal: 25, check: (c) => c.horsesFound >= 25 },
   { id: 'longshot', name: '穴党', desc: '20倍以上を的中させる', tier: 2, colors: ['#37b98a', '#a9f0d6'], metric: 'maxOdds', goal: 20, check: (c) => c.maxOdds >= 20 },
-  { id: 'dresser', name: 'おしゃれさん', desc: '図鑑を30%あつめる', tier: 2, colors: ['#a05f8f', '#e3b6da'], metric: 'collectPct', goal: 30, check: (c) => c.collectPct >= 30 },
-  { id: 'arena_ten_wins', name: '道場やぶり', desc: '対戦で10回優勝する', tier: 2, colors: ['#7a4f9a', '#cfb0e6'], metric: 'arenaWins', goal: 10, check: (c) => c.arenaWins >= 10 },
+  { id: 'dresser', name: 'おしゃれさん', desc: '図鑑を30%集める', tier: 2, colors: ['#a05f8f', '#e3b6da'], metric: 'collectPct', goal: 30, check: (c) => c.collectPct >= 30 },
+  { id: 'arena_ten_wins', name: '道場破り', desc: '対戦で10回優勝する', tier: 2, colors: ['#7a4f9a', '#cfb0e6'], metric: 'arenaWins', goal: 10, check: (c) => c.arenaWins >= 10 },
   { id: 'multi_millionaire', name: 'マルチミリオネア', desc: '総獲得賞金1000万コイン', tier: 2, colors: ['#3f8f6a', '#a8e0c4'], metric: 'totalEarned', goal: 10_000_000, check: (c) => c.totalEarned >= 10_000_000 },
 
   // ── 3段：10人に3人 ──────────────────────────────────────────
   { id: 'forecaster', name: 'ベテラン予想家', desc: '100倍以上を的中させる', tier: 3, colors: ['#3f7fd6', '#a9caf5'], metric: 'maxOdds', goal: 100, check: (c) => c.maxOdds >= 100 },
   { id: 'streaker', name: '連勝の使い手', desc: '3連勝する', tier: 3, colors: ['#d68a2f', '#f5d296'], metric: 'streakBest', goal: 3, check: (c) => c.streakBest >= 3 },
   { id: 'gp_finalist', name: 'グランプリ入賞', desc: 'グランプリG1で3位以内', tier: 3, colors: ['#c07b45', '#eec49a'], metric: 'gpTop3', goal: 1, check: (c) => c.gpTop3 >= 1 },
-  { id: 'collector', name: '収集家', desc: '図鑑を60%あつめる', tier: 3, colors: ['#7a5fd0', '#c4b3f0'], metric: 'collectPct', goal: 60, check: (c) => c.collectPct >= 60 },
+  { id: 'collector', name: '収集家', desc: '図鑑を60%集める', tier: 3, colors: ['#7a5fd0', '#c4b3f0'], metric: 'collectPct', goal: 60, check: (c) => c.collectPct >= 60 },
   { id: 'big_rancher', name: '大牧場主', desc: 'ウマを100頭見つける', tier: 3, colors: ['#8f7a30', '#dfcd90'], metric: 'horsesFound', goal: 100, check: (c) => c.horsesFound >= 100 },
   { id: 'arena_25_wins', name: '闘技場の常勝者', desc: '対戦で25回優勝する', tier: 3, colors: ['#b05a2f', '#f0b58e'], metric: 'arenaWins', goal: 25, check: (c) => c.arenaWins >= 25 },
   { id: 'mega_millionaire', name: 'メガミリオネア', desc: '総獲得賞金5000万コイン', tier: 3, colors: ['#2f8fa0', '#a4dfe8'], metric: 'totalEarned', goal: 50_000_000, check: (c) => c.totalEarned >= 50_000_000 },
@@ -133,7 +133,7 @@ export const TITLES: TitleDef[] = [
   // ── 4段：10人に1人 ──────────────────────────────────────────
   { id: 'sharp_eye', name: '大穴の目利き', desc: '500倍以上を的中させる', tier: 4, colors: ['#e0a92e', '#ffe6a0'], metric: 'maxOdds', goal: 500, check: (c) => c.maxOdds >= 500 },
   { id: 'tycoon', name: '大富豪', desc: 'コインを50万まで貯める', tier: 4, colors: ['#c9a227', '#ffe9a8'], metric: 'coins', goal: 500_000, check: (c) => c.coins >= 500_000 },
-  { id: 'veteran', name: 'ひとすじ', desc: 'レースを300回走る', tier: 4, colors: ['#4a7a5f', '#a8d9bd'], metric: 'races', goal: 300, check: (c) => c.races >= 300 },
+  { id: 'veteran', name: '一筋', desc: 'レースを300回走る', tier: 4, colors: ['#4a7a5f', '#a8d9bd'], metric: 'races', goal: 300, check: (c) => c.races >= 300 },
   { id: 'turf_dweller', name: 'ターフの住人', desc: 'レースを500回走る', tier: 4, colors: ['#3f7a6a', '#a3ddcd'], metric: 'races', goal: 500, check: (c) => c.races >= 500 },
   { id: 'many_wins', name: '常勝', desc: '1着を50回とる', tier: 4, colors: ['#c05a7a', '#f0aec2'], metric: 'wins', goal: 50, check: (c) => c.wins >= 50 },
   { id: 'century_win', name: '百勝の名手', desc: '1着を100回とる', tier: 4, colors: ['#9b4f8f', '#e3b0dd'], metric: 'wins', goal: 100, check: (c) => c.wins >= 100 },
@@ -143,7 +143,7 @@ export const TITLES: TitleDef[] = [
 
   // ── 5段：50人に1人 ──────────────────────────────────────────
   { id: 'ticket_hunter', name: '万馬券ハンター', desc: '1000倍以上を的中させる', tier: 5, colors: ['#e0485f', '#ffb3bf'], metric: 'maxOdds', goal: 1000, check: (c) => c.maxOdds >= 1000 },
-  { id: 'almost_all', name: '完全収集', desc: '図鑑を90%あつめる', tier: 5, colors: ['#9a5fe0', '#d8bcff'], metric: 'collectPct', goal: 90, check: (c) => c.collectPct >= 90 },
+  { id: 'almost_all', name: '完全収集', desc: '図鑑を90%集める', tier: 5, colors: ['#9a5fe0', '#d8bcff'], metric: 'collectPct', goal: 90, check: (c) => c.collectPct >= 90 },
   { id: 'unbeaten', name: '無敗の采配', desc: '7連勝する', tier: 5, colors: ['#2f8fa8', '#a4dcea'], metric: 'streakBest', goal: 7, check: (c) => c.streakBest >= 7 },
   { id: 'champion', name: '頂点の証', desc: 'グランプリG1で優勝する', tier: 5, colors: ['#d8a72f', '#ffe9a8'], metric: 'gpWins', goal: 1, check: (c) => c.gpWins >= 1 },
   { id: 'lucky_hand', name: '豪運の持ち主', desc: '1レースで50万コイン以上の払戻', tier: 5, colors: ['#e08a2f', '#ffd8a0'], metric: 'maxPayout', goal: 500_000, check: (c) => c.maxPayout >= 500_000 },
@@ -157,12 +157,12 @@ export const TITLES: TitleDef[] = [
   { id: 'legend_hit', name: '伝説の的中王', desc: '5000倍以上を的中させる', tier: 6, colors: ['#b06bff', '#ffd7f2'], metric: 'maxOdds', goal: 5000, check: (c) => c.maxOdds >= 5000 },
   { id: 'jackpot', name: '一攫千金', desc: '1レースで100万コイン以上の払戻', tier: 6, colors: ['#ffcf3a', '#fff2b6'], metric: 'maxPayout', goal: 1_000_000, check: (c) => c.maxPayout >= 1_000_000 },
   { id: 'miracle_ten', name: '十連の奇跡', desc: '10連勝する', tier: 6, colors: ['#ff5fae', '#ffc4e4'], metric: 'streakBest', goal: 10, check: (c) => c.streakBest >= 10 },
-  { id: 'dex_complete', name: '図鑑コンプリート', desc: '図鑑を100%あつめる', tier: 6, colors: ['#3ad7ff', '#c8f2ff'], metric: 'collectPct', goal: 100, check: (c) => c.collectPct >= 100 },
+  { id: 'dex_complete', name: '図鑑コンプリート', desc: '図鑑を100%集める', tier: 6, colors: ['#3ad7ff', '#c8f2ff'], metric: 'collectPct', goal: 100, check: (c) => c.collectPct >= 100 },
   { id: 'brave_5000', name: '五千戦の猛者', desc: 'レースを5000回走る', tier: 6, colors: ['#5fc0b0', '#c6f0e9'], metric: 'races', goal: 5000, check: (c) => c.races >= 5000 },
   { id: 'iron_runner', name: '万戦の鉄人', desc: 'レースを1万回走る', tier: 6, colors: ['#9aa8b8', '#e3ecf5'], metric: 'races', goal: 10_000, check: (c) => c.races >= 10_000 },
   { id: 'thousand_wins', name: '千勝の英雄', desc: '1着を1000回とる', tier: 6, colors: ['#e03f5f', '#ffb0bf'], metric: 'wins', goal: 1000, check: (c) => c.wins >= 1000 },
   { id: 'pioneer_5000', name: '五千頭の開拓者', desc: 'ウマを5000頭見つける', tier: 6, colors: ['#4fd08a', '#c8ffe4'], metric: 'horsesFound', goal: 5000, check: (c) => c.horsesFound >= 5000 },
-  { id: 'lord_10000', name: '万頭のあるじ', desc: 'ウマを1万頭見つける', tier: 6, colors: ['#ffb648', '#ffe7bb'], metric: 'horsesFound', goal: 10_000, check: (c) => c.horsesFound >= 10_000 },
+  { id: 'lord_10000', name: '万頭の主', desc: 'ウマを1万頭見つける', tier: 6, colors: ['#ffb648', '#ffe7bb'], metric: 'horsesFound', goal: 10_000, check: (c) => c.horsesFound >= 10_000 },
   { id: 'ruler_50000', name: '五万頭の覇者', desc: 'ウマを5万頭見つける', tier: 6, colors: ['#ff7a5f', '#ffd0c2'], metric: 'horsesFound', goal: 50_000, check: (c) => c.horsesFound >= 50_000 },
   { id: 'legend_100000', name: '十万頭の伝説', desc: 'ウマを10万頭見つける', tier: 6, colors: ['#8f7aff', '#d5cdff'], metric: 'horsesFound', goal: 100_000, check: (c) => c.horsesFound >= 100_000 },
   { id: 'gold_emperor', name: 'ゴールドエンペラー', desc: '総獲得賞金100億コイン', tier: 6, colors: ['#7a3fd0', '#ffd76a'], metric: 'totalEarned', goal: 10_000_000_000, check: (c) => c.totalEarned >= 10_000_000_000 },

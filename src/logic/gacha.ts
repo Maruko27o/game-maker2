@@ -25,8 +25,15 @@ export const RARITY_WEIGHT: Record<Rarity, number> = { N: 70, R: 25, SR: 5 };
  */
 export type DrawOpts = { srMul?: number; owned?: Record<string, number> };
 
-/** 未所持を優先する強さ。図鑑が埋まっていくほど効きが実感できるくらいの控えめな値。 */
-export const UNOWNED_MUL = 2;
+/**
+ * 未所持を優先する強さ（図鑑デーの重みの倍率）。**確定ではない**。
+ *
+ * 2 だったころは、図鑑が9割埋まった人で「引いた1つが未所持である確率」が
+ * 9.2% → 16.8% にしかならず、いちばん効いてほしい終盤で体感がなかった。
+ * 4 にすると 9.2% → 約29% になり、集めるほど効きを実感できる。
+ * それでも確定ではないので、図鑑デーだけで一気に埋まりきることはない。
+ */
+export const UNOWNED_MUL = 4;
 
 function weightOf<T extends Poolable>(e: T, opts?: DrawOpts): number {
   let w = RARITY_WEIGHT[e.rarity];

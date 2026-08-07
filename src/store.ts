@@ -22,22 +22,32 @@ import type {
   EquipFrame,
   AptGrade,
 } from './types';
-import { STREAK_MAX } from './types';
+import { STREAK_MAX, parseEquipFrame } from './types';
 import { foldRace, achievedLevel } from './logic/streak';
 import { allParts, slotOf } from './data/parts';
 import { COURSES } from './data/courses';
 import { spawn as gachaSpawn } from './logic/gacha';
 import { ENERGY_CAP, ENERGY_REGEN_MS, spendEnergy } from './logic/energy';
-import { grassRegenMs, okawariCost, trainingGain, srRateMul, prefersUnowned, g1Attempts } from './logic/weekdayEvents';
+import { grassRegenMs, okawariCost, trainingGain, srRateMul, prefersUnowned, g1Attempts, trainingSuccessRate, trimCost } from './logic/weekdayEvents';
 import { rescaleTo40, mulberry32, hashString } from './logic/stats';
 import { rollSkill, skillForHorseId } from './logic/skill';
 import { rollAptitude, aptitudeForHorseId } from './logic/aptitude';
 import { makeWildHorse } from './logic/wild';
 import { applyReroll } from './logic/reroll';
+import { dupeRows, canExchange, spendDupes } from './logic/dyeExchange';
 import { canRefine, refineState, REFINE_TICKET_COST, arenaTickets } from './logic/refine';
 import { rewardForDow, loginDayKey, dowOf, canClaim, rollDye, type LoginReward } from './logic/loginBonus';
 import { colorSlotById } from './data/parts';
-import { applyTraining, trainingRoom } from './logic/training';
+import {
+  applyTraining,
+  trainingRoom,
+  canApply,
+  canTrim,
+  applyTrim,
+  isPityHit,
+  rollTraining,
+} from './logic/training';
+import type { TrainResult } from './logic/training';
 import { evaluateBadges } from './logic/badges';
 import {
   GRASS_OKAWARI_COST,
@@ -227,29 +237,10 @@ function freshSave(): SaveData {
 }
 
 // Profile prefs (icon horse + trophy shelf) — default sensibly for older saves.
-function normFrame(v: unknown): EquipFrame | null {
-  if (!v || typeof v !== 'object') return null;
-  const f = v as Record<string, unknown>;
-  // 連勝フレーム（スペシャルタスク報酬）。
-  // ボックス限定フレーム（1/1000・1/10000）。
-  if (f.kind === 'box') {
-    return f.box === 'lucky' || f.box === 'gold' ? { kind: 'box', box: f.box } : null;
-  }
-  // 適性フレーム（6コースすべて同じ等級のウマを手に入れた記録）。
-  if (f.kind === 'apt') {
-    const g = f.grade;
-    return g === 'C' || g === 'B' || g === 'A' || g === 'S' ? { kind: 'apt', grade: g } : null;
-  }
-  if (f.kind === 'streak') {
-    const level = Number(f.level);
-    if (Number.isFinite(level) && level >= 1 && level <= STREAK_MAX) return { kind: 'streak', level: Math.round(level) };
-    return null;
-  }
-  const rank = f.rank === 1 || f.rank === 2 || f.rank === 3 ? f.rank : null;
-  const metric = f.metric === 'odds' || f.metric === 'payout' ? f.metric : null;
-  if (typeof f.period !== 'string' || rank === null || metric === null) return null;
-  return { period: f.period, rank, metric };
-}
+// フレームの検証は types.ts の parseEquipFrame ひとつに集約している
+// （セーブ用とランキング用に同じ判定を2つ持っていたせいで、種類を増やしたときに
+//  片方だけ直し忘れ、ボックス限定・適性フレームがランキングで消えていた）。
+const normFrame = parseEquipFrame;
 /** 読み込み時の適性フレームの足しこみ。
  *  授与は「ウマの顔ぶれが変わったとき」に走るが、それだけだとこの更新より前から
  *  オール S のウマを持っている人がいつまでももらえない。読み込みのたびに今いる
@@ -600,7 +591,8 @@ type Store = SaveData & {
   unlockGp: (patch: { g2?: boolean; g1?: boolean }) => void;
   /** Consume item at index and raise `target` on the horse. Returns success. */
   /** 上がったポイント数（0＝失敗）。火曜はまぐれで2になることがある。 */
-  trainHorse: (horseId: string, itemIndex: number, target: StatKey) => number;
+  trainHorse: (horseId: string, itemIndex: number, target: StatKey) => TrainResult;
+  trimHorseStat: (horseId: string, target: StatKey) => boolean;
   recordRace: (courseId: string, mode: 30 | 60, rank: number, time: number) => void;
   /** Record a finished single race: updates best time, win streak, and awards
    *  badges (ACCOUNT.md §2). Returns the newly-earned badges (for the cut-in). */
@@ -625,6 +617,8 @@ type Store = SaveData & {
   /** 染料で色を塗る。slot を渡すとその部位に塗る（省略時は染料の元の部位）。
    *  色は3部位のどこにでも塗れる ＝ 手に入れた染料の使い道が狭まらない。 */
   useDye: (horseId: string, colorId: string, slot?: ColorSlot) => boolean;
+  /** ダブったパーツを染料1つに替える。できた染料の色IDを返す（できなければ null）。 */
+  exchangeDupesForDye: (picks: Record<string, number>) => string | null;
   /** Buy an extra grass charge (300, repeatable). Returns true on success. */
   buyOkawari: () => boolean;
   /** Begin a grand-prix attempt, consuming one of the day's plays (max
@@ -960,19 +954,67 @@ export const useStore = create<Store>((set, get) => {
     trainHorse: (horseId, itemIndex, target) => {
       const horse = get().horses.find((h) => h.id === horseId);
       const item = get().items[itemIndex];
-      if (!horse || !item) return 0;
-      if (item.kind === 'stat' && item.stat !== target) return 0; // stat items are fixed
-      // 火曜（トレーニングデー）はまぐれで2つ上がる。合計48は超えない（room で切る）。
-      const gain = trainingGain(trustedNow(), Math.random, trainingRoom(horse.stats, target));
-      const next = applyTraining(horse.stats, target, gain);
-      if (!next) return 0; // capped — item is NOT consumed
+      if (!horse || !item) return { ok: false, gain: 0, pity: false, blocked: true };
+      if (item.kind === 'stat' && item.stat !== target) return { ok: false, gain: 0, pity: false, blocked: true };
+      // 上限に当たっているときはアイテムを消費しない（失敗ですらない）。
+      if (!canApply(horse.stats, target)) return { ok: false, gain: 0, pity: false, blocked: true };
+
+      const now = trustedNow();
+      const misses = horse.trainMiss ?? 0;
+      // 2回続けて失敗していたら3回目は必ず成功。運が悪いだけで延々と外れないようにする。
+      const pity = isPityHit(misses);
+      const ok = rollTraining(Math.random, trainingSuccessRate(now), misses);
+
+      // 成否にかかわらずアイテムは1つ減る。失敗しても減らないと「押すだけ」に戻るため。
       const items = get().items.slice();
       items.splice(itemIndex, 1);
+
+      if (!ok) {
+        commit({
+          horses: get().horses.map((h) => (h.id === horseId ? { ...h, trainMiss: misses + 1 } : h)),
+          items,
+        });
+        return { ok: false, gain: 0, pity: false, blocked: false };
+      }
+
+      // 火曜（トレーニングデー）はまぐれで2つ上がる。合計48は超えない（room で切る）。
+      const gain = trainingGain(now, Math.random, trainingRoom(horse.stats, target));
+      const next = applyTraining(horse.stats, target, gain) ?? horse.stats;
+      commit({
+        horses: get().horses.map((h) => (h.id === horseId ? { ...h, stats: next, trainMiss: 0 } : h)),
+        items,
+      });
+      return { ok: true, gain: next[target] - horse.stats[target], pity, blocked: false };
+    },
+
+    /**
+     * 能力値を1つ下げる「調整」。アイテムをまとめて使う（ふだん10個、火曜は5個）。
+     * 下げたぶんは合計から引かれるので、その場で別の項目に振り直せる。
+     * 使うアイテムは融通のきかない「ステータス指定」から先に減らす。
+     */
+    trimHorseStat: (horseId, target) => {
+      const horse = get().horses.find((h) => h.id === horseId);
+      if (!horse || !canTrim(horse.stats, target)) return false;
+      const cost = trimCost(trustedNow());
+      const all = get().items;
+      if (all.length < cost) return false;
+
+      // 指定つきを先に、余ったぶんを「どれでも」から。手元に自由なアイテムを残す。
+      const order = all.map((_, i) => i).sort((a, b) => {
+        const ka = all[a].kind === 'stat' ? 0 : 1;
+        const kb = all[b].kind === 'stat' ? 0 : 1;
+        return ka - kb || a - b;
+      });
+      const spend = new Set(order.slice(0, cost));
+      const items = all.filter((_, i) => !spend.has(i));
+
+      const next = applyTrim(horse.stats, target);
+      if (!next) return false;
       commit({
         horses: get().horses.map((h) => (h.id === horseId ? { ...h, stats: next } : h)),
         items,
       });
-      return next[target] - horse.stats[target];
+      return true;
     },
 
     recordRace: (courseId, mode, rank, time) => {
@@ -1053,6 +1095,27 @@ export const useStore = create<Store>((set, get) => {
       }
       commit(patch);
       return reward;
+    },
+
+    /**
+     * ダブったパーツを染料1つに替える。
+     *
+     * 何を何個出すかは呼ぶ側（図鑑の画面）が決めるが、**足りているかと、
+     * 1個目を使っていないかはここで必ず確かめ直す**。画面の数え上げを信じて
+     * そのまま減らすと、画面の不具合がそのままセーブの壊れになるため。
+     * できる染料の色は、ログインボーナスの染料とまったく同じ抽選（rollDye）。
+     */
+    exchangeDupesForDye: (picks) => {
+      const s = get();
+      const rows = dupeRows(s.owned);
+      if (!canExchange(rows, picks)) return null;
+      const owned = spendDupes(s.owned, rows, picks);
+      const colorId = rollDye(mulberry32((Math.random() * 2 ** 31) >>> 0));
+      commit({
+        owned,
+        dyes: { ...(s.dyes ?? {}), [colorId]: ((s.dyes ?? {})[colorId] ?? 0) + 1 },
+      });
+      return colorId;
     },
 
     useDye: (horseId, colorId, slotArg) => {

@@ -149,8 +149,49 @@ describe('コインが増える経路の二重取り防止', () => {
       horses: [{ ...horse('A'), stats: capped }], team: ['A'],
       items: [{ kind: 'stat', stat: 'gut' }],
     });
-    // trainHorse は「上がったポイント数」を返す（0＝失敗）。
-    expect(useStore.getState().trainHorse('A', 0, 'gut')).toBe(0);
+    // 上限に当たっているときは「そもそも試せなかった」＝ blocked。
+    // 失敗（ok:false）とは別物で、こちらはアイテムも減らない。
+    const r = useStore.getState().trainHorse('A', 0, 'gut');
+    expect(r).toEqual({ ok: false, gain: 0, pity: false, blocked: true });
     expect(useStore.getState().items).toHaveLength(1); // アイテムは残る
+  });
+
+  it('育成に失敗してもアイテムは減る（押すだけの作業に戻らない）', () => {
+    const room: Stats = { spd: 7, sta: 7, pwr: 7, jmp: 6, gut: 6, wit: 5 }; // 合計38
+    useStore.setState({
+      horses: [{ ...horse('A'), stats: room }], team: ['A'],
+      items: [{ kind: 'any' }, { kind: 'any' }, { kind: 'any' }],
+    });
+    // 3回押せば、成否にかかわらずアイテムは3つとも減り、かつ最低1回は成功する
+    // （2回続けて失敗したら3回目は必ず成功する救済があるため）。
+    let wins = 0;
+    for (let i = 0; i < 3; i++) if (useStore.getState().trainHorse('A', 0, 'gut').ok) wins++;
+    expect(useStore.getState().items).toHaveLength(0);
+    expect(wins).toBeGreaterThanOrEqual(1);
+  });
+
+  it('調整（−1）はアイテムが足りないとできない', () => {
+    const st: Stats = { spd: 7, sta: 7, pwr: 7, jmp: 6, gut: 6, wit: 5 };
+    useStore.setState({
+      horses: [{ ...horse('A'), stats: st }], team: ['A'],
+      items: [{ kind: 'any' }, { kind: 'any' }], // 10個に足りない
+    });
+    expect(useStore.getState().trimHorseStat('A', 'spd')).toBe(false);
+    expect(useStore.getState().horses[0].stats.spd).toBe(7); // 下がっていない
+    expect(useStore.getState().items).toHaveLength(2); // アイテムも減っていない
+  });
+
+  it('調整（−1）は1より下に下げられない', () => {
+    const low: Stats = { spd: 1, sta: 7, pwr: 7, jmp: 6, gut: 6, wit: 5 };
+    useStore.setState({
+      horses: [{ ...horse('A'), stats: low }], team: ['A'],
+      items: Array.from({ length: 20 }, () => ({ kind: 'any' }) as const),
+    });
+    expect(useStore.getState().trimHorseStat('A', 'spd')).toBe(false);
+    expect(useStore.getState().items).toHaveLength(20); // 無駄づかいさせない
+    // 下げられる項目なら通り、そのぶん合計が減って振り直せるようになる
+    expect(useStore.getState().trimHorseStat('A', 'sta')).toBe(true);
+    expect(useStore.getState().horses[0].stats.sta).toBe(6);
+    expect(useStore.getState().items).toHaveLength(10);
   });
 });

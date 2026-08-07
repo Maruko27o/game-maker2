@@ -457,7 +457,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
         </div>
         <div className={a.balanceNote}>
           参加費1,000／1日2回開催。予選2連戦を勝ち抜いて優勝すると大金！
-          <br />入賞でもらえる<b>厳選チケット</b>は、マイウマの「厳選」でつかえます。
+          <br />入賞でもらえる<b>厳選チケット</b>は、マイウマの「厳選」で使えます。
         </div>
       </div>
 

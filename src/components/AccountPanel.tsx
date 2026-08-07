@@ -75,7 +75,7 @@ export default function AccountPanel() {
   if (!configured) {
     return (
       <p className={styles.note}>
-        クラウド同期は未設定です。いまは<strong>この端末だけ</strong>にデータが保存されています。
+        クラウド同期は未設定です。今は<strong>この端末だけ</strong>にデータが保存されています。
         <br />
         全端末で同期するには、開発者がSupabaseの設定を行う必要があります（README参照）。
       </p>
@@ -99,7 +99,7 @@ export default function AccountPanel() {
             <div className={styles.pwForm}>
               <div className={styles.pwField}>
                 <input className={styles.pwInput} type={showOld ? 'text' : 'password'} autoComplete="current-password"
-                  placeholder="いまのパスワード" value={oldPw} onChange={(e) => setOldPw(e.target.value)} />
+                  placeholder="今のパスワード" value={oldPw} onChange={(e) => setOldPw(e.target.value)} />
                 <button className={styles.eyeBtn} type="button" onClick={() => setShowOld((v) => !v)}
                   aria-label={showOld ? 'パスワードを隠す' : 'パスワードを表示'}>
                   <Icon name={showOld ? 'eyeOff' : 'eye'} size={18} />

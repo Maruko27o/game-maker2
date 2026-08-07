@@ -54,7 +54,7 @@ export const LUCKY_BOX: BoxDef = {
   kind: 'lucky',
   name: 'ラッキーボックス',
   colors: ['#d0417a', '#ffb3cd'],
-  lead: '育てるためのごほうびが入っているよ。',
+  lead: '育てるためのご褒美が入っているよ。',
   frameRate: 0.001,
   titleRate: 0.003,
   slots: [
