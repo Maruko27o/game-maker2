@@ -240,6 +240,7 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
       {openStats !== null && entrants[openStats] && (
         <HorseStatsPopup
           entrant={entrants[openStats]}
+          look={looks[entrants[openStats].horseId]}
           gate={openStats + 1}
           mood={moods?.[openStats]}
           onClose={() => setOpenStats(null)}

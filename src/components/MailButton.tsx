@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { setRankingFrame } from '../cloud';
 import { monthLabel } from '../logic/period';
 import type { EquipFrame, FrameAward, HorseLook, MailItem } from '../types';
-import { isStreakFrame } from '../types';
+import { isStreakFrame, isAptFrame } from '../types';
 import Icon from './Icon';
 import AvatarFrame from './AvatarFrame';
 import EquippedFrame from './EquippedFrame';
@@ -15,7 +15,7 @@ const DEFAULT_LOOK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: 
 const metricLabel = (m: FrameAward['metric']) => (m === 'payout' ? '最大獲得賞金' : '最大オッズ');
 const frameTitle = (f: FrameAward) => `${monthLabel(f.period)} ${metricLabel(f.metric)} ${f.rank}位`;
 const sameFrame = (a: EquipFrame | null | undefined, b: FrameAward) =>
-  !!a && !isStreakFrame(a) && a.period === b.period && a.rank === b.rank && a.metric === b.metric;
+  !!a && !isStreakFrame(a) && !isAptFrame(a) && a.period === b.period && a.rank === b.rank && a.metric === b.metric;
 
 // Top-bar mailbox (タスクの横). フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
 export default function MailButton() {

@@ -1,11 +1,12 @@
 import type { Entrant } from '../logic/raceSim2';
-import type { StatKey } from '../types';
+import type { StatKey, HorseLook } from '../types';
 import { STAT_KEYS, STAT_LABEL, RUN_STYLE_LABEL } from '../types';
 import { statTotal } from '../logic/stats';
 import { SKILL_BY_ID } from '../data/skills';
 import { GRADE_STYLE } from '../data/aptitude';
 import { MOODS, type MoodLevel } from '../logic/mood';
 import StatRadar from './StatRadar';
+import HorseView from './HorseView';
 import MoodFace from './MoodFace';
 import Icon from './Icon';
 import styles from './HorseStatsPopup.module.css';
@@ -14,14 +15,21 @@ import CloseButton from './CloseButton';
 type Props = {
   entrant: Entrant;
   gate: number; // 馬番（ゼッケン）
+  /** そのウマの見た目。マイウマの詳細と同じく全身を出すために使う。 */
+  look?: HorseLook;
   mood?: MoodLevel; // パドックだけ。レース中・払戻では出さない
   onClose: () => void;
 };
 
+const BLANK: HorseLook = { name: '', colors: { body: '', mane: '', hoof: '' }, decos: {} };
+
 // 出走ウマの能力ポップアップ。パドック・レース中の順位カード・払戻画面の着順の
 // どこから開いても同じ中身を出す（賭ける前も、走っている最中も、終わってからも
 // 同じ判断材料が見られるように）。
-export default function HorseStatsPopup({ entrant: e, gate, mood, onClose }: Props) {
+//
+// 上半分は左＝ウマの全身／右＝能力図の2列。マイウマの詳細と同じ並びにして、
+// 「どのウマの話か」が図だけで分かるようにする。
+export default function HorseStatsPopup({ entrant: e, gate, look, mood, onClose }: Props) {
   const skill = e.skill ? SKILL_BY_ID[e.skill] : undefined;
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -32,50 +40,55 @@ export default function HorseStatsPopup({ entrant: e, gate, mood, onClose }: Pro
           <span className={styles.title}>{e.isPlayer ? 'あなた' : e.name}</span>
         </div>
 
-        <div className={styles.body}>
-          <StatRadar stats={e.stats} size={150} />
-          <div className={styles.meta}>
-            <div className={styles.chipRow}>
-              <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
-              <span className={styles.totalChip}>合計 {statTotal(e.stats)}</span>
-              {e.apt && (
-                <span
-                  className={styles.aptChip}
-                  style={{ background: GRADE_STYLE[e.apt].background, color: GRADE_STYLE[e.apt].ink, borderColor: GRADE_STYLE[e.apt].border }}
-                  title={`このコースの適性 ${e.apt}`}
-                >
-                  適性 {e.apt}
-                </span>
-              )}
-              {mood != null && (
-                <span className={styles.moodChip} style={{ background: MOODS[mood].color, color: MOODS[mood].ink }}>
-                  <MoodFace level={mood} size={16} title={false} /> {MOODS[mood].label}
-                </span>
-              )}
-            </div>
-
-            {skill && (
-              <div className={styles.skillLine}>
-                <span className={styles.skillName}>{skill.name}</span>
-                <span className={styles.skillStars}>
-                  {Array.from({ length: 5 }).map((_, si) => (
-                    <Icon key={si} name="star" size={10} className={si < skill.star ? styles.starOn : styles.starOff} />
-                  ))}
-                </span>
-                <span className={styles.skillEffect}>{skill.effect}</span>
-              </div>
-            )}
-
-            <dl className={styles.nums}>
-              {STAT_KEYS.map((k: StatKey) => (
-                <div key={k}>
-                  <dt>{STAT_LABEL[k]}</dt>
-                  <dd>{e.stats[k]}</dd>
-                </div>
-              ))}
-            </dl>
+        {/* 左＝ウマの全身／右＝能力図。同じ大きさの正方形で真ん中のラインをそろえる。 */}
+        <div className={styles.topGrid}>
+          <div className={styles.horseBox}>
+            <HorseView horse={look ?? BLANK} size={150} shadow />
+          </div>
+          <div className={styles.radarBox}>
+            <StatRadar stats={e.stats} size={150} />
           </div>
         </div>
+
+        <div className={styles.chipRow}>
+          <span className={styles.styleChip}>{RUN_STYLE_LABEL[e.style]}</span>
+          <span className={styles.totalChip}>合計 {statTotal(e.stats)}</span>
+          {e.apt && (
+            <span
+              className={styles.aptChip}
+              style={{ background: GRADE_STYLE[e.apt].background, color: GRADE_STYLE[e.apt].ink, borderColor: GRADE_STYLE[e.apt].border }}
+              title={`このコースの適性 ${e.apt}`}
+            >
+              適性 {e.apt}
+            </span>
+          )}
+          {mood != null && (
+            <span className={styles.moodChip} style={{ background: MOODS[mood].color, color: MOODS[mood].ink }}>
+              <MoodFace level={mood} size={16} title={false} /> {MOODS[mood].label}
+            </span>
+          )}
+        </div>
+
+        {skill && (
+          <div className={styles.skillLine}>
+            <span className={styles.skillName}>{skill.name}</span>
+            <span className={styles.skillStars}>
+              {Array.from({ length: 5 }).map((_, si) => (
+                <Icon key={si} name="star" size={10} className={si < skill.star ? styles.starOn : styles.starOff} />
+              ))}
+            </span>
+            <span className={styles.skillEffect}>{skill.effect}</span>
+          </div>
+        )}
+
+        <dl className={styles.nums}>
+          {STAT_KEYS.map((k: StatKey) => (
+            <div key={k}>
+              <dt>{STAT_LABEL[k]}</dt>
+              <dd>{e.stats[k]}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </div>
   );

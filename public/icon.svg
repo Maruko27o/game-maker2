@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff6e2"/>
+      <stop offset="55%" stop-color="#ffeccd"/>
+      <stop offset="100%" stop-color="#f6dcb0"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a8dc7a"/>
+      <stop offset="100%" stop-color="#77b94b"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c08d4e"/>
+      <stop offset="50%" stop-color="#9a6b34"/>
+      <stop offset="100%" stop-color="#7c5528"/>
+    </linearGradient>
+    <clipPath id="round"><rect x="18" y="18" width="476" height="476" rx="108"/></clipPath>
+  </defs>
+
+  <!-- 木の縁（アプリの丸みのある枠に合わせる） -->
+  <rect x="6" y="6" width="500" height="500" rx="120" fill="url(#wood)"/>
+  <rect x="18" y="18" width="476" height="476" rx="108" fill="url(#sky)"/>
+
+  <g clip-path="url(#round)">
+    <!-- 下の草地 -->
+    <path d="M18 372 C 120 340, 200 396, 300 366 C 380 342, 450 372, 494 358 L494 494 L18 494 Z" fill="url(#grass)"/>
+    <!-- やわらかい光 -->
+    <ellipse cx="180" cy="120" rx="190" ry="120" fill="#ffffff" opacity="0.42"/>
+    <!-- ウマの顔（アプリの絵をそのまま） -->
+    <g transform="translate(256 250) scale(0.80) translate(-260 -260)">
+      <svg viewBox="269 17 226 226" width="520" height="520" x="0" y="0"><defs><clipPath id="face-r1"><circle cx="382" cy="130" r="104"></circle></clipPath></defs><defs><linearGradient id="gradRainbow" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff5b5b"></stop><stop offset="0.17" stop-color="#ffb14e"></stop><stop offset="0.34" stop-color="#ffe066"></stop><stop offset="0.5" stop-color="#5bd97a"></stop><stop offset="0.67" stop-color="#5bc8e0"></stop><stop offset="0.84" stop-color="#7a5fe0"></stop><stop offset="1" stop-color="#e05be0"></stop></linearGradient><linearGradient id="gradSunset" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd06b"></stop><stop offset="0.45" stop-color="#ff8a5b"></stop><stop offset="0.75" stop-color="#e0567a"></stop><stop offset="1" stop-color="#7a4fb0"></stop></linearGradient><linearGradient id="gradGalaxy" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b2e6b"></stop><stop offset="0.55" stop-color="#5b3fb0"></stop><stop offset="1" stop-color="#c85be0"></stop></linearGradient><linearGradient id="gradAurora" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ad7c0"></stop><stop offset="0.5" stop-color="#5bd97a"></stop><stop offset="1" stop-color="#7a5fe0"></stop></linearGradient></defs><g clip-path="url(#face-r1)"><rect x="269" y="17" width="226" height="226" fill="rgb(251,249,246)"></rect><g><g stroke="#2b2118" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+    <g id="legs-far">
+      <path id="leg-back-far" fill="var(--body,#fff)" d="M 185,300 C 183,286 190,279 199,279 C 208,279 215,286 213,300 C 211,332 210,346 211,362 C 212,392 213,410 212,430 L 186,430 C 185,410 186,392 187,362 C 188,346 187,332 185,300 Z"></path>
+      <path id="hoof-back-far" fill="var(--hoof,#fff)" d="M 186,424 L 212,424 L 213,450 C 213,457 209,459 203,459 L 195,459 C 189,459 185,457 185,450 Z"></path>
+      <path id="leg-front-far" fill="var(--body,#fff)" d="M 261,304 C 259,290 266,283 275,283 C 284,283 291,290 289,304 C 287,334 286,348 287,362 C 288,392 289,410 288,430 L 262,430 C 261,410 262,392 263,362 C 264,348 263,334 261,304 Z"></path>
+      <path id="hoof-front-far" fill="var(--hoof,#fff)" d="M 262,424 L 288,424 L 289,450 C 289,457 285,459 279,459 L 271,459 C 265,459 261,457 261,450 Z"></path>
+    </g>
+    <path id="tail" fill="var(--mane,#fff)" d="M 140,230 C 100,214 74,242 67,292 C 60,344 78,382 96,398 C 88,352 90,300 112,270 C 123,254 133,247 142,262 Z"></path>
+    <ellipse id="body" fill="var(--body,#fff)" cx="230" cy="265" rx="105" ry="72"></ellipse>
+    <ellipse id="belly" fill="rgba(255,255,255,0.42)" stroke="none" cx="238" cy="314" rx="70" ry="22"></ellipse>
+    <ellipse id="body-outline" fill="none" cx="230" cy="265" rx="105" ry="72"></ellipse>
+    <path id="neck" fill="var(--body,#fff)" d="M 263,214 C 284,160 324,124 366,102 L 396,150 C 361,176 331,216 321,264 Z"></path>
+    <g id="legs-near">
+      <path id="leg-back-near" fill="var(--body,#fff)" d="M 153,304 C 151,288 161,280 172,280 C 183,280 193,288 191,304 C 190,334 188,348 189,364 C 190,394 191,410 190,430 L 154,430 C 153,410 153,394 154,364 C 155,348 154,334 153,304 Z"></path>
+      <path id="hoof-back-near" fill="var(--hoof,#fff)" d="M 154,424 L 190,424 L 191,452 C 191,459 186,461 179,461 L 165,461 C 158,461 153,459 153,452 Z"></path>
+      <path id="leg-front-near" fill="var(--body,#fff)" d="M 293,300 C 291,285 301,278 312,278 C 323,278 333,285 331,300 C 330,332 328,346 329,362 C 330,392 331,410 330,430 L 294,430 C 293,410 293,392 294,362 C 295,346 294,332 293,300 Z"></path>
+      <path id="hoof-front-near" fill="var(--hoof,#fff)" d="M 294,424 L 330,424 L 331,452 C 331,459 326,461 319,461 L 305,461 C 298,461 293,459 293,452 Z"></path>
+    </g>
+    <path id="mane" fill="var(--mane,#fff)" d="M 258,212 C 282,155 322,120 364,99 L 382,120 C 341,142 301,182 279,232 Z"></path>
+    <path id="ear" fill="var(--body,#fff)" d="M 386,90 L 377,50 L 410,82 Z"></path>
+    <path id="head" fill="var(--body,#fff)" d="M 355,152 C 344,110 366,84 401,85 L 431,100 C 456,111 478,126 478,146 C 478,166 460,177 440,173 L 400,166 C 375,163 361,161 355,152 Z"></path>
+    <ellipse id="muzzle" fill="#ffffff" stroke="none" cx="452" cy="152" rx="24" ry="15"></ellipse>
+    <circle id="eye" fill="#2b2118" stroke="none" cx="404" cy="122" r="8"></circle>
+    <circle id="nostril" fill="#2b2118" stroke="none" cx="462" cy="149" r="4.5"></circle>
+  </g></g></g><circle cx="382" cy="130" r="104" fill="none" stroke="#5c4326" stroke-width="9"></circle></svg>
+    </g>
+  </g>
+
+  <!-- 内側のハイライトと縁取り -->
+  <rect x="18" y="18" width="476" height="476" rx="108" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="7"/>
+  <rect x="6" y="6" width="500" height="500" rx="120" fill="none" stroke="#5c3f20" stroke-opacity="0.55" stroke-width="10"/>
+</svg>

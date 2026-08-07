@@ -294,6 +294,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
         {boardStats && view.rounds[boardStats.round]?.field[boardStats.i] && (
           <HorseStatsPopup
             entrant={snapToEntrant(view.rounds[boardStats.round].field[boardStats.i])}
+            look={fieldLooks(view.rounds[boardStats.round].field)[snapToEntrant(view.rounds[boardStats.round].field[boardStats.i]).horseId]}
             gate={boardStats.i + 1}
             onClose={() => setBoardStats(null)}
           />

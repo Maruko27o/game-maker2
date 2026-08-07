@@ -33,9 +33,13 @@
 
 /* Mode menu --------------------------------------------------------------- */
 /* モードごとに色をつけた「札」。左に色帯、その隣に丸い記章のアイコン。
-   4枚が同じ見た目だとどれがどれか分からないので、色で区別できるようにする。
-   --m1/--m2 はモードごとに差し替える（.modeSolo など）。 */
+   同じ見た目が並ぶとどれがどれか分からないので、色で区別できるようにする。
+   色は --m1/--m2 を変種クラス（.modeSolo / .modeG1 / .modeTurf …）で差し替える。
+   既定値は必ず持たせること。未定義だと var() が解決できず background の宣言ごと
+   無効になり、カードが透明になって木目に溶ける（実際にそのバグを出した）。 */
 .modeCard {
+  --m1: #8a6636;
+  --m2: #e8d3ae;
   position: relative;
   display: flex;
   align-items: center;
@@ -85,6 +89,17 @@
 .modePick { --m1: #4f8f3a; --m2: #b6e08e; }
 .modeGp { --m1: #c9922a; --m2: #ffe0a0; }
 .modeArena { --m1: #b8452f; --m2: #f6b3a3; }
+/* グランプリの格：銅→銀→金 */
+.modeG3 { --m1: #a9673a; --m2: #f0c9a8; }
+.modeG2 { --m1: #7f8b96; --m2: #dfe6ec; }
+.modeG1 { --m1: #c9a227; --m2: #ffe9a8; }
+/* コース選択：路面ごとの色 */
+.modeTurf { --m1: #4f8f3a; --m2: #bde79b; }
+.modeDirt { --m1: #9a6a35; --m2: #e8c898; }
+.modeSand { --m1: #c2a03f; --m2: #f4e0a6; }
+.modeSteeple { --m1: #7a5fd0; --m2: #cfc0f2; }
+.modeCircuit { --m1: #2f5f9a; --m2: #a9c9ec; }
+.modeTrail { --m1: #4a7a5f; --m2: #a8d9bd; }
 /* 中身は ::after の光より前に出す（文字が白飛びしないように）。 */
 .modeEmoji,
 .modeText,

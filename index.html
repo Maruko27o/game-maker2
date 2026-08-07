@@ -8,6 +8,19 @@
     />
     <meta name="theme-color" content="#c8a06a" />
     <title>ウマあつめ</title>
+
+    <!-- ホーム画面に追加したときのアイコンと名前。
+         iOS は manifest のアイコンを見ないので apple-touch-icon が本体。
+         端末側で角を丸めるため、この画像は角まで塗った全面版を使う
+         （角を透明にすると二重に丸まって縁が痩せる）。 -->
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ウマあつめ" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="icon" type="image/png" sizes="64x64" href="./favicon-64.png" />
   </head>
   <body>
     <div id="root"></div>

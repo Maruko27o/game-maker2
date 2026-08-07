@@ -19,6 +19,8 @@ import { STREAK_MAX, isStreakFrame, type HorseLook, type StreakFrame as StreakFr
 import Icon from './Icon';
 import CoinIcon from './CoinIcon';
 import StreakFrame from './StreakFrame';
+import AptFrame from './AptFrame';
+import { APT_GRADES } from '../types';
 import styles from './TaskButton.module.css';
 import CloseButton from './CloseButton';
 
@@ -35,6 +37,7 @@ export default function TaskButton() {
   const streakClaimed = useStore((s) => s.streakClaimed ?? 0);
   const claimStreakFrame = useStore((s) => s.claimStreakFrame);
   const equippedFrame = useStore((s) => s.equippedFrame ?? null);
+  const aptFrames = useStore((s) => s.aptFrames ?? []);
   const equipFrame = useStore((s) => s.equipFrame);
   const horses = useStore((s) => s.horses);
   const avatarHorseId = useStore((s) => s.avatarHorseId);
@@ -200,6 +203,26 @@ export default function TaskButton() {
                   {soloStreak > 0
                     ? <><span className={styles.spStatusBig}>{soloStreak}</span>連勝中！この調子でLv{achievedLevel(streak) < STREAK_MAX ? Math.min(soloStreak + 1, STREAK_MAX) : STREAK_MAX}へ</>
                     : <>連勝は0。次のレースから積み上げよう</>}
+                </div>
+
+                {/* 適性チャレンジ：6コースすべての適性が同じ等級のウマを手に入れる。 */}
+                <div className={styles.spLead}>
+                  <span className={styles.spLeadTitle}>適性チャレンジ</span>
+                  <span className={styles.spLeadSub}>6つのコース適性が<b>すべて同じ等級</b>のウマを手に入れると、その等級のフレームがもらえるよ。草むらでも厳選でもOK！<b>一度もらったフレームは、そのウマを引退させても厳選し直しても消えません。</b></span>
+                </div>
+                <div className={styles.aptRow}>
+                  {APT_GRADES.map((g) => {
+                    const got = aptFrames.includes(g);
+                    return (
+                      <div key={g} className={`${styles.aptCard} ${got ? styles.aptCardGot : ''}`}>
+                        <div className={styles.aptFrameWrap}>
+                          <AptFrame grade={g} look={look} size={64} />
+                        </div>
+                        <div className={styles.aptCardName}>オール{g}</div>
+                        <div className={styles.aptCardState}>{got ? '獲得ずみ' : 'みつけよう'}</div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <p className={styles.foot}>獲得したフレームは「プロフィール → アイコン設定 → フレーム」で装備できます。<br />レース開始後は他のタブに移っても結果は変わりません。</p>
