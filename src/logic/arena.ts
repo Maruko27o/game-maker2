@@ -63,8 +63,10 @@ export function buildRoundField(
   const band = (ARENA_COM_BANDS[round] ?? ARENA_COM_BANDS[2]) as [number, number];
   const avoidBody = colorById[player.colors.body]?.value;
   let i = 0;
+  // すでに卓にいる実プレイヤーの名前も避ける（COM と同名にならないように）。
+  const takenNames = new Set<string>(field.map((f) => f.name));
   while (field.length < ARENA_FIELD) {
-    const cpu = makeCpu(`com${round}_${i}`, rng, band, 0.5, undefined, avoidBody);
+    const cpu = makeCpu(`com${round}_${i}`, rng, band, 0.5, undefined, avoidBody, takenNames);
     field.push({
       horseId: cpu.entrant.horseId,
       name: cpu.entrant.name,

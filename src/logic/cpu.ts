@@ -48,8 +48,30 @@ function pickBodyColor(rng: RNG, avoidHue: number | null): string {
   return chosen.id;
 }
 
-export function cpuName(rng: RNG): string {
-  return pick(NAME_A, rng) + pick(NAME_B, rng);
+/**
+ * COM の名前をひとつ引く。
+ *
+ * taken を渡すと、そこに入っている名前を避けて引き直す（同じレースに同じ名前が
+ * 2頭出ないようにするため）。組み合わせは 14×12＝168 通りしかないので、8頭でも
+ * 1割、グランプリの18頭では半分以上の確率でぶつかっていた。
+ * 引いた名前は taken に足すので、呼ぶ側はレースごとに空の Set を1つ用意すればよい。
+ *
+ * taken を渡さないときは前と同じ挙動（乱数の消費量も変わらない）。
+ */
+export function cpuName(rng: RNG, taken?: Set<string>): string {
+  const first = pick(NAME_A, rng) + pick(NAME_B, rng);
+  if (!taken) return first;
+  let name = first;
+  // 168通りに対して1レースはせいぜい18頭なので、数回で必ず空きが見つかる。
+  for (let i = 0; i < 40 && taken.has(name); i++) name = pick(NAME_A, rng) + pick(NAME_B, rng);
+  // それでも埋まっていたら（ありえないが）番号で分ける。名前が重なるよりはまし。
+  if (taken.has(name)) {
+    let n = 2;
+    while (taken.has(`${first}${n}`)) n++;
+    name = `${first}${n}`;
+  }
+  taken.add(name);
+  return name;
 }
 
 /** A CPU racer whose 40+ points are laid down along a running-style template
@@ -60,9 +82,11 @@ export function makeCpu(
   rng: RNG,
   band: [number, number],
   decoChance: number,
-  name = cpuName(rng),
+  name?: string,
   avoidBody?: string, // player's body colour value (#hex) to steer clear of
+  taken?: Set<string>, // 同じレースですでに使った名前（重複を避ける）
 ): { entrant: Entrant; look: HorseLook } {
+  const chosen = name ?? cpuName(rng, taken);
   const total = band[0] + Math.floor(rng() * (band[1] - band[0] + 1));
   // 能力はテンプレどおりに振るが、実際に走る脚質はプレイヤーのウマとまったく同じ
   // 手順（能力から引き直す）で決める。CPU だけテンプレと100%一致していると、
@@ -76,7 +100,7 @@ export function makeCpu(
     chance *= 0.5;
   }
   const look: HorseLook = {
-    name,
+    name: chosen,
     colors: {
       body: pickBodyColor(rng, hueOf(avoidBody)),
       mane: pick(colorsBySlot.mane, rng).id,
@@ -89,7 +113,7 @@ export function makeCpu(
   const skill = rollSkill(rng).id;
   const apt = rollGrade(rng);
   return {
-    entrant: { horseId: id, name, isPlayer: false, stats, style, skill, apt },
+    entrant: { horseId: id, name: chosen, isPlayer: false, stats, style, skill, apt },
     look,
   };
 }

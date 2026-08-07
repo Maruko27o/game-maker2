@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../store';
-import { BOXES, RARITY_FX, BOX_FRAME_NAME, BOX_TITLE_NAME, BOX_TITLE_ID, type BoxKind } from '../data/boxes';
+import { BOXES, RARITY_FX, FLASH_STEPS, FLASH_MS, BOX_FRAME_NAME, BOX_TITLE_NAME, BOX_TITLE_ID, type BoxKind } from '../data/boxes';
 import { titleById } from '../data/titles';
 import { tallyBoxResults, type BoxResult, type BoxTally } from '../logic/boxes';
 import CoinIcon from './CoinIcon';
@@ -48,12 +48,26 @@ export default function BoxOpen({
 
   const fx = result ? RARITY_FX[result.rarity] : RARITY_FX.normal;
 
+  // 光る段を1つずつ上げていく。step は「いま何段目を光らせているか」。
+  // 灰→青→紫→金 と続くかどうかが、そのまま当たりの大きさになる。
+  const steps = result ? FLASH_STEPS[result.rarity] : [];
+  const [step, setStep] = useState(0);
+  const cur = steps[step] ?? 'normal';
+
   useEffect(() => {
     if (phase !== 'charging' || !result) return;
-    const hold = reduced ? 200 : RARITY_FX[result.rarity].holdMs;
-    const t = setTimeout(() => setPhase('done'), hold);
+    if (reduced) {
+      // 動きを減らす設定：段を飛ばして結果だけ出す。
+      const t = setTimeout(() => setPhase('done'), 200);
+      return () => clearTimeout(t);
+    }
+    if (step >= steps.length) {
+      const t = setTimeout(() => setPhase('done'), 260);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setStep((n) => n + 1), FLASH_MS[steps[step]]);
     return () => clearTimeout(t);
-  }, [phase, result, reduced]);
+  }, [phase, result, reduced, step, steps]);
 
   // 1個でも10個でも入口は同じ。溜め演出は「いちばんレアだったもの」で1回だけ流す。
   function open(n: number) {
@@ -63,12 +77,14 @@ export default function BoxOpen({
     const t = tallyBoxResults(got);
     setTally(n > 1 ? t : null);
     setResult(t.best);
+    setStep(0);
     setPhase('charging');
   }
 
   function reset() {
     setResult(null);
     setTally(null);
+    setStep(0);
     setPhase('idle');
   }
 
@@ -77,7 +93,13 @@ export default function BoxOpen({
       <div
         className={styles.sheet}
         onClick={(e) => e.stopPropagation()}
-        style={{ ['--c1' as string]: def.colors[0], ['--c2' as string]: def.colors[1], ['--glow' as string]: fx.glow, ['--ring' as string]: fx.ring }}
+        style={{
+          ['--c1' as string]: def.colors[0],
+          ['--c2' as string]: def.colors[1],
+          // 溜めの色は「いま光っている段」のもの。灰→青→紫→金と変わっていく。
+          ['--glow' as string]: (phase === 'charging' ? RARITY_FX[cur] : fx).glow,
+          ['--ring' as string]: (phase === 'charging' ? RARITY_FX[cur] : fx).ring,
+        }}
       >
         {phase !== 'charging' && <CloseButton onClick={onClose} />}
 
@@ -92,6 +114,33 @@ export default function BoxOpen({
           <>
             <div className={`${styles.stage} ${phase === 'charging' ? styles.charging : ''} ${phase === 'done' ? styles.opened : ''}`}>
               <span className={styles.glow} aria-hidden />
+              {/* 段が上がるたびに、外へ広がる輪と光の粒を1回ずつ出す。
+                  key に step を入れているので、段が変わるたびにアニメが最初から流れる。 */}
+              {phase === 'charging' && !reduced && (
+                <span key={step} className={styles.burstWrap} aria-hidden>
+                  <span className={styles.shock} />
+                  <span className={`${styles.shock} ${styles.shock2}`} />
+                  {[...Array(10)].map((_, i) => (
+                    <span
+                      key={i}
+                      className={styles.spark}
+                      style={{ ['--a' as string]: `${i * 36}deg`, ['--d' as string]: `${i * 18}ms` }}
+                    />
+                  ))}
+                </span>
+              )}
+              {/* いま何段目か。光った数がそのままレアさになる。 */}
+              {phase === 'charging' && steps.length > 1 && (
+                <span className={styles.steps} aria-hidden>
+                  {steps.map((r, i) => (
+                    <span
+                      key={r}
+                      className={`${styles.stepDot} ${i <= step ? styles.stepOn : ''}`}
+                      style={{ ['--c' as string]: RARITY_FX[r].ring }}
+                    />
+                  ))}
+                </span>
+              )}
               {phase === 'done' && result ? (
                 <div className={styles.prize}>
                   {result.reward.type === 'frame' ? (

@@ -38,8 +38,10 @@ export function buildGpField(
   const looks: Record<string, HorseLook> = { [player.horseId]: playerLook };
   const avoidBody = colorById[playerLook.colors.body]?.value;
   const cpus: Entrant[] = [];
+  // 18頭も並ぶので、名前がぶつかる確率がいちばん高いのがここ。使った名前を持ち回る。
+  const takenNames = new Set<string>(playerLook.name ? [playerLook.name] : []);
   for (let i = 0; i < 17; i++) {
-    const c = makeCpu(`gp${i}`, rng, band, decoChance, undefined, avoidBody);
+    const c = makeCpu(`gp${i}`, rng, band, decoChance, undefined, avoidBody, takenNames);
     cpus.push(c.entrant);
     looks[c.entrant.horseId] = c.look;
   }

@@ -170,8 +170,8 @@ export const TITLES: TitleDef[] = [
   // 週末ボックスの限定称号。フレームと確率をわざと入れ替えてあるので、
   // 「フレームは出たのに称号が出ない」箱と、その逆の箱ができる。
   // 色はそれぞれの限定フレームとそろえる（並べたとき同じイベントのものだと分かる）。
-  { id: 'box_lucky_tail', name: '幸運のしっぽ', desc: 'ラッキーボックスから 1/1000 で出る', tier: 6, colors: ['#e0518c', '#ffd9a8'], crest: 'lucky', check: (c) => c.luckyBoxTitle },
-  { id: 'box_gold_hoof', name: '黄金のひづめ', desc: 'ゴールドボックスから 1/1000 で出る', tier: 6, colors: ['#5aa8c8', '#eafaff'], crest: 'gold', check: (c) => c.goldBoxTitle },
+  { id: 'box_lucky_tail', name: '幸運のしっぽ', desc: 'ラッキーボックスから 0.3% で出る', tier: 6, colors: ['#e0518c', '#ffd9a8'], crest: 'lucky', check: (c) => c.luckyBoxTitle },
+  { id: 'box_gold_hoof', name: '黄金のひづめ', desc: 'ゴールドボックスから 0.3% で出る', tier: 6, colors: ['#5aa8c8', '#eafaff'], crest: 'gold', check: (c) => c.goldBoxTitle },
 ];
 
 export const titleById: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

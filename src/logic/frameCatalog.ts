@@ -29,8 +29,8 @@ export type FrameCatalogInput = {
 };
 
 const BOX_HINT: Record<BoxFrameKind, string> = {
-  lucky: 'ラッキーボックスから 1/10000',
-  gold: 'ゴールドボックスから 1/10000',
+  lucky: 'ラッキーボックスから 0.1%',
+  gold: 'ゴールドボックスから 0.1%',
 };
 
 export function frameCatalog(s: FrameCatalogInput): FrameSlot[] {

@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { openBox, stackBox, takeBox, boxCount, tallyBoxResults } from './boxes';
-import { BOXES, BOX_KINDS, dropTable, boxOfDow, boxMailId } from '../data/boxes';
+import {
+  BOXES,
+  BOX_KINDS,
+  dropTable,
+  boxOfDow,
+  boxMailId,
+  FLASH_STEPS,
+  FLASH_MS,
+  RARITY_FX,
+} from '../data/boxes';
+import type { BoxRarity } from '../data/boxes';
 import { mulberry32 } from './stats';
 import type { MailItem } from '../types';
 
@@ -28,25 +38,22 @@ describe('週末のボックス', () => {
     }
   });
 
-  it('限定枠の確率どおりに出る（フレーム 1/10000・称号 1/1000）', () => {
+  it('限定枠の確率どおりに出る（フレーム 0.1%・称号 0.3%）', () => {
     // 当たりの回数はポアソン分布なので、割合そのものではなく回数を ±4σ で見る。
-    // 1/10000 は 400k 回でも期待40回しか出ず、割合の ±25% だと誤差にひっかかる。
     const trials = 400_000;
-    const cases = [
-      { kind: 'lucky' as const, frameOdds: 10000, titleOdds: 1000 },
-      { kind: 'gold' as const, frameOdds: 10000, titleOdds: 1000 },
-    ];
-    for (const c of cases) {
+    for (const kind of BOX_KINDS) {
+      expect(BOXES[kind].frameRate).toBe(0.001);
+      expect(BOXES[kind].titleRate).toBe(0.003);
       const rng = mulberry32(12345);
       let frames = 0;
       let titles = 0;
       for (let i = 0; i < trials; i++) {
-        const t = openBox(c.kind, rng, { frame: false, title: false }).reward.type;
+        const t = openBox(kind, rng, { frame: false, title: false }).reward.type;
         if (t === 'frame') frames++;
         if (t === 'title') titles++;
       }
-      for (const [hits, odds] of [[frames, c.frameOdds], [titles, c.titleOdds]] as const) {
-        const mu = trials / odds;
+      for (const [hits, rate] of [[frames, BOXES[kind].frameRate], [titles, BOXES[kind].titleRate]] as const) {
+        const mu = trials * rate;
         const band = 4 * Math.sqrt(mu);
         expect(hits).toBeGreaterThan(mu - band);
         expect(hits).toBeLessThan(mu + band);
@@ -69,27 +76,36 @@ describe('週末のボックス', () => {
     for (let i = 0; i < 200_000; i++) {
       if (openBox('gold', rng, { frame: true, title: false }).reward.type === 'title') titles++;
     }
-    const mu = 200_000 / 1000; // 称号はどちらの箱も 1/1000
+    const mu = 200_000 * 0.003; // 称号はどちらの箱も 0.3%
     expect(titles).toBeGreaterThan(mu - 4 * Math.sqrt(mu));
     expect(titles).toBeLessThan(mu + 4 * Math.sqrt(mu));
   });
 
-  it('ゴールドボックスは 1,000 〜 100,000 コインの6段', () => {
+  it('ゴールドボックスは 500 〜 100,000 コインの6段', () => {
     const amounts = BOXES.gold.slots.map((s) => (s.reward.type === 'coins' ? s.reward.amount : 0));
-    expect(amounts).toEqual([1_000, 2_500, 5_000, 10_000, 25_000, 100_000]);
+    expect(amounts).toEqual([500, 1_000, 2_500, 10_000, 25_000, 100_000]);
     // 段は必ず上がっていく（並べ替えを間違えると i ボタンの表が変になる）
     for (let i = 1; i < amounts.length; i++) expect(amounts[i]).toBeGreaterThan(amounts[i - 1]);
   });
 
-  it('ゴールドボックス1箱あたりの平均は 8,000 コイン前後', () => {
+  it('ゴールドボックスの上位3段はご指定どおりの割合（1% / 3% / 10%）', () => {
+    const rows = dropTable(BOXES.gold);
+    const pct = (label: string) => rows.find((r) => r.label === label)!.pct;
+    // 限定枠(0.4%)を除いたぶんが配られるので、ぴったり1%ではなく 0.996% になる
+    expect(pct('コイン 100,000')).toBeCloseTo(1, 1);
+    expect(pct('コイン 25,000')).toBeCloseTo(3, 1);
+    expect(pct('コイン 10,000')).toBeCloseTo(10, 1);
+  });
+
+  it('ゴールドボックス1箱あたりの平均は 4,000 コイン前後', () => {
     // 出しすぎないことの歯止め。中身をいじったときにここで気づけるようにする。
     const total = BOXES.gold.slots.reduce((n, s) => n + s.weight, 0);
     const avg = BOXES.gold.slots.reduce(
       (n, s) => n + (s.reward.type === 'coins' ? s.reward.amount : 0) * (s.weight / total),
       0,
     );
-    expect(avg).toBeGreaterThan(6_000);
-    expect(avg).toBeLessThan(9_500);
+    expect(avg).toBeGreaterThan(3_000);
+    expect(avg).toBeLessThan(4_500);
   });
 
   it('必ず何かが当たる（空っぽで返らない）', () => {
@@ -149,6 +165,44 @@ describe('週末のボックス', () => {
       const seen = new Set<string>();
       for (let i = 0; i < 200_000; i++) seen.add(openBox(k, rng, { frame: true, title: true }).label);
       for (const s of BOXES[k].slots) expect(seen.has(s.label)).toBe(true);
+    }
+  });
+});
+
+describe('開封演出（段階的に光る）', () => {
+  const ORDER: BoxRarity[] = ['normal', 'rare', 'epic', 'legend'];
+
+  it('レアリティの段だけ光る（グレー1回／青は2回／紫は3回／金は4回）', () => {
+    expect(FLASH_STEPS.normal).toEqual(['normal']);
+    expect(FLASH_STEPS.rare).toEqual(['normal', 'rare']);
+    expect(FLASH_STEPS.epic).toEqual(['normal', 'rare', 'epic']);
+    expect(FLASH_STEPS.legend).toEqual(['normal', 'rare', 'epic', 'legend']);
+  });
+
+  it('どの段も「下から順に上がって、そのレアリティで止まる」', () => {
+    for (let i = 0; i < ORDER.length; i++) {
+      const steps = FLASH_STEPS[ORDER[i]];
+      expect(steps.length).toBe(i + 1); // 段数＝レアリティの高さ
+      expect(steps).toEqual(ORDER.slice(0, i + 1)); // 飛ばさず順に上がる
+      expect(steps[steps.length - 1]).toBe(ORDER[i]); // 最後は自分の色
+    }
+  });
+
+  it('段が上がるほど溜めが長い（期待を引っぱる）', () => {
+    for (let i = 1; i < ORDER.length; i++) {
+      expect(FLASH_MS[ORDER[i]]).toBeGreaterThan(FLASH_MS[ORDER[i - 1]]);
+    }
+    // 金でも4段合わせて4秒は超えない（毎回見るものなので長すぎない）
+    const longest = FLASH_STEPS.legend.reduce((n, r) => n + FLASH_MS[r], 0);
+    expect(longest).toBeLessThan(4000);
+  });
+
+  it('どの段にも色が用意されている（var() が欠けて演出が消えない）', () => {
+    for (const r of ORDER) {
+      expect(RARITY_FX[r].glow).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(RARITY_FX[r].ring).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(RARITY_FX[r].label.length).toBeGreaterThan(0);
+      expect(FLASH_MS[r]).toBeGreaterThan(0);
     }
   });
 });
