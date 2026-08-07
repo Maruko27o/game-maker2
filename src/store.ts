@@ -20,6 +20,7 @@ import type {
   MailItem,
   FrameAward,
   EquipFrame,
+  AptGrade,
 } from './types';
 import { STREAK_MAX } from './types';
 import { foldRace, achievedLevel } from './logic/streak';
@@ -53,6 +54,7 @@ import { periodId, ARENA_ENTRY_FEE, ARENA_MODE, ARENA_CATCHUP_MAX, ARENA_RESULTS
 import { farmRatePerHour, farmAccrued, retireValueOf, teamHorses } from './logic/farm';
 import { addToTeam, removeFromTeam, moveInTeam, normalizeTeam } from './logic/team';
 import { trustedNow } from './logic/trustedClock';
+import { normAptFrames, newlyEarned, mergeAptFrames } from './logic/aptFrames';
 import { normalizeCustomBet } from './data/customBet';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
@@ -203,6 +205,7 @@ function freshSave(): SaveData {
     displayTrophies: [],
     mailbox: [],
     equippedFrame: null,
+    aptFrames: [],
     equippedTitle: null,
     customBet: null,
     raceSession: null,
@@ -217,6 +220,11 @@ function normFrame(v: unknown): EquipFrame | null {
   if (!v || typeof v !== 'object') return null;
   const f = v as Record<string, unknown>;
   // 連勝フレーム（スペシャルタスク報酬）。
+  // 適性フレーム（6コースすべて同じ等級のウマを手に入れた記録）。
+  if (f.kind === 'apt') {
+    const g = f.grade;
+    return g === 'C' || g === 'B' || g === 'A' || g === 'S' ? { kind: 'apt', grade: g } : null;
+  }
   if (f.kind === 'streak') {
     const level = Number(f.level);
     if (Number.isFinite(level) && level >= 1 && level <= STREAK_MAX) return { kind: 'streak', level: Math.round(level) };
@@ -227,11 +235,21 @@ function normFrame(v: unknown): EquipFrame | null {
   if (typeof f.period !== 'string' || rank === null || metric === null) return null;
   return { period: f.period, rank, metric };
 }
+/** 読み込み時の適性フレームの足しこみ。
+ *  授与は「ウマの顔ぶれが変わったとき」に走るが、それだけだとこの更新より前から
+ *  オール S のウマを持っている人がいつまでももらえない。読み込みのたびに今いる
+ *  ウマを見て足す（すでに持っている等級は絶対に消さない）。 */
+function profileWithAptFrames(d: Record<string, unknown>, horses: Horse[]) {
+  const p = normProfile(d);
+  return { ...p, aptFrames: mergeAptFrames(p.aptFrames, newlyEarned(horses, p.aptFrames)) };
+}
+
 function normProfile(d: Record<string, unknown>): {
   avatarHorseId: string | null;
   displayTrophies: number[];
   mailbox: MailItem[];
   equippedFrame: EquipFrame | null;
+  aptFrames: AptGrade[];
   equippedTitle: string | null;
   customBet: SaveData['customBet'];
 } {
@@ -247,7 +265,7 @@ function normProfile(d: Record<string, unknown>): {
   const equippedTitle = typeof d.equippedTitle === 'string' ? d.equippedTitle : null;
   const cb = d.customBet as SaveData['customBet'];
   const customBet = cb && typeof cb === 'object' && typeof cb.amount === 'number' ? normalizeCustomBet(cb) : null;
-  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), equippedTitle, customBet };
+  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), aptFrames: normAptFrames(d.aptFrames), equippedTitle, customBet };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -415,7 +433,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
         daily,
         tasks,
         stats,
-        ...normProfile(d),
+        ...profileWithAptFrames(d, horses),
         raceSession: normRaceSession(d.raceSession),
         arena: normArena(d.arena),
         farmClaimedAt: typeof d.farmClaimedAt === 'number' ? d.farmClaimedAt : trustedNow(),
@@ -459,7 +477,7 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
       daily,
       tasks,
       stats,
-      ...normProfile(d),
+      ...profileWithAptFrames(d, rescaled),
       savedAt,
     },
     migrated: isPreV4, // only the v3→v4 stat change warrants the one-time notice
@@ -654,6 +672,14 @@ export const useStore = create<Store>((set, get) => {
   if (migrated) persist(initial); // save the upgraded shape immediately
 
   const commit = (partial: Partial<SaveData>) => {
+    // ウマの顔ぶれが変わったら、適性フレームの授与を確かめる。
+    // 「6コース全部が同じ等級」のウマを持った瞬間にもらえる。すでに持っている
+    // 等級は足しこむだけなので、あとで引退させても厳選し直しても消えない。
+    if (partial.horses) {
+      const owned = get().aptFrames ?? [];
+      const add = newlyEarned(partial.horses, owned);
+      if (add.length > 0) partial = { ...partial, aptFrames: mergeAptFrames(owned, add) };
+    }
     const savedAt = Date.now();
     const next = { ...get(), ...partial, savedAt } as Store;
     const data: SaveData = {
@@ -688,6 +714,7 @@ export const useStore = create<Store>((set, get) => {
       displayTrophies: next.displayTrophies,
       mailbox: next.mailbox ?? [],
       equippedFrame: next.equippedFrame ?? null,
+      aptFrames: next.aptFrames ?? [],
       equippedTitle: next.equippedTitle ?? null,
       customBet: next.customBet ?? null,
       raceSession: next.raceSession ?? null,

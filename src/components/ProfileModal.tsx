@@ -5,7 +5,7 @@ import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRank
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
 import type { HorseLook, EquipFrame } from '../types';
-import { isStreakFrame } from '../types';
+import { isStreakFrame, isAptFrame } from '../types';
 import { ownedLevels } from '../logic/streak';
 import { fmtOdds } from '../logic/betting';
 import HorseFace from './HorseFace';
@@ -21,6 +21,7 @@ import TitleBanner from './TitleBanner';
 function sameFrame(a: EquipFrame | null, b: EquipFrame | null): boolean {
   if (!a || !b) return a === b;
   if (isStreakFrame(a) || isStreakFrame(b)) return isStreakFrame(a) && isStreakFrame(b) && a.level === b.level;
+  if (isAptFrame(a) || isAptFrame(b)) return isAptFrame(a) && isAptFrame(b) && a.grade === b.grade;
   return a.period === b.period && a.rank === b.rank && a.metric === b.metric;
 }
 
@@ -48,6 +49,7 @@ export default function ProfileModal({
   const streakClaimed = useStore((s) => s.streakClaimed ?? 0);
   const mailbox = useStore((s) => s.mailbox ?? []);
   const equippedFrame = useStore((s) => s.equippedFrame ?? null);
+  const aptFrames = useStore((s) => s.aptFrames ?? []);
   const equipFrame = useStore((s) => s.equipFrame);
 
   const user = useAuth((s) => s.user);
@@ -78,8 +80,11 @@ export default function ProfileModal({
       seen.add(key);
       rank.push(m.frame);
     }
-    return [...streak, ...rank];
-  }, [streakClaimed, mailbox]);
+    // 適性フレーム（6コース全部同じ等級のウマを手に入れた記録）。等級だけを持つので
+    // そのウマを引退させても厳選し直しても消えない。
+    const apt: EquipFrame[] = aptFrames.map((grade) => ({ kind: 'apt', grade }));
+    return [...streak, ...apt, ...rank];
+  }, [streakClaimed, mailbox, aptFrames]);
 
   // フレームを装備／解除（ローカル＋ランキング行にも反映）。
   function equip(frame: EquipFrame | null) {

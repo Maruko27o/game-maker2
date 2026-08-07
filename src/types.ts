@@ -263,10 +263,23 @@ export type FrameAward = { period: string; rank: FrameRank; metric: FrameMetric 
 // 連勝数(数のみ)を刻んだ特別フレーム。Lv1..10、重ねるほど豪華になる。
 export const STREAK_MAX = 10;
 export type StreakFrame = { kind: 'streak'; level: number };
-// アイコンに装備できるフレームは殿堂フレームか連勝フレームのいずれか。
-export type EquipFrame = FrameAward | StreakFrame;
+// スペシャルタスク：適性フレーム。6コースすべての適性が同じ等級のウマを
+// 手に入れると、その等級のフレームがもらえる（C→B→A→S の順に豪華）。
+//
+// 大事なのは「一度もらったら二度と取り上げない」こと。授与の記録はセーブの
+// aptFrames に等級だけを残すので、そのウマを引退させても厳選で振り直しても
+// フレームは残る。
+export type AptGrade = 'C' | 'B' | 'A' | 'S';
+export const APT_GRADES: AptGrade[] = ['C', 'B', 'A', 'S'];
+export type AptFrame = { kind: 'apt'; grade: AptGrade };
+
+// アイコンに装備できるフレームは 殿堂 / 連勝 / 適性 のいずれか。
+export type EquipFrame = FrameAward | StreakFrame | AptFrame;
 export function isStreakFrame(f: EquipFrame | null | undefined): f is StreakFrame {
   return !!f && (f as StreakFrame).kind === 'streak';
+}
+export function isAptFrame(f: EquipFrame | null | undefined): f is AptFrame {
+  return !!f && (f as AptFrame).kind === 'apt';
 }
 
 // メールボックスの1通。フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
@@ -313,7 +326,10 @@ export type SaveData = {
   avatarHorseId: string | null; // profile: which owned horse is the player's icon
   displayTrophies: number[]; // profile: trophy ranks (1|2|3) shown on the shelf (max 5)
   mailbox?: MailItem[]; // 受信箱（フレーム配布・補填など）
-  equippedFrame?: EquipFrame | null; // アイコンに装備中のフレーム（殿堂 or 連勝）
+  equippedFrame?: EquipFrame | null; // アイコンに装備中のフレーム（殿堂 / 連勝 / 適性）
+  /** 適性フレームを授与された等級。等級だけを持つので、そのウマを引退させても
+   *  厳選で振り直しても取り上げられない（スペシャルタスクの約束）。 */
+  aptFrames?: AptGrade[];
   equippedTitle?: string | null; // 装備中の称号ID（data/titles.ts）。未設定なら達成済みで一番上の段
   customBet?: { amount: number; minOdds: number; maxOdds: number } | null; // カスタムベットの設定
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads

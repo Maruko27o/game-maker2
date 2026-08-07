@@ -83,6 +83,11 @@ function gpRaceDoneAt(anchorMs: number, durationS: number, reduced: boolean): nu
 }
 const toSaved = (b: Bet) => ({ kind: b.kind, sel: b.sel, amount: b.amount, odds: b.odds });
 
+// グランプリの格ごとの色クラス（銅→銀→金）。
+function gradeClass(g: 'g3' | 'g2' | 'g1'): string {
+  return { g3: 'modeG3', g2: 'modeG2', g1: 'modeG1' }[g];
+}
+
 export default function GrandPrix({ player, mode, onExit }: { player: Horse; mode: 30 | 60; onExit: () => void }) {
   const reduced = usePrefersReducedMotion();
   const gpUnlocked = useStore((s) => s.gpUnlocked);
@@ -315,7 +320,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           return (
             <button
               key={g}
-              className={`${styles.modeCard} ${isG1 ? gp.g1Card : ''} ${disabled ? styles.modeLocked : ''}`}
+              className={`${styles.modeCard} ${styles[gradeClass(g)]} ${isG1 ? gp.g1Card : ''} ${disabled ? styles.modeLocked : ''}`}
               disabled={disabled}
               onClick={() => !disabled && startGrade(g)}
             >
@@ -632,6 +637,7 @@ export default function GrandPrix({ player, mode, onExit }: { player: Horse; mod
           {podiumStats !== null && finalists[podiumStats] && (
             <HorseStatsPopup
               entrant={finalists[podiumStats]}
+              look={state.looks[finalists[podiumStats].horseId]}
               gate={finalResult.gate[podiumStats]}
               onClose={() => setPodiumStats(null)}
             />

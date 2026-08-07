@@ -65,24 +65,9 @@
   font-weight: 900;
   color: var(--ink-soft);
 }
-
-.body {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  padding: 10px;
-  background: var(--panel-inner);
-  border: 2px solid var(--border);
-  border-radius: 12px;
-}
 .body > svg {
   align-self: center;
-}
-.meta {
-  min-width: 0;
-}
-.chipRow {
+}.chipRow {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -188,4 +173,39 @@
   font-weight: 900;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+}
+
+/* 上半分：左＝ウマの全身／右＝能力図。同じ大きさの正方形で真ん中をそろえる。 */
+.topGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.horseBox,
+.radarBox {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--border);
+  border-radius: 13px;
+  padding: 5px;
+  overflow: hidden;
+}
+.horseBox {
+  background: linear-gradient(180deg, #d9edb8, #bfe08a);
+  box-shadow: inset 0 2px 6px rgba(60, 90, 30, 0.18);
+}
+.radarBox {
+  background: linear-gradient(180deg, #fffaf0, var(--panel-inner));
+  box-shadow: inset 0 2px 6px rgba(90, 60, 28, 0.12);
+}
+.horseBox svg,
+.radarBox svg {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
 }

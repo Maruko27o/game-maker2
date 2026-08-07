@@ -123,6 +123,14 @@ function raceDoneAt(anchorMs: number, durationS: number, reduced: boolean): numb
 // 「コースを選ぶ」（練習）だけは自分で選べる。
 export const LAP_CHOICES = [1, 2, 3] as const;
 
+// 路面ごとの色クラス（カードの左の色帯と記章に使う）。
+function surfaceClass(s: string): string {
+  return {
+    turf: 'modeTurf', dirt: 'modeDirt', sand: 'modeSand',
+    steeple: 'modeSteeple', circuit: 'modeCircuit', trail: 'modeTrail',
+  }[s] ?? 'modeTurf';
+}
+
 function surfaceLabel(s: string): string {
   return { turf: '芝', dirt: 'ダート', sand: '砂', steeple: '障害', circuit: 'ナイター', trail: '山道' }[s] ?? s;
 }
@@ -598,7 +606,7 @@ export default function Race() {
         <h1 className={styles.title}>コースを選ぶ</h1>
         <p className={styles.lead}>好きなコースで走ろう（馬券なし・{laps}周）。</p>
         {COURSES.map((c) => (
-          <button key={c.id} className={styles.modeCard} onClick={() => begin(c)}>
+          <button key={c.id} className={`${styles.modeCard} ${styles[surfaceClass(c.surface)]}`} onClick={() => begin(c)}>
             <span className={styles.modeEmoji}><Icon name="flag" size={26} /></span>
             <span className={styles.modeText}>
               <span className={styles.modeName}>{c.name}</span>
@@ -752,6 +760,7 @@ export default function Race() {
         {resultStats !== null && setup.entrants[resultStats] && (
           <HorseStatsPopup
             entrant={setup.entrants[resultStats]}
+            look={setup.looks[setup.entrants[resultStats].horseId]}
             gate={result.gate[resultStats]}
             onClose={() => setResultStats(null)}
           />

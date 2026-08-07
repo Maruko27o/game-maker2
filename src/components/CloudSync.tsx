@@ -58,6 +58,7 @@ function snapshot(): SaveData {
     displayTrophies: s.displayTrophies,
     mailbox: s.mailbox ?? [],
     equippedFrame: s.equippedFrame ?? null,
+    aptFrames: s.aptFrames ?? [],
     equippedTitle: s.equippedTitle ?? null,
     customBet: s.customBet ?? null,
     raceSession: s.raceSession ?? null,
