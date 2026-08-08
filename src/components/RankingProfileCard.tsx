@@ -9,6 +9,7 @@ import Icon from './Icon';
 import { fmtOdds } from '../logic/betting';
 import { titleById } from '../data/titles';
 import TitleBanner from './TitleBanner';
+import GalleryShelf from './GalleryShelf';
 import styles from './RankingProfileCard.module.css';
 import CloseButton from './CloseButton';
 
@@ -84,6 +85,14 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
             </span>
           </div>
         </div>
+
+        {/* ギャラリー：その人が選んで飾っているもの。列が未適用のときは空なので出ない。 */}
+        {row.gallery.length > 0 && (
+          <>
+            <div className={styles.trophyLabel}>ギャラリー</div>
+            <GalleryShelf items={row.gallery} look={look} size={46} />
+          </>
+        )}
 
         <div className={styles.trophyLabel}>飾っているトロフィー</div>
         {trophies.length === 0 ? (

@@ -443,6 +443,9 @@ export type SaveData = {
   shopFrames?: AnimalId[];
   /** ショップの称号ボックスで当てた動物（10種そろうとコンプリート称号）。 */
   shopTitles?: AnimalId[];
+  /** ギャラリー（飾り棚）に並べるものを選んだ一覧。中身の検証は logic/gallery.ts。
+   *  ここに入るのは見た目だけで、強さにも確率にもかかわらない。 */
+  gallery?: unknown[];
   /** コンプリートフレームでいま選んでいる動物。10種からいつでも選び直せる。 */
   shopFramePick?: AnimalId;
   /** コンプリート称号でいま選んでいる動物。 */

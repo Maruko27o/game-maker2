@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import type { SaveData, HorseLook, ArenaHorseSnapshot, FrameAward, FrameRank, EquipFrame } from './types';
 import { parseEquipFrame } from './types';
+import { parseGallery, type GalleryItem } from './logic/gallery';
 import { monthKey } from './logic/period';
 import { anchorServerTime } from './logic/trustedClock';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from './supabaseConfig';
@@ -237,6 +238,17 @@ export async function setRankingTitle(title: string | null): Promise<void> {
 
 /** Update just the equipped icon-frame for the signed-in account so it shows on
  *  every player's ranking row (no-op if no row this month / column not applied). */
+/** Update just the gallery (飾り棚) for the signed-in account.
+ *  列やRPCが未適用のときは黙って何もしない（アプリは通常どおり動く）。 */
+export async function setRankingGallery(gallery: GalleryItem[]): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.rpc('set_bet_gallery', { p_gallery: gallery });
+  } catch {
+    /* 未適用でも困らない */
+  }
+}
+
 export async function setRankingFrame(frame: EquipFrame | null): Promise<void> {
   if (!supabase) return;
   try {
@@ -256,6 +268,7 @@ export type ScoreRow = {
   displayTrophies: number[];
   equippedFrame: EquipFrame | null;
   title: string | null; // 装備中の称号ID（列が未適用なら null）
+  gallery: GalleryItem[]; // 飾り棚（列が未適用なら空）
 };
 
 /** Read the signed-in player's own ranking row (best odds/payout), to backfill
@@ -323,6 +336,7 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
     // isn't applied yet, then to fewer columns for older schemas. The equipped_frame
     // column is newest, so it leads and drops off first when not yet applied.
     const attempts: [string, boolean][] = [
+      ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies, equipped_frame, title, gallery', true],
       ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies, equipped_frame, title', true],
       ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies, equipped_frame', true],
       ['user_id, username, best_odds, best_payout, course_id, avatar, display_trophies', true],
@@ -345,6 +359,7 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
         display_trophies?: number[] | null;
         equipped_frame?: unknown;
         title?: string | null;
+        gallery?: unknown;
       }[]
     ).map((r) => ({
       userId: r.user_id,
@@ -356,6 +371,7 @@ export async function loadLeaderboard(limit = 50, by: RankBy = 'odds', period?: 
       displayTrophies: Array.isArray(r.display_trophies) ? r.display_trophies : [],
       equippedFrame: normFrameAward(r.equipped_frame),
       title: typeof r.title === 'string' ? r.title : null,
+      gallery: parseGallery(r.gallery),
     }));
   } catch {
     return [];

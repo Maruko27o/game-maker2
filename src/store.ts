@@ -71,6 +71,7 @@ import { type BoxKind } from './data/boxes';
 import { normalizeCustomBets, setCustomBetSlot } from './data/customBet';
 import { ANIMALS, SHOP_BOXES, isAnimalId, type AnimalId, type ShopBoxKind } from './data/shop';
 import { drawShopBox, canBuy as canBuyShop, type ShopBuyResult } from './logic/shop';
+import { parseGallery, type GalleryItem } from './logic/gallery';
 import { masterTitleId } from './data/titles';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
@@ -229,6 +230,7 @@ function freshSave(): SaveData {
     boxTitles: [],
     shopFrames: [],
     shopTitles: [],
+    gallery: [],
     // 空配列で持たせておく（undefined のままだと「まだ読み込めていない」と
     // 区別がつかず、称号の初ゲットのお知らせが一度も出なくなる）。
     seenTitles: [],
@@ -295,6 +297,7 @@ function normProfile(d: Record<string, unknown>): {
   boxTitles: BoxKind[];
   shopFrames: AnimalId[];
   shopTitles: AnimalId[];
+  gallery: GalleryItem[];
   shopFramePick: AnimalId;
   shopTitlePick: AnimalId;
   seenTitles: string[];
@@ -324,6 +327,7 @@ function normProfile(d: Record<string, unknown>): {
     boxTitles: normBoxFrames(d.boxTitles),
     shopFrames: normAnimals(d.shopFrames),
     shopTitles: normAnimals(d.shopTitles),
+    gallery: parseGallery(d.gallery),
     shopFramePick: normAnimalPick(d.shopFramePick),
     shopTitlePick: normAnimalPick(d.shopTitlePick),
     aptPending: normAptFrames(d.aptPending),
@@ -621,6 +625,7 @@ export function toSaveData(next: SaveData, savedAt: number): SaveData {
     shopTitles: next.shopTitles ?? [],
     shopFramePick: next.shopFramePick ?? ANIMALS[0],
     shopTitlePick: next.shopTitlePick ?? ANIMALS[0],
+    gallery: parseGallery(next.gallery),
     seenTitles: next.seenTitles ?? [],
     equippedTitle: next.equippedTitle ?? null,
     customBets: next.customBets ?? [],
@@ -771,6 +776,8 @@ type Store = SaveData & {
   buyShopBox: (kind: ShopBoxKind, rng?: () => number) => ShopBuyResult | null;
   /** コンプリート品で飾る動物を選ぶ（10種そろっていなくても覚えておく）。 */
   setShopPick: (kind: ShopBoxKind, animal: AnimalId) => void;
+  /** ギャラリー（飾り棚）に並べるものを決める。 */
+  setGallery: (items: GalleryItem[]) => void;
   /** カスタムベットの設定を保存する（100きざみ・整数の倍率に丸めて入る）。 */
   /** カスタムベットの枠（0 か 1）を決める。null でその枠を消す。 */
   setCustomBet: (slot: number, spec: { amount: number; minOdds: number; maxOdds: number } | null) => void;
@@ -1441,6 +1448,8 @@ export const useStore = create<Store>((set, get) => {
       commit({ coins: s.coins - SHOP_BOXES[kind].price, [ownedKey]: res.owned });
       return res;
     },
+
+    setGallery: (items) => commit({ gallery: parseGallery(items) }),
 
     setShopPick: (kind, animal) => {
       if (!isAnimalId(animal)) return;
