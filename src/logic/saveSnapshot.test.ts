@@ -66,6 +66,7 @@ function filled(): SaveData {
     shopTitles: ['bear'],
     shopFramePick: 'penguin',
     shopTitlePick: 'frog',
+    gallery: [{ k: 'title', id: 'rookie' }, { k: 'trophy', rank: 1 }],
     seenTitles: ['rookie'],
     equippedTitle: 'shop_master_frog',
     customBets: [{ amount: 500, minOdds: 3, maxOdds: 10 }, null],
@@ -101,6 +102,7 @@ describe('セーブの作り方は1か所（toSaveData）', () => {
     expect(out.shopFramePick).toBe('penguin');
     expect(out.shopTitlePick).toBe('frog');
     expect(out.customBets).toEqual([{ amount: 500, minOdds: 3, maxOdds: 10 }, null]);
+    expect(out.gallery).toEqual([{ k: 'title', id: 'rookie' }, { k: 'trophy', rank: 1 }]);
   });
 
   it('JSON を往復しても変わらない（localStorage と Supabase の両方を通るため）', () => {

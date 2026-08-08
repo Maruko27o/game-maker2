@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { titleCtx, activeTitle, visibleTitles, type TitleDef } from '../data/titles';
 import { ANIMALS, ANIMAL_NAME } from '../data/shop';
 import AnimalFace from './AnimalFace';
-import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRankingFrame, setRankingTitle } from '../cloud';
+import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRankingFrame, setRankingTitle, setRankingGallery } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
 import type { HorseLook, EquipFrame, FrameAward } from '../types';
@@ -20,6 +20,9 @@ import styles from './ProfileModal.module.css';
 import CloseButton from './CloseButton';
 import TitleBanner from './TitleBanner';
 import CollectionModal from './CollectionModal';
+import GalleryShelf from './GalleryShelf';
+import { BADGES, BADGE_VIEWBOX, badgeName } from '../data/badges';
+import { GALLERY_MAX, ownedFor, ownedOnly, parseGallery, toggleItem, type GalleryItem } from '../logic/gallery';
 import Icon from './Icon';
 
 // 殿堂フレームの説明（読み上げと見出し用）。
@@ -58,6 +61,8 @@ export default function ProfileModal({
   const shopFramePick = useStore((s) => s.shopFramePick ?? ANIMALS[0]);
   const shopTitlePick = useStore((s) => s.shopTitlePick ?? ANIMALS[0]);
   const setShopPick = useStore((s) => s.setShopPick);
+  const gallery = useStore((s) => s.gallery ?? []);
+  const setGallery = useStore((s) => s.setGallery);
 
   const user = useAuth((s) => s.user);
   const displayName = useAuth((s) => s.displayName);
@@ -68,6 +73,7 @@ export default function ProfileModal({
   const [iconMode, setIconMode] = useState<'horse' | 'frame'>('horse');
   const [frameHint, setFrameHint] = useState<string | null>(null); // 未取得フレームをタップしたときの獲得条件
   const [showCollection, setShowCollection] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
 
   const avatar = useMemo<HorseLook>(() => {
     const byId = avatarHorseId ? horses.find((h) => h.id === avatarHorseId) : null;
@@ -115,6 +121,18 @@ export default function ProfileModal({
   // コンプリート称号は動物ちがいで10件あるが、選ぶのは1つなので1件に畳んでから数える。
   const titleList = useMemo(() => visibleTitles(shopTitlePick), [shopTitlePick]);
   const titleHave = titleList.filter((t) => t.check(ctx)).length;
+  // ギャラリー（飾り棚）。持っていないものは並べない＆選べない。
+  const ownedSet = useMemo(
+    () => ownedFor(useStore.getState(), [...frameSlots.filter((f) => f.owned).map((f) => f.frame), ...rankFrames], dexPct),
+    [frameSlots, rankFrames, dexPct],
+  );
+  const shownGallery = useMemo(() => ownedOnly(parseGallery(gallery), ownedSet), [gallery, ownedSet]);
+  function toggleGallery(item: GalleryItem) {
+    const next = toggleItem(shownGallery, item);
+    setGallery(next);
+    void setRankingGallery(next);
+  }
+
   function pickTitle(t: TitleDef) {
     if (!t.check(ctx)) return;
     equipTitle(t.id);
@@ -251,6 +269,13 @@ export default function ProfileModal({
           <span className={styles.collectionLabel}><Icon name="book" size={16} /> コレクション</span>
           <span className={styles.collectionCount}>フレーム {frameHave}/{frameSlots.length}・称号 {titleHave}/{titleList.length}</span>
         </button>
+
+        {/* ギャラリー：集めたものから選んで飾る場所。他の人からも見える。 */}
+        <button className={styles.collectionBtn} onClick={() => setShowGallery(true)}>
+          <span className={styles.collectionLabel}><Icon name="sparkle" size={16} /> ギャラリー</span>
+          <span className={styles.collectionCount}>{shownGallery.length}/{GALLERY_MAX} 飾っています</span>
+        </button>
+        {shownGallery.length > 0 && <GalleryShelf items={shownGallery} look={avatar} size={48} />}
 
         {/* Tabs */}
         <div className={styles.tabs}>
@@ -483,6 +508,107 @@ export default function ProfileModal({
       )}
 
       {showCollection && <CollectionModal look={avatar} onClose={() => setShowCollection(false)} />}
+
+      {/* ギャラリーを編集する画面。持っているものだけを並べ、押すと出し入れする。 */}
+      {showGallery && (
+        <div className={styles.editorOverlay} onClick={() => setShowGallery(false)}>
+          <div className={styles.editorCard} onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={() => setShowGallery(false)} />
+            <div className={styles.editorHead}>
+              <h3 className={styles.editorTitle}>ギャラリーに飾る</h3>
+            </div>
+            <p className={styles.hint}>
+              集めたものから {GALLERY_MAX}個まで選んで飾れます。ランキングであなたのアイコンを
+              タップした人にも見えます。
+            </p>
+
+            {shownGallery.length > 0 && (
+              <>
+                <span className={styles.galleryLabel}>いま飾っているもの（押すとはずす）</span>
+                <GalleryShelf items={shownGallery} look={avatar} size={48} onTap={toggleGallery} />
+              </>
+            )}
+
+            <span className={styles.galleryLabel}>フレーム</span>
+            <div className={styles.frameGrid}>
+              {ownedSet.frames.map((f, i) => {
+                const on = shownGallery.some((g) => g.k === 'frame' && sameFrame(g.frame, f));
+                return (
+                  <button
+                    key={`gf-${i}`}
+                    className={`${styles.framePick} ${on ? styles.picked : ''}`}
+                    onClick={() => toggleGallery({ k: 'frame', frame: f })}
+                  >
+                    <EquippedFrame frame={f} look={avatar} size={56} />
+                    {on && <span className={styles.frameTag}>飾り中</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            <span className={styles.galleryLabel}>称号</span>
+            <ul className={styles.titleList}>
+              {titleList
+                .filter((t) => ownedSet.titles.includes(t.id))
+                .map((t) => {
+                  const on = shownGallery.some((g) => g.k === 'title' && g.id === t.id);
+                  return (
+                    <li key={t.id}>
+                      <button
+                        className={`${styles.titleCard} ${on ? styles.titleOn : ''}`}
+                        onClick={() => toggleGallery({ k: 'title', id: t.id })}
+                      >
+                        <TitleBanner title={t} className={styles.titleArt} />
+                        <span className={styles.titleBody}>
+                          <span className={styles.titleName}>{t.name}</span>
+                        </span>
+                        {on && <span className={styles.titleCheck}>✓</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+
+            {(ownedSet.trophies.length > 0 || ownedSet.badges.length > 0) && (
+              <>
+                <span className={styles.galleryLabel}>トロフィー・バッジ</span>
+                <div className={styles.galleryIcons}>
+                  {ownedSet.trophies.map((r) => {
+                    const on = shownGallery.some((g) => g.k === 'trophy' && g.rank === r);
+                    return (
+                      <button
+                        key={`gt-${r}`}
+                        className={`${styles.galleryIcon} ${on ? styles.picked : ''}`}
+                        onClick={() => toggleGallery({ k: 'trophy', rank: r })}
+                        aria-label={`${r}位トロフィー`}
+                      >
+                        <TrophyIcon rank={r} size={40} />
+                      </button>
+                    );
+                  })}
+                  {ownedSet.badges.map((id) => {
+                    const on = shownGallery.some((g) => g.k === 'badge' && g.id === id);
+                    const b = BADGES[id as keyof typeof BADGES];
+                    if (!b) return null;
+                    return (
+                      <button
+                        key={`gb-${id}`}
+                        className={`${styles.galleryIcon} ${on ? styles.picked : ''}`}
+                        onClick={() => toggleGallery({ k: 'badge', id })}
+                        aria-label={badgeName(id)}
+                      >
+                        <svg viewBox={BADGE_VIEWBOX} width={40} height={40} aria-hidden>
+                          <g dangerouslySetInnerHTML={{ __html: b.inner }} />
+                        </svg>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
