@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from './store';
 import { useAuth } from './cloud';
 import CloudSync from './components/CloudSync';
@@ -79,6 +79,7 @@ export default function App() {
       return true;
     }
   });
+  const navigate = useNavigate();
   function dismissTitle() {
     try {
       sessionStorage.setItem('seenTitle', '1');
@@ -86,6 +87,10 @@ export default function App() {
       /* ignore */
     }
     setShowTitle(false);
+    // タイトルから入ったら、行き先はかならず草むら。
+    // 前回どこで閉じたかによって図鑑やランキングから始まると、毎回ちがう場所に
+    // 出てしまって「はじまりの場所」が定まらないため。
+    navigate('/', { replace: true });
   }
   return (
     <div className={styles.shell}>

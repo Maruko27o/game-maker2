@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
+import { MetalSheen, GemFlash } from './FrameFx';
+import { usePrefersReducedMotion } from '../hooks';
 
 // 殿堂フレーム（月間ランキング上位3名へ毎月配布）。全プレイヤーの頂点にふさわしい
 // 重厚な鋳造メタル調のメダル：分厚いベベルのリング＋台座付きの塊の宝石＋立体的な
@@ -78,6 +80,10 @@ export default function AvatarFrame({
 }) {
   const uid = useId().replace(/:/g, '');
   const c = PALETTE[rank];
+  const still = usePrefersReducedMotion();
+  // 順位が上がるほど、光沢が速く強くなる（金＞銀＞銅）。
+  const sheenDur = rank === 1 ? 3 : rank === 2 ? 3.8 : 4.6;
+  const sheenStrength = rank === 1 ? 0.95 : rank === 2 ? 0.85 : 0.7;
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
@@ -107,6 +113,15 @@ export default function AvatarFrame({
         <circle cx={CX} cy={CY} r={R + 2.4} fill="none" stroke={c.hi} strokeOpacity="0.7" strokeWidth="1" />
         <circle cx={CX} cy={CY} r={R - 3.2} fill="none" stroke={c.hi} strokeOpacity="0.6" strokeWidth="1" />
         <circle cx={CX} cy={CY} r={R - 4.4} fill="none" stroke={c.darkest} strokeWidth="1.8" />
+
+        {/* 鋳込んだ金属の光沢。帯そのものを斜めの光がすうっと横切る。
+            殿堂は「重い金属の塊」が売りなので、動きもそこに乗せる（枠の外では動かさない）。 */}
+        <MetalSheen c={CX} r={R} w={7.5} uid={`av${uid}`} dur={sheenDur} strength={sheenStrength} still={still} />
+        {/* 王冠と銘板の帯にも同じ光を通す（面がつながって見えるように） */}
+        <MetalSheen c={CX} r={R + 3.4} w={4} uid={`av2${uid}`} dur={sheenDur} strength={sheenStrength * 0.6} still={still} />
+
+        {/* 四方の石が順にきらりと光る。順位が上がるほど間隔が短い。 */}
+        <GemFlash c={CX} r={R} uid={`av${uid}`} count={4} color={c.gem} size={4.2} dur={sheenDur * 0.85} still={still} />
 
         {/* studs (solid dots) between the cardinal gems */}
         {Array.from({ length: 12 }).map((_, i) => {

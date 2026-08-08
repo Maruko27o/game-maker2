@@ -24,6 +24,7 @@ import { RUN_STYLE_LABEL } from '../types';
 import type { ArenaResult, ArenaRoundResult, ArenaEntry, Horse } from '../types';
 import HorseView from '../components/HorseView';
 import CoinIcon from '../components/CoinIcon';
+import CourseMark from '../components/CourseMark';
 import { arenaPrizeMul } from '../logic/weekdayEvents';
 import { trustedNow } from '../logic/trustedClock';
 import EventNote from '../components/EventNote';
@@ -128,7 +129,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
   const results = st.results;
   const unseen = results.filter((r) => !r.seen).length;
 
-  const [screen, setScreen] = useState<'home' | 'playing' | 'interstitial' | 'summary'>('home');
+  const [screen, setScreen] = useState<'home' | 'pick' | 'playing' | 'interstitial' | 'summary'>('home');
   const [horseId, setHorseId] = useState<string>(horses[0]?.id ?? '');
   const [view, setView] = useState<ArenaResult | null>(null);
   const [round, setRound] = useState(0);
@@ -243,12 +244,67 @@ export default function Arena({ onExit }: { onExit: () => void }) {
     arenaMarkSeen(r.period);
     setView(r);
     setRound(0);
-    setScreen('playing');
+    // いきなり予選1回戦から流さず、どのレースを見るか選ばせる。
+    // 本戦だけ見返したいのに毎回予選から見るのは待ち時間が長すぎたため。
+    setScreen('pick');
   }
   function afterRound() {
     if (!view) return;
     if (round + 1 < view.rounds.length) setScreen('interstitial');
     else setScreen('summary');
+  }
+
+  // ---- どのレースを見るか選ぶ ----
+  // 順位や勝ち上がりなど「知りたいことだけ」はここで分かるようにして、
+  // 映像を見なくても結果を追えるようにする。
+  if (screen === 'pick' && view) {
+    const champ = view.outcome === 'champion';
+    return (
+      <div className={styles.page}>
+        <div className={`${a.resultTop} ${champ ? a.resultTopWin : ''}`}>
+          <div className={a.resultLabel}>{view.label}</div>
+          <div className={a.resultBig}>
+            {champ && <Icon name="trophy" size={26} />} {arenaOutcomeLabel(view.outcome, view.finalRank ?? 0)}
+          </div>
+          <div className={a.resultPay}>
+            <CoinIcon size={18} /> 賞金 ＋{view.payout.toLocaleString()}
+          </div>
+        </div>
+
+        <div className={a.pickList}>
+          {view.rounds.map((rr, i) => {
+            const course = COURSES.find((c) => c.id === rr.courseId) ?? COURSES[0];
+            const isFinal = i === view.rounds.length - 1;
+            const advanced = !isFinal && rr.playerRank <= ARENA_ADVANCE;
+            return (
+              <button
+                key={rr.round}
+                className={a.pickRow}
+                onClick={() => { setRound(i); setScreen('playing'); }}
+              >
+                <span className={a.pickHead}>
+                  <CourseMark course={course} size={22} />
+                  <span className={a.pickName}>{ARENA_ROUND_NAMES[rr.round]}</span>
+                </span>
+                <span className={a.pickCourse}>{course.name}</span>
+                <span className={a.pickRank}>
+                  <b>{rr.playerRank}</b>位 / {rr.field.length}頭
+                </span>
+                <span className={`${a.pickTag} ${isFinal ? a.pickTagFinal : advanced ? a.pickTagOk : a.pickTagNg}`}>
+                  {isFinal ? '本戦' : advanced ? '通過' : '敗退'}
+                </span>
+                <span className={a.pickPlay}>▶</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className={styles.setupActions}>
+          <button className="btn neutral" onClick={() => { setView(null); setScreen('home'); }}>閉じる</button>
+          <button className="btn" onClick={() => { setRound(0); setScreen('playing'); }}>最初から見る</button>
+        </div>
+      </div>
+    );
   }
 
   // ---- playback ----
@@ -324,7 +380,7 @@ export default function Arena({ onExit }: { onExit: () => void }) {
         <div className={a.poolNote}>足りない分はCOMが自動で参加しているよ</div>
         <div className={styles.setupActions}>
           <button className="btn neutral" onClick={() => { setView(null); setScreen('home'); }}>閉じる</button>
-          <button className="btn" onClick={() => { setRound(0); setScreen('playing'); }}>もう一度見る</button>
+          <button className="btn" onClick={() => setScreen('pick')}>もう一度見る</button>
         </div>
       </div>
     );

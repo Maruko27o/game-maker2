@@ -3,7 +3,7 @@ import type { Entrant } from '../logic/raceSim2';
 import type { Course } from '../data/courses';
 import type { HorseLook } from '../types';
 import { raceOddsFromProbs, oddsFor, fmtOdds, pickInOddsRange, BET_KINDS, type Bet, type BetKind } from '../logic/betting';
-import { CUSTOM_BET, DEFAULT_CUSTOM_BET, normalizeCustomBet, type CustomBetSpec } from '../data/customBet';
+import { CUSTOM_BET, CUSTOM_BET_SLOTS, DEFAULT_CUSTOM_BET, digitsOnly, normalizeCustomBet, type CustomBetSpec } from '../data/customBet';
 import { useStore } from '../store';
 import CloseButton from './CloseButton';
 import { fillPicks } from '../logic/omakase';
@@ -14,6 +14,7 @@ import HorseView from './HorseView';
 import Icon from './Icon';
 import StatRadar from './StatRadar';
 import CoinIcon from './CoinIcon';
+import CourseMark from './CourseMark';
 import type { MoodLevel } from '../logic/mood';
 import HorseStatsPopup from './HorseStatsPopup';
 import styles from './Paddock.module.css';
@@ -47,10 +48,23 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
   const [sel, setSel] = useState<number[]>([]); // entrant indices, in tap order
   const [amount, setAmount] = useState<number>(BET_AMOUNTS[0]);
   // カスタムベット：倍率と金額を決めておいて、ワンタップでその条件の馬券を買う。
-  const customBet = useStore((st) => st.customBet);
+  const customBets = useStore((st) => st.customBets) ?? [];
   const setCustomBet = useStore((st) => st.setCustomBet);
-  const [cbOpen, setCbOpen] = useState(false);
-  const [cbDraft, setCbDraft] = useState<CustomBetSpec>(customBet ?? DEFAULT_CUSTOM_BET);
+  /** いま設定しているのは何枠目か（null なら閉じている）。 */
+  const [cbSlot, setCbSlot] = useState<number | null>(null);
+  const [cbDraft, setCbDraft] = useState<CustomBetSpec>(DEFAULT_CUSTOM_BET);
+  // 倍率の入力は「文字のまま」持つ。入力のたびに数値へ変えて書き戻していたので、
+  // 「3」と打ったのに「03」のまま残ることがあった。確定するときだけ数値にする。
+  const [cbMinText, setCbMinText] = useState('');
+  const [cbMaxText, setCbMaxText] = useState('');
+
+  function openCb(slot: number, base: CustomBetSpec) {
+    setCbDraft(base);
+    setCbMinText(String(base.minOdds));
+    setCbMaxText(String(base.maxOdds));
+    setCbError(null);
+    setCbSlot(slot);
+  }
   const [cbError, setCbError] = useState<string | null>(null);
   const [openStats, setOpenStats] = useState<number | null>(null); // entrant idx whose 能力 panel is open
   const spec = BET_KINDS.find((k) => k.kind === kind)!;
@@ -108,20 +122,28 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
 
   // 設定した倍率の範囲に入る買い目を、その時のレースの倍率から探して1点買う。
   // 候補が複数あればランダムに1つ（例：3〜4倍で単勝3.2倍と3.5倍があればどちらか）。
-  function placeCustom() {
-    if (!customBet) { setCbDraft(DEFAULT_CUSTOM_BET); setCbOpen(true); return; }
+  function placeCustom(slot: number) {
+    const cb = customBets[slot];
+    if (!cb) { openCb(slot, DEFAULT_CUSTOM_BET); return; }
     setCbError(null);
     if (full) { setCbError(`馬券は${maxBets}パターンまでです`); return; }
-    if (coins < customBet.amount) { setCbError('コインが不足しています'); return; }
-    const hit = pickInOddsRange(p, laps ?? 2, customBet.minOdds, customBet.maxOdds, Math.random);
+    if (coins < cb.amount) { setCbError('コインが不足しています'); return; }
+    const hit = pickInOddsRange(p, laps ?? 2, cb.minOdds, cb.maxOdds, Math.random);
     if (!hit) { setCbError('その倍率は組めません'); return; }
-    onAdd({ kind: hit.kind, sel: hit.sel, amount: customBet.amount, odds: hit.odds });
+    onAdd({ kind: hit.kind, sel: hit.sel, amount: cb.amount, odds: hit.odds });
   }
 
   return (
     <div className={styles.paddock}>
       <div className={styles.head}>
         <h2 className={styles.h2}>パドック</h2>
+        {/* どのコースを何周走るのかは、賭ける前に必ず要る情報なので見出しの横に置く。
+            コース名は長さがまちまちなので、はみ出すぶんは縮めて必ず1行に収める。 */}
+        <span className={styles.course}>
+          <CourseMark course={course} size={18} />
+          <span className={styles.courseName}>{course.name}</span>
+          <span className={styles.courseLaps}>{laps ?? 2}周</span>
+        </span>
         <span className={styles.coins}><CoinIcon size={16} /> {coins.toLocaleString()}</span>
       </div>
 
@@ -189,22 +211,35 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
           : `${KIND_LABEL[kind]}をおまかせ（${amount}コインで1点）`}
       </button>
 
-      {/* カスタムベット：設定してあれば1タップで買う。ペンで設定し直せる。 */}
+      {/* カスタムベット：2パターンを横に並べる。1タップで買え、ペンで設定し直せる。
+          縦に積むと出走ボタンが下に押し出されるので、必ず1行に収める。 */}
       <div className={styles.customRow}>
-        <button className={styles.custom} disabled={full} onClick={placeCustom}>
-          {customBet
-            ? `カスタム ${customBet.minOdds}〜${customBet.maxOdds}倍・${customBet.amount.toLocaleString()}コイン`
-            : 'カスタムベットを設定'}
-        </button>
-        {customBet && (
-          <button
-            className={styles.customEdit}
-            aria-label="カスタムベットの設定"
-            onClick={() => { setCbDraft(customBet); setCbOpen(true); }}
-          >
-            ✎
-          </button>
-        )}
+        {Array.from({ length: CUSTOM_BET_SLOTS }, (_, slot) => {
+          const cb = customBets[slot];
+          return (
+            <div key={slot} className={styles.customCell}>
+              <button className={styles.custom} disabled={full} onClick={() => placeCustom(slot)}>
+                {cb ? (
+                  <>
+                    <span className={styles.customOdds}>{cb.minOdds}〜{cb.maxOdds}倍</span>
+                    <span className={styles.customAmt}>{cb.amount.toLocaleString()}コイン</span>
+                  </>
+                ) : (
+                  <span className={styles.customEmpty}>カスタム{slot + 1}を設定</span>
+                )}
+              </button>
+              {cb && (
+                <button
+                  className={styles.customEdit}
+                  aria-label={`カスタムベット${slot + 1}の設定`}
+                  onClick={() => openCb(slot, cb)}
+                >
+                  ✎
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
       {cbError && <div className={styles.customError} role="alert">{cbError}</div>}
 
@@ -252,11 +287,11 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
       </div>
 
       {/* カスタムベットの設定 */}
-      {cbOpen && (
-        <div className={styles.cbOverlay} onClick={() => setCbOpen(false)}>
+      {cbSlot !== null && (
+        <div className={styles.cbOverlay} onClick={() => setCbSlot(null)}>
           <div className={styles.cbSheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="カスタムベットの設定">
-            <CloseButton onClick={() => setCbOpen(false)} />
-            <h3 className={styles.cbTitle}>カスタムベット</h3>
+            <CloseButton onClick={() => setCbSlot(null)} />
+            <h3 className={styles.cbTitle}>カスタムベット{cbSlot + 1}</h3>
 
             <div className={styles.cbLabel}>賭ける金額</div>
             <div className={styles.cbStepper}>
@@ -290,26 +325,22 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
             <div className={styles.cbOddsRow}>
               <input
                 className={styles.cbNum}
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={CUSTOM_BET.oddsMin}
-                max={CUSTOM_BET.oddsMax}
-                step={1}
-                value={cbDraft.minOdds}
+                maxLength={5}
+                value={cbMinText}
                 aria-label="倍率の下限"
-                onChange={(e) => setCbDraft((d) => ({ ...d, minOdds: Math.floor(Number(e.target.value) || 0) }))}
+                onChange={(e) => setCbMinText(digitsOnly(e.target.value))}
               />
               <span className={styles.cbTilde}>〜</span>
               <input
                 className={styles.cbNum}
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={CUSTOM_BET.oddsMin}
-                max={CUSTOM_BET.oddsMax}
-                step={1}
-                value={cbDraft.maxOdds}
+                maxLength={5}
+                value={cbMaxText}
                 aria-label="倍率の上限"
-                onChange={(e) => setCbDraft((d) => ({ ...d, maxOdds: Math.floor(Number(e.target.value) || 0) }))}
+                onChange={(e) => setCbMaxText(digitsOnly(e.target.value))}
               />
               <span className={styles.cbUnit}>倍</span>
             </div>
@@ -317,12 +348,29 @@ export default function Paddock({ entrants, looks, course, coins, bets, onAdd, o
               {CUSTOM_BET.oddsMin}〜{CUSTOM_BET.oddsMax.toLocaleString()}倍まで。範囲に入る買い目から1つを自動で選びます。
             </p>
 
-            <button
-              className={styles.cbOk}
-              onClick={() => { setCustomBet(normalizeCustomBet(cbDraft)); setCbError(null); setCbOpen(false); }}
-            >
-              確定
-            </button>
+            <div className={styles.cbActions}>
+              {customBets[cbSlot] && (
+                <button
+                  className={styles.cbClear}
+                  onClick={() => { setCustomBet(cbSlot, null); setCbError(null); setCbSlot(null); }}
+                >
+                  消す
+                </button>
+              )}
+              <button
+                className={styles.cbOk}
+                onClick={() => {
+                  // 入力中の文字をここではじめて数値にする（空なら既定値に戻す）
+                  const minOdds = cbMinText === '' ? CUSTOM_BET.oddsMin : Number(cbMinText);
+                  const maxOdds = cbMaxText === '' ? CUSTOM_BET.oddsMax : Number(cbMaxText);
+                  setCustomBet(cbSlot, normalizeCustomBet({ ...cbDraft, minOdds, maxOdds }));
+                  setCbError(null);
+                  setCbSlot(null);
+                }}
+              >
+                確定
+              </button>
+            </div>
           </div>
         </div>
       )}

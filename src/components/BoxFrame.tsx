@@ -2,7 +2,7 @@ import { useId } from 'react';
 import type { BoxFrameKind, HorseLook } from '../types';
 import HorseFace from './HorseFace';
 import BoxCrest from './BoxCrest';
-import { Facets, Orbit, Pulse } from './FrameFx';
+import { Facets, MetalSheen, GemFlash } from './FrameFx';
 import { usePrefersReducedMotion } from '../hooks';
 
 // 週末のボックスから出る限定フレーム。ゲーム内でいちばん出ないものなので、
@@ -56,8 +56,6 @@ export default function BoxFrame({
 
         {/* いちばん外の光の輪。ここが「限定」の格を出す。 */}
         <circle cx={C} cy={C} r={58} fill={`url(#bglow-${uid})`} />
-        {/* 外周オーラの二段脈動（適性 A 以上と同じ動き）。 */}
-        <Pulse c={C} r={R} color={fxColor} uid={`b${uid}`} still={still} />
 
         {gold ? <GoldRing uid={uid} c={C} r={R} w={ringW} /> : <LuckyRing uid={uid} c={C} r={R} w={ringW} />}
 
@@ -74,44 +72,31 @@ export default function BoxFrame({
           still={still}
         />
 
-        {/* 巡る光の粒。限定フレームだけ 12 粒＝いちばん多い。 */}
-        <Orbit c={C} r={R} uid={`b${uid}`} count={12} color={fxColor} still={still} />
-
-        {/* リングを一周する流れる光 */}
-        <circle
-          cx={C}
-          cy={C}
+        {/* 金属の光沢。ゴールドはダイヤらしく速く強く、ラッキーはやわらかく。 */}
+        <MetalSheen
+          c={C}
           r={R}
-          fill="none"
-          stroke={`url(#bsheen-${uid})`}
-          strokeWidth={ringW - 2}
-          strokeDasharray="26 270"
-          strokeLinecap="round"
-        >
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from={`0 ${C} ${C}`}
-            to={`360 ${C} ${C}`}
-            dur={gold ? '3.4s' : '4.6s'}
-            repeatCount="indefinite"
-          />
-        </circle>
+          w={ringW}
+          uid={`b${uid}`}
+          dur={gold ? 2.6 : 3.4}
+          strength={gold ? 0.95 : 0.7}
+          still={still}
+        />
+
+        {/* きらりと光る石。ゲーム内でいちばん出ないフレームなので数もいちばん多い。 */}
+        <GemFlash
+          c={C}
+          r={R}
+          uid={`b${uid}`}
+          count={gold ? 12 : 10}
+          color={fxColor}
+          size={gold ? 4.2 : 3.8}
+          dur={gold ? 2.4 : 3}
+          still={still}
+        />
 
         {gold ? <GoldTop uid={uid} c={C} /> : <LuckyTop c={C} />}
 
-        {/* きらめき */}
-        {[[16, 24], [104, 26], [14, 94], [106, 96]].map(([x, y], i) => (
-          <path
-            key={i}
-            transform={`translate(${x} ${y})`}
-            d="M 0,-5 L 1.3,-1.3 L 5,0 L 1.3,1.3 L 0,5 L -1.3,1.3 L -5,0 L -1.3,-1.3 Z"
-            fill="#fff"
-            opacity="0.9"
-          >
-            <animate attributeName="opacity" values="0.15;1;0.15" dur="2.4s" begin={`${i * 0.5}s`} repeatCount="indefinite" />
-          </path>
-        ))}
 
         {/* 下の紋章：丸いウマの顔。フレームと称号で同じ絵を使う。 */}
         <g transform={`translate(${C} 104)`}>

@@ -20,8 +20,41 @@
   font-weight: 900;
   color: var(--ink);
   margin: 0;
+  flex: none;
+}
+/* コース名＋周回数。コース名は長さがまちまちなので、余ったぶんだけ伸びて
+   足りなければ縮む（min-width:0 が無いと flex は縮まず、コインが押し出される）。 */
+.course {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 8px;
+  padding: 3px 8px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-inner);
+}
+.courseName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.courseLaps {
+  flex: none;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
 }
 .coins {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -559,9 +592,17 @@
 /* ── カスタムベット ───────────────────────────────────────────
    倍率と金額を決めておいて、ワンタップでその条件の馬券を買う。 */
 .customRow {
-  display: flex;
+  /* 2パターンを横に並べる。縦に積むと出走ボタンが下タブに押し出されるので、
+     必ず1行に収める（中身は2行だが、行そのものの高さは1つぶん）。 */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
   margin-top: 8px;
+}
+.customCell {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
 }
 .custom {
   flex: 1;
@@ -575,7 +616,30 @@
   font-weight: 900;
   box-shadow: 0 3px 0 var(--border);
   cursor: pointer;
-  padding: 0 10px;
+  padding: 3px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  line-height: 1.2;
+}
+/* 倍率の帯と金額を2段に。横に詰めるより、狭い幅でも読める。 */
+.customOdds {
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.customAmt {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.customEmpty {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
 }
 .custom:active:not(:disabled) {
   transform: translateY(2px);
@@ -586,7 +650,7 @@
 }
 .customEdit {
   flex: none;
-  width: 44px;
+  width: 30px;
   min-height: 44px;
   border: 3px solid var(--border-dark);
   border-radius: 13px;
@@ -716,9 +780,26 @@
   color: var(--ink-soft);
   line-height: 1.5;
 }
-.cbOk {
-  width: 100%;
+/* 確定と（設定ずみなら）消す を横に並べる。 */
+.cbActions {
+  display: flex;
+  gap: 8px;
   margin-top: 12px;
+}
+.cbClear {
+  flex: 0 0 84px;
+  min-height: 46px;
+  border: 3px solid var(--border-dark);
+  border-radius: 13px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 3px 0 var(--border);
+}
+.cbOk {
+  flex: 1;
+  width: 100%;
   min-height: 46px;
   border: 3px solid var(--border-dark);
   border-radius: 13px;

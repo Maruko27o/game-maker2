@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { colorsBySlot, decosBySlot } from '../data/parts';
 import type { ColorPart, DecoPart, Rarity } from '../types';
 import PartThumb from '../components/PartThumb';
+import LazyThumb from '../components/LazyThumb';
 import HorseView from '../components/HorseView';
 import CloseButton from '../components/CloseButton';
 import Icon from '../components/Icon';
@@ -133,14 +134,18 @@ export default function Collection() {
                 tabIndex={has ? 0 : undefined}
               >
                 <div className={styles.thumb}>
-                  {has ? (
-                    <PartThumb id={e.id} size={78} />
-                  ) : (
-                    <div className={styles.silhouette}>
-                      <HorseView horse={BLANK} size={78} />
-                      <span className={styles.q}>?</span>
-                    </div>
-                  )}
+                  {/* 画面に入ってから描く。絵そのものは今までと同じで、
+                      「まだ見えていないマスを先に作らない」だけ。 */}
+                  <LazyThumb size={78}>
+                    {has ? (
+                      <PartThumb id={e.id} size={78} />
+                    ) : (
+                      <div className={styles.silhouette}>
+                        <HorseView horse={BLANK} size={78} />
+                        <span className={styles.q}>?</span>
+                      </div>
+                    )}
+                  </LazyThumb>
                 </div>
                 {has ? (
                   <>

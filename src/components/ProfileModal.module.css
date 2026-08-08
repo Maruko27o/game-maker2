@@ -379,10 +379,12 @@
   box-shadow: none;
 }
 
-/* horse picker ------------------------------------------------------------- */
+/* horse picker -------------------------------------------------------------
+   4列そろえ。flex の折り返しだと最後の行に大きな余白が出て、右側が間延びして
+   見えていた（列数が中身の数で変わるため）。grid にして常に4列に固定する。 */
 .horseGrid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 .horsePick {
@@ -390,6 +392,8 @@
   border-radius: 14px;
   background: var(--panel-inner);
   padding: 3px;
+  width: 100%;
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -399,23 +403,25 @@
   outline-offset: 1px;
 }
 
-/* frame picker (アイコン設定→フレーム) ------------------------------------- */
+/* frame picker (アイコン設定→フレーム) -------------------------------------
+   ウマのタブと同じ4列。フレームは装飾が枠の外にはみ出すので、行の間隔だけ
+   少し広めに取る（上下の行の飾りがぶつからないように）。 */
 .frameGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 6px 2px 2px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 8px;
+  padding: 8px 2px 2px;
 }
 .framePick {
   position: relative;
   border: 3px solid var(--border-dark);
   border-radius: 14px;
   background: var(--panel-inner);
-  padding: 8px;
+  padding: 6px 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px; /* 連勝数の銘板が枠下にはみ出すぶん、ラベルとの間隔を広めに */
+  gap: 6px; /* 連勝数の銘板が枠下にはみ出すぶん、ラベルとの間隔を広めに */
   cursor: pointer;
   overflow: visible; /* フレームの装飾が枠外へはみ出すため clip しない */
   line-height: 0;
