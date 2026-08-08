@@ -63,10 +63,8 @@ export default function RankingProfileCard({ row, onClose }: { row: ScoreRow; on
           )}
         </div>
         <div className={styles.name}>{row.username}</div>
-        <div className={styles.title}>
-          <span className={styles.titleStars} aria-hidden>{'★'.repeat(title.tier)}</span>
-          {title.name}
-        </div>
+        {/* 段の星は出さない（ランキング側と同じ扱い）。 */}
+        <div className={styles.title}>{title.name}</div>
 
         <div className={styles.recordLabel}>
           <Icon name="star" size={11} />

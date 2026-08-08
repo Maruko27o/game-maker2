@@ -1,6 +1,7 @@
 import type { TitleDef } from '../data/titles';
 import BoxCrest from './BoxCrest';
 import AnimalFace from './AnimalFace';
+import TitleMotif from './TitleMotif';
 import styles from './TitleBanner.module.css';
 
 // 称号の背景。段（tier）が上がるほど層が増える。
@@ -30,6 +31,16 @@ export default function TitleBanner({ title, className }: { title: TitleDef; cla
           {[8, 24, 44, 63, 82, 94].map((x, i) => (
             <span key={x} style={{ left: `${x}%`, top: `${22 + ((i * 37) % 60)}%`, animationDelay: `${i * 0.45}s` }} />
           ))}
+        </span>
+      )}
+      {/* そのシリーズらしい絵（走るウマ・コイン・剣・動物のすみか …）。
+          段の模様の上、きらめきより下に置く。名前の文字は帯の外なので隠れない。
+          ■ 絵の色は「地の明るさの逆」を使う
+          1〜3段は地が濃いので白、4段以上は地が明るいので濃い色。ここを取り違えると
+          同系色が重なって、絵がまったく見えなくなる（実際にそうなった）。 */}
+      {title.art && (
+        <span className={styles.motif}>
+          <TitleMotif art={title.art} ink={t >= 4 ? '#43301a' : '#ffffff'} />
         </span>
       )}
       {t >= 6 && <span className={styles.aurora} />}

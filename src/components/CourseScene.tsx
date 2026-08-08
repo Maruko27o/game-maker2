@@ -34,9 +34,22 @@ export function SceneDefs() {
         <linearGradient id="cs-sback" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ecca8e" /><stop offset="1" stopColor="#dcb672" /></linearGradient>
         <linearGradient id="cs-sfront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d9ac66" /><stop offset="1" stopColor="#c6974f" /></linearGradient>
       </defs>
+      {/* コース抽選のリールは同じ6種を何周も並べる。**シーンの中身は1回だけ**
+          ここに <symbol> として置き、リールの各コマは <use> で参照するだけにする。
+          以前はコマごとにシーンを丸ごと描いていて、36コマで DOM が1,400ノードを
+          超え（画面全体の約9割）、回している間ずっと重かった。 */}
+      {SCENE_THEMES.map((t) => (
+        <symbol key={t} id={sceneSymbolId(t)} viewBox="0 0 220 140" preserveAspectRatio="xMidYMid slice">
+          <CourseScene theme={t} />
+        </symbol>
+      ))}
     </svg>
   );
 }
+
+/** リールのコマが参照する symbol の id。 */
+export const sceneSymbolId = (t: CourseTheme) => `cs-scene-${t}`;
+const SCENE_THEMES: CourseTheme[] = ['grass', 'dirt', 'trail', 'sand', 'jump', 'night'];
 
 function Clouds({ o = 1 }: { o?: number }) {
   return (

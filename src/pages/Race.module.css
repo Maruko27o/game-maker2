@@ -261,6 +261,10 @@
 .reel {
   display: flex;
   gap: 10px;
+  /* 動かすのは transform だけ。1枚の層として扱わせて描き直しを避ける。
+     ※ content-visibility / contain:paint はここでは使わないこと。
+        コマの中身が描かれず、リールが真っ白になった。軽さは
+        「シーンを symbol にして 1 回だけ描く」ほうで取れている。 */
   will-change: transform;
 }
 .reelCell {

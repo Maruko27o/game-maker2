@@ -23,7 +23,7 @@ import Icon from '../components/Icon';
 import EventCalendar from '../components/EventCalendar';
 import EventNote from '../components/EventNote';
 import RaceTrack2 from '../components/RaceTrack2';
-import CourseScene, { SceneDefs, courseTheme, THEME_LABEL } from '../components/CourseScene';
+import { SceneDefs, courseTheme, sceneSymbolId, THEME_LABEL } from '../components/CourseScene';
 import GrandPrix from './GrandPrix';
 import Arena from './Arena';
 import { settle, type Bet } from '../logic/betting';
@@ -158,8 +158,10 @@ function CourseTile({ course }: { course: Course }) {
   return (
     <div className={styles.tile}>
       <div className={styles.tileArt}>
+        {/* 中身は SceneDefs の <symbol> に1回だけ置いてある。コマはそれを指すだけ。
+            コマごとにシーンを描くと、36コマで DOM が1,400ノードを超えて重くなる。 */}
         <svg className={styles.tileSvg} viewBox="0 0 220 140" preserveAspectRatio="xMidYMid slice" aria-hidden>
-          <CourseScene theme={courseTheme(course)} />
+          <use href={`#${sceneSymbolId(courseTheme(course))}`} width="220" height="140" />
         </svg>
         <span className={styles.tileBadge}>{THEME_LABEL[courseTheme(course)]}</span>
       </div>
@@ -172,7 +174,7 @@ function CourseTile({ course }: { course: Course }) {
 const TILE_W = 176; // px（タイル幅）
 const TILE_GAP = 10;
 const STEP = TILE_W + TILE_GAP;
-const REEL_LOOPS = 6; // 6周ぶんのタイルを流す
+const REEL_LOOPS = 4; // 4周ぶんのタイルを流す（多いほど重いだけで、見え方はほぼ変わらない）
 const SPIN_MS = 3200; // 決まるまで（<5秒）
 
 function Roulette({ course, laps, player, reduced, onDone }: { course: Course; laps: number; player: Horse; reduced: boolean; onDone: () => void }) {
