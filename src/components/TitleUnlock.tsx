@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { TITLES, titleCtx, earnedTitles, titleById, TIER_INFO } from '../data/titles';
+import { TITLES, titleCtx, earnedTitles, titleById, collapseMasters, TIER_INFO } from '../data/titles';
+import { ANIMALS } from '../data/shop';
 import { setRankingTitle } from '../cloud';
 import { TOTAL_PARTS } from '../data/parts';
 import TitleBanner from './TitleBanner';
@@ -29,6 +30,8 @@ export default function TitleUnlock() {
   const trophies = useStore((s) => s.trophies);
   const boxTitles = useStore((s) => s.boxTitles);
   const streakBest = useStore((s) => s.streakBest);
+  const shopTitles = useStore((s) => s.shopTitles);
+  const shopTitlePick = useStore((s) => s.shopTitlePick ?? ANIMALS[0]);
 
   const [queue, setQueue] = useState<string[]>([]);
 
@@ -36,7 +39,7 @@ export default function TitleUnlock() {
     const dexPct = Math.round((Object.keys(owned ?? {}).length / TOTAL_PARTS) * 100);
     return earnedTitles(titleCtx(useStore.getState(), dexPct));
     // 依存に並べた値のどれかが動いたら計算し直す（称号の材料はこの範囲に収まる）。
-  }, [owned, stats, tasks, badges, trophies, boxTitles, streakBest]);
+  }, [owned, stats, tasks, badges, trophies, boxTitles, streakBest, shopTitles]);
 
   useEffect(() => {
     if (seen === undefined) return; // まだセーブを読み込んでいない
@@ -47,9 +50,13 @@ export default function TitleUnlock() {
     }
     const fresh = earned.filter((id) => !seen.includes(id));
     if (fresh.length === 0) return;
+    // 既読には全部入れる（コンプリート称号は動物ちがいで10件ある。1件しか
+    // 入れないと、動物を選び直すたびに「新しく取れた」とお知らせが出てしまう）。
     markTitlesSeen(fresh);
-    setQueue((q) => [...q, ...fresh.filter((id) => !q.includes(id))]);
-  }, [earned, seen, markTitlesSeen]);
+    // お知らせに出すのは1件だけ。同じ称号のお知らせが10回続くのを防ぐ。
+    const show = collapseMasters(fresh, shopTitlePick);
+    setQueue((q) => [...q, ...show.filter((id) => !q.includes(id))]);
+  }, [earned, seen, markTitlesSeen, shopTitlePick]);
 
   const id = queue[0];
   const title = id ? titleById[id] : null;

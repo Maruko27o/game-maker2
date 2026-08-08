@@ -1,6 +1,7 @@
 import type { AptGrade, BoxFrameKind, EquipFrame, FrameAward, MailItem } from '../types';
 import { APT_GRADES, STREAK_MAX } from '../types';
 import { BOX_KINDS } from '../data/boxes';
+import { ANIMALS, ANIMAL_NAME, type AnimalId } from '../data/shop';
 import { ownedLevels } from './streak';
 
 // 集められるフレームの全一覧。
@@ -26,6 +27,10 @@ export type FrameCatalogInput = {
   boxFrames: BoxFrameKind[];
   streakClaimed: number;
   aptFrames: AptGrade[];
+  /** ショップのフレームボックスで当てた動物。 */
+  shopFrames?: AnimalId[];
+  /** コンプリートフレームでいま選んでいる動物（10種そろった人だけ着けられる）。 */
+  shopFramePick?: AnimalId;
 };
 
 const BOX_HINT: Record<BoxFrameKind, string> = {
@@ -48,6 +53,24 @@ export function frameCatalog(s: FrameCatalogInput): FrameSlot[] {
   // 適性フレーム（S がいちばん豪華なので降順）。
   for (const g of [...APT_GRADES].reverse()) {
     rows.push({ key: `apt-${g}`, frame: { kind: 'apt', grade: g }, owned: s.aptFrames.includes(g), hint: `6コースの適性がすべて${g}のウマ` });
+  }
+  // ショップの動物フレーム。コンプリートは動物を選び直せるので、
+  // 目録には「いま選んでいる動物」の1枠だけを置く（10枠に増やさない）。
+  const shop = new Set(s.shopFrames ?? []);
+  const pick = s.shopFramePick ?? ANIMALS[0];
+  rows.push({
+    key: 'shop-master',
+    frame: { kind: 'animalMaster', animal: pick },
+    owned: shop.size >= ANIMALS.length,
+    hint: `動物フレームを10種そろえる（${shop.size}/${ANIMALS.length}）`,
+  });
+  for (const a of ANIMALS) {
+    rows.push({
+      key: `shop-${a}`,
+      frame: { kind: 'animal', animal: a },
+      owned: shop.has(a),
+      hint: `ショップのフレームボックスから（${ANIMAL_NAME[a]}）`,
+    });
   }
   return rows;
 }

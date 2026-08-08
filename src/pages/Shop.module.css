@@ -1,0 +1,292 @@
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100%;
+  padding-bottom: 16px;
+}
+.title {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--ink);
+  margin-bottom: 4px;
+  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.85), 0 1px 6px rgba(255, 248, 235, 0.55);
+}
+.lead {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+  background: rgba(255, 249, 238, 0.82);
+  border-radius: 9px;
+  padding: 3px 11px;
+}
+
+/* 商品カード。上端に商品の色の帯を入れて、2つを見分けやすくする。 ------------ */
+.card {
+  position: relative;
+  margin-bottom: 16px;
+  padding: 14px 13px 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 46%), var(--panel);
+  border: 3px solid var(--border-dark);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 var(--border);
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 7px;
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 3px;
+}
+.cardName {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  background: var(--panel-inner);
+  border: 2px solid var(--border-dark);
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+.cardLead {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* 見本＋説明。左に実物、右に箇条書き。 */
+.sample {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.sampleTitle {
+  flex: none;
+  width: 118px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* TitleBanner は position:absolute で親いっぱいに広がる部品なので、
+   必ず「位置指定つき・高さを決めた入れもの」に入れる。
+   これを忘れると、いちばん近い position:relative の親（＝商品カード）まで
+   帯が広がって、見出しと値段を覆ってしまう。 */
+.bannerBox,
+.resultBannerBox {
+  position: relative;
+  width: 100%;
+  height: 34px;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 2px solid var(--border-dark);
+}
+.resultBannerBox {
+  height: 46px;
+  border-radius: 11px;
+}
+.sampleName {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  text-align: center;
+}
+.detail {
+  flex: 1;
+  margin: 0;
+  padding-left: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* 集まり具合（10マス） */
+.progress {
+  margin-top: 12px;
+}
+.progressLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  margin-bottom: 5px;
+}
+.animalRow {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+}
+.got,
+.notGot {
+  aspect-ratio: 1 / 1;
+  line-height: 0;
+  border-radius: 50%;
+}
+/* まだ持っていないものは灰色にして、何が残っているかを一目で分かるようにする。 */
+.notGot {
+  filter: grayscale(1);
+  opacity: 0.32;
+}
+
+.completeNote {
+  margin: 10px 0 0;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+  color: #6b4a00;
+  background: #fff3cf;
+  border: 2px solid #d8a72f;
+  border-radius: 10px;
+}
+
+.buy {
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(180deg, var(--c2), var(--c1));
+  border: 3px solid var(--border-dark);
+  border-radius: 13px;
+  box-shadow: 0 3px 0 var(--border);
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.buy:disabled {
+  filter: grayscale(0.85);
+  opacity: 0.6;
+  cursor: default;
+}
+.refundNote {
+  margin: 7px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+/* 引いた結果 ---------------------------------------------------------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(24, 18, 10, 0.62);
+}
+.resultCard {
+  position: relative;
+  width: 100%;
+  max-width: 330px;
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 22px 16px 16px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 40%), var(--panel);
+  border: 3px solid var(--border-dark);
+  border-radius: 18px;
+  box-shadow: 0 6px 0 var(--border);
+}
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 12px;
+  margin-bottom: 10px;
+}
+.tagNew {
+  background: #d8452f;
+}
+.tagDupe {
+  background: #7a7060;
+}
+.resultArt {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0 4px;
+}
+.resultName {
+  margin: 10px 0 0;
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.resultRefund {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.completeBox {
+  margin-top: 14px;
+  padding: 12px 10px 10px;
+  background: #fff8e4;
+  border: 3px solid #d8a72f;
+  border-radius: 14px;
+}
+.completeTitle {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #a8770e;
+}
+.completeArt {
+  display: flex;
+  justify-content: center;
+  /* コンプリートフレームは王冠が枠の上へはみ出す。空けておかないと見出しに重なる。 */
+  padding-top: 12px;
+}
+.completeName {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #6b4a00;
+}
+
+.close {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink);
+  background: var(--panel-inner);
+  border: 3px solid var(--border-dark);
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--border);
+  cursor: pointer;
+}

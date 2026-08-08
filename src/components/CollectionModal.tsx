@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { TITLES, titleCtx, nextTitles, METRIC_UNIT, type TitleDef, type NumericTitleKey } from '../data/titles';
+import { visibleTitles, titleCtx, nextTitles, METRIC_UNIT, type TitleDef, type NumericTitleKey } from '../data/titles';
+import { ANIMALS } from '../data/shop';
 import { TOTAL_PARTS } from '../data/parts';
 import { frameCatalog, frameProgress, rankingFrames, type FrameSlot } from '../logic/frameCatalog';
 import type { HorseLook } from '../types';
@@ -21,12 +22,15 @@ export default function CollectionModal({ look, onClose }: { look: HorseLook; on
   const streakClaimed = useStore((s) => s.streakClaimed ?? 0);
   const owned = useStore((s) => s.owned);
   const mailbox = useStore((s) => s.mailbox ?? []);
+  const shopFrames = useStore((s) => s.shopFrames ?? []);
+  const shopFramePick = useStore((s) => s.shopFramePick ?? ANIMALS[0]);
+  const shopTitlePick = useStore((s) => s.shopTitlePick ?? ANIMALS[0]);
 
   const [tab, setTab] = useState<'frame' | 'title'>('frame');
 
   const frames = useMemo(
-    () => frameCatalog({ boxFrames, streakClaimed, aptFrames }),
-    [boxFrames, streakClaimed, aptFrames],
+    () => frameCatalog({ boxFrames, streakClaimed, aptFrames, shopFrames, shopFramePick }),
+    [boxFrames, streakClaimed, aptFrames, shopFrames, shopFramePick],
   );
   const fp = frameProgress(frames);
   // 殿堂フレームは毎月増えるので「あと何個」の数には入れない。持っているぶんだけ
@@ -37,7 +41,12 @@ export default function CollectionModal({ look, onClose }: { look: HorseLook; on
     () => titleCtx(useStore.getState(), Math.round((Object.keys(owned ?? {}).length / TOTAL_PARTS) * 100)),
     [owned],
   );
-  const titles = useMemo(() => TITLES.map((t) => ({ t, got: t.check(ctx) })), [ctx]);
+  // コンプリート称号は動物ちがいで10件あるので、1件に畳んでから並べる
+  // （畳まないと同じ称号が10行ならんで、集まり具合の分母まで狂う）。
+  const titles = useMemo(
+    () => visibleTitles(shopTitlePick).map((t) => ({ t, got: t.check(ctx) })),
+    [ctx, shopTitlePick],
+  );
   const titleHave = titles.filter((x) => x.got).length;
   // あと少しで取れる称号（近い順に3つ）。「次に何をすればいいか」を出す。
   const soon = useMemo(() => nextTitles(ctx, 3), [ctx]);

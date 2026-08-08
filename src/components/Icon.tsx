@@ -5,7 +5,7 @@ export type IconName =
   | 'leaf' | 'horse' | 'palette' | 'book' | 'flag' | 'trophy'
   | 'star' | 'account' | 'cloud' | 'gear' | 'lock' | 'gift'
   | 'refresh' | 'bolt' | 'skip' | 'medal' | 'crown' | 'clipboard' | 'sparkle' | 'swords'
-  | 'dice' | 'eye' | 'eyeOff' | 'mail' | 'ticket' | 'dyeSwap';
+  | 'dice' | 'eye' | 'eyeOff' | 'mail' | 'ticket' | 'dyeSwap' | 'shop';
 
 const P: Record<IconName, JSX.Element> = {
   // 草むら
@@ -53,6 +53,13 @@ const P: Record<IconName, JSX.Element> = {
     </g>
   ),
   crown: <path d="M3 8l3.5 3L12 5l5.5 6L21 8l-1.5 10h-15L3 8zm2 12h14v2H5v-2z" fillRule="evenodd" />,
+  // ショップ（日よけテントのついたお店）。波形のテントで「お店」だと分かるようにする。
+  shop: (
+    <path
+      d="M3 4h18l2 5c0 1.4-1.1 2.5-2.5 2.5-1 0-1.9-.6-2.3-1.5-.4.9-1.3 1.5-2.3 1.5s-1.9-.6-2.3-1.5c-.4.9-1.3 1.5-2.3 1.5s-1.9-.6-2.3-1.5c-.4.9-1.3 1.5-2.3 1.5C2 11.5 1 10.4 1 9l2-5zm1 8.8c.5.2 1 .3 1.5.3.9 0 1.7-.3 2.3-.8V20h8v-7.7c.6.5 1.4.8 2.3.8.5 0 1-.1 1.5-.3V21H4v-8.2zM10 14h4v4h-4v-4z"
+      fillRule="evenodd"
+    />
+  ),
   clipboard: <path d="M9 3h6v2h3v16H6V5h3V3zm0 4h6V5H9v2zm-1 4h8v-2H8v2zm0 4h8v-2H8v2zm0 4h5v-2H8v2z" fillRule="evenodd" />,
   mail: <path d="M3 5h18v14H3V5zm2 2v.4l7 4.6 7-4.6V7H5zm14 2.9l-7 4.6-7-4.6V17h14V9.9z" fillRule="evenodd" />,
   sparkle: <path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6zm7 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />,

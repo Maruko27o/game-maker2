@@ -3,7 +3,7 @@ import { TITLES, titleProgress, nextTitles, METRIC_UNIT, type TitleCtx } from '.
 
 const ZERO: TitleCtx = {
   races: 0, horsesFound: 0, wins: 0, betsPlaced: 0, maxOdds: 0, maxPayout: 0,
-  totalEarned: 0, arenaWins: 0, coins: 0, streakBest: 0, collectPct: 0, gpTop3: 0, gpWins: 0,
+  totalEarned: 0, arenaWins: 0, coins: 0, streakBest: 0, collectPct: 0, gpTop3: 0, gpWins: 0, shopTitles: [],
   luckyBoxTitle: false, goldBoxTitle: false,
 };
 

@@ -1,5 +1,6 @@
 import type { TitleDef } from '../data/titles';
 import BoxCrest from './BoxCrest';
+import AnimalFace from './AnimalFace';
 import styles from './TitleBanner.module.css';
 
 // 称号の背景。段（tier）が上がるほど層が増える。
@@ -39,6 +40,14 @@ export default function TitleBanner({ title, className }: { title: TitleDef; cla
         <span className={styles.crest}>
           <svg viewBox="-16 -16 32 32" width="100%" height="100%">
             <BoxCrest box={title.crest} uid={`tb-${title.id}`} r={14} />
+          </svg>
+        </span>
+      )}
+      {/* ショップの称号は、フレームと同じ動物の顔を左端に出す。 */}
+      {title.animal && (
+        <span className={styles.crest}>
+          <svg viewBox="-16 -16 32 32" width="100%" height="100%">
+            <AnimalFace id={title.animal} uid={`tb-${title.id}`} r={14} />
           </svg>
         </span>
       )}

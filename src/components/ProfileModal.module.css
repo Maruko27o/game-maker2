@@ -764,3 +764,37 @@
   width: max(100%, 44px);
   height: max(100%, 44px);
 }
+
+/* コンプリート品の動物えらび（フレーム／称号で共通） ------------------------- */
+/* 10個を1行に収める。押せることが分かるよう、選択中だけ枠を強くする。 */
+.animalRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 2px 2px;
+}
+.animalRowLabel {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.animalPicks {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+.animalPick {
+  aspect-ratio: 1 / 1;
+  border: 2px solid var(--border-dark);
+  border-radius: 10px;
+  background: var(--panel-inner);
+  padding: 2px;
+  cursor: pointer;
+  line-height: 0;
+  opacity: 0.65;
+}
+.animalOn {
+  opacity: 1;
+  border-color: var(--accent, #d8a72f);
+  box-shadow: 0 0 0 2px rgba(216, 167, 47, 0.45);
+}

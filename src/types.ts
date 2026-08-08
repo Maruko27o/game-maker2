@@ -1,6 +1,11 @@
 // Core data model. Kept intentionally small; race/vote features will extend
 // Horse later, so avoid baking in stat values now (see CLAUDE.md §6, §10).
 
+// ショップの動物（見た目だけの品）。data/shop.ts は何も import しないので、
+// ここから参照しても循環しない。
+import { isAnimalId, type AnimalId } from './data/shop';
+export type { AnimalId };
+
 export type Rarity = 'N' | 'R' | 'SR';
 export type ColorSlot = 'body' | 'mane' | 'hoof';
 export type DecoSlot = 'head' | 'face' | 'back' | 'tail';
@@ -287,8 +292,16 @@ export type AptFrame = { kind: 'apt'; grade: AptGrade };
 export type BoxFrameKind = 'lucky' | 'gold';
 export type BoxFrame = { kind: 'box'; box: BoxFrameKind };
 
-// アイコンに装備できるフレームは 殿堂 / 連勝 / 適性 のいずれか。
-export type EquipFrame = FrameAward | StreakFrame | AptFrame | BoxFrame;
+// ショップの「フレームボックス」から出る動物フレーム（10種）。
+// コインで買うだけの見た目もので、強さにも確率にも一切かかわらない。
+export type AnimalFrame = { kind: 'animal'; animal: AnimalId };
+// 10種そろえた人だけがもらえるコンプリートフレーム。
+// 動物は10種からいつでも選び直せるので、選んだ動物をフレーム自身が持つ。
+// こうしておけば、ランキングに送る JSON だけで見た目がそのまま再現できる。
+export type AnimalMasterFrame = { kind: 'animalMaster'; animal: AnimalId };
+
+// アイコンに装備できるフレームは 殿堂 / 連勝 / 適性 / ボックス / ショップ のいずれか。
+export type EquipFrame = FrameAward | StreakFrame | AptFrame | BoxFrame | AnimalFrame | AnimalMasterFrame;
 export function isStreakFrame(f: EquipFrame | null | undefined): f is StreakFrame {
   return !!f && (f as StreakFrame).kind === 'streak';
 }
@@ -297,6 +310,12 @@ export function isAptFrame(f: EquipFrame | null | undefined): f is AptFrame {
 }
 export function isBoxFrame(f: EquipFrame | null | undefined): f is BoxFrame {
   return !!f && (f as BoxFrame).kind === 'box';
+}
+export function isAnimalFrame(f: EquipFrame | null | undefined): f is AnimalFrame {
+  return !!f && (f as AnimalFrame).kind === 'animal';
+}
+export function isAnimalMasterFrame(f: EquipFrame | null | undefined): f is AnimalMasterFrame {
+  return !!f && (f as AnimalMasterFrame).kind === 'animalMaster';
 }
 
 /**
@@ -318,6 +337,13 @@ export function parseEquipFrame(v: unknown): EquipFrame | null {
   if (f.kind === 'box') {
     return f.box === 'lucky' || f.box === 'gold' ? { kind: 'box', box: f.box } : null;
   }
+  // ショップの動物フレーム／コンプリートフレーム。
+  if (f.kind === 'animal') {
+    return isAnimalId(f.animal) ? { kind: 'animal', animal: f.animal } : null;
+  }
+  if (f.kind === 'animalMaster') {
+    return isAnimalId(f.animal) ? { kind: 'animalMaster', animal: f.animal } : null;
+  }
   // 適性フレーム（6コースすべて同じ等級のウマを手に入れた記録）。
   if (f.kind === 'apt') {
     const g = f.grade;
@@ -334,6 +360,25 @@ export function parseEquipFrame(v: unknown): EquipFrame | null {
   const metric = f.metric === 'odds' || f.metric === 'payout' ? f.metric : null;
   if (typeof f.period !== 'string' || rank === null || metric === null) return null;
   return { period: f.period, rank, metric };
+}
+
+/**
+ * 2つのフレームが同じものか。
+ *
+ * parseEquipFrame と同じ理由でここに置いてある。**種類を増やしたら、この関数と
+ * parseEquipFrame の2つだけを直せばよい**ようにしておく。以前は画面側に同じ
+ * 判定が散らばっていて、種類を増やしたときに「装備中」の印だけが付かなくなった。
+ */
+export function sameFrame(a: EquipFrame | null | undefined, b: EquipFrame | null | undefined): boolean {
+  if (!a || !b) return (a ?? null) === (b ?? null);
+  if (isStreakFrame(a) || isStreakFrame(b)) return isStreakFrame(a) && isStreakFrame(b) && a.level === b.level;
+  if (isAptFrame(a) || isAptFrame(b)) return isAptFrame(a) && isAptFrame(b) && a.grade === b.grade;
+  if (isBoxFrame(a) || isBoxFrame(b)) return isBoxFrame(a) && isBoxFrame(b) && a.box === b.box;
+  if (isAnimalFrame(a) || isAnimalFrame(b)) return isAnimalFrame(a) && isAnimalFrame(b) && a.animal === b.animal;
+  if (isAnimalMasterFrame(a) || isAnimalMasterFrame(b)) {
+    return isAnimalMasterFrame(a) && isAnimalMasterFrame(b) && a.animal === b.animal;
+  }
+  return a.period === b.period && a.rank === b.rank && a.metric === b.metric;
 }
 
 // メールボックスの1通。フレーム配布のほか、今後の補填・お知らせにも使う汎用受信箱。
@@ -394,6 +439,14 @@ export type SaveData = {
   boxFrames?: BoxFrameKind[];
   /** ボックスから出た限定称号（1度きり）。称号IDではなく箱の種類で持つ。 */
   boxTitles?: BoxFrameKind[];
+  /** ショップのフレームボックスで当てた動物（10種そろうとコンプリートフレーム）。 */
+  shopFrames?: AnimalId[];
+  /** ショップの称号ボックスで当てた動物（10種そろうとコンプリート称号）。 */
+  shopTitles?: AnimalId[];
+  /** コンプリートフレームでいま選んでいる動物。10種からいつでも選び直せる。 */
+  shopFramePick?: AnimalId;
+  /** コンプリート称号でいま選んでいる動物。 */
+  shopTitlePick?: AnimalId;
   /** 「初ゲット」のお知らせを出しおわった称号ID。出したものを覚えておくだけ。 */
   seenTitles?: string[];
   /** 「総獲得賞金」のお詫びを出す対象か。この項目より前から遊んでいた人だけ true。
