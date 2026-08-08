@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useStore, bindSaveKey } from '../store';
+import { useStore, bindSaveKey, toSaveData } from '../store';
 import type { SaveData } from '../types';
 import {
   initAuth,
@@ -23,54 +23,18 @@ import { reconcile, resolvePushConflict, guardEmptyPush } from '../logic/cloudRe
 import { randomUsername } from '../logic/username';
 import { NOTICE_TOTAL_EARNED } from '../data/notices';
 
-// Extract the persisted shape from the live store state.
+/**
+ * クラウドへ送るセーブ。**作り方は store の toSaveData ひとつだけ**を使う。
+ *
+ * 以前はここに同じ「項目を並べた表」をもう1つ持っていた。新しい項目を足したとき
+ * store 側だけ直してここを直し忘れ、**端末には保存されるのにクラウドには送られない**
+ * 状態になった。次の同期で古い中身に上書きされ、ショップで買った品とカスタムベットが
+ * 消えた（コインは両方の表にあったので減ったまま残り、「買ったのに無くなった」形に
+ * なった）。表を2つ持たないことが唯一の対策なので、ここでは絶対に項目を並べ直さない。
+ */
 function snapshot(): SaveData {
   const s = useStore.getState();
-  return {
-    version: 6,
-    owned: s.owned,
-    horses: s.horses,
-    energy: s.energy,
-    energyUpdatedAt: s.energyUpdatedAt,
-    trophies: s.trophies,
-    badges: s.badges,
-    winStreaks: s.winStreaks,
-    soloStreak: s.soloStreak ?? 0,
-    streakBest: s.streakBest ?? 0,
-    streakClaimed: s.streakClaimed ?? 0,
-    streakRuleResetDone: s.streakRuleResetDone ?? false,
-    items: s.items,
-    raceRecords: s.raceRecords,
-    gpUnlocked: s.gpUnlocked,
-    freeRebalance: s.freeRebalance,
-    freeRename: s.freeRename,
-    coins: s.coins,
-    refineTickets: s.refineTickets ?? 0,
-    dyes: s.dyes ?? {},
-    login: s.login,
-    bets: s.bets,
-    maxHorses: s.maxHorses,
-    team: s.team ?? [],
-    daily: s.daily,
-    tasks: s.tasks,
-    stats: s.stats,
-    avatarHorseId: s.avatarHorseId,
-    displayTrophies: s.displayTrophies,
-    mailbox: s.mailbox ?? [],
-    equippedFrame: s.equippedFrame ?? null,
-    aptFrames: s.aptFrames ?? [],
-    aptPending: s.aptPending ?? [],
-    boxFrames: s.boxFrames ?? [],
-    boxTitles: s.boxTitles ?? [],
-    seenTitles: s.seenTitles ?? [],
-    earnedNoticeDue: s.earnedNoticeDue,
-    equippedTitle: s.equippedTitle ?? null,
-    customBet: s.customBet ?? null,
-    raceSession: s.raceSession ?? null,
-    arena: s.arena ?? null,
-    farmClaimedAt: s.farmClaimedAt, // 牧場の放置収入アンカー（クラウドでも保持しオフライン加算を保つ）
-    savedAt: s.savedAt,
-  };
+  return toSaveData(s, s.savedAt);
 }
 
 // Headless: connects the game store to the cloud when signed in. Optimistic
