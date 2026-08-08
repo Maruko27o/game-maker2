@@ -136,7 +136,7 @@ export default function Collection() {
                 <div className={styles.thumb}>
                   {/* 画面に入ってから描く。絵そのものは今までと同じで、
                       「まだ見えていないマスを先に作らない」だけ。 */}
-                  <LazyThumb size={78}>
+                  <LazyThumb>
                     {has ? (
                       <PartThumb id={e.id} size={78} />
                     ) : (

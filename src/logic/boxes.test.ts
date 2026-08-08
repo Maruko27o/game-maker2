@@ -88,24 +88,30 @@ describe('週末のボックス', () => {
     for (let i = 1; i < amounts.length; i++) expect(amounts[i]).toBeGreaterThan(amounts[i - 1]);
   });
 
-  it('ゴールドボックスの上位3段はご指定どおりの割合（1% / 3% / 10%）', () => {
+  it('100,000コインの1%は残っている（夢のある一撃は消さない）', () => {
     const rows = dropTable(BOXES.gold);
     const pct = (label: string) => rows.find((r) => r.label === label)!.pct;
     // 限定枠(0.4%)を除いたぶんが配られるので、ぴったり1%ではなく 0.996% になる
     expect(pct('コイン 100,000')).toBeCloseTo(1, 1);
-    expect(pct('コイン 25,000')).toBeCloseTo(3, 1);
-    expect(pct('コイン 10,000')).toBeCloseTo(10, 1);
+    expect(pct('コイン 25,000')).toBeCloseTo(1, 1);
+    expect(pct('コイン 10,000')).toBeCloseTo(3, 1);
   });
 
-  it('ゴールドボックス1箱あたりの平均は 4,000 コイン前後', () => {
-    // 出しすぎないことの歯止め。中身をいじったときにここで気づけるようにする。
+  it('ゴールドボックス1箱あたりの平均は 2,000 コイン強', () => {
+    // 出しすぎないことの歯止め。
+    //
+    // 平均 3,730 だったころは、10個開ければ約37,000コイン。対戦の優勝賞金 12,000 を
+    // ボックス3個ぶんで超えてしまい、勝ち抜きトーナメントを戦う意味が薄かった。
+    // 100,000の1%（平均への寄与1,000）は残したまま、下の段だけ絞ってある。
     const total = BOXES.gold.slots.reduce((n, s) => n + s.weight, 0);
     const avg = BOXES.gold.slots.reduce(
       (n, s) => n + (s.reward.type === 'coins' ? s.reward.amount : 0) * (s.weight / total),
       0,
     );
-    expect(avg).toBeGreaterThan(3_000);
-    expect(avg).toBeLessThan(4_500);
+    expect(avg).toBeGreaterThan(2_000);
+    expect(avg).toBeLessThan(2_600);
+    // 対戦の優勝賞金(12,000)を超えるには、ボックスが5個以上いる
+    expect(avg * 5).toBeLessThan(12_000);
   });
 
   it('必ず何かが当たる（空っぽで返らない）', () => {
