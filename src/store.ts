@@ -567,6 +567,70 @@ export function migrate(parsed: unknown): { data: SaveData; migrated: boolean } 
   };
 }
 
+/**
+ * ストアの状態から、保存する形（SaveData）を作る **唯一の場所**。
+ *
+ * ここを1つにしておくのが大事。以前は同じ「項目を並べた表」が store.ts と
+ * CloudSync.tsx の2か所にあり、新しい項目を足したときに store 側だけ直して
+ * クラウド側を直し忘れた。その結果 **端末には保存されるのにクラウドには送られず、
+ * 次の同期で古い中身に上書きされて消える**（ショップで買った品とカスタムベットが
+ * 実際にこれで消えた。コインは両方の表にあったので減ったまま残った）。
+ *
+ * **保存する項目を増やすときは、この関数だけを直すこと。**
+ * 抜けがあれば saveSnapshot のテストが落ちる。
+ */
+export function toSaveData(next: SaveData, savedAt: number): SaveData {
+  return {
+      version: 6,
+    earnedNoticeDue: next.earnedNoticeDue,
+    owned: next.owned,
+    horses: next.horses,
+    energy: next.energy,
+    energyUpdatedAt: next.energyUpdatedAt,
+    trophies: next.trophies,
+    badges: next.badges,
+    winStreaks: next.winStreaks,
+    soloStreak: next.soloStreak ?? 0,
+    streakBest: next.streakBest ?? 0,
+    streakClaimed: next.streakClaimed ?? 0,
+    streakRuleResetDone: next.streakRuleResetDone ?? false,
+    items: next.items,
+    raceRecords: next.raceRecords,
+    gpUnlocked: next.gpUnlocked,
+    freeRebalance: next.freeRebalance,
+    freeRename: next.freeRename ?? true,
+    coins: next.coins,
+    refineTickets: next.refineTickets ?? 0,
+    dyes: next.dyes ?? {},
+    login: next.login,
+    bets: next.bets,
+    maxHorses: next.maxHorses,
+    team: next.team ?? [],
+    daily: next.daily,
+    tasks: next.tasks,
+    stats: next.stats,
+    avatarHorseId: next.avatarHorseId,
+    displayTrophies: next.displayTrophies,
+    mailbox: next.mailbox ?? [],
+    equippedFrame: next.equippedFrame ?? null,
+    aptFrames: next.aptFrames ?? [],
+    aptPending: next.aptPending ?? [],
+    boxFrames: next.boxFrames ?? [],
+    boxTitles: next.boxTitles ?? [],
+    shopFrames: next.shopFrames ?? [],
+    shopTitles: next.shopTitles ?? [],
+    shopFramePick: next.shopFramePick ?? ANIMALS[0],
+    shopTitlePick: next.shopTitlePick ?? ANIMALS[0],
+    seenTitles: next.seenTitles ?? [],
+    equippedTitle: next.equippedTitle ?? null,
+    customBets: next.customBets ?? [],
+    raceSession: next.raceSession ?? null,
+    arena: next.arena ?? freshArena(),
+    farmClaimedAt: next.farmClaimedAt ?? trustedNow(),
+    savedAt,
+  };
+}
+
 function loadKey(key: string): { data: SaveData; migrated: boolean } {
   try {
     const raw = localStorage.getItem(key);
@@ -788,55 +852,7 @@ export const useStore = create<Store>((set, get) => {
     }
     const savedAt = Date.now();
     const next = { ...get(), ...partial, savedAt } as Store;
-    const data: SaveData = {
-      version: 6,
-      earnedNoticeDue: next.earnedNoticeDue,
-      owned: next.owned,
-      horses: next.horses,
-      energy: next.energy,
-      energyUpdatedAt: next.energyUpdatedAt,
-      trophies: next.trophies,
-      badges: next.badges,
-      winStreaks: next.winStreaks,
-      soloStreak: next.soloStreak ?? 0,
-      streakBest: next.streakBest ?? 0,
-      streakClaimed: next.streakClaimed ?? 0,
-      streakRuleResetDone: next.streakRuleResetDone ?? false,
-      items: next.items,
-      raceRecords: next.raceRecords,
-      gpUnlocked: next.gpUnlocked,
-      freeRebalance: next.freeRebalance,
-      freeRename: next.freeRename ?? true,
-      coins: next.coins,
-      refineTickets: next.refineTickets ?? 0,
-      dyes: next.dyes ?? {},
-      login: next.login,
-      bets: next.bets,
-      maxHorses: next.maxHorses,
-      team: next.team ?? [],
-      daily: next.daily,
-      tasks: next.tasks,
-      stats: next.stats,
-      avatarHorseId: next.avatarHorseId,
-      displayTrophies: next.displayTrophies,
-      mailbox: next.mailbox ?? [],
-      equippedFrame: next.equippedFrame ?? null,
-      aptFrames: next.aptFrames ?? [],
-      aptPending: next.aptPending ?? [],
-      boxFrames: next.boxFrames ?? [],
-      boxTitles: next.boxTitles ?? [],
-      shopFrames: next.shopFrames ?? [],
-      shopTitles: next.shopTitles ?? [],
-      shopFramePick: next.shopFramePick ?? ANIMALS[0],
-      shopTitlePick: next.shopTitlePick ?? ANIMALS[0],
-      seenTitles: next.seenTitles ?? [],
-      equippedTitle: next.equippedTitle ?? null,
-      customBets: next.customBets ?? [],
-      raceSession: next.raceSession ?? null,
-      arena: next.arena ?? freshArena(),
-      farmClaimedAt: next.farmClaimedAt ?? trustedNow(),
-      savedAt,
-    };
+    const data: SaveData = toSaveData(next, savedAt);
     persist(data);
     set({ ...(partial as Partial<Store>), savedAt });
   };

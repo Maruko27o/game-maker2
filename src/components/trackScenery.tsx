@@ -156,14 +156,23 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
   const [c1, c2] = isCircuit ? SURFACE.circuit : SURFACE[course.surface] ?? SURFACE.turf;
 
   // コース別の空気感（空・遠景・地面の色みと、名物の飾り）。夜は別処理。
-  type Theme = { sky: [string, string]; mtnA: string; mtnB: string; tree: string; bg: string; sun?: boolean; cacti?: boolean; pines?: boolean; puddles?: boolean };
-  const THEME: Record<string, Theme> = {
-    dirt: { sky: ['#c7c1ab', '#e4ddc6'], mtnA: '#9a8f78', mtnB: '#877c66', tree: '#8d855f', bg: '#b4a37f', puddles: true },
-    sand: { sky: ['#ffd49a', '#ffe9c6'], mtnA: '#e3c088', mtnB: '#d5ac6e', tree: '#dcbe80', bg: '#e6ce96', sun: true, cacti: true },
-    trail: { sky: ['#cfe6f0', '#e1eecb'], mtnA: '#6f9a6a', mtnB: '#5b8857', tree: '#4d8843', bg: '#9abf6a', pines: true },
+  // infield … コースの内側（ラチの中）の地面の色。
+  // lawn   … 芝のコースか。芝でないコース（砂・ダート）に緑の刈り込み模様や
+  //          花壇を描くと、その場所だけ別のコースのように浮いてしまう。
+  type Theme = {
+    sky: [string, string]; mtnA: string; mtnB: string; tree: string; bg: string;
+    infield: string; lawn: boolean;
+    sun?: boolean; cacti?: boolean; pines?: boolean; puddles?: boolean;
   };
-  const theme: Theme = THEME[course.id] ?? { sky: ['#bfe3f2', '#e6f2d6'], mtnA: '#9fc4a0', mtnB: '#8fb992', tree: '#7bab5e', bg: '#a9cf7a' };
+  const THEME: Record<string, Theme> = {
+    dirt: { sky: ['#c7c1ab', '#e4ddc6'], mtnA: '#9a8f78', mtnB: '#877c66', tree: '#8d855f', bg: '#b4a37f', infield: '#b6a179', lawn: false, puddles: true },
+    sand: { sky: ['#ffd49a', '#ffe9c6'], mtnA: '#e3c088', mtnB: '#d5ac6e', tree: '#dcbe80', bg: '#e6ce96', infield: '#e2c88f', lawn: false, sun: true, cacti: true },
+    trail: { sky: ['#cfe6f0', '#e1eecb'], mtnA: '#6f9a6a', mtnB: '#5b8857', tree: '#4d8843', bg: '#9abf6a', infield: '#7fae5a', lawn: true, pines: true },
+  };
+  const theme: Theme = THEME[course.id] ?? { sky: ['#bfe3f2', '#e6f2d6'], mtnA: '#9fc4a0', mtnB: '#8fb992', tree: '#7bab5e', bg: '#a9cf7a', infield: '#8fc25c', lawn: true };
   const horizon = vb.y + standsH * 0.72; // where stands meet the track apron
+  // 内側の飾りを切り抜くための id。コースごとに変えて、同じ画面に2つ出ても混ざらないように。
+  const infieldClipId = `infield-${course.id}`;
 
   // --- mowing stripes: alternating thick strokes on short centerline arcs ---
   const stripeLen = 13;
@@ -262,7 +271,7 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
   // --- real-racecourse infield: mown rings (lawn texture) + a hedge just inside
   //     the rail + scattered shrubs, so the ring between the fence and the pond
   //     isn't bare. ---
-  const mowRings = isCircuit
+  const mowRings = isCircuit || !theme.lawn
     ? []
     : [
         { rx: track.straight * 0.62 + 8, ry: track.radius * 0.8, c: '#84b953' },
@@ -460,17 +469,29 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
           a clean white line and isn't crowded by the green hedge). */}
       <path d={edgePath(track, halfW + 0.3)} fill="none" stroke="#f4f1e6" strokeWidth={0.7} />
 
-      {/* infield: grass hole + mown rings + hedge ring + shrubs + tufts, detailed
-          pond (rim, ripples, lily pads, reeds, shimmering reflection), flowerbeds */}
-      <path d={edgePath(track, -halfW - 1.3)} fill={isCircuit ? '#3f4a3c' : '#8fc25c'} stroke="none" />
-      {/* concentric mown rings (lawn texture) */}
-      <g opacity={isCircuit ? 0 : 0.55}>{mowRings}</g>
-      {/* flower-border planting inside the inner rail so the fence-to-pond ring isn't bare */}
-      {!isCircuit && <g>{planting}</g>}
-      {/* infield decor — desert=cacti, trail=pines, dirt=puddles(+bushes), else bushes */}
-      {!isCircuit && <g>{theme.cacti ? cacti : theme.pines ? [...bushes, ...infieldPines] : bushes}</g>}
-      {!isCircuit && theme.puddles && <g>{puddles}</g>}
-      <g>{tufts}</g>
+      {/* infield: ground + mown rings + hedge ring + shrubs + tufts, detailed
+          pond (rim, ripples, lily pads, reeds, shimmering reflection), flowerbeds
+
+          ■ 内側の飾りは必ず内側だけに収める
+          刈り込みリングなどは「オーバルの中心に置いた楕円」で描いていて、コースの
+          形に沿っていない。半径がコースの内側の幅より大きくなると、そのぶんが
+          走路の上へはみ出す（砂原デザートで緑の模様が路面に乗っていたのはこれ）。
+          数字の調整で押さえこむのではなく、**内側の形そのもので切り抜く**。
+          こうしておけば、これから飾りを足しても走路には絶対に出てこない。 */}
+      <clipPath id={infieldClipId}>
+        <path d={edgePath(track, -halfW - 1.3)} />
+      </clipPath>
+      <path d={edgePath(track, -halfW - 1.3)} fill={isCircuit ? '#3f4a3c' : theme.infield} stroke="none" />
+      <g clipPath={`url(#${infieldClipId})`}>
+        {/* concentric mown rings (lawn texture) — 芝のコースだけ */}
+        <g opacity={isCircuit ? 0 : 0.55}>{mowRings}</g>
+        {/* flower-border planting inside the inner rail so the fence-to-pond ring isn't bare。
+            砂・ダートでは緑の花壇を出さない（その場所だけ別のコースに見えてしまう）。 */}
+        {!isCircuit && theme.lawn && <g>{planting}</g>}
+        {/* infield decor — desert=cacti, trail=pines, dirt=puddles(+bushes), else bushes */}
+        {!isCircuit && <g>{theme.cacti ? cacti : theme.pines ? [...bushes, ...infieldPines] : bushes}</g>}
+        {!isCircuit && theme.puddles && <g>{puddles}</g>}
+        {theme.lawn && <g>{tufts}</g>}
       {/* pond body + shadow rim */}
       <ellipse cx={cx} cy={cy} rx={pondRx} ry={pondRy} fill={isCircuit ? '#3b4a63' : '#5aa0b0'} opacity={0.5} />
       <ellipse cx={cx} cy={cy - 0.4} rx={pondRx - 0.5} ry={pondRy - 0.6} fill="url(#pond)" />
@@ -482,8 +503,9 @@ export function buildScenery(track: Track, course: Course, vb: VB, standsH: numb
       <ellipse className={styles.shimmer} style={{ animationDelay: '1.4s' }} cx={cx + pondRx * 0.25} cy={pondRy * 0.28} rx={pondRx * 0.2} ry={1.0} fill="#ffffff" />
       {lilypad(-pondRx * 0.4, pondRy * 0.35, 1.8, true, 'lp0')}
       {lilypad(pondRx * 0.45, -pondRy * 0.1, 1.4, false, 'lp1')}
-      <g>{reeds}</g>
-      <g>{flowers}</g>
+        <g>{reeds}</g>
+        {theme.lawn && <g>{flowers}</g>}
+      </g>
 
       {/* inner rail — drawn last, on top of the infield/hedge, so it always reads as
           a clean white line (a soft shadow just inside gives it a little lift). */}
