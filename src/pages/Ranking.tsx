@@ -139,8 +139,9 @@ export default function Ranking() {
             const t = r.title ? titleById[r.title] : undefined;
             if (!t) return null;
             return (
+              // ランキングでは段の星を出さない。他の人の一覧で見たいのは
+              // 「どんな称号か」であって難易度ではなく、星が並ぶと名前が読みにくい。
               <span className={styles.rowTitle} style={{ ['--tc' as string]: t.colors[0] }}>
-                <span className={styles.rowTitleStar} aria-hidden>{'★'.repeat(t.tier)}</span>
                 {t.name}
               </span>
             );
