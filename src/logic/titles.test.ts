@@ -1,9 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { TITLES, TIER_INFO, activeTitle, earnedTitles, type TitleCtx } from '../data/titles';
+import {
+  TITLES,
+  TIER_INFO,
+  activeTitle,
+  earnedTitles,
+  visibleTitles,
+  collapseMasters,
+  titleById,
+  shopTitleId,
+  masterTitleId,
+  type TitleCtx,
+} from '../data/titles';
+import { ANIMALS } from '../data/shop';
 
 const ZERO: TitleCtx = {
   races: 0, horsesFound: 0, wins: 0, betsPlaced: 0, maxOdds: 0, maxPayout: 0,
-  totalEarned: 0, arenaWins: 0, coins: 0, streakBest: 0, collectPct: 0, gpTop3: 0, gpWins: 0,
+  totalEarned: 0, arenaWins: 0, coins: 0, streakBest: 0, collectPct: 0, gpTop3: 0, gpWins: 0, shopTitles: [],
   luckyBoxTitle: false, goldBoxTitle: false,
 };
 
@@ -174,5 +186,84 @@ describe('週末ボックスの限定称号', () => {
     expect(gold.crest).toBe('gold');
     // 紋章を出すのはこの2つだけ（他の称号に混ざらない）
     expect(TITLES.filter((t) => t.crest).map((t) => t.id).sort()).toEqual(['box_gold_hoof', 'box_lucky_tail']);
+  });
+});
+
+// ── ショップの称号 ───────────────────────────────────────────
+describe('ショップの称号', () => {
+  it('10種の動物称号は、当てた動物だけ達成になる', () => {
+    const ctx: TitleCtx = { ...ZERO, shopTitles: ['cat', 'frog'] };
+    const got = earnedTitles(ctx);
+    expect(got).toContain(shopTitleId('cat'));
+    expect(got).toContain(shopTitleId('frog'));
+    expect(got).not.toContain(shopTitleId('bear'));
+  });
+
+  it('コンプリート称号は10種そろって初めて達成になる', () => {
+    const nine = ANIMALS.slice(0, ANIMALS.length - 1);
+    expect(titleById[masterTitleId('cat')].check({ ...ZERO, shopTitles: [...nine] })).toBe(false);
+    expect(titleById[masterTitleId('cat')].check({ ...ZERO, shopTitles: [...ANIMALS] })).toBe(true);
+  });
+
+  it('コンプリート称号は動物ちがいで10件あるが、一覧では1件に畳む', () => {
+    // 畳まないと、同じ称号が10行ならんで「◯個中◯個」の数まで10倍に狂う。
+    const masters = TITLES.filter((t) => t.master);
+    expect(masters).toHaveLength(ANIMALS.length);
+    for (const a of ANIMALS) {
+      const list = visibleTitles(a);
+      expect(list.filter((t) => t.master)).toHaveLength(1);
+      expect(list.filter((t) => t.master)[0].animal).toBe(a);
+      expect(list).toHaveLength(TITLES.length - (ANIMALS.length - 1));
+    }
+  });
+
+  it('ぜんぶ集めた人の達成数は、畳んだ一覧でも1つぶんだけ増える', () => {
+    const before = visibleTitles('cat').filter((t) => t.check({ ...ZERO, shopTitles: [] })).length;
+    const after = visibleTitles('cat').filter((t) => t.check({ ...ZERO, shopTitles: [...ANIMALS] })).length;
+    // 動物10種 ＋ コンプリート1つ ＝ 11。
+    expect(after - before).toBe(ANIMALS.length + 1);
+  });
+
+  it('ショップの称号には、左端に出す動物が必ず入っている', () => {
+    for (const a of ANIMALS) {
+      expect(titleById[shopTitleId(a)].animal).toBe(a);
+      expect(titleById[masterTitleId(a)].animal).toBe(a);
+    }
+  });
+});
+
+describe('コンプリート称号の自動えらび', () => {
+  const ALL: TitleCtx = { ...ZERO, shopTitles: [...ANIMALS] };
+
+  it('未設定のとき、選んでいる動物のコンプリート称号になる', () => {
+    // pick を渡さないと一覧の先頭（ねこ）が選ばれ、「選んだ動物とちがう」ように見える。
+    expect(activeTitle(null, ALL, 'penguin').id).toBe(masterTitleId('penguin'));
+    expect(activeTitle(null, ALL, 'frog').id).toBe(masterTitleId('frog'));
+  });
+
+  it('IDで指定されていれば、その動物のまま出る（他の人の画面でも同じ）', () => {
+    expect(activeTitle(masterTitleId('bear'), ALL, 'cat').id).toBe(masterTitleId('bear'));
+  });
+
+  it('まだそろっていなければコンプリート称号は選ばれない', () => {
+    expect(activeTitle(masterTitleId('bear'), ZERO, 'bear').id).toBe('rookie');
+  });
+});
+
+describe('コンプリート称号のお知らせ', () => {
+  it('10件そろっても、お知らせに出るのは選んだ動物の1件だけ', () => {
+    // 10種そろえた瞬間、達成した称号は「コンプリート称号 ×10」になる。
+    // そのまま流すと同じお知らせが10回続く。
+    const fresh = ANIMALS.map((a) => masterTitleId(a));
+    expect(collapseMasters(fresh, 'bear')).toEqual([masterTitleId('bear')]);
+  });
+
+  it('ふつうの称号は畳まれない', () => {
+    const ids = ['rookie', 'first_win', ...ANIMALS.map((a) => shopTitleId(a))];
+    expect(collapseMasters(ids, 'cat')).toEqual(ids);
+  });
+
+  it('知らないIDが混ざっていても落とさない（古いセーブ対策）', () => {
+    expect(collapseMasters(['rookie', 'no_such_title'], 'cat')).toEqual(['rookie', 'no_such_title']);
   });
 });

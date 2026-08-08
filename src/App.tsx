@@ -24,6 +24,7 @@ const NAV: { to: string; label: string; icon: IconName; end?: boolean }[] = [
   { to: '/collection', label: '図鑑', icon: 'book' },
   { to: '/race', label: 'レース', icon: 'flag' },
   { to: '/ranking', label: 'ランキング', icon: 'trophy' },
+  { to: '/shop', label: 'ショップ', icon: 'shop' },
 ];
 
 // Which screen's fixed background accent to show. The accent lives on <main>
@@ -35,6 +36,7 @@ function screenOf(pathname: string): string {
   if (pathname.startsWith('/race')) return 'race';
   if (pathname.startsWith('/ranking')) return 'ranking';
   if (pathname.startsWith('/hall')) return 'ranking';
+  if (pathname.startsWith('/shop')) return 'shop';
   return 'grass';
 }
 

@@ -12,6 +12,7 @@ import type { SaveData } from '../types';
 // 揃えるのは「難しさ ↔ 段 ↔ 背景の格」の対応であって、段ごとの点数ではない。
 
 import type { BoxFrameKind } from '../types';
+import { ANIMALS, ANIMAL_NAME, SHOP_COMPLETE_TITLE_NAME, shopTitleName, type AnimalId } from './shop';
 
 export type TitleTier = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -35,6 +36,12 @@ export type TitleDef = {
   colors: [string, string];
   /** 週末ボックスの称号だけ、左端に同じイベントの紋章（ウマの顔）を出す。 */
   crest?: BoxFrameKind;
+  /** ショップの称号だけ、左端に動物の顔を出す。 */
+  animal?: AnimalId;
+  /** ショップのコンプリート称号。動物ちがいで10件あるが、選んで着けるのは1つ。
+   *  称号はIDの文字列だけがランキングに送られるので、**選んだ動物をIDに含める**。
+   *  こうしておけば、他の人の画面でも選んだ動物のまま表示される。 */
+  master?: boolean;
   /** 「◯◯を N 回」型の称号は、どの値をいくつまで伸ばすかを持つ。
    *  進み具合（あと何回か）を出すのに使う。運で決まる称号には無い。 */
   metric?: NumericTitleKey;
@@ -67,6 +74,8 @@ export type TitleCtx = {
   // セーブのフラグをそのまま持ち込む。
   luckyBoxTitle: boolean;
   goldBoxTitle: boolean;
+  // ショップの称号ボックスで当てた動物。数える対象ではないので、そのまま持ち込む。
+  shopTitles: AnimalId[];
 };
 
 export function titleCtx(s: SaveData, collectPct: number): TitleCtx {
@@ -101,8 +110,60 @@ export function titleCtx(s: SaveData, collectPct: number): TitleCtx {
     gpWins: (s.trophies ?? []).filter((t) => t.rank === 1).length,
     luckyBoxTitle: (s.boxTitles ?? []).includes('lucky'),
     goldBoxTitle: (s.boxTitles ?? []).includes('gold'),
+    shopTitles: s.shopTitles ?? [],
   };
 }
+
+// ── ショップの称号 ───────────────────────────────────────────
+// 買って集めるものなので、段は「やり込み(3)」に置く。10種そろえたコンプリートだけ
+// 最上段(6)。10種そろえるには平均でおよそ29回引く必要があり（返却を差し引いても
+// 600万コイン規模）、伝説の段に見合う。
+//
+// コンプリートは動物ちがいで10件あるが、条件は同じ（10種そろえた）。
+// 選んで着けるのは常に1つで、称号を選ぶ画面では visibleTitles() が1件に畳む。
+export const SHOP_TITLE_TIER: TitleTier = 3;
+export const SHOP_MASTER_TITLE_TIER: TitleTier = 6;
+
+/** 動物称号のID。 */
+export const shopTitleId = (a: AnimalId) => `shop_${a}`;
+/** コンプリート称号のID（選んだ動物ごとに1つ）。 */
+export const masterTitleId = (a: AnimalId) => `shop_master_${a}`;
+
+/** 動物ごとの色（背景と名札）。フレームの色とそろえる。 */
+const SHOP_TITLE_COLORS: Record<AnimalId, [string, string]> = {
+  cat: ['#e0518c', '#ffd3e4'],
+  dog: ['#7d4a1c', '#f0d6b4'],
+  rabbit: ['#6b56a8', '#e6e0f7'],
+  bear: ['#8a6220', '#f5dcae'],
+  fox: ['#d2691a', '#ffd9b8'],
+  panda: ['#3f6b3c', '#dff0dc'],
+  chick: ['#c9a10e', '#fff0b8'],
+  frog: ['#3a7a20', '#d6f2c8'],
+  penguin: ['#2f4d7a', '#d6e4f7'],
+  squirrel: ['#8a3f18', '#f7d9c8'],
+};
+
+const SHOP_TITLES: TitleDef[] = [
+  ...ANIMALS.map<TitleDef>((a) => ({
+    id: shopTitleId(a),
+    name: shopTitleName(a),
+    desc: `ショップの称号ボックスから（10種の1つ）`,
+    tier: SHOP_TITLE_TIER,
+    colors: SHOP_TITLE_COLORS[a],
+    animal: a,
+    check: (c) => c.shopTitles.includes(a),
+  })),
+  ...ANIMALS.map<TitleDef>((a) => ({
+    id: masterTitleId(a),
+    name: SHOP_COMPLETE_TITLE_NAME,
+    desc: `称号ボックスの10種を全部集めた証（いまは ${ANIMAL_NAME[a]}）`,
+    tier: SHOP_MASTER_TITLE_TIER,
+    colors: ['#7a3fd0', '#ffd76a'],
+    animal: a,
+    master: true,
+    check: (c) => new Set(c.shopTitles).size >= ANIMALS.length,
+  })),
+];
 
 export const TITLES: TitleDef[] = [
   // ── 1段：ほぼ全員 ───────────────────────────────────────────
@@ -172,7 +233,37 @@ export const TITLES: TitleDef[] = [
   // 色はそれぞれの限定フレームとそろえる（並べたとき同じイベントのものだと分かる）。
   { id: 'box_lucky_tail', name: '幸運のしっぽ', desc: 'ラッキーボックスから 0.3% で出る', tier: 6, colors: ['#e0518c', '#ffd9a8'], crest: 'lucky', check: (c) => c.luckyBoxTitle },
   { id: 'box_gold_hoof', name: '黄金のひづめ', desc: 'ゴールドボックスから 0.3% で出る', tier: 6, colors: ['#5aa8c8', '#eafaff'], crest: 'gold', check: (c) => c.goldBoxTitle },
+
+  // ショップ（コインで買う見た目もの）。
+  ...SHOP_TITLES,
 ];
+
+/**
+ * 称号を選ぶ画面に出す一覧。
+ *
+ * コンプリート称号は動物ちがいで10件あるが、中身は同じ1つの称号なので、
+ * **選んでいる動物のぶんだけを残す**。そうしないと同じ称号が10行ならんで、
+ * 「◯個中◯個」の数まで10倍に狂う。動物の選び直しは、その1行の中でする。
+ */
+export function visibleTitles(pick: AnimalId): TitleDef[] {
+  return TITLES.filter((t) => !t.master || t.animal === pick);
+}
+
+/**
+ * 称号IDの並びから、コンプリート称号を1件に畳む。
+ *
+ * 10種そろえた瞬間、達成した称号は「コンプリート称号 ×10（動物ちがい）」に
+ * なる。そのまま初ゲットのお知らせに流すと、同じ称号のお知らせが10回続く。
+ * **既読の記録には10件すべてを入れて、お知らせに出すのは1件だけ**にすること。
+ * 既読を1件しか入れないと、動物を選び直すたびに「新しく取れた」と誤解して
+ * お知らせが出てしまう。
+ */
+export function collapseMasters(ids: string[], pick: AnimalId): string[] {
+  return ids.filter((id) => {
+    const t = titleById[id];
+    return !t?.master || t.animal === pick;
+  });
+}
 
 export const titleById: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));
 
@@ -181,11 +272,19 @@ export function earnedTitles(c: TitleCtx): string[] {
   return TITLES.filter((t) => t.check(c)).map((t) => t.id);
 }
 
-/** 装備中の称号。未設定・未達成なら、達成しているうちで一番上の段のものを返す。 */
-export function activeTitle(equipped: string | null | undefined, c: TitleCtx): TitleDef {
+/**
+ * 装備中の称号。未設定・未達成なら、達成しているうちで一番上の段のものを返す。
+ *
+ * @param pick コンプリート称号で選んでいる動物。自動で選ばれるとき、10件ある
+ *   コンプリート称号のうち**その動物のもの**を返すために使う。渡さないと、
+ *   一覧の先頭（ねこ）が選ばれて「選んだはずの動物とちがう」ように見える。
+ *   他人の称号を描くときは equipped にIDが入っているので、渡さなくてよい。
+ */
+export function activeTitle(equipped: string | null | undefined, c: TitleCtx, pick?: AnimalId): TitleDef {
   const eq = equipped ? titleById[equipped] : undefined;
   if (eq && eq.check(c)) return eq;
-  const owned = TITLES.filter((t) => t.check(c));
+  const list = pick ? visibleTitles(pick) : TITLES;
+  const owned = list.filter((t) => t.check(c));
   return owned.reduce((best, t) => (t.tier > best.tier ? t : best), TITLES[0]);
 }
 

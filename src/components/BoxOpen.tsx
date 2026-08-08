@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../store';
-import { BOXES, RARITY_FX, FLASH_STEPS, FLASH_MS, BOX_FRAME_NAME, BOX_TITLE_NAME, BOX_TITLE_ID, type BoxKind } from '../data/boxes';
+import { BOXES, RARITY_FX, FLASH_STEPS, ALL_FLASH_STEPS as ALL_STEPS, FLASH_MS, BOX_FRAME_NAME, BOX_TITLE_NAME, BOX_TITLE_ID, type BoxKind } from '../data/boxes';
 import { titleById } from '../data/titles';
 import { tallyBoxResults, type BoxResult, type BoxTally } from '../logic/boxes';
 import CoinIcon from './CoinIcon';
@@ -129,16 +129,25 @@ export default function BoxOpen({
                   ))}
                 </span>
               )}
-              {/* いま何段目か。光った数がそのままレアさになる。 */}
-              {phase === 'charging' && steps.length > 1 && (
+              {/* いま何段目か。光った数がそのままレアさになる。
+                  ■ 点の数は**必ず全段ぶん**出す（結果によって変えない）
+                  以前は「その結果の段数ぶん」だけ点を並べていたので、光り出す前に
+                  点を数えるだけで当たりの大きさが分かってしまった（ノーマルなら
+                  そもそも点が出ない、エピックなら4つ並ぶ）。**先が見えないこと**が
+                  この演出の値打ちなので、枠は全部出しておいて、光った数だけで示す。 */}
+              {phase === 'charging' && (
                 <span className={styles.steps} aria-hidden>
-                  {steps.map((r, i) => (
-                    <span
-                      key={r}
-                      className={`${styles.stepDot} ${i <= step ? styles.stepOn : ''}`}
-                      style={{ ['--c' as string]: RARITY_FX[r].ring }}
-                    />
-                  ))}
+                  {ALL_STEPS.map((r, i) => {
+                    const lit = i <= step && i < steps.length;
+                    return (
+                      <span
+                        key={r}
+                        className={`${styles.stepDot} ${lit ? styles.stepOn : ''}`}
+                        // 消えている点は色も伏せる（色で先が読めないように）。
+                        style={{ ['--c' as string]: lit ? RARITY_FX[r].ring : 'transparent' }}
+                      />
+                    );
+                  })}
                 </span>
               )}
               {phase === 'done' && result ? (

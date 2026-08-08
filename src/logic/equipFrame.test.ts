@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseEquipFrame, STREAK_MAX, APT_GRADES } from '../types';
+import { parseEquipFrame, sameFrame, STREAK_MAX, APT_GRADES } from '../types';
 import type { EquipFrame } from '../types';
+import { ANIMALS } from '../data/shop';
 
 // フレームの検証は1か所（types.ts の parseEquipFrame）に集約している。
 //
@@ -19,6 +20,8 @@ describe('装備フレームの検証（セーブとランキングで共通）'
     ...APT_GRADES.map((grade) => ({ kind: 'apt', grade }) as EquipFrame),
     { kind: 'box', box: 'lucky' },
     { kind: 'box', box: 'gold' },
+    ...ANIMALS.map((animal) => ({ kind: 'animal', animal }) as EquipFrame),
+    ...ANIMALS.map((animal) => ({ kind: 'animalMaster', animal }) as EquipFrame),
   ];
 
   it('装備できる全種類がそのまま通る（往復して同じもの）', () => {
@@ -46,8 +49,30 @@ describe('装備フレームの検証（セーブとランキングで共通）'
       { period: '2026-06' }, { period: '2026-06', rank: 4, metric: 'odds' },
       { period: '2026-06', rank: 1, metric: 'coins' }, { rank: 1, metric: 'odds' },
       { kind: 'unknown-future-frame' },
+      // ショップのフレーム：動物IDが知らない値ならはじく。
+      { kind: 'animal' }, { kind: 'animal', animal: 'dragon' }, { kind: 'animal', animal: 1 },
+      { kind: 'animalMaster' }, { kind: 'animalMaster', animal: 'CAT' },
     ];
     for (const v of bad) expect(parseEquipFrame(v)).toBeNull();
+  });
+
+  // sameFrame も parseEquipFrame と同じ場所に置いてある。種類を増やしたときに
+  // 「装備中」の印だけ付かなくなる事故を防ぐため、全種類で見張る。
+  it('同一判定は全種類で成り立つ（自分自身とだけ一致する）', () => {
+    for (let i = 0; i < all.length; i++) {
+      expect(sameFrame(all[i], all[i])).toBe(true);
+      for (let j = 0; j < all.length; j++) {
+        if (i !== j) expect(sameFrame(all[i], all[j])).toBe(false);
+      }
+    }
+    expect(sameFrame(null, null)).toBe(true);
+    expect(sameFrame(null, all[0])).toBe(false);
+    expect(sameFrame(undefined, null)).toBe(true);
+  });
+
+  it('動物フレームとコンプリートフレームは、動物が同じでも別物として扱う', () => {
+    const a = ANIMALS[0];
+    expect(sameFrame({ kind: 'animal', animal: a }, { kind: 'animalMaster', animal: a })).toBe(false);
   });
 
   it('連勝レベルは整数に丸める（DBに小数が入っていても壊れない）', () => {

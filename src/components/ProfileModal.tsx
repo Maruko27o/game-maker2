@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { TITLES, titleCtx, activeTitle, type TitleDef } from '../data/titles';
+import { titleCtx, activeTitle, visibleTitles, type TitleDef } from '../data/titles';
+import { ANIMALS, ANIMAL_NAME } from '../data/shop';
+import AnimalFace from './AnimalFace';
 import { useAuth, saveDisplayName, setRankingAvatar, setRankingTrophies, setRankingFrame, setRankingTitle } from '../cloud';
 import { normalizeUsername } from '../logic/username';
 import { TOTAL_PARTS } from '../data/parts';
 import type { HorseLook, EquipFrame, FrameAward } from '../types';
 import { monthLabel } from '../logic/period';
-import { isStreakFrame, isAptFrame, isBoxFrame } from '../types';
+import { sameFrame, isAnimalMasterFrame } from '../types';
 import { frameCatalog, rankingFrames } from '../logic/frameCatalog';
 import { fmtOdds } from '../logic/betting';
 import HorseFace from './HorseFace';
@@ -19,15 +21,6 @@ import CloseButton from './CloseButton';
 import TitleBanner from './TitleBanner';
 import CollectionModal from './CollectionModal';
 import Icon from './Icon';
-
-// アイコンに装備できるフレーム同士の同一判定。
-function sameFrame(a: EquipFrame | null, b: EquipFrame | null): boolean {
-  if (!a || !b) return a === b;
-  if (isStreakFrame(a) || isStreakFrame(b)) return isStreakFrame(a) && isStreakFrame(b) && a.level === b.level;
-  if (isAptFrame(a) || isAptFrame(b)) return isAptFrame(a) && isAptFrame(b) && a.grade === b.grade;
-  if (isBoxFrame(a) || isBoxFrame(b)) return isBoxFrame(a) && isBoxFrame(b) && a.box === b.box;
-  return a.period === b.period && a.rank === b.rank && a.metric === b.metric;
-}
 
 // 殿堂フレームの説明（読み上げと見出し用）。
 const metricLabel = (m: FrameAward['metric']) => (m === 'payout' ? '最大獲得賞金' : '最大オッズ');
@@ -60,6 +53,11 @@ export default function ProfileModal({
   const aptFrames = useStore((s) => s.aptFrames ?? []);
   const boxFrames = useStore((s) => s.boxFrames ?? []);
   const equipFrame = useStore((s) => s.equipFrame);
+  const shopFrames = useStore((s) => s.shopFrames ?? []);
+  const shopTitles = useStore((s) => s.shopTitles ?? []);
+  const shopFramePick = useStore((s) => s.shopFramePick ?? ANIMALS[0]);
+  const shopTitlePick = useStore((s) => s.shopTitlePick ?? ANIMALS[0]);
+  const setShopPick = useStore((s) => s.setShopPick);
 
   const user = useAuth((s) => s.user);
   const displayName = useAuth((s) => s.displayName);
@@ -79,9 +77,12 @@ export default function ProfileModal({
   // フレーム一覧（目録は logic/frameCatalog.ts に集約）。まだ持っていないものも
   // ぼかして並べる。何があるか見えないと集めようがないため。
   const frameSlots = useMemo(
-    () => frameCatalog({ boxFrames, streakClaimed, aptFrames }),
-    [streakClaimed, aptFrames, boxFrames],
+    () => frameCatalog({ boxFrames, streakClaimed, aptFrames, shopFrames, shopFramePick }),
+    [streakClaimed, aptFrames, boxFrames, shopFrames, shopFramePick],
   );
+  // コンプリート品がそろっているか（動物を選ぶ列を出すかどうかの判断）。
+  const frameMasterOwned = new Set(shopFrames).size >= ANIMALS.length;
+  const titleMasterOwned = new Set(shopTitles).size >= ANIMALS.length;
   // 殿堂フレームは「持っているぶんだけ」を目録のうしろに足す。毎月増えるので
   // 未取得の枠は作らない（作ると一覧が月の数だけ伸びてしまう）。
   const rankFrames = useMemo(() => rankingFrames(mailbox), [mailbox]);
@@ -107,10 +108,13 @@ export default function ProfileModal({
   const equippedTitle = useStore((s) => s.equippedTitle);
   const equipTitle = useStore((s) => s.equipTitle);
   const ctx = useMemo(() => titleCtx(useStore.getState(), dexPct), [dexPct, horses, trophies, pstats, owned]);
-  const active = activeTitle(equippedTitle, ctx);
+  // 自動で選ばれるときも、コンプリート称号は自分が選んだ動物のものを出す。
+  const active = activeTitle(equippedTitle, ctx, shopTitlePick);
   // コレクションの入口に出す集まり具合（ctx を使うので、その下で数える）。
   const frameHave = frameSlots.filter((f) => f.owned).length;
-  const titleHave = TITLES.filter((t) => t.check(ctx)).length;
+  // コンプリート称号は動物ちがいで10件あるが、選ぶのは1つなので1件に畳んでから数える。
+  const titleList = useMemo(() => visibleTitles(shopTitlePick), [shopTitlePick]);
+  const titleHave = titleList.filter((t) => t.check(ctx)).length;
   function pickTitle(t: TitleDef) {
     if (!t.check(ctx)) return;
     equipTitle(t.id);
@@ -245,7 +249,7 @@ export default function ProfileModal({
         {/* コレクション：フレームと称号が「あと何で埋まるか」を眺める場所。 */}
         <button className={styles.collectionBtn} onClick={() => setShowCollection(true)}>
           <span className={styles.collectionLabel}><Icon name="book" size={16} /> コレクション</span>
-          <span className={styles.collectionCount}>フレーム {frameHave}/{frameSlots.length}・称号 {titleHave}/{TITLES.length}</span>
+          <span className={styles.collectionCount}>フレーム {frameHave}/{frameSlots.length}・称号 {titleHave}/{titleList.length}</span>
         </button>
 
         {/* Tabs */}
@@ -343,6 +347,33 @@ export default function ProfileModal({
                     );
                   })}
                 </div>
+                {/* コンプリートフレームの動物えらび。10種そろえた人だけ。
+                    「動物はいつでも10種から選べる」ので、外して着け直さなくても
+                    ここを押すだけで飾る動物が変わる。 */}
+                {frameMasterOwned && (
+                  <div className={styles.animalRow}>
+                    <span className={styles.animalRowLabel}>コンプリートフレームの動物</span>
+                    <div className={styles.animalPicks}>
+                      {ANIMALS.map((a) => (
+                        <button
+                          key={a}
+                          className={`${styles.animalPick} ${shopFramePick === a ? styles.animalOn : ''}`}
+                          onClick={() => {
+                            setShopPick('frame', a);
+                            // 装備中なら、そのまま新しい動物でランキングにも反映する。
+                            if (isAnimalMasterFrame(equippedFrame)) void setRankingFrame({ kind: 'animalMaster', animal: a });
+                          }}
+                          aria-label={ANIMAL_NAME[a]}
+                          aria-pressed={shopFramePick === a}
+                        >
+                          <svg viewBox="-16 -16 32 32" width="100%" height="100%">
+                            <AnimalFace id={a} uid={`fp-${a}`} r={14} />
+                          </svg>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <p className={styles.hint}>
                   {frameHint ?? 'タップでアイコンに装備できます。ぼやけているものはまだ持っていません。'}
                 </p>
@@ -360,8 +391,32 @@ export default function ProfileModal({
             <div className={styles.editorHead}>
               <h3 className={styles.editorTitle}>称号を選ぶ</h3>
             </div>
+            {/* コンプリート称号の動物えらび（フレームと同じ考え方）。 */}
+            {titleMasterOwned && (
+              <div className={styles.animalRow}>
+                <span className={styles.animalRowLabel}>コンプリート称号の動物</span>
+                <div className={styles.animalPicks}>
+                  {ANIMALS.map((a) => (
+                    <button
+                      key={a}
+                      className={`${styles.animalPick} ${shopTitlePick === a ? styles.animalOn : ''}`}
+                      onClick={() => {
+                        setShopPick('title', a);
+                        if (equippedTitle?.startsWith('shop_master_')) void setRankingTitle(`shop_master_${a}`);
+                      }}
+                      aria-label={ANIMAL_NAME[a]}
+                      aria-pressed={shopTitlePick === a}
+                    >
+                      <svg viewBox="-16 -16 32 32" width="100%" height="100%">
+                        <AnimalFace id={a} uid={`tp-${a}`} r={14} />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
         <ul className={styles.titleList}>
-              {TITLES.map((t) => {
+              {titleList.map((t) => {
                 const got = t.check(ctx);
                 const on = active.id === t.id;
                 return (

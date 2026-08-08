@@ -7,6 +7,7 @@ import {
   boxOfDow,
   boxMailId,
   FLASH_STEPS,
+  ALL_FLASH_STEPS,
   FLASH_MS,
   RARITY_FX,
 } from '../data/boxes';
@@ -257,5 +258,26 @@ describe('まとめて開ける', () => {
     expect(t.rows).toEqual([]);
     expect(t.best).toBeNull();
     expect(t.coins).toBe(0);
+  });
+});
+
+// ── 開ける前に当たりが分からないこと ─────────────────────────
+describe('開封演出は結果を先に見せない', () => {
+  it('段の一覧は、どのレア度でも同じ長さの並びの先頭部分になっている', () => {
+    // 画面は ALL_FLASH_STEPS の数だけ点を並べ、光った数だけで当たりを示す。
+    // 各レア度の段が「全段の先頭からの並び」でないと、この見せ方が成り立たない。
+    for (const r of ['normal', 'rare', 'epic', 'legend'] as const) {
+      const chain = FLASH_STEPS[r];
+      expect(chain.length).toBeLessThanOrEqual(ALL_FLASH_STEPS.length);
+      expect(ALL_FLASH_STEPS.slice(0, chain.length)).toEqual(chain);
+      // 最後の段は、そのレア度そのもの（色がそこで止まる）。
+      expect(chain[chain.length - 1]).toBe(r);
+    }
+  });
+
+  it('全段の並びは、いちばん長い段（レジェンド）と同じ', () => {
+    // ここがずれると、レジェンドのときだけ点が足りなくなる。
+    const longest = Math.max(...Object.values(FLASH_STEPS).map((c) => c.length));
+    expect(ALL_FLASH_STEPS).toHaveLength(longest);
   });
 });

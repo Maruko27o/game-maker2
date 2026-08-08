@@ -22,7 +22,7 @@ import type {
   EquipFrame,
   AptGrade,
 } from './types';
-import { STREAK_MAX, parseEquipFrame } from './types';
+import { STREAK_MAX, parseEquipFrame, isAnimalMasterFrame } from './types';
 import { foldRace, achievedLevel } from './logic/streak';
 import { allParts, slotOf } from './data/parts';
 import { COURSES } from './data/courses';
@@ -68,7 +68,10 @@ import { trustedNow } from './logic/trustedClock';
 import { normAptFrames, newlyEarned, mergeAptFrames } from './logic/aptFrames';
 import { openBox as rollBox, stackBox, takeBox, type BoxResult } from './logic/boxes';
 import { type BoxKind } from './data/boxes';
-import { normalizeCustomBet, normalizeCustomBets, CUSTOM_BET_SLOTS } from './data/customBet';
+import { normalizeCustomBets, setCustomBetSlot } from './data/customBet';
+import { ANIMALS, SHOP_BOXES, isAnimalId, type AnimalId, type ShopBoxKind } from './data/shop';
+import { drawShopBox, canBuy as canBuyShop, type ShopBuyResult } from './logic/shop';
+import { masterTitleId } from './data/titles';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 30; // 所持できるマイウマの上限（5×6ボックス）。全プレイヤー共通・無料開放
@@ -224,6 +227,8 @@ function freshSave(): SaveData {
     aptPending: [],
     boxFrames: [],
     boxTitles: [],
+    shopFrames: [],
+    shopTitles: [],
     // 空配列で持たせておく（undefined のままだと「まだ読み込めていない」と
     // 区別がつかず、称号の初ゲットのお知らせが一度も出なくなる）。
     seenTitles: [],
@@ -259,6 +264,18 @@ function normBoxFrames(v: unknown): BoxKind[] {
   return out;
 }
 
+/** ショップで当てた動物の一覧（外から来た値なので必ず通す）。 */
+function normAnimals(v: unknown): AnimalId[] {
+  if (!Array.isArray(v)) return [];
+  const out: AnimalId[] = [];
+  for (const a of v) if (isAnimalId(a) && !out.includes(a)) out.push(a);
+  return out;
+}
+/** コンプリート品で選んでいる動物。おかしな値なら先頭の動物に戻す。 */
+function normAnimalPick(v: unknown): AnimalId {
+  return isAnimalId(v) ? v : ANIMALS[0];
+}
+
 // 読み込み時にも適性チャレンジの達成を拾う（前の版で条件を満たしていた人ぶん）。
 // 授与ではなく「受け取り待ち」に入れる。受け取るのはタスク画面。
 function profileWithAptFrames(d: Record<string, unknown>, horses: Horse[]) {
@@ -276,6 +293,10 @@ function normProfile(d: Record<string, unknown>): {
   aptPending: AptGrade[];
   boxFrames: BoxKind[];
   boxTitles: BoxKind[];
+  shopFrames: AnimalId[];
+  shopTitles: AnimalId[];
+  shopFramePick: AnimalId;
+  shopTitlePick: AnimalId;
   seenTitles: string[];
   equippedTitle: string | null;
   customBets: NonNullable<SaveData['customBets']>;
@@ -293,7 +314,23 @@ function normProfile(d: Record<string, unknown>): {
   // カスタムベットは1パターン → 2パターンに増えた。旧セーブはオブジェクト1個で
   // 入っているので、どちらの形でも配列にそろえる。
   const customBets = normalizeCustomBets(d.customBets ?? d.customBet);
-  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), aptFrames: normAptFrames(d.aptFrames), boxFrames: normBoxFrames(d.boxFrames), boxTitles: normBoxFrames(d.boxTitles), aptPending: normAptFrames(d.aptPending), seenTitles: normIdList(d.seenTitles), equippedTitle, customBets };
+  return {
+    avatarHorseId,
+    displayTrophies,
+    mailbox,
+    equippedFrame: normFrame(d.equippedFrame),
+    aptFrames: normAptFrames(d.aptFrames),
+    boxFrames: normBoxFrames(d.boxFrames),
+    boxTitles: normBoxFrames(d.boxTitles),
+    shopFrames: normAnimals(d.shopFrames),
+    shopTitles: normAnimals(d.shopTitles),
+    shopFramePick: normAnimalPick(d.shopFramePick),
+    shopTitlePick: normAnimalPick(d.shopTitlePick),
+    aptPending: normAptFrames(d.aptPending),
+    seenTitles: normIdList(d.seenTitles),
+    equippedTitle,
+    customBets,
+  };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -664,6 +701,12 @@ type Store = SaveData & {
   equipFrame: (frame: EquipFrame | null) => void;
   /** 称号を付け替える（未達成のIDは無視される）。 */
   equipTitle: (id: string | null) => void;
+  // ショップ（見た目だけの品）。
+  /** ショップのくじを1回引く。コインが足りない／もうそろっているなら null。
+   *  被りは出ないので、値段を引いて、まだ持っていない動物を1つ足すだけ。 */
+  buyShopBox: (kind: ShopBoxKind, rng?: () => number) => ShopBuyResult | null;
+  /** コンプリート品で飾る動物を選ぶ（10種そろっていなくても覚えておく）。 */
+  setShopPick: (kind: ShopBoxKind, animal: AnimalId) => void;
   /** カスタムベットの設定を保存する（100きざみ・整数の倍率に丸めて入る）。 */
   /** カスタムベットの枠（0 か 1）を決める。null でその枠を消す。 */
   setCustomBet: (slot: number, spec: { amount: number; minOdds: number; maxOdds: number } | null) => void;
@@ -782,6 +825,10 @@ export const useStore = create<Store>((set, get) => {
       aptPending: next.aptPending ?? [],
       boxFrames: next.boxFrames ?? [],
       boxTitles: next.boxTitles ?? [],
+      shopFrames: next.shopFrames ?? [],
+      shopTitles: next.shopTitles ?? [],
+      shopFramePick: next.shopFramePick ?? ANIMALS[0],
+      shopTitlePick: next.shopTitlePick ?? ANIMALS[0],
       seenTitles: next.seenTitles ?? [],
       equippedTitle: next.equippedTitle ?? null,
       customBets: next.customBets ?? [],
@@ -1365,12 +1412,41 @@ export const useStore = create<Store>((set, get) => {
 
     equipFrame: (frame) => commit({ equippedFrame: frame }),
     equipTitle: (id) => commit({ equippedTitle: id }),
+
+    // ショップ。売っているのは見た目だけなので、レースの倍率にも勝率にも
+    // 一切かかわらない（値段をいくらにしてもバランスは動かない）。
+    buyShopBox: (kind, rng = Math.random) => {
+      const s = get();
+      const ownedKey = kind === 'frame' ? 'shopFrames' : 'shopTitles';
+      const owned = (s[ownedKey] ?? []) as AnimalId[];
+      if (!canBuyShop(kind, s.coins, owned)) return null;
+      const res = drawShopBox(owned, rng());
+      if (!res) return null;
+      commit({ coins: s.coins - SHOP_BOXES[kind].price, [ownedKey]: res.owned });
+      return res;
+    },
+
+    setShopPick: (kind, animal) => {
+      if (!isAnimalId(animal)) return;
+      if (kind === 'frame') {
+        // コンプリートフレームを着けているなら、その場で選び直した動物に差し替える
+        //（外して着け直させると「選べる」ように見えない）。
+        const eq = get().equippedFrame;
+        const patch: Partial<SaveData> = { shopFramePick: animal };
+        if (isAnimalMasterFrame(eq)) patch.equippedFrame = { kind: 'animalMaster', animal };
+        commit(patch);
+      } else {
+        const eq = get().equippedTitle;
+        const patch: Partial<SaveData> = { shopTitlePick: animal };
+        // コンプリート称号はIDに動物が入っているので、着けていれば付け替える。
+        if (eq && eq.startsWith('shop_master_')) patch.equippedTitle = masterTitleId(animal);
+        commit(patch);
+      }
+    },
     /** カスタムベットを1枠ぶん決める（spec が null ならその枠を消す）。 */
     setCustomBet: (slot, spec) => {
-      // 抜けのある配列を作らないよう、いったんその枠を外してから入れ直す。
-      const next = (get().customBets ?? []).filter((_, i) => i !== slot);
-      if (spec) next.splice(Math.min(slot, next.length), 0, normalizeCustomBet(spec));
-      commit({ customBets: next.slice(0, CUSTOM_BET_SLOTS) });
+      // 枠と位置は1対1。決めた枠だけを入れ替え、ほかの枠は動かさない。
+      commit({ customBets: setCustomBetSlot(get().customBets, slot, spec) });
     },
 
     recordSoloStreak: (win) => {
