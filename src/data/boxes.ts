@@ -134,6 +134,16 @@ export const FLASH_STEPS: Record<BoxRarity, BoxRarity[]> = {
   legend: ['normal', 'rare', 'epic', 'legend'],
 };
 
+/**
+ * 画面に並べる段の**全部**。
+ *
+ * 開ける演出では、この数だけ点を並べて「光った数」で当たりを示す。
+ * 結果ごとの段数（FLASH_STEPS）で点を並べてしまうと、光り出す前に点を数える
+ * だけで当たりの大きさが分かってしまい、開ける楽しみが無くなる。
+ * どの結果でも見た目の点の数は同じにすること。
+ */
+export const ALL_FLASH_STEPS: BoxRarity[] = FLASH_STEPS.legend;
+
 /** 1段ぶんの光の長さ(ms)。段が上がるほど溜めを長くして、期待を引っぱる。 */
 export const FLASH_MS: Record<BoxRarity, number> = {
   normal: 620,

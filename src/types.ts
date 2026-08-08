@@ -455,7 +455,9 @@ export type SaveData = {
   equippedTitle?: string | null; // 装備中の称号ID（data/titles.ts）。未設定なら達成済みで一番上の段
   /** カスタムベットの設定。2パターンまで決めておける。
    *  旧セーブはオブジェクト1個で入っているので、読み込み時に配列へそろえる。 */
-  customBets?: { amount: number; minOdds: number; maxOdds: number }[];
+  /** 空の枠は null。**枠の数ぶん必ず並ぶ**（詰めない）。詰めてしまうと、
+   *  1つめが空のまま2つめを決めたときに位置がずれて「消えた」ように見える。 */
+  customBets?: ({ amount: number; minOdds: number; maxOdds: number } | null)[];
   /** 旧・カスタムベット（1パターンだけだったころ）。読み込みの互換のためだけに残す。 */
   customBet?: { amount: number; minOdds: number; maxOdds: number } | null;
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads

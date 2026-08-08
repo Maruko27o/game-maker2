@@ -276,17 +276,25 @@ function FaceArt({ id, t }: { id: AnimalId; t: Tone }) {
  * @param uid defs の衝突よけ（同じ画面に何枚も出るため）
  * @param r   半径。これだけで大きさが決まる
  * @param plain 台座を描かない（称号の帯など、背景が別にあるとき）
+ * @param soft コンプリートフレーム用の落ち着いた見た目。
+ *   ふつうの動物フレームは「その動物の色」の台座で、絵もはっきり出す。
+ *   ただしコンプリートフレームは10色の帯が主役なので、同じ描き方だと銘板だけが
+ *   くっきり浮いて主張しすぎる。**台座を帯と同じ淡い生成り＋金のふちにして、
+ *   絵の彩度も落とす**。動物が変わっても銘板の色は変わらない（＝どの動物を
+ *   選んでもフレーム全体の色がまとまる）。
  */
 export default function AnimalFace({
   id,
   uid,
   r = 13,
   plain,
+  soft,
 }: {
   id: AnimalId;
   uid: string;
   r?: number;
   plain?: boolean;
+  soft?: boolean;
 }) {
   const t = ANIMAL_TONE[id];
   const k = r / 13;
@@ -297,15 +305,29 @@ export default function AnimalFace({
           <defs>
             <radialGradient id={`af-${uid}`} cx="50%" cy="32%" r="74%">
               <stop offset="0%" stopColor="#fff" />
-              <stop offset="55%" stopColor={t.bg} />
-              <stop offset="100%" stopColor={t.deep} />
+              <stop offset="55%" stopColor={soft ? '#fff6e2' : t.bg} />
+              <stop offset="100%" stopColor={soft ? '#e8cf9e' : t.deep} />
             </radialGradient>
+            {soft && (
+              // 彩度を落とす。色を1つずつ塗り替えるより、まとめてここで弱める方が
+              // 10種すべてに同じ効き方をする（描き分けの手を入れずに済む）。
+              <filter id={`afsoft-${uid}`} colorInterpolationFilters="sRGB">
+                <feColorMatrix type="saturate" values="0.45" />
+              </filter>
+            )}
           </defs>
-          <circle cx={0} cy={0} r={r} fill={`url(#af-${uid})`} stroke={t.edge} strokeWidth={1.6 * k} />
+          <circle
+            cx={0}
+            cy={0}
+            r={r}
+            fill={`url(#af-${uid})`}
+            stroke={soft ? '#a8783a' : t.edge}
+            strokeWidth={1.6 * k}
+          />
           <circle cx={0} cy={0} r={r - 2.2 * k} fill="none" stroke="#fff" strokeOpacity="0.7" strokeWidth={0.8 * k} />
         </>
       )}
-      <g transform={`scale(${k * 0.82})`}>
+      <g transform={`scale(${k * 0.82})`} filter={soft && !plain ? `url(#afsoft-${uid})` : undefined} opacity={soft ? 0.88 : undefined}>
         <FaceArt id={id} t={t} />
       </g>
     </g>

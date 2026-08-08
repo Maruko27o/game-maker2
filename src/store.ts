@@ -68,9 +68,9 @@ import { trustedNow } from './logic/trustedClock';
 import { normAptFrames, newlyEarned, mergeAptFrames } from './logic/aptFrames';
 import { openBox as rollBox, stackBox, takeBox, type BoxResult } from './logic/boxes';
 import { type BoxKind } from './data/boxes';
-import { normalizeCustomBet, normalizeCustomBets, CUSTOM_BET_SLOTS } from './data/customBet';
+import { normalizeCustomBets, setCustomBetSlot } from './data/customBet';
 import { ANIMALS, SHOP_BOXES, isAnimalId, type AnimalId, type ShopBoxKind } from './data/shop';
-import { drawShopBox, coinDelta, type ShopBuyResult } from './logic/shop';
+import { drawShopBox, canBuy as canBuyShop, type ShopBuyResult } from './logic/shop';
 import { masterTitleId } from './data/titles';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
@@ -702,8 +702,8 @@ type Store = SaveData & {
   /** 称号を付け替える（未達成のIDは無視される）。 */
   equipTitle: (id: string | null) => void;
   // ショップ（見た目だけの品）。
-  /** ショップのくじを1回引く。コインが足りなければ null。
-   *  値段を引き、当たった動物を足し、ダブりならその場でコインを戻す。 */
+  /** ショップのくじを1回引く。コインが足りない／もうそろっているなら null。
+   *  被りは出ないので、値段を引いて、まだ持っていない動物を1つ足すだけ。 */
   buyShopBox: (kind: ShopBoxKind, rng?: () => number) => ShopBuyResult | null;
   /** コンプリート品で飾る動物を選ぶ（10種そろっていなくても覚えておく）。 */
   setShopPick: (kind: ShopBoxKind, animal: AnimalId) => void;
@@ -1417,16 +1417,12 @@ export const useStore = create<Store>((set, get) => {
     // 一切かかわらない（値段をいくらにしてもバランスは動かない）。
     buyShopBox: (kind, rng = Math.random) => {
       const s = get();
-      const def = SHOP_BOXES[kind];
-      if (s.coins < def.price) return null;
       const ownedKey = kind === 'frame' ? 'shopFrames' : 'shopTitles';
       const owned = (s[ownedKey] ?? []) as AnimalId[];
-      const res = drawShopBox(kind, owned, rng());
-      commit({
-        // 値段を引いて、ダブりなら返却ぶんを戻す。
-        coins: s.coins + coinDelta(kind, res),
-        [ownedKey]: res.owned,
-      });
+      if (!canBuyShop(kind, s.coins, owned)) return null;
+      const res = drawShopBox(owned, rng());
+      if (!res) return null;
+      commit({ coins: s.coins - SHOP_BOXES[kind].price, [ownedKey]: res.owned });
       return res;
     },
 
@@ -1449,10 +1445,8 @@ export const useStore = create<Store>((set, get) => {
     },
     /** カスタムベットを1枠ぶん決める（spec が null ならその枠を消す）。 */
     setCustomBet: (slot, spec) => {
-      // 抜けのある配列を作らないよう、いったんその枠を外してから入れ直す。
-      const next = (get().customBets ?? []).filter((_, i) => i !== slot);
-      if (spec) next.splice(Math.min(slot, next.length), 0, normalizeCustomBet(spec));
-      commit({ customBets: next.slice(0, CUSTOM_BET_SLOTS) });
+      // 枠と位置は1対1。決めた枠だけを入れ替え、ほかの枠は動かさない。
+      commit({ customBets: setCustomBetSlot(get().customBets, slot, spec) });
     },
 
     recordSoloStreak: (win) => {

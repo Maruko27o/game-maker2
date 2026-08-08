@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { allCandidates, pickInOddsRange, oddsFor, fmtOdds } from './betting';
-import { CUSTOM_BET, normalizeCustomBet } from '../data/customBet';
+import { CUSTOM_BET, normalizeCustomBet, normalizeCustomBets, setCustomBetSlot } from '../data/customBet';
 
 // 8頭ぶんのそれらしい勝率（合計1）
 const P = [0.30, 0.20, 0.15, 0.12, 0.09, 0.07, 0.04, 0.03];
@@ -70,5 +70,58 @@ describe('カスタムベットの設定値', () => {
     const c = normalizeCustomBet({ amount: 500, minOdds: 0, maxOdds: 99999 });
     expect(c.minOdds).toBe(CUSTOM_BET.oddsMin);
     expect(c.maxOdds).toBe(CUSTOM_BET.oddsMax);
+  });
+});
+
+// ── 枠の位置がずれない（「設定したのに消えた」の再発防止） ──────────────
+describe('カスタムベットの枠', () => {
+  it('必ず枠の数ぶん並ぶ（空は null）', () => {
+    expect(normalizeCustomBets(undefined)).toEqual([null, null]);
+    expect(normalizeCustomBets([])).toEqual([null, null]);
+    expect(normalizeCustomBets([null, null])).toEqual([null, null]);
+  });
+
+  it('1つめが空のまま2つめを決めても、2つめの位置に入る', () => {
+    // ここが以前の不具合。詰めてしまうと1つめの位置に入り、画面は2つめを
+    // 見にいくので「設定したのに消えた」ように見えていた。
+    const out = setCustomBetSlot(undefined, 1, { amount: 500, minOdds: 3, maxOdds: 10 });
+    expect(out[0]).toBeNull();
+    expect(out[1]).toEqual({ amount: 500, minOdds: 3, maxOdds: 10 });
+  });
+
+  it('片方を決めても、もう片方は動かない', () => {
+    const a = setCustomBetSlot(undefined, 0, { amount: 300, minOdds: 2, maxOdds: 5 });
+    const b = setCustomBetSlot(a, 1, { amount: 1000, minOdds: 20, maxOdds: 50 });
+    expect(b[0]).toEqual({ amount: 300, minOdds: 2, maxOdds: 5 });
+    expect(b[1]).toEqual({ amount: 1000, minOdds: 20, maxOdds: 50 });
+  });
+
+  it('消しても、もう片方は残る（位置もそのまま）', () => {
+    const both = setCustomBetSlot(
+      setCustomBetSlot(undefined, 0, { amount: 300, minOdds: 2, maxOdds: 5 }),
+      1,
+      { amount: 1000, minOdds: 20, maxOdds: 50 },
+    );
+    const cleared = setCustomBetSlot(both, 0, null);
+    expect(cleared[0]).toBeNull();
+    expect(cleared[1]).toEqual({ amount: 1000, minOdds: 20, maxOdds: 50 });
+  });
+
+  it('保存された値を読み直しても、位置と中身が変わらない（タスクキル後も同じ）', () => {
+    const saved = setCustomBetSlot(undefined, 1, { amount: 2500, minOdds: 8, maxOdds: 30 });
+    // localStorage は JSON で往復する。
+    expect(normalizeCustomBets(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
+  });
+
+  it('旧セーブ（1件だけのオブジェクト）は1枠目に入る', () => {
+    expect(normalizeCustomBets({ amount: 500, minOdds: 3, maxOdds: 10 })).toEqual([
+      { amount: 500, minOdds: 3, maxOdds: 10 },
+      null,
+    ]);
+  });
+
+  it('枠の外を指しても壊れない', () => {
+    expect(setCustomBetSlot(undefined, 5, { amount: 500, minOdds: 3, maxOdds: 10 })).toEqual([null, null]);
+    expect(setCustomBetSlot(undefined, -1, { amount: 500, minOdds: 3, maxOdds: 10 })).toEqual([null, null]);
   });
 });

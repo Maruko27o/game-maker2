@@ -61,6 +61,8 @@ export default function Shop() {
         const owned = new Set(ownedOf(kind));
         const complete = owned.size >= ANIMALS.length;
         const afford = coins >= def.price;
+        const left = ANIMALS.length - owned.size;
+        const canPull = afford && !complete;
         return (
           <section key={kind} className={styles.card} style={{ ['--c1' as string]: def.colors[0], ['--c2' as string]: def.colors[1] }}>
             <header className={styles.cardHead}>
@@ -92,7 +94,8 @@ export default function Shop() {
               </ul>
             </div>
 
-            {/* 集まり具合。10マスなので、あと何が足りないかがそのまま見える。 */}
+            {/* 集まり具合。10マスなので、あと何が足りないかがそのまま見える。
+                被りが出ないので、残っているマスの数＝あと何回引けばそろうか。 */}
             <div className={styles.progress}>
               <span className={styles.progressLabel}>
                 あつめた数 {owned.size}/{ANIMALS.length}
@@ -115,12 +118,14 @@ export default function Shop() {
               </p>
             )}
 
-            <button className={styles.buy} onClick={() => buy(kind)} disabled={!afford}>
-              {afford ? '1回引く' : 'コインが足りません'}
+            <button className={styles.buy} onClick={() => buy(kind)} disabled={!canPull}>
+              {complete ? '全部集めました' : afford ? '1回引く' : 'コインが足りません'}
             </button>
-            <p className={styles.refundNote}>
-              すでに持っているものが出たら {def.refund.toLocaleString()}コイン が戻ります。
-            </p>
+            {!complete && (
+              <p className={styles.pullNote}>
+                被りは出ません。残り{left}回でそろいます（{(def.price * left).toLocaleString()}コイン）。
+              </p>
+            )}
           </section>
         );
       })}
@@ -130,7 +135,7 @@ export default function Shop() {
   );
 }
 
-/** 引いた結果。新しく手に入れたか、ダブって返却されたかをはっきり出す。 */
+/** 引いた結果。被りが出ないので、必ず「新しく手に入れた1つ」を出す。 */
 function ResultOverlay({
   kind,
   res,
@@ -142,15 +147,12 @@ function ResultOverlay({
   look: HorseLook;
   onClose: () => void;
 }) {
-  const def = SHOP_BOXES[kind];
   const name = kind === 'frame' ? shopFrameName(res.animal) : shopTitleName(res.animal);
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.resultCard} onClick={(e) => e.stopPropagation()}>
         <CloseButton onClick={onClose} />
-        <span className={`${styles.tag} ${res.dupe ? styles.tagDupe : styles.tagNew}`}>
-          {res.dupe ? 'ダブり' : 'NEW'}
-        </span>
+        <span className={`${styles.tag} ${styles.tagNew}`}>NEW</span>
         <div className={styles.resultArt}>
           {kind === 'frame' ? (
             <ShopFrame animal={res.animal} look={look} size={132} />
@@ -161,11 +163,6 @@ function ResultOverlay({
           )}
         </div>
         <p className={styles.resultName}>{name}</p>
-        {res.dupe && (
-          <p className={styles.resultRefund}>
-            <CoinIcon size={15} /> {def.refund.toLocaleString()} が戻りました
-          </p>
-        )}
         {res.completed && (
           <div className={styles.completeBox}>
             <p className={styles.completeTitle}>10種コンプリート！</p>

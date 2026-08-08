@@ -181,7 +181,8 @@
   opacity: 0.6;
   cursor: default;
 }
-.refundNote {
+/* 「あと何回で そろうか」。被りが無いので回数と総額が確定で言い切れる。 */
+.pullNote {
   margin: 7px 0 0;
   font-size: 11px;
   font-weight: 700;
@@ -225,9 +226,6 @@
 .tagNew {
   background: #d8452f;
 }
-.tagDupe {
-  background: #7a7060;
-}
 .resultArt {
   display: flex;
   justify-content: center;
@@ -238,17 +236,6 @@
   font-size: 17px;
   font-weight: 900;
   color: var(--ink);
-}
-.resultRefund {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  margin: 6px 0 0;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
 }
 
 .completeBox {
@@ -267,7 +254,7 @@
 .completeArt {
   display: flex;
   justify-content: center;
-  /* コンプリートフレームは王冠が枠の上へはみ出す。空けておかないと見出しに重なる。 */
+  /* コンプリートフレームはお花が枠の上へはみ出す。空けておかないと見出しに重なる。 */
   padding-top: 12px;
 }
 .completeName {
