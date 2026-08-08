@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import type { AptGrade, HorseLook } from '../types';
 import HorseFace from './HorseFace';
-import { Facets, Orbit, Pulse } from './FrameFx';
+import { Facets, MetalSheen, GemFlash } from './FrameFx';
 import { usePrefersReducedMotion } from '../hooks';
 
 // スペシャルタスク（適性チャレンジ）の報酬フレーム。
@@ -32,41 +32,40 @@ type Tier = {
   glow: boolean;
   sparkles: boolean;
   rainbow: boolean;
-  /** リングを一周する光の速さ（秒）。等級が上がるほど速く・強くする。 */
-  sheenDur: string;
-  // ── 動きの積み上げ（FrameFx）。等級が上がるほど種類が増える。 ──
-  /** カット面の数。全等級が持つ土台の動き。 */
+  // ── 動きの積み上げ（FrameFx）。等級が上がるほど濃くなる。 ──
+  // 動きはぜんぶリングの上。周りを飛ぶ粒や、回る細い弧は使わない。
+  /** カット面の数。多いほど面が細かい＝上等な石に見える。 */
   facets: number;
-  /** 巡る光の粒の数（0 なら無し）。B 以上。 */
-  orbit: number;
-  /** 外周オーラの二段脈動。A 以上。 */
-  pulse: boolean;
+  /** 金属の光沢が1周する秒数。短いほど磨き込まれて見える。 */
+  sheenDurSec: number;
+  /** きらりと光る石の数（0 なら無し）。 */
+  gemFlash: number;
 };
 
 const TIERS: Record<AptGrade, Tier> = {
   C: {
     base: '#b97742', hi: '#e7b184', lo: '#7c4a20', ink: '#5b3a1c',
     plate: '#d9a273', plateHi: '#f2cba6',
-    studs: 8, laurel: false, gems: false, glow: false, sparkles: false, rainbow: false, sheenDur: '7s',
-    facets: 10, orbit: 0, pulse: false,
+    studs: 8, laurel: false, gems: false, glow: false, sparkles: false, rainbow: false,
+    facets: 10, sheenDurSec: 5.2, gemFlash: 0,
   },
   B: {
     base: '#b9c4cf', hi: '#f4f8fb', lo: '#77828e', ink: '#3f4650',
     plate: '#dfe6ed', plateHi: '#ffffff',
-    studs: 12, laurel: true, gems: false, glow: false, sparkles: false, rainbow: false, sheenDur: '6s',
-    facets: 12, orbit: 4, pulse: false,
+    studs: 12, laurel: true, gems: false, glow: false, sparkles: false, rainbow: false,
+    facets: 12, sheenDurSec: 4.4, gemFlash: 4,
   },
   A: {
     base: '#e9b93c', hi: '#fff0b8', lo: '#a2760f', ink: '#5a3f00',
     plate: '#ffe9a8', plateHi: '#fff8dc',
-    studs: 16, laurel: true, gems: true, glow: true, sparkles: false, rainbow: false, sheenDur: '5s',
-    facets: 14, orbit: 6, pulse: true,
+    studs: 16, laurel: true, gems: true, glow: true, sparkles: false, rainbow: false,
+    facets: 14, sheenDurSec: 3.6, gemFlash: 6,
   },
   S: {
     base: '#c4a2ff', hi: '#ffffff', lo: '#7b5fc0', ink: '#3a2c1c',
     plate: '#ffd59a', plateHi: '#fdff9a',
-    studs: 20, laurel: true, gems: true, glow: true, sparkles: true, rainbow: true, sheenDur: '3.6s',
-    facets: 16, orbit: 9, pulse: true,
+    studs: 20, laurel: true, gems: true, glow: true, sparkles: true, rainbow: true,
+    facets: 16, sheenDurSec: 2.8, gemFlash: 10,
   },
 };
 
@@ -126,12 +125,6 @@ export default function AptFrame({
             <stop offset="0%" stopColor={t.plateHi} />
             <stop offset="100%" stopColor={t.plate} />
           </linearGradient>
-          {/* リングの上を流れる光。どの等級にも入れて「止まって見えない」ようにする。 */}
-          <linearGradient id={`asheen-${uid}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#fff" stopOpacity="0" />
-            <stop offset="50%" stopColor="#fff" stopOpacity="0.85" />
-            <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
           <radialGradient id={`aglow-${uid}`} cx="50%" cy="50%" r="50%">
             <stop offset="60%" stopColor={t.hi} stopOpacity="0" />
             <stop offset="86%" stopColor={t.hi} stopOpacity="0.5" />
@@ -139,12 +132,9 @@ export default function AptFrame({
           </radialGradient>
         </defs>
 
-        {/* 外周のオーラ。A 以上は「ドクン・ドクン」と二段で脈打つ（FrameFx.Pulse）。 */}
-        {t.pulse ? (
-          <Pulse c={C} r={R} color={t.hi} uid={uid} still={still} />
-        ) : (
-          t.glow && <circle cx={C} cy={C} r={57} fill={`url(#aglow-${uid})`} opacity="0.7" />
-        )}
+        {/* 外周のオーラ（A 以上）。**動かさない**。枠の外で何かが動くと、枠と関係の
+            ない別物が乗っているように見えて安っぽくなるため。 */}
+        {t.glow && <circle cx={C} cy={C} r={57} fill={`url(#aglow-${uid})`} opacity="0.7" />}
 
         {/* 左右の月桂樹（B 以上） */}
         {t.laurel && (
@@ -192,38 +182,22 @@ export default function AptFrame({
         <circle cx={C} cy={C} r={R - ringW / 2} fill="none" stroke={t.lo} strokeOpacity="0.5" strokeWidth="1.2" />
 
         {/* カット面のきらめき。光源が一周しながら面を順に立ち上げる（全等級）。 */}
-        <Facets c={C} r={R} w={ringW} uid={uid} count={t.facets} color={t.hi} dur={parseFloat(t.sheenDur) * 0.55} still={still} />
+        <Facets c={C} r={R} w={ringW} uid={uid} count={t.facets} color={t.hi} dur={t.sheenDurSec * 1.5} still={still} />
 
-        {/* 巡る光の粒（B 以上）。等級が上がるほど数が増える。 */}
-        {t.orbit > 0 && <Orbit c={C} r={R} uid={uid} count={t.orbit} color={t.hi} still={still} />}
-
-        {/* リングを一周する光。等級が上がるほど速い。 */}
-        <circle
-          cx={C}
-          cy={C}
-          r={R}
-          fill="none"
-          stroke={`url(#asheen-${uid})`}
-          strokeWidth={ringW - 1.8}
-          strokeDasharray="24 272"
-          strokeLinecap="round"
-        >
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from={`0 ${C} ${C}`}
-            to={`360 ${C} ${C}`}
-            dur={t.sheenDur}
-            repeatCount="indefinite"
-          />
-        </circle>
+        {/* 金属の光沢。帯そのものを斜めの光が横切る（細い弧は回さない）。 */}
+        <MetalSheen c={C} r={R} w={ringW} uid={uid} dur={t.sheenDurSec} strength={0.7} still={still} />
 
         {/* 鋲。等級が上がるほど密になる。 */}
         {studs.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r={1.15} fill={t.hi} opacity="0.95" />
         ))}
 
-        {/* 四方の宝石（A 以上） */}
+        {/* きらりと光る石。等級が上がるほど数が増える（B から）。 */}
+        {t.gemFlash > 0 && (
+          <GemFlash c={C} r={R} uid={uid} count={t.gemFlash} color={t.hi} size={3.6} dur={t.sheenDurSec * 0.9} still={still} />
+        )}
+
+        {/* 四方の宝石（A 以上）。こちらは形。光るのは上の GemFlash が受け持つ。 */}
         {t.gems &&
           [0, 90, 180, 270].map((deg) => {
             const a = ((deg - 90) * Math.PI) / 180;

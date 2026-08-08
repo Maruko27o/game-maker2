@@ -29,3 +29,36 @@ export function normalizeCustomBet(s: CustomBetSpec): CustomBetSpec {
   if (minOdds > maxOdds) [minOdds, maxOdds] = [maxOdds, minOdds];
   return { amount, minOdds, maxOdds };
 }
+
+/** 決めておけるパターンの数。2つあれば「本命の帯」と「大穴の帯」を使い分けられる。 */
+export const CUSTOM_BET_SLOTS = 2;
+
+/**
+ * 保存されている値をパターンの配列にそろえる。
+ *
+ * 以前は1つだけ（オブジェクト1個）だったので、そのまま入っているセーブも
+ * 受け取って1件の配列にする。壊れた値は落とす。上限を超えるぶんも切る。
+ */
+export function normalizeCustomBets(v: unknown): CustomBetSpec[] {
+  const list = Array.isArray(v) ? v : v ? [v] : [];
+  const out: CustomBetSpec[] = [];
+  for (const raw of list) {
+    if (!raw || typeof raw !== 'object') continue;
+    const s = raw as Partial<CustomBetSpec>;
+    if (typeof s.amount !== 'number' || typeof s.minOdds !== 'number' || typeof s.maxOdds !== 'number') continue;
+    out.push(normalizeCustomBet(s as CustomBetSpec));
+    if (out.length >= CUSTOM_BET_SLOTS) break;
+  }
+  return out;
+}
+
+/**
+ * 入力欄の文字を数字だけにそろえる。
+ *
+ * 「3」と打ったのに「03」になっていたのは、入力中の文字をそのまま数値に変えて
+ * 書き戻していたため（先頭の 0 が消えないことがあった）。入力中は文字のまま
+ * 持っておき、確定するときだけ数値にする。ここはその「文字のまま」の掃除役。
+ */
+export function digitsOnly(s: string, maxLen = 5): string {
+  return s.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '').slice(0, maxLen);
+}

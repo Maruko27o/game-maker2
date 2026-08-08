@@ -596,3 +596,89 @@
   color: var(--ink-soft);
   margin-bottom: 2px;
 }
+
+/* ── 見返すレースを選ぶ画面 ────────────────────────────────
+   予選から順に流れると、本戦だけ見たいときも待たされる。どのレースから見るかを
+   選べるようにして、順位や勝ち上がりだけ知りたいときはここで済ませられるようにする。 */
+.pickList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+.pickRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 3px solid var(--border-dark);
+  border-radius: 14px;
+  background: var(--panel-inner);
+  color: var(--ink);
+  text-align: left;
+  box-shadow: 0 3px 0 var(--border);
+}
+.pickRow:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border);
+}
+.pickHead {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.pickName {
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.pickCourse {
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pickRank {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.pickRank b {
+  font-size: 15px;
+  color: var(--ink);
+}
+.pickTag {
+  font-size: 10px;
+  font-weight: 900;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 2px solid var(--border);
+  white-space: nowrap;
+}
+.pickTagOk {
+  background: #ddf3d8;
+  border-color: #4f8f3a;
+  color: #1f5a17;
+}
+.pickTagNg {
+  background: var(--paper);
+  color: var(--ink-soft);
+}
+.pickTagFinal {
+  background: #ffeeba;
+  border-color: #a97a12;
+  color: #5a3f00;
+}
+.pickPlay {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--blue);
+}

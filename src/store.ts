@@ -68,7 +68,7 @@ import { trustedNow } from './logic/trustedClock';
 import { normAptFrames, newlyEarned, mergeAptFrames } from './logic/aptFrames';
 import { openBox as rollBox, stackBox, takeBox, type BoxResult } from './logic/boxes';
 import { type BoxKind } from './data/boxes';
-import { normalizeCustomBet } from './data/customBet';
+import { normalizeCustomBet, normalizeCustomBets, CUSTOM_BET_SLOTS } from './data/customBet';
 
 export const STORAGE_KEY = 'horse-game/v1'; // guest slot; payload is versioned inside
 export const MAX_HORSES = 30; // 所持できるマイウマの上限（5×6ボックス）。全プレイヤー共通・無料開放
@@ -228,7 +228,7 @@ function freshSave(): SaveData {
     // 区別がつかず、称号の初ゲットのお知らせが一度も出なくなる）。
     seenTitles: [],
     equippedTitle: null,
-    customBet: null,
+    customBets: [],
     raceSession: null,
     arena: freshArena(),
     farmClaimedAt: trustedNow(),
@@ -278,7 +278,7 @@ function normProfile(d: Record<string, unknown>): {
   boxTitles: BoxKind[];
   seenTitles: string[];
   equippedTitle: string | null;
-  customBet: SaveData['customBet'];
+  customBets: NonNullable<SaveData['customBets']>;
 } {
   const avatarHorseId = typeof d.avatarHorseId === 'string' ? d.avatarHorseId : null;
   const displayTrophies = Array.isArray(d.displayTrophies)
@@ -290,9 +290,10 @@ function normProfile(d: Record<string, unknown>): {
       )
     : [];
   const equippedTitle = typeof d.equippedTitle === 'string' ? d.equippedTitle : null;
-  const cb = d.customBet as SaveData['customBet'];
-  const customBet = cb && typeof cb === 'object' && typeof cb.amount === 'number' ? normalizeCustomBet(cb) : null;
-  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), aptFrames: normAptFrames(d.aptFrames), boxFrames: normBoxFrames(d.boxFrames), boxTitles: normBoxFrames(d.boxTitles), aptPending: normAptFrames(d.aptPending), seenTitles: normIdList(d.seenTitles), equippedTitle, customBet };
+  // カスタムベットは1パターン → 2パターンに増えた。旧セーブはオブジェクト1個で
+  // 入っているので、どちらの形でも配列にそろえる。
+  const customBets = normalizeCustomBets(d.customBets ?? d.customBet);
+  return { avatarHorseId, displayTrophies, mailbox, equippedFrame: normFrame(d.equippedFrame), aptFrames: normAptFrames(d.aptFrames), boxFrames: normBoxFrames(d.boxFrames), boxTitles: normBoxFrames(d.boxTitles), aptPending: normAptFrames(d.aptPending), seenTitles: normIdList(d.seenTitles), equippedTitle, customBets };
 }
 
 function normGp(v: unknown): { g2: boolean; g1: boolean } {
@@ -664,7 +665,8 @@ type Store = SaveData & {
   /** 称号を付け替える（未達成のIDは無視される）。 */
   equipTitle: (id: string | null) => void;
   /** カスタムベットの設定を保存する（100きざみ・整数の倍率に丸めて入る）。 */
-  setCustomBet: (spec: { amount: number; minOdds: number; maxOdds: number } | null) => void;
+  /** カスタムベットの枠（0 か 1）を決める。null でその枠を消す。 */
+  setCustomBet: (slot: number, spec: { amount: number; minOdds: number; maxOdds: number } | null) => void;
   // スペシャルタスク（連勝チャレンジ）.
   /** 1人でレース・馬券ありの結果を折り込む。win=払戻>賭け。負けで連勝リセット。
    *  馬券なし／コース選択レースでは呼ばない（何も変えない）。 */
@@ -782,7 +784,7 @@ export const useStore = create<Store>((set, get) => {
       boxTitles: next.boxTitles ?? [],
       seenTitles: next.seenTitles ?? [],
       equippedTitle: next.equippedTitle ?? null,
-      customBet: next.customBet ?? null,
+      customBets: next.customBets ?? [],
       raceSession: next.raceSession ?? null,
       arena: next.arena ?? freshArena(),
       farmClaimedAt: next.farmClaimedAt ?? trustedNow(),
@@ -1363,7 +1365,13 @@ export const useStore = create<Store>((set, get) => {
 
     equipFrame: (frame) => commit({ equippedFrame: frame }),
     equipTitle: (id) => commit({ equippedTitle: id }),
-    setCustomBet: (spec) => commit({ customBet: spec ? normalizeCustomBet(spec) : null }),
+    /** カスタムベットを1枠ぶん決める（spec が null ならその枠を消す）。 */
+    setCustomBet: (slot, spec) => {
+      // 抜けのある配列を作らないよう、いったんその枠を外してから入れ直す。
+      const next = (get().customBets ?? []).filter((_, i) => i !== slot);
+      if (spec) next.splice(Math.min(slot, next.length), 0, normalizeCustomBet(spec));
+      commit({ customBets: next.slice(0, CUSTOM_BET_SLOTS) });
+    },
 
     recordSoloStreak: (win) => {
       const s = get();

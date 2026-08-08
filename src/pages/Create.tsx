@@ -96,6 +96,9 @@ export default function Create() {
         },
   );
   const [dyePick, setDyePick] = useState<string | null>(null); // 使おうとしている染料
+  // 染料の一覧はたたんでおく。たくさん持っていると画面が縦に伸びきってしまい、
+  // 肝心のウマが見えなくなるため（開いたときだけ出す）。
+  const [dyeOpen, setDyeOpen] = useState(false);
   const [dyeSlot, setDyeSlot] = useState<ColorSlot | null>(null); // 塗る部位（既定は染料の元の部位）
   const [decos, setDecos] = useState<Partial<Record<DecoSlot, string>>>(() =>
     editing ? { ...editing.decos } : {},
@@ -209,13 +212,28 @@ export default function Create() {
               出さない。着せ替えできるのは飾り（頭・顔・背中・エフェクト）だけ。 */}
           {editing ? (
             <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>染料で色を変える</h2>
+              {/* 見出しそのものを開け閉めのボタンにする（持っている数も出す）。 */}
+              <button
+                type="button"
+                className={styles.dyeToggle}
+                onClick={() => setDyeOpen((v) => !v)}
+                aria-expanded={dyeOpen}
+                disabled={myDyes.length === 0}
+              >
+                <span className={styles.sectionTitle}>染料で色を変える</span>
+                <span className={styles.dyeToggleRight}>
+                  {myDyes.length > 0 && (
+                    <span className={styles.dyeHave}>{myDyes.reduce((n, d) => n + d.count, 0)}個</span>
+                  )}
+                  <span className={`${styles.dyeCaret} ${dyeOpen ? styles.dyeCaretOpen : ''}`} aria-hidden>▼</span>
+                </span>
+              </button>
               {myDyes.length === 0 ? (
                 <p className={styles.lockedNote}>
                   体・たてがみ・ひづめの色は生まれつきです。
                   <br />ログインボーナス（土・日）でもらえる<strong>染料</strong>があると、塗り替えられます。
                 </p>
-              ) : (
+              ) : dyeOpen ? (
                 <>
                   <p className={styles.lockedNote}>
                     使いたい染料をタップすると、その色の場所（{COLOR_LABEL.body}／{COLOR_LABEL.mane}／{COLOR_LABEL.hoof}）が塗り替わります。
@@ -240,7 +258,7 @@ export default function Create() {
                     })}
                   </div>
                 </>
-              )}
+              ) : null}
             </section>
           ) : (
             <p className={styles.lockedNote}>

@@ -400,7 +400,11 @@ export type SaveData = {
    *  新規アカウントには無関係なので届かない。判定は初回の読み込みで一度だけ。 */
   earnedNoticeDue?: boolean;
   equippedTitle?: string | null; // 装備中の称号ID（data/titles.ts）。未設定なら達成済みで一番上の段
-  customBet?: { amount: number; minOdds: number; maxOdds: number } | null; // カスタムベットの設定
+  /** カスタムベットの設定。2パターンまで決めておける。
+   *  旧セーブはオブジェクト1個で入っているので、読み込み時に配列へそろえる。 */
+  customBets?: { amount: number; minOdds: number; maxOdds: number }[];
+  /** 旧・カスタムベット（1パターンだけだったころ）。読み込みの互換のためだけに残す。 */
+  customBet?: { amount: number; minOdds: number; maxOdds: number } | null;
   raceSession?: RaceSession | null; // in-progress race, resumable across reloads
   arena?: ArenaState | null; // 対戦: pending entry + last revealed tournament
   farmClaimedAt?: number; // 牧場の放置収入を最後に回収した時刻（ms）

@@ -363,22 +363,66 @@
   line-height: 1.6;
 }
 
-/* ---- 染料（着せ替え画面で色を塗り替える） ---------------------------------- */
+/* ---- 染料（着せ替え画面で色を塗り替える） ----------------------------------
+   たくさん持っていると縦に伸びきってウマが見えなくなるので、ふだんはたたむ。
+   1つ1つも小さくして、開いたときも場所を取りすぎないようにする。 */
+.dyeToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+.dyeToggle:disabled {
+  opacity: 1; /* 見出しとしては読ませたいので薄くしない */
+}
+.dyeToggleRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dyeHave {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  background: var(--panel-inner);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.dyeCaret {
+  font-size: 11px;
+  color: var(--ink-soft);
+  transition: transform 0.2s ease;
+}
+.dyeCaretOpen {
+  transform: rotate(180deg);
+}
 .dyeGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: 8px;
+  /* 1つを小さくして、狭い画面でも4〜5列並ぶようにする */
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  gap: 6px;
   margin-top: 8px;
+  /* 開いても画面を占領しない。多いときは中だけ縦に流す */
+  max-height: 40vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .dye {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   background: var(--panel-inner);
-  border: 3px solid var(--border);
-  border-radius: 12px;
-  padding: 8px 4px 6px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 5px 2px 4px;
   color: var(--ink);
 }
 .dye:disabled {
@@ -388,24 +432,24 @@
   border-color: var(--grass-dark);
 }
 .dyeSwatch {
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 3px solid var(--border-dark);
+  border: 2px solid var(--border-dark);
 }
 .dyeName {
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 800;
   text-align: center;
   line-height: 1.2;
 }
 .dyeSlot {
-  font-size: 10px;
+  font-size: 8px;
   color: var(--ink-soft);
   font-weight: 800;
 }
 .dyeCount {
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 900;
   color: var(--ink-soft);
 }

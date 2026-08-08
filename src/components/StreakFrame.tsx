@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import type { HorseLook } from '../types';
 import HorseFace from './HorseFace';
+import { CountUpGems, MetalSheen } from './FrameFx';
+import { usePrefersReducedMotion } from '../hooks';
 
 // スペシャルタスク（連勝チャレンジ）の報酬フレーム。連勝数(数のみ)を刻んだ特別な
 // アイコンフレーム。Lv1..10 で徐々に豪華に。数字は丸枠に閉じ込めず、数字の形に沿った
@@ -91,6 +93,7 @@ function ShapedNumber({ n, x, y, size, fill, line, lineW, italic = true, anchor 
 export default function StreakFrame({ level, look, size = 104, variant = 'emblem' }: { level: number; look: HorseLook; size?: number; variant?: StreakVariant }) {
   const uid = useId().replace(/:/g, '');
   const t = tierOf(level);
+  const still = usePrefersReducedMotion();
   const off = `${-SPILL * 100}%`;
   const span = `${(1 + SPILL * 2) * 100}%`;
   // 主リングの太さ。Lv が上がるほど少しずつ厚くなる（Lv1 6.2 … Lv10 8.2）。
@@ -199,6 +202,34 @@ export default function StreakFrame({ level, look, size = 104, variant = 'emblem
             {[-5.6, 0, 5.6].map((x, i) => <circle key={i} cx={x} cy={-4.6 + (i === 1 ? -1.5 : 0)} r="1.45" fill={GEM_COLORS[i % GEM_COLORS.length]} stroke={t.lo} strokeWidth="0.4" />)}
           </g>
         )}
+
+        {/* ── 連勝フレームだけの動き ─────────────────────────────
+            リングに並ぶ石が **1個目から順に灯っていき、連勝数まで点いたら
+            少し見せて、また消えて数え直す**。アニメーションそのものが
+            「何連勝か」を数えているので、他のフレームと役割がはっきり違う。
+            Lv が上がるほど灯る数が増えるので、上位ほど画面が満ちる。
+            光はリングの上だけ。枠の外へは一切出さない。 */}
+        <CountUpGems
+          c={CX}
+          r={R}
+          uid={uid}
+          level={level}
+          color={t.lo}
+          glow={t.gem}
+          size={level >= 8 ? 3 : 2.6}
+          still={still}
+        />
+
+        {/* 帯の金属光沢。Lv が上がるほど速く強くなる。 */}
+        <MetalSheen
+          c={CX}
+          r={R}
+          w={ringW}
+          uid={`st${uid}`}
+          dur={5.4 - level * 0.28}
+          strength={0.45 + level * 0.035}
+          still={still}
+        />
 
         {/* ===== 数字の配置パターン ===== */}
         {variant === 'corner' && <CornerNumber t={t} level={level} uid={uid} />}
