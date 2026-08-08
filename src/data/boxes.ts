@@ -80,11 +80,17 @@ export const GOLD_BOX: BoxDef = {
   // 100,000 は 1% ＝ 100箱に1回。それでも平均の3割弱をこの1段が担っているので、
   // 「たまに大当たりする箱」という手ざわりは残る。
   slots: [
-    { weight: 36, rarity: 'normal', label: 'コイン 500', reward: { type: 'coins', amount: 500 } },
-    { weight: 30, rarity: 'normal', label: 'コイン 1,000', reward: { type: 'coins', amount: 1000 } },
-    { weight: 20, rarity: 'normal', label: 'コイン 2,500', reward: { type: 'coins', amount: 2500 } },
-    { weight: 10, rarity: 'rare', label: 'コイン 10,000', reward: { type: 'coins', amount: 10000 } },
-    { weight: 3, rarity: 'epic', label: 'コイン 25,000', reward: { type: 'coins', amount: 25000 } },
+    // 1箱あたりの平均は 2,350コイン。
+    //
+    // 以前は平均 3,730 で、10個開ければ約37,000コイン。対戦の優勝賞金 12,000 を
+    // ボックス3個ぶんで超えてしまい、勝ち抜きトーナメントを戦う意味が薄かった。
+    // **100,000コインの1%はそのまま残し**、その下の段を絞って平均だけ下げている
+    // （夢のある一撃は残したまま、日常的な稼ぎだけを減らす）。
+    { weight: 60, rarity: 'normal', label: 'コイン 500', reward: { type: 'coins', amount: 500 } },
+    { weight: 25, rarity: 'normal', label: 'コイン 1,000', reward: { type: 'coins', amount: 1000 } },
+    { weight: 10, rarity: 'normal', label: 'コイン 2,500', reward: { type: 'coins', amount: 2500 } },
+    { weight: 3, rarity: 'rare', label: 'コイン 10,000', reward: { type: 'coins', amount: 10000 } },
+    { weight: 1, rarity: 'epic', label: 'コイン 25,000', reward: { type: 'coins', amount: 25000 } },
     { weight: 1, rarity: 'epic', label: 'コイン 100,000', reward: { type: 'coins', amount: 100000 } },
   ],
 };
